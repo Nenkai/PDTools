@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Syroot.BinaryData.Memory" Version="5.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PDTools.Compression\PDTools.Compression.csproj" />
+    <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="MGameParameter\" />
+  </ItemGroup>
+
+</Project>
