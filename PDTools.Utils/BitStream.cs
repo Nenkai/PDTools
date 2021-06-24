@@ -2,9 +2,13 @@
 using System.Text;
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Generic;
 
 namespace PDTools.Utils
 {
+    /// <summary>
+    /// Bit stream reverse engineered & modified with extra features. Big Endian only.
+    /// </summary>
     [DebuggerDisplay("Position = {BytePosition}")]
     public ref struct BitStream
     {
@@ -12,6 +16,8 @@ namespace PDTools.Utils
         public const int Short_Bits = 16;
         public const int Int_Bits = 32;
         public const int Long_Bits = 64;
+
+        public BitStreamMode Mode { get; }
 
         public Span<byte> SourceBuffer { get; set; }
 
@@ -23,58 +29,13 @@ namespace PDTools.Utils
         public int BufferByteSize { get; set; }
         public bool IsEndOfStream { get; set; }
 
-        public bool UnkBool { get; set; }
-
-#if DEBUG
-        private StreamWriter _sw;
-#endif
+        public bool _needsFlush;
 
         /// <summary>
-        /// Creates a new bit stream based on an existing buffer.
+        /// Byte position within the stream.
         /// </summary>
-        /// <param name="buffer"></param>
-        public BitStream(Span<byte> buffer)
-        {
-            RemainingByteBits = 0;
-            CurrentByte = 0;
-
-            SourceBuffer = buffer;
-            _currentBuffer = buffer;
-
-            BufferByteSize = 0;
-
-            UnkBool = false;
-
-            IsEndOfStream = false;
-#if DEBUG
-            _sw = null;
-#endif
-        }
-
-        /// <summary>
-        /// Creates a new bit stream with a new buffer.
-        /// </summary>
-        public BitStream(int capacity = 1024)
-        {
-            RemainingByteBits = 0;
-            CurrentByte = 0;
-
-            SourceBuffer = new byte[capacity];
-            _currentBuffer = SourceBuffer;
-
-            BufferByteSize = 0;
-
-            UnkBool = false;
-
-            IsEndOfStream = false;
-
-#if DEBUG
-            _sw = null;
-#endif
-        }
-
         // Non Original
-        public unsafe int BytePosition
+        public unsafe int Position
         {
             get
             {
@@ -87,33 +48,202 @@ namespace PDTools.Utils
                     return (int)(current - start);
                 }
             }
+            set
+            {
+                SeekToByte(value);
+            }
         }
 
-        // Non Original
-        public void SeekToBit(int bitOffset)
-        {
-
-        }
-
+        /// <summary>
+        /// Current length of the stream.
+        /// </summary>
         // Non original
+        private int _length;
+        public int Length => _length;
+
+#if DEBUG
+        private StreamWriter _sw;
+#endif
+        // TODO: Enum to mark stream as write or read only
+
+        /// <summary>
+        /// Creates a new bit stream based on an existing buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        public BitStream(BitStreamMode mode, Span<byte> buffer)
+        {
+            Mode = mode;
+
+            RemainingByteBits = 0;
+            CurrentByte = 0;
+
+            SourceBuffer = buffer;
+            _currentBuffer = buffer;
+
+            BufferByteSize = 0;
+
+            IsEndOfStream = false;
+            _length = buffer.Length;
+
+            _needsFlush = false;
+#if DEBUG
+            _sw = null;
+#endif
+        }
+
+
+        /// <summary>
+        /// Creates a new bit stream with a new buffer.
+        /// </summary>
+        public BitStream(BitStreamMode mode, int capacity = 1024)
+        {
+            Mode = mode;
+
+            RemainingByteBits = 0;
+            CurrentByte = 0;
+
+            SourceBuffer = new byte[capacity];
+            _currentBuffer = SourceBuffer;
+
+            BufferByteSize = 0;
+
+            IsEndOfStream = false;
+            _length = 0;
+            _needsFlush = false;
+
+#if DEBUG
+            _sw = null;
+#endif
+        }
+
+        public static int GetSizeOfVariablePrefixString(string str)
+            => GetSizeOfVarInt(str.Length) + str.Length;
+
+        public static int GetSizeOfVarInt(int val)
+        {
+            return val switch
+            {
+                < 0x80 => 1,
+                < 0x4000 => 2,
+                < 0x200000 => 3,
+                < 0x10000000 => 4,
+                _ => 5,
+            };
+        }
+
+
+        /// <summary>
+        /// Returns a span of the stream at the current position.
+        /// </summary>
+        /// <returns></returns>
+        public Span<byte> GetSpanOfCurrentPosition()
+            => SourceBuffer.Slice(Position);
+
+        /// <summary>
+        /// Returns a span of the stream.
+        /// </summary>
+        /// <returns></returns>
+        public Span<byte> GetSpan()
+            => SourceBuffer.Slice(0, _length);
+
+        /// <summary>
+        /// Seeks to a specific bit within the whole stream.
+        /// </summary>
+        /// <param name="bitOffset">Bit offset.</param>
+        // Non original
+        public void SeekToBit(long bitOffset)
+        {
+            int bytePos = (int)(bitOffset / Byte_Bits);
+            uint bitPos = (uint)bitOffset % Byte_Bits;
+
+            if (Mode == BitStreamMode.Read && bytePos > Length)
+                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+
+            // Update stream length if needed
+            if (bytePos > _length)
+                _length = bytePos;
+
+            if (bytePos + 1 > SourceBuffer.Length)
+                EnsureCapacity((SourceBuffer.Length - bytePos) * Byte_Bits + Byte_Bits);
+
+            _currentBuffer = SourceBuffer.Slice(bytePos);
+            CurrentByte = _currentBuffer[0];
+            RemainingByteBits = Byte_Bits - bitPos;
+
+        }
+
+        /// <summary>
+        /// Seeks to a specific byte within the whole stream.
+        /// </summary>
+        /// <param name="byteOffset"></param>
         public void SeekToByte(int byteOffset)
         {
-            if (byteOffset > SourceBuffer.Length)
-                EnsureCapacity((SourceBuffer.Length - byteOffset) * Byte_Bits);
+            if (Mode == BitStreamMode.Read && byteOffset > Length)
+                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+
+            // Flush current byte
+            AlignToNextByte();
+
+            if (byteOffset >= _length)
+                _length = byteOffset;
+
+            if (_length > SourceBuffer.Length)
+                EnsureCapacity((SourceBuffer.Length - _length) * Byte_Bits);
 
             _currentBuffer = SourceBuffer.Slice(byteOffset);
-            CurrentByte = _currentBuffer[0];
+
+            if (_currentBuffer.IsEmpty)
+                CurrentByte = 0;
+            else
+                CurrentByte = _currentBuffer[0];
+
             RemainingByteBits = 0;
         }
 
         public void SeekToByteFromCurrentPosition(int byteOffset)
         {
-            if (byteOffset + BytePosition >= SourceBuffer.Length)
-                EnsureCapacity(byteOffset * Byte_Bits);
+            int newPos = byteOffset + Position;
+            if (Mode == BitStreamMode.Read && newPos > Length)
+                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+
+            // Flush current byte
+            AlignToNextByte();
+
+            if (newPos >= _length)
+                _length = newPos;
+
+            if (_length >= SourceBuffer.Length)
+                EnsureCapacity(_length * Byte_Bits);
 
             _currentBuffer = _currentBuffer.Slice(byteOffset);
             CurrentByte = _currentBuffer[0];
             RemainingByteBits = 0;
+        }
+
+        /// <summary>
+        /// Seeks the stream to the next new byte.
+        /// </summary>
+        public void AlignToNextByte()
+        {
+            if (RemainingByteBits > 0 && RemainingByteBits != 8)
+            {
+                if (_needsFlush)
+                {
+                    SourceBuffer[Position] = CurrentByte;
+                    _needsFlush = false;
+                }
+
+                _currentBuffer = _currentBuffer.Slice(1);
+                CurrentByte = _currentBuffer[0];
+                RemainingByteBits = 8;
+            }
+        }
+
+        public void Align(int alignment)
+        {
+            AlignToNextByte();
+            var newPos = (-Position % alignment + alignment) % alignment;
+            Position += newPos;
         }
 
         public unsafe bool CanRead(int bitCountToRead)
@@ -131,6 +261,45 @@ namespace PDTools.Utils
                 return !IsEndOfStream;
             }
         }
+
+        private void EnsureCapacity(long bitCount)
+        {
+            bitCount += Byte_Bits; // Since we may slice to the next byte, better to be safe
+
+            uint bitsLeftThisByte = Byte_Bits - RemainingByteBits;
+            long totalFreeBits = (_currentBuffer.Length * Byte_Bits) + bitsLeftThisByte;
+
+            if (bitCount >= totalFreeBits)
+            {
+                int cPos = Position < 0 ? SourceBuffer.Length : Position;
+
+                // Expand our buffer by twice the size everytime - if possible
+                int newCapacity;
+                if (SourceBuffer.Length * 2 < bitCount / 8)
+                    newCapacity = (int)((bitCount / 8) * 2);
+                else
+                    newCapacity = SourceBuffer.Length * 2;
+
+                var newBuffer = new byte[newCapacity];
+
+                // Copy our buffer over the larger one
+                SourceBuffer.CopyTo(newBuffer.AsSpan());
+                SourceBuffer = newBuffer;
+
+                // Ensure that the current representation of the rest of our stream is updated
+                _currentBuffer = SourceBuffer.Slice(cPos);
+            }
+        }
+
+        public Span<byte> GetBuffer()
+            => SourceBuffer.Slice(0, Position);
+
+        /* ********************************************
+         * *                                          *
+         * *         Reading Stream Methods           *
+         * *                                          *
+         * ******************************************** */
+
 
         public ulong ReadUInt64()
             => ReadBits(Long_Bits);
@@ -173,10 +342,73 @@ namespace PDTools.Utils
             return -1;
         }
 
+        public ulong ReadVarInt()
+        {
+            ulong value = ReadByte();
+            ulong mask = 0x80;
+
+            while ((value & mask) != 0)
+            {
+                value = ((value - mask) << 8) | (ReadByte());
+                mask <<= 7;
+            }
+
+            return value;
+        }
+
+        public byte[] ReadByteDataPrefixed4()
+        {
+            AlignToNextByte();
+
+            int len = ReadInt32();
+            byte[] data = new byte[len];
+            ReadIntoByteArray(len, data, Byte_Bits);
+            return data;
+        }
+
+        public string ReadVarPrefixString()
+        {
+            int strLen = (int)ReadVarInt();
+            if (strLen < 0)
+                throw new Exception($"Attempted to read string length of {strLen}.");
+
+            byte[] chars = new byte[strLen];
+            ReadIntoByteArray(strLen, chars, Byte_Bits);
+            return Encoding.ASCII.GetString(chars);
+        }
+
+        public string ReadStringNullTerminated()
+        {
+            AlignToNextByte();
+
+            List<byte> buf = new List<byte>();
+            StringBuilder sb = new StringBuilder();
+
+            byte nc;
+            while ((nc = ReadByte()) != 1)
+                buf.Add(nc);
+
+            
+            return Encoding.UTF8.GetString(buf.ToArray());
+        }
+
+        public string ReadStringRaw(int count)
+        {
+            AlignToNextByte();
+
+            byte[] chars = new byte[count];
+            ReadIntoByteArray(count, chars, Byte_Bits);
+            return Encoding.UTF8.GetString(chars);
+        }
 
         public string ReadString4()
         {
+            AlignToNextByte();
+
             int strLen = ReadInt32();
+            if (strLen == 0)
+                return string.Empty;
+
             byte[] chars = new byte[strLen];
             ReadIntoByteArray(strLen, chars, Byte_Bits);
             return Encoding.ASCII.GetString(chars);
@@ -184,7 +416,12 @@ namespace PDTools.Utils
 
         public string ReadString4Aligned()
         {
+            AlignToNextByte();
+
             int strLen = ReadInt32();
+            if (strLen == 0)
+                return string.Empty;
+
             byte[] chars = new byte[strLen];
             ReadIntoByteArray(strLen, chars, Byte_Bits);
             string str = Encoding.UTF8.GetString(chars).TrimEnd('\0');
@@ -192,8 +429,8 @@ namespace PDTools.Utils
             // Align
             const int alignment = 0x04;
 
-            var alignOffset = (-BytePosition % alignment + alignment) % alignment;
-            SeekToByte(BytePosition + alignOffset);
+            var alignOffset = (-Position % alignment + alignment) % alignment;
+            SeekToByte(Position + alignOffset);
             return str;
         }
 
@@ -344,32 +581,18 @@ namespace PDTools.Utils
             }
         }
 
-        private void EnsureCapacity(long bitCount)
-        {
-            bitCount += Byte_Bits; // Since we may slice to the next byte, better to be safe
+        /* ********************************************
+         * *                                          *
+         * *         Writing Stream Methods           *
+         * *                                          *
+         * ******************************************** */
 
-            uint bitsLeftThisByte = Byte_Bits - RemainingByteBits;
-            long totalFreeBits = (_currentBuffer.Length * Byte_Bits) + bitsLeftThisByte;
-
-            if (bitCount >= totalFreeBits)
-            {
-                int cPos = BytePosition < 0 ? SourceBuffer.Length : BytePosition;
-
-                // Expand our buffer by twice the size everytime
-                var newBuffer = new byte[SourceBuffer.Length * 2];
-
-                // Copy our buffer over the larger one
-                SourceBuffer.CopyTo(newBuffer.AsSpan());
-                SourceBuffer = newBuffer;
-
-                // Ensure that the current representation of the rest of our stream is updated
-                _currentBuffer = SourceBuffer.Slice(cPos);
-            }
-        }
-
-        // Original Impl (except capacity ensuring)
+        // Original Impl (except capacity ensuring & length)
         public void WriteBits(ulong value, ulong bitCountToWrite)
         {
+            if (Mode == BitStreamMode.Read)
+                throw new IOException("Stream is read only.");
+
             EnsureCapacity((long)bitCountToWrite);
 
             var buf = _currentBuffer;
@@ -414,8 +637,12 @@ namespace PDTools.Utils
             _currentBuffer = buf;
             CurrentByte = (byte)currentByte;
 
+            if (Position > _length)
+                _length = Position;
+
+            _needsFlush = RemainingByteBits > 0;
 #if DEBUG
-            _sw?.WriteLine($"[{BytePosition} - {RemainingByteBits}/8] Wrote {value} ({bitCountToWrite} bits)");
+            _sw?.WriteLine($"[{Position} - {RemainingByteBits}/8] Wrote {value} ({bitCountToWrite} bits)");
 #endif
         }
 
@@ -448,9 +675,60 @@ namespace PDTools.Utils
             SeekToByteFromCurrentPosition(totalSize);
         }
 
-        public void WriteByteData(Span<byte> data, bool withPrefixLength = true)
+        public void WriteVarInt(int val)
+        {
+            Span<byte> buffer = Array.Empty<byte>();
+
+            if (val <= 0x7F)
+            {
+                WriteByte((byte)val);
+                return;
+            }
+            else if (val <= 0x3FFF)
+            {
+                Span<byte> tempBuf = BitConverter.GetBytes(val).AsSpan();
+                tempBuf.Reverse();
+                buffer = tempBuf.Slice(2, 2);
+            }
+            else if (val <= 0x1FFFFF)
+            {
+                Span<byte> tempBuf = BitConverter.GetBytes(val).AsSpan();
+                tempBuf.Reverse();
+                buffer = tempBuf.Slice(1, 3);
+            }
+            else if (val <= 0xFFFFFFF)
+            {
+                buffer = BitConverter.GetBytes(val).AsSpan();
+                buffer.Reverse();
+            }
+            else if (val <= 0xFFFFFFFF)
+            {
+                buffer = BitConverter.GetBytes(val);
+                buffer.Reverse();
+                buffer = new byte[] { 0, buffer[0], buffer[1], buffer[2], buffer[3] };
+            }
+
+            uint mask = 0x80;
+            for (int i = 1; i < buffer.Length; i++)
+            {
+                buffer[0] += (byte)mask;
+                mask >>= 1;
+            }
+
+            WriteByteData(buffer, false);
+        }
+
+        public void WriteVarPrefixString(string str)
+        {
+            WriteVarInt(str.Length);
+            if (!string.IsNullOrEmpty(str))
+                WriteByteData(Encoding.UTF8.GetBytes(str));
+        }
+
+        public void WriteByteData(Span<byte> data, bool withPrefixLength = false)
         {
             EnsureCapacity(((withPrefixLength ? 4 : 0) + data.Length) * Byte_Bits);
+            AlignToNextByte();
 
             if (withPrefixLength)
                 WriteInt32(data.Length);
@@ -517,8 +795,6 @@ namespace PDTools.Utils
         public void WriteBoolBit(bool value)
             => WriteBits((ulong)(value ? 1 : 0), 1);
 
-        public Span<byte> GetBuffer()
-            => SourceBuffer.Slice(0, BytePosition);
 
         #region Debug Tools
 
@@ -544,5 +820,12 @@ namespace PDTools.Utils
 #endif
         }
         #endregion
+    }
+
+    public enum BitStreamMode
+    {
+        Read,
+        Write,
+        ReadWrite,
     }
 }

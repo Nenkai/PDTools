@@ -70,9 +70,69 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteEndElement();
         }
 
-        public void ReadFromBuffer(ref BitStream reader)
+        public void ReadFromCache(ref BitStream reader)
         {
+            uint magic = reader.ReadUInt32();
+            if (magic != 0xE5_E5_C3_44 && magic != 0xE6_E6_C3_44)
+                throw new System.IO.InvalidDataException($"Course magic did not match - Got {magic.ToString("X8")}, expected 0xE6E6C344");
 
+            int version = reader.ReadInt32();
+
+            int gadgetVersion = -1;
+            if (version >= 1_01)
+                gadgetVersion = reader.ReadInt32();
+
+            CourseCode = (int)reader.ReadInt64();
+
+            byte[] edit_data = reader.ReadByteDataPrefixed4();
+            if (edit_data != null)         
+                CustomCourse = CustomCourse.Read(edit_data);
+            
+            CourseLayoutNumber = reader.ReadInt32();
+
+            if (version <= 1_01)
+                reader.ReadInt32();
+
+            int gadgetCount = reader.ReadInt32();
+            for (int i = 0; i < gadgetCount; i++)
+            {
+                Gadget gadget = new Gadget();
+                gadget.ReadFromBuffer(ref reader, gadgetVersion);
+            }
+
+            if (version >= 1_02)
+            {
+                MapOffsetWorldX = reader.ReadInt16();
+                MapOffsetWorldY = reader.ReadInt16();
+                MapScale = reader.ReadInt16();
+                IsOmodetoDifficulty = reader.ReadBool();
+                reader.ReadByte();
+
+                if (version >= 1_03)
+                    reader.ReadInt64(); // generated_course_id
+            }
+            else
+            {
+                reader.ReadInt32();
+                reader.ReadInt32();
+                reader.ReadSingle();
+                reader.ReadInt32();
+                reader.ReadInt32();
+
+                reader.ReadString4();
+
+                int count = reader.ReadInt32();
+                for (int i = 0; i < count; i++)
+                    reader.ReadSingle();
+
+                reader.ReadInt32();
+
+                MapOffsetWorldX = reader.ReadInt16();
+                MapOffsetWorldY = reader.ReadInt16();
+                MapScale = reader.ReadInt16();
+                IsOmodetoDifficulty = reader.ReadBool();
+                reader.ReadByte();
+            }
         }
 
         public void WriteToCache(ref BitStream bs)

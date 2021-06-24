@@ -124,6 +124,16 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteEndElement();
         }
 
+        public void ReadFromCache(ref BitStream reader)
+        {
+            if (reader.ReadUInt32() != 0xE6_E8_DC_CF)
+                throw new Exception("License condition magic did not match expected (0xE6_E8_DC_CF)");
+
+            uint version = reader.ReadUInt32();
+
+            throw new NotImplementedException("Implement license condition reading");
+        }
+
         public void WriteToCache(ref BitStream bs)
         {
             bs.WriteUInt32(0xE6_E8_DC_CF);

@@ -49,6 +49,16 @@ namespace PDTools.Structures.MGameParameter
                 throw new Exception("Failure condition magic did not match expected (E6 E6 DC CE)");
 
             uint version = reader.ReadUInt32();
+
+            int type_list_count = reader.ReadInt32();
+            for (int i = 0; i < type_list_count; i++)
+                FailConditions.Add((FailCondition)reader.ReadInt32());
+
+            int data_list_count = reader.ReadInt32();
+            for (int i = 0; i < data_list_count; i++)
+                DataList.Add(reader.ReadInt32());
+
+            NoFailureAtResult = reader.ReadBool();
         }
 
         public void WriteToCache(ref BitStream bs)

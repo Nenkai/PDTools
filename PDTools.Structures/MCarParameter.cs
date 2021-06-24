@@ -126,20 +126,25 @@ namespace PDTools.Structures
 
         public static MCarParameter ImportFromBlob(string fileName)
         {
-            var car = ImportFromBlob(File.ReadAllBytes(fileName));
-            return car;
+            return ImportFromBlob(File.ReadAllBytes(fileName));
         }
 
-        public static MCarParameter ImportFromBlob(ReadOnlySpan<byte> blob)
+        public static MCarParameter ImportFromBlob(Span<byte> blob)
         {
-            var car = new MCarParameter();
-
-            BitStream reader = new BitStream(/*blob*/ Span<byte>.Empty); // FIX ME
+            BitStream reader = new BitStream(BitStreamMode.Read, blob); // FIX ME
             reader.BufferByteSize = blob.Length;
 
+            return ImportFromBlob(ref reader);
+        }
+
+        public static MCarParameter ImportFromBlob(ref BitStream reader)
+        {
+            int baseOffset = reader.Position;
+
+            var car = new MCarParameter();
             int version = reader.ReadInt32();
             //if (version != Version)
-              //  throw new InvalidDataException("File is not an expected MCarParameter blob.");
+            //  throw new InvalidDataException("File is not an expected MCarParameter blob.");
 
             if (version == 110)
                 reader.ReadUInt32(); // Header Size
@@ -168,7 +173,7 @@ namespace PDTools.Structures
             }
             else
             {
-                uint obtainDate = reader.ReadUInt32();
+                DateTime obtainDate = new PDIDATETIME32(reader.ReadUInt32()).GetDateTime();
                 short winCount = reader.ReadInt16();
                 reader.ReadInt16();
 
@@ -181,9 +186,20 @@ namespace PDTools.Structures
 
             car.Settings.ParseSettings(ref reader, version);
 
+            if (version >= 1_10)
+            {
+                throw new NotImplementedException("Implement this part");
+            }
+            else
+            {
+                car.Settings.PurchaseBits = new byte[version < 1_09 ? 0x40 : 0x20];
+                reader.ReadIntoByteArray(car.Settings.PurchaseBits.Length, car.Settings.PurchaseBits, 8);
+            }
+
+            int alignedBlobSize = (int)((reader.Position + (0x0F - baseOffset)) & 0xFFFFFFF0);
+            reader.Position = baseOffset + alignedBlobSize;
             return car;
         }
-
     }
 
     public class MCarCondition
@@ -320,8 +336,8 @@ namespace PDTools.Structures
         public byte RearCamber { get; set; }
         public short FrontRideHeight { get; set; }
         public short RearRideHeight { get; set; }
-        public sbyte FrontToe { get; set; }
-        public sbyte RearToe { get; set; }
+        public short FrontToe { get; set; }
+        public short RearToe { get; set; }
         public short FrontSpringRate { get; set; }
         public short RearSpringRate { get; set; }
         public short LeverRatioF { get; set; }
@@ -431,9 +447,10 @@ namespace PDTools.Structures
 
         public void ParseSettings(ref BitStream reader, int carParamVersion)
         {
+            int partsVersion;
             if (carParamVersion >= 110)
             {
-                short partsVersion = reader.ReadInt16();
+                partsVersion = (int)reader.ReadInt16();
                 short partsSize = reader.ReadInt16();
                 long unkBits = reader.ReadInt64();
                 reader.ReadInt64();
@@ -450,9 +467,11 @@ namespace PDTools.Structures
             }
             else
             {
+                reader.ReadInt32();
+                partsVersion = reader.ReadInt32();
                 FrontWheelEx = reader.ReadInt16();
                 RearWheelEx = reader.ReadInt16();
-                WheelInchupRelated = reader.ReadInt16();
+                WheelInchupRelated = (short)reader.ReadInt32();
                 WheelSP = reader.ReadInt32();
                 CarCode = reader.ReadInt32();
                 GarageID = reader.ReadInt32();
@@ -485,7 +504,7 @@ namespace PDTools.Structures
             ASCC = reader.ReadInt32();
             TCSC = reader.ReadInt32();
 
-            if (carParamVersion < 106 || carParamVersion >= 110)
+            if (partsVersion < 106 || partsVersion >= 110)
                 reader.ReadInt32();
 
             Supercharger = reader.ReadInt32();
@@ -524,8 +543,8 @@ namespace PDTools.Structures
             Param4WD = reader.ReadByte();
             FrontABS = reader.ReadByte();
             RearABS = reader.ReadByte();
-            DownforceFront = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
-            DownforceRear = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            DownforceFront = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            DownforceRear = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
 
             turbo_Boost1 = reader.ReadByte();
             turbo_peakRpm1 = reader.ReadByte();
@@ -538,12 +557,12 @@ namespace PDTools.Structures
             RearCamber = reader.ReadByte();
             FrontRideHeight = reader.ReadInt16();
             RearRideHeight = reader.ReadInt16();
-            FrontToe = reader.ReadSByte();
-            RearToe = reader.ReadSByte();
-            FrontSpringRate = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
-            RearSpringRate = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
-            LeverRatioF = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
-            LevelRarioR = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            FrontToe = (short)reader.ReadSByte();
+            RearToe = (short)reader.ReadSByte();
+            FrontSpringRate = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            RearSpringRate = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            LeverRatioF = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            LevelRarioR = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
 
             FrontDamperF1B = reader.ReadByte();
             FrontDamperF2B = reader.ReadByte();
@@ -574,7 +593,7 @@ namespace PDTools.Structures
             WeightModifyRatio = reader.ReadInt16();
             PowerModifyRatio = reader.ReadInt16();
 
-            if (carParamVersion >= 110)
+            if (partsVersion >= 110)
             {
                 reader.ReadByte();
                 reader.ReadByte();
@@ -585,50 +604,107 @@ namespace PDTools.Structures
             FrontBrakeBalanceLevel = reader.ReadByte();
             RearBrakeBalanceLevel = reader.ReadByte();
             ABSCorneringControlLevel = reader.ReadByte();
-            int unk = carParamVersion >= 110 ? reader.ReadInt16() : reader.ReadByte();
-            int unk2 = carParamVersion >= 110 ? reader.ReadInt16() : reader.ReadByte();
-            gasCapacity = carParamVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
+            int unk = partsVersion >= 110 ? reader.ReadInt16() : reader.ReadByte();
+            reader.ReadInt16();
+            gasCapacity = partsVersion >= 110 ? reader.ReadByte() : reader.ReadInt16();
             PowerLimiter = reader.ReadInt16();
             HornSoundID = reader.ReadInt32();
 
-            if (carParamVersion < 110)
+            if (partsVersion >= 1_08)
             {
                 wheel_color = reader.ReadByte();
                 BodyPaintID = reader.ReadInt16();
                 WheelPaintID = reader.ReadInt16();
                 BrakePaintID = reader.ReadInt16();
-                CustomRearWingPaintID = reader.ReadInt16();
+
+                if (partsVersion >= 1_17)
+                    CustomRearWingPaintID = reader.ReadInt16();
+
                 FrontWheelWidth = reader.ReadInt16();
                 FrontWheelDiameter = reader.ReadInt16();
                 RearWheelWidth = reader.ReadInt16();
                 RearWheelDiameter = reader.ReadInt16();
-                reader.ReadInt16();
                 WheelInchup = reader.ReadByte();
                 DeckenPreface = reader.ReadByte();
-                DeckenNumber = reader.ReadByte();
-                DeckenType = reader.ReadByte();
-                reader.ReadIntoByteArray(21, new byte[21], BitStream.Byte_Bits);
-                unkCustomWing1 = reader.ReadByte();
-                unkCustomWing2 = reader.ReadByte();
-                unkCustomWing3 = reader.ReadByte();
-                customWingsStays = reader.ReadByte();
-                unkCustomWing4 = reader.ReadByte();
+
+                if (partsVersion < 1_16)
+                {
+                    DeckenNumber = reader.ReadByte();
+                    DeckenType = reader.ReadByte();
+                    reader.ReadByte(); // window_sticker_custom_type
+                    reader.ReadInt64();
+                    reader.ReadInt64(); // Decken custom ID
+                    reader.ReadByte(); // Wing customized
+                }
+                else
+                {
+                    DeckenNumber = (byte)reader.ReadBits(2);
+                    DeckenType = (byte)reader.ReadBits(2);
+                    reader.ReadBits(2); // window_sticker_custom_type
+                    reader.ReadInt64();
+                    reader.ReadInt64(); // Decken custom ID
+                    reader.ReadBoolBit(); // Wing customized
+                }
+
+                reader.ReadByte(); // Wing Flap Type
+                reader.ReadByte(); // Wing End Plate Type;
+                reader.ReadByte(); // Wing Stay Type
+                reader.ReadByte(); // Wing Mount Type
                 WingWidthOffset = reader.ReadInt16();
                 WingHeightOffset = reader.ReadInt16();
                 WingAngleOffset = reader.ReadInt16();
-                unk8 = reader.ReadInt32();
-
-                unk9 = reader.ReadByte();
-                unk10 = reader.ReadByte();
-                unk11 = reader.ReadByte();
-
-                CustomMeterData = reader.ReadInt16();
-                CustomMeterUnk = reader.ReadInt16();
-                CustomMeterColor = reader.ReadUInt32();
-                unkToeAngle1 = reader.ReadInt16();
-                unkToeAngle2 = reader.ReadInt16();
                 reader.ReadInt16();
-                reader.ReadIntoByteArray(0x20, PurchaseBits, BitStream.Byte_Bits);
+                reader.ReadInt16();
+
+                // Wing bits
+                reader.ReadBits(3);
+                reader.ReadBoolBit();
+                reader.ReadBits(4);
+                reader.ReadBits(4);
+                reader.ReadBits(2);
+                reader.ReadBits(2);
+                reader.ReadBits(3);
+                reader.ReadBits(2);
+                reader.ReadBoolBit();
+                reader.ReadBits(2);
+
+                // Custom Meter stuff
+                if (partsVersion == 1_15)
+                {
+                    reader.ReadByte();
+                    reader.ReadByte();
+
+                    reader.ReadInt16();
+                    reader.ReadInt16();
+                    reader.ReadInt16();
+
+                    // Backlight Color ARGB
+                    reader.ReadInt16();
+                    reader.ReadInt16();
+                    reader.ReadInt16();
+                    reader.ReadInt16();
+                }
+                else
+                {
+                    reader.ReadBits(2);
+                    reader.ReadBits(2);
+
+                    reader.ReadBits(10);
+                    reader.ReadBits(10);
+                    reader.ReadBits(10);
+
+                    // Backlight Color ARGB
+                    reader.ReadByte();
+                    reader.ReadByte();
+                    reader.ReadByte();
+                    reader.ReadByte();
+                }
+
+                if (partsVersion >= 1_18)
+                {
+                    FrontToe = (sbyte)reader.ReadInt16();
+                    RearToe = (sbyte)reader.ReadInt16();
+                }
             }
         }
 
@@ -715,8 +791,8 @@ namespace PDTools.Structures
 
             bs.WriteInt16(FrontRideHeight);
             bs.WriteInt16(RearRideHeight);
-            bs.WriteSByte(FrontToe);
-            bs.WriteSByte(RearToe);
+            bs.WriteSByte((sbyte)FrontToe);
+            bs.WriteSByte((sbyte)RearToe);
             bs.WriteInt16(FrontSpringRate);
             bs.WriteInt16(RearSpringRate);
             bs.WriteInt16(LeverRatioF);

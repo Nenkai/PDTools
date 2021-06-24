@@ -15,6 +15,11 @@ namespace PDTools.Structures
         public string PlayerName { get; set; }
         public string OnlineID { get; set; }
         public string Region { get; set; }
+        public byte Port { get; set; }
+        public byte DriverType { get; set; }
+        public byte ResidenceID { get; set; }
+        public bool IsGhost { get; set; }
+        public bool DisplayDrivingLine { get; set; }
 
         public DriverSettings Settings { get; set; } = new DriverSettings();
 
@@ -27,19 +32,20 @@ namespace PDTools.Structures
 
         public GrowthParameter GrowthParameter { get; set; } = new GrowthParameter();
 
-        public static MCarDriverParameter Read(ref SpanReader buffer)
+        public static MCarDriverParameter Read(ref BitStream reader)
         {
+            int basePos = reader.Position;
             var driver = new MCarDriverParameter();
-            BitStream reader = new BitStream(/*buffer.Span.Slice(buffer.Position)*/ Span<byte>.Empty); // FIX ME
-            reader.BufferByteSize = 0xC0;
 
             driver.Version = reader.ReadInt32();
-            driver.unk2 = reader.ReadUInt32();
-            reader.ReadBits(4); // *puVar13 & 0xfffffff | iVar5 << 0x1c;
-            reader.ReadBits(4); // *puVar13 & 0xf0ffffff | (uVar6 & 0xf) << 0x18;
-            reader.ReadBits(6); // *puVar13 & 0xff03ffff | (uVar6 & 0x3f) << 0x12;
-            reader.ReadBits(1); // *puVar13 & 0xfffdffff | (uVar6 & 0x1) << 0x11;
-            reader.ReadBits(1); // *puVar13 & 0xfffeffff | (uVar6 & 0x1) << 0x10;
+            int cdp_size = reader.ReadInt32();
+
+            driver.Port = (byte)reader.ReadBits(4);
+            driver.DriverType = (byte)reader.ReadBits(4);
+            driver.ResidenceID = (byte)reader.ReadBits(6);
+            driver.IsGhost = reader.ReadBoolBit();
+            driver.DisplayDrivingLine = reader.ReadBoolBit(); 
+
             byte[] name = new byte[driver.Version >= 110 ? 32 : 64];
             reader.ReadIntoByteArray(name.Length, name, BitStream.Byte_Bits);
             driver.PlayerName = Encoding.ASCII.GetString(name).TrimEnd((char)0);
@@ -56,14 +62,14 @@ namespace PDTools.Structures
             driver.Settings.Read(ref reader);
             driver.CorneringSkill = reader.ReadByte();
             driver.AcceleratingSkill = reader.ReadByte();
-            reader.ReadBits(4); // pDVar2->field_0x53 & 0xf | (byte)(iVar5 << 0x4);
-            reader.ReadBits(4); // pDVar2->field_0x53 & 0xf0 | bVar11 & 0xf;
+            reader.ReadBits(4); // ai_pit_decision_10_vitality_before_race
+            reader.ReadBits(4); // ai_pit_decision_10_tire_before_race
             driver.BrakingSkill = reader.ReadByte();
             driver.SpecialDriverType = reader.ReadByte();
             driver.StartingSkill = reader.ReadByte();
-            reader.ReadBits(3); // pDVar2->field_0x57 & 0x1f | (byte)(iVar5 << 0x5);
-            reader.ReadBits(4); // pDVar2->field_0x57 & 0xe0 | (byte)(((pDVar2->field_0x57 & 0x1) << 0x1b) >> 0x1b) | (byte)(iVar5 << 0x1) & 0x1e;
-            reader.ReadBits(1); // pDVar2->field_0x57 & 0xfe | bVar11 & 0x1;
+            reader.ReadBits(3); // ai_reaction_level
+            reader.ReadBits(4); // unk6
+            reader.ReadBits(1); // disable_bspec_skill
             driver.AILevel = reader.ReadByte();
 
             driver.GrowthParameter.Read(ref reader);
@@ -73,13 +79,13 @@ namespace PDTools.Structures
                 if (driver.Version >= 110)
                 {
                     // All use ReadBitsSafe, but for the purposes of making it more clean we arent
-                    reader.ReadInt16();
-                    reader.ReadInt16();
-                    reader.ReadInt16();
-                    reader.ReadInt16();
-                    reader.ReadBits(2); // pDVar2->field_0x88 & 0x3fffffff | iVar4 << 0x1e;
-                    reader.ReadBits(1); // pDVar2->field_0x88 & 0xdfffffff | (uVar5 & 0x1) << 0x1d;
-                    reader.ReadBits(5); // pDVar2->field_0x88 & 0xe0ffffff | (uVar5 & 0x1f) << 0x18;
+                    reader.ReadInt16(); // Head Code
+                    reader.ReadInt16(); // Body Code
+                    reader.ReadInt16(); // Head Color Code
+                    reader.ReadInt16(); // Body Color Code
+                    reader.ReadBits(2); 
+                    reader.ReadBits(1); 
+                    reader.ReadBits(5); 
                     reader.ReadByte();
                     reader.ReadInt16();
 
@@ -135,6 +141,9 @@ namespace PDTools.Structures
                     }
                 }
             }
+
+            reader.Position = basePos + cdp_size;
+
             return driver;
         }
     }

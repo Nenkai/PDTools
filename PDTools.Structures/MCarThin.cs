@@ -24,6 +24,14 @@ namespace PDTools.Structures
             CarLabel = label;
         }
 
+        public void Read(ref BitStream bs)
+        {
+            CarCode = bs.ReadInt32(); // Code
+            Paint = bs.ReadInt16(); // Paint
+            bs.ReadInt16(); // Is Tuned Car
+            bs.ReadInt32();
+        }
+
         public void Serialize(ref BitStream bs)
         {
             bs.WriteInt32(CarCode ?? -1); // Code

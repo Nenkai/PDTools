@@ -65,12 +65,15 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteEndElement();
         }
 
-        public void ReadFromBuffer(ref BitStream reader)
+        public void ReadFromBuffer(ref BitStream reader, int version)
         {
             X = reader.ReadSingle();
             Y = reader.ReadSingle();
             Z = reader.ReadSingle();
-            KindDBId = reader.ReadInt32();
+
+            if (version >= 1_01)
+                KindDBId = reader.ReadByte();
+
             int postureCount = reader.ReadInt32();
             for (int i = 0; i < postureCount; i++)
                 Postures.Add(reader.ReadSingle());

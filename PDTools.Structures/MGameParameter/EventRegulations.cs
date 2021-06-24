@@ -368,7 +368,7 @@ namespace PDTools.Structures.MGameParameter
         {
             uint magic = reader.ReadUInt32();
             if (magic != 0xE5E561AB && magic != 0xE6E661AB)
-                ;
+                throw new System.IO.InvalidDataException($"Regulation magic did not match - Got {magic.ToString("X8")}, expected 0xE6E661AB");
 
             uint regulationVersion = reader.ReadUInt32();
             PPMax = reader.ReadInt32();

@@ -574,7 +574,7 @@ namespace PDTools.Structures.MGameParameter
 
         public void ReadFromCache(ref BitStream reader)
         {
-            int currentPos = reader.BytePosition;
+            int currentPos = reader.Position;
             short bufferSize = reader.ReadInt16();
             short rpVersion = reader.ReadInt16();
 
@@ -625,7 +625,7 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadBits(3); // unk - Check this, got 3 on from game and 0 from built
             AutoStandingDelay = reader.ReadByte();
             reader.ReadBits(3); // unk
-            reader.ReadBits(2); // start signal type
+            StartSignalType = (StartSignalType)reader.ReadBits(2); // start signal type
             reader.ReadBoolBit(); // unk
             reader.ReadBoolBit(); // bench_test
             reader.ReadByte(); // mu_ratio100
@@ -636,7 +636,7 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadBoolBit(); // gps
             PenaltyNoReset = reader.ReadBoolBit();
             SlipstreamBehavior = (SlipstreamBehavior)reader.ReadBits(2);
-            reader.ReadBits(4); // Pit constraint
+            PitConstraint = (byte)reader.ReadBits(4); 
             reader.ReadBoolBit(); // need_tire_change
             reader.ReadBits(4); // after_race_penalty_sec_5
             reader.ReadBoolBit(); // is_speedtest_milemode
@@ -666,7 +666,7 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadByte(); // temperature_engine
             reader.ReadByte(); // unk field_0x5a
             LightingMode = (LightingMode)reader.ReadByte();
-            reader.ReadUInt32(); // datetime
+            Date = new PDIDATETIME32(reader.ReadUInt32()).GetDateTime(); // datetime
             TimeProgressSpeed = reader.ReadByte();
             AllowCoDriver = reader.ReadBool();
             PaceNote = reader.ReadBool();
@@ -725,11 +725,11 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadInt32();
             reader.ReadByte(); // course_layout_no
             reader.ReadByte();
-            reader.ReadByte(); // race_initial_laps
-            reader.ReadByte(); // keep_load_ghost
+            RaceInitialLaps = reader.ReadByte(); // race_initial_laps
+            KeepLoadGhost = reader.ReadBool(); // keep_load_ghost
             reader.ReadInt32(); // course_code
-            reader.ReadByte(); // race_class_id
-            reader.ReadBits(1); // goal_time_use_lap_total
+            LineGhostPlayMax = (int)reader.ReadByte();
+            GoalTimeUseLapTotal = reader.ReadBoolBit();
 
             ulong unk;
             if (rpVersion < 117)
@@ -745,7 +745,7 @@ namespace PDTools.Structures.MGameParameter
                 }
                 else
                 {
-                    reader.ReadBits(1); // force_pitcrew_off
+                    /* ForcePitcrewOff = */ reader.ReadBoolBit();
                     unk = reader.ReadBits(20);
                 }
             } 
@@ -766,80 +766,80 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadInt32(); // unk
 
             reader.ReadBits(7); // skipped
-            AutostartPitout = reader.ReadBoolBit(); // autostart_pitout
-            reader.ReadBits(5); // unk ((uVar2 & 0x1f) << 0x2f | param_1->BoolBits)
+            AutostartPitout = reader.ReadBoolBit();
+            StartTimeOffset = (byte)reader.ReadBits(5);
             reader.ReadBits(3); // unk (((uVar2 & 0x7) << 0x3c | param_1->BoolBits)
-            AutoStandingDelay = reader.ReadByte(); // auto_standing_delay
+            AutoStandingDelay = reader.ReadByte();
             reader.ReadBits(3); // unk (uVar2 & 0x7) << 0x39
-            reader.ReadBits(2); // start_signal_type
+            StartSignalType = (StartSignalType)reader.ReadBits(2);
             reader.ReadBits(2); // skipped
             reader.ReadBoolBit(); // unk (Bits & 0x01 << 0x38)
             reader.ReadBoolBit(); // bench_test
             reader.ReadByte(); // mu_ratio_100
             reader.ReadBoolBit(); // unk (Bits & 0x1 << 0x17)
-            EnableDamage = reader.ReadBoolBit(); // enable_damage
-            reader.ReadBits(2); // low_mu_type?  (Bits & 0x3 << 0x14)
+            EnableDamage = reader.ReadBoolBit();
+            reader.ReadBits(2); // low_mu_type?
             reader.ReadBits(2); // unk (Bits & 0x3 << 0x12)
             reader.ReadBoolBit(); // gps
-            PenaltyNoReset = reader.ReadBoolBit(); // penalty_no_reset
-            reader.ReadBits(2); // behavior_slipstream_type
+            PenaltyNoReset = reader.ReadBoolBit(); 
+            SlipstreamBehavior = (SlipstreamBehavior)reader.ReadBits(2);
             reader.ReadBits(4); // unk (Bits & 0xf << 0xa)
-            reader.ReadBoolBit(); // need_tire_change
+            NeedTireChange = reader.ReadBoolBit(); // need_tire_change
             reader.ReadBits(4); // after_race_penalty_sec5? (Bits & 0xf << 5)
             reader.ReadBoolBit(); // is_speedtest_milemode
-            LineGhostRecordType = (LineGhostRecordType)reader.ReadBits(2); // line_ghost_record_type
+            LineGhostRecordType = (LineGhostRecordType)reader.ReadBits(2);
             reader.ReadBits(2); // attack_seperate_type? (Bits & 0x03)
-            reader.ReadByte(); // penalty_level
+            PenaltyLevel = (PenaltyLevel)reader.ReadByte();
             reader.ReadByte(); // auto_start_with_session
             reader.ReadByte(); // auto_end_session_with_finish
-            ImmediateFinish = reader.ReadBool(); // immediate_finish
-            OnlineOn = reader.ReadBool(); // online_on
-            Endless = reader.ReadBool(); // endless
+            ImmediateFinish = reader.ReadBool();
+            OnlineOn = reader.ReadBool();
+            Endless = reader.ReadBool();
             reader.ReadByte(); // use grid list
-            GhostType = (GhostType)reader.ReadByte(); // ghost_type
-            GridSortType = (GridSortType)reader.ReadByte(); // grid_sort_type
-            Accumulation = reader.ReadBool(); // accumulation
-            EnablePit = reader.ReadBool(); // enable_pit
-            Flagset = (Flagset)reader.ReadByte(); // flagset
+            GhostType = (GhostType)reader.ReadByte();
+            GridSortType = (GridSortType)reader.ReadByte(); 
+            Accumulation = reader.ReadBool();
+            EnablePit = reader.ReadBool();
+            Flagset = (Flagset)reader.ReadByte(); 
             reader.ReadByte(); // unk (Bits & 0x1 << 0x26)
-            DisableCollision = reader.ReadBool(); // disable_collision
+            DisableCollision = reader.ReadBool(); 
             reader.ReadByte(); // penalty_condition
-            reader.ReadByte(); // academy_event
+            AcademyEvent = reader.ReadBool();
             reader.ReadByte(); // consume_fuel
             reader.ReadByte(); // bspec_vitality_10
             reader.ReadByte(); // consideration_type
-            TireUseMultiplier = reader.ReadByte(); // consume_tire
+            TireUseMultiplier = reader.ReadByte();
             reader.ReadByte(); // temperature_tire
             reader.ReadByte(); // temperature_engine
             reader.ReadByte(); // unk field_5a
-            LightingMode = (LightingMode)reader.ReadByte(); // lighting_mode
-            reader.ReadUInt32(); // Datetime
+            LightingMode = (LightingMode)reader.ReadByte();
+            Date = new PDIDATETIME32(reader.ReadUInt32()).GetDateTime();
             reader.ReadByte(); // time_progress_speed
-            AllowCoDriver = reader.ReadBool(); // allow_codriver
+            AllowCoDriver = reader.ReadBool();
             reader.ReadByte(); // pace_note
             reader.ReadByte(); // team_count
             reader.ReadIntoByteArray(32, new byte[32], BitStream.Byte_Bits); // grid_list
             reader.ReadIntoByteArray(32, new byte[32], BitStream.Byte_Bits); // delay_start_sec_list
             if (rpVersion >= 113)
-                EventStartV = reader.ReadInt32(); // event_start_v
-            EventGoalV = reader.ReadInt32(); // event_goal_v
-            EventGoalWidth = reader.ReadSByte(); // event_goal_width
-            reader.ReadBoolBit(); // fixed_retention
-            reader.ReadBits(4); // initial_retention10 (?)
+                EventStartV = reader.ReadInt32();
+            EventGoalV = reader.ReadInt32();
+            EventGoalWidth = reader.ReadSByte();
+            FixedRetention =  reader.ReadBoolBit();
+            TrackWetness = (int)reader.ReadBits(4); // initial_retention10
 
             // entering weather zone
-            reader.ReadBits(3); // decisive_weather
+            DecisiveWeather = (DecisiveWeatherType)reader.ReadBits(3); // decisive_weather
             WeatherTotalSec = reader.ReadUInt16(); // weather points? confirm this
             reader.ReadBits(4); // unk (field_0xae & 0x3ff)
             reader.ReadBits(4); // unk (field_0xae & 0xfc00)
 
             for (int i = 1; i < 15; i++)
-                reader.ReadBits(0x0c); // Do thing weather related with it
+               NewWeatherData[i].TimeRate = reader.ReadBits(12);
 
             for (int i = 0; i < 16; i++)
-                reader.ReadBits(6); // Do thing weather related with it
+                NewWeatherData[i].High = reader.ReadBits(6);
             for (int i = 0; i < 16; i++)
-                reader.ReadBits(6); // Again, and same function
+                NewWeatherData[i].Low = reader.ReadBits(6);
 
             WeatherRandomSeed = reader.ReadInt32();
             WeatherNoPrecipitation = reader.ReadBoolBit(); //   weather_no_precipitation
@@ -871,11 +871,18 @@ namespace PDTools.Structures.MGameParameter
             // boost_table
             for (int i = 0; i < 2; i++)
             {
-                var arr = new byte[4];
-                reader.ReadIntoByteArray(4, arr, BitStream.Byte_Bits); // Front
-                reader.ReadIntoByteArray(4, arr, BitStream.Byte_Bits); // Rear
-                reader.ReadByte(); // boost_reference_rank
-                reader.ReadByte(); // unk boost
+                BoostTables[i].FrontLimit = reader.ReadByte();
+                BoostTables[i].FrontMaximumRate = reader.ReadSByte();
+                BoostTables[i].FrontStart = reader.ReadByte();
+                BoostTables[i].FrontInitialRate = reader.ReadSByte();
+
+                BoostTables[i].RearLimit = reader.ReadByte();
+                BoostTables[i].RearMaximumRate = reader.ReadSByte();
+                BoostTables[i].RearStart = reader.ReadByte();
+                BoostTables[i].RearInitialRate = reader.ReadSByte();
+
+                BoostTables[i].ReferenceRank = reader.ReadByte();
+                reader.ReadByte();
             }
 
             // boost_params? Maybe?
@@ -885,13 +892,13 @@ namespace PDTools.Structures.MGameParameter
                 reader.ReadIntoByteArray(6, new byte[6], BitStream.Byte_Bits); // Rear
             }
 
-            reader.ReadByte(); // boost_level
-            reader.ReadSByte(); // rolling_player_grid
+            BoostLevel = reader.ReadByte(); 
+            RollingPlayerGrid = reader.ReadBool(); 
             reader.ReadByte(); // field_0x323
-            reader.ReadByte(); // boost_flag
-            reader.ReadByte(); // boost_type
-            reader.ReadByte(); // disable_recording_replay
-            reader.ReadByte(); // ghost_presence_type
+            BoostFlag = reader.ReadBool();
+            BoostType = reader.ReadBool();
+            DisableRecordingReplay = reader.ReadBool(); // disable_recording_replay
+            GhostPresenceType = (GhostPresenceType)reader.ReadByte(); // ghost_presence_type
             reader.ReadIntoShortArray(30, EventVList, BitStream.Short_Bits); // event_v_list
 
             PenaltyParameter.ReadPenaltyParameter(ref reader);
@@ -909,13 +916,13 @@ namespace PDTools.Structures.MGameParameter
                 reader.ReadByte(); // pitstage_revision
 
             if (rpVersion >= 115)
-                reader.ReadByte(); // vehicle_freeze_mode
+                VehicleFreezeMode = reader.ReadBool(); // vehicle_freeze_mode
 
             if (rpVersion >= 116)
-                reader.ReadByte(); // course_out_penalty_margine
+                CourseOutPenaltyMargin = reader.ReadByte(); // course_out_penalty_margine
 
             if (rpVersion >= 118)
-                reader.ReadInt32(); // behavior_fallback
+                BehaviorFallBack = reader.ReadInt32(); // behavior_fallback
 
             if (rpVersion >= 120)
             {
@@ -927,7 +934,7 @@ namespace PDTools.Structures.MGameParameter
 
         public void WriteToCache(ref BitStream bs, Event parent)
         {
-            int cPos = bs.BytePosition;
+            int cPos = bs.Position;
             bs.WriteInt16(0x410); // Buffer Size. Writen size does not match, but is intentionally larger for later versions
             bs.WriteInt16(1_23); // Version
 

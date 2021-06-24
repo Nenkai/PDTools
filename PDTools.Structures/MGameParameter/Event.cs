@@ -142,7 +142,7 @@ namespace PDTools.Structures.MGameParameter
         {
             uint magic = reader.ReadUInt32();
             if (magic != 0xE5E5043D && magic != 0xE6E6043D)
-                ;
+                throw new System.IO.InvalidDataException($"Event magic did not match - Got {magic.ToString("X8")}, expected 0xE6E6043D");
 
             uint eventVersion = reader.ReadUInt32();
             EventID = reader.ReadUInt64();
@@ -156,10 +156,11 @@ namespace PDTools.Structures.MGameParameter
             Regulations.ReadFromCache(ref reader);
             Constraints.ReadFromCache(ref reader);
             RaceParameters.ReadFromCache(ref reader);
-            Course.ReadFromBuffer(ref reader);
-            // Entries
+            Course.ReadFromCache(ref reader);
+            Entries.ReadFromCache(ref reader);
             EvalConditions.ReadFromCache(ref reader);
             AchieveCondition.ReadFromCache(ref reader);
+            FailConditions.ReadFromCache(ref reader);
         }
 
         public void WriteToCache(ref BitStream bs)

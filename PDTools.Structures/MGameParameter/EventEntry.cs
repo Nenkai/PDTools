@@ -229,6 +229,9 @@ namespace PDTools.Structures.MGameParameter
         public Suspension Suspension { get; set; } = Suspension.UNSPECIFIED;
         public Transmission Transmission { get; set; } = Transmission.UNSPECIFIED;
 
+        // For reading
+        public MCarParameter CarParameter { get; set; }
+
         public EventEntry(bool isPlayer = false)
         {
             if (isPlayer)
@@ -358,6 +361,147 @@ namespace PDTools.Structures.MGameParameter
                 xml.WriteEndElement();
 
             xml.WriteEndElement();
+        }
+
+        public void ReadEntryBaseFromCache(ref BitStream reader)
+        {
+            uint magic = reader.ReadUInt32();
+            if (magic != 0xE5_EB_45_F8 && magic != 0xE6_EB_45_F8)
+                throw new System.IO.InvalidDataException($"Course magic did not match - Got {magic.ToString("X8")}, expected 0xE6EB45F8");
+
+            int version = reader.ReadInt32();
+
+            CarCode = reader.ReadInt32();
+            ColorIndex = reader.ReadInt16();
+            reader.ReadInt16();
+            reader.ReadInt32();
+
+            DriverName = reader.ReadString4Aligned();
+            DriverRegion = reader.ReadString4Aligned();
+            RaceClassID = reader.ReadByte();
+            reader.ReadSByte();
+
+            int boost_rate_count = reader.ReadInt32();
+            if (boost_rate_count > 0)
+            {
+                for (int i = 0; i < boost_rate_count; i++)
+                    reader.ReadByte();
+            }
+
+            BrakingSkill = reader.ReadInt16();
+            CorneringSkill = reader.ReadInt16();
+            AccelSkill = reader.ReadSByte();
+            StartingSkill = reader.ReadSByte();
+            Roughness = reader.ReadSByte();
+
+            EngineStage = (EngineNATuneState)reader.ReadSByte();
+            TurboKit = (EngineTurboKit)reader.ReadSByte();
+            Computer = (EngineComputer)reader.ReadSByte();
+            Exhaust = (Muffler)reader.ReadSByte();
+            Suspension = (Suspension)reader.ReadSByte();
+            Transmission = (Transmission)reader.ReadSByte();
+
+            WheelID = reader.ReadInt16();
+
+            if (version >= 1_02)
+            {
+                WheelPaintID = reader.ReadInt16();
+                WheelInchUp = reader.ReadInt16();
+            }
+
+            TireFront = (TireType)reader.ReadSByte();
+            TireRear = (TireType)reader.ReadSByte();
+
+            // Aero
+            reader.ReadSByte();
+            reader.ReadSByte();
+            reader.ReadSByte();
+            reader.ReadSByte();
+
+            PowerLimiter = (uint)reader.ReadSByte() * 10;
+            DownforceFront = reader.ReadSByte();
+            DownforceRear = reader.ReadSByte();
+            BodyPaintID = reader.ReadInt16();
+
+            if (version >= 1_02)
+            {
+                reader.ReadInt16();
+                reader.ReadInt16(); // Decken Number
+            }
+
+            if (version >= 1_03)
+            {
+                reader.ReadInt16(); // Head Code
+                reader.ReadInt16(); // Body Code
+                reader.ReadInt16(); // Head Color
+                reader.ReadInt16(); // Body Color
+            }
+
+            if (version >= 1_04)
+            {
+                reader.ReadByte(); // AI Reaction
+                BallastWeight = reader.ReadByte();
+                BallastPosition = reader.ReadSByte();
+            }
+
+            if (version >= 1_05)
+            {
+                reader.ReadByte(); // Decken Type
+                reader.ReadByte(); // Decken Custom ID
+            }
+
+            if (version >= 1_06)
+                reader.ReadByte(); // Decken Custom Type
+        }
+
+        public void ReadEntryFromCache(ref BitStream reader)
+        {
+            uint magic = reader.ReadUInt32();
+            if (magic != 0xE5_E5_25_EE && magic != 0xE6_E6_25_EE)
+                throw new System.IO.InvalidDataException($"Course magic did not match - Got {magic.ToString("X8")}, expected 0xE6E625EE");
+            int version = reader.ReadInt32();
+
+            int player_no = reader.ReadInt32();
+            if (player_no != 0)
+                IsAI = true;
+
+            MCarThin car = new MCarThin(0);
+            car.Read(ref reader);
+
+            CarParameter = MCarParameter.ImportFromBlob(ref reader);
+            DriverName = reader.ReadString4Aligned();
+            DriverRegion = reader.ReadString4Aligned();
+
+            for (int i = 0; i < 4; i++)
+                MCarDriverParameter.Read(ref reader);
+
+            var entry = new EventEntry();
+            if (version >= 1_08)
+                entry.ReadEntryBaseFromCache(ref reader);
+
+            reader.ReadBool(); // Available initial position
+            RaceClassID = reader.ReadByte();
+            reader.ReadByte(); // Proxy driver model
+            reader.ReadByte(); // Pilot ID
+            InitialVCoord = reader.ReadInt32();
+            InitialVelocity = reader.ReadInt32();
+            StartType = (StartType)reader.ReadInt32();
+            Delay = reader.ReadInt32();
+            reader.ReadByte(); // No suitable tyre
+            reader.ReadInt16(); // Initial fuel 100
+
+            int boost_rate_count = reader.ReadInt32();
+            reader.ReadIntoByteArray(boost_rate_count, new byte[boost_rate_count], 8);
+            reader.ReadIntoByteArray(boost_rate_count, new byte[boost_rate_count], 8);
+
+            BrakingSkill = reader.ReadInt16();
+            CorneringSkill = reader.ReadInt16();
+            AccelSkill = reader.ReadSByte();
+            StartingSkill = reader.ReadSByte();
+            Roughness = reader.ReadSByte();
+
+            if (version >= 1_07)
+                reader.ReadByte(); // Unk
         }
 
         public void WriteEntryBaseToBuffer(ref BitStream bs)

@@ -3,8 +3,9 @@ using System.Drawing;
 using System.Xml;
 using System.Linq;
 using System.Text.RegularExpressions;
-
+using System;
 using System.IO;
+
 using Syroot.BinaryData;
 using PDTools.Utils;
 
@@ -126,13 +127,8 @@ namespace PDTools.Structures.MGameParameter
             }
         }
 
-        public void ReadFromCache(string path)
+        public void ReadFromBuffer(ref BitStream reader)
         {
-            BitStream reader = new BitStream(File.ReadAllBytes(path));
-
-            if (reader.SourceBuffer[0] == 0x0E)
-                reader.SeekToByte(0x12);
-
             uint magic = reader.ReadUInt32();
             if (magic != 0xE5E54F17 && magic != 0xE6E64F17)
                 ;
@@ -147,12 +143,19 @@ namespace PDTools.Structures.MGameParameter
             {
                 Event evnt = new Event();
                 evnt.ReadFromCache(ref reader);
+                Events.Add(evnt);
             }
         }
 
-        private byte[] WriteToCache()
+        public void ReadFromBuffer(Span<byte> buffer)
         {
-            BitStream bs = new BitStream(1024);
+            var reader = new BitStream(BitStreamMode.Read, buffer);
+            ReadFromBuffer(ref reader);
+        }
+
+        public byte[] WriteToCache()
+        {
+            BitStream bs = new BitStream(BitStreamMode.Write, 1024);
             bs.WriteUInt32(0xE6_E6_4F_17);
             bs.WriteInt32(1_01); // Version
             bs.WriteUInt64(FolderId);
@@ -173,7 +176,7 @@ namespace PDTools.Structures.MGameParameter
 
             bs.WriteUInt32(0xE6_E6_4F_18); // End Magic Terminator
 
-            return bs.GetBuffer().ToArray();
+            return bs.GetSpan().ToArray();
         }
 
         public byte[] Serialize()

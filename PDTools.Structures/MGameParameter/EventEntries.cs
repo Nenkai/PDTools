@@ -327,6 +327,76 @@ namespace PDTools.Structures.MGameParameter
             return newEntry;
         }
 
+        public void ReadFromCache(ref BitStream reader)
+        {
+            uint magic = reader.ReadUInt32();
+            if (magic != 0xE5_E5_00_2F && magic != 0xE6_E6_00_2F)
+                throw new System.IO.InvalidDataException($"Course magic did not match - Got {magic.ToString("X8")}, expected 0xE6E6002F");
+
+            int version = reader.ReadInt32();
+            ReadEntryGenerateFromCache(ref reader);
+
+            int entries = reader.ReadInt32();
+            for (int i = 0; i < entries; i++)
+            {
+                EventEntry entry = new EventEntry();
+                entry.ReadEntryFromCache(ref reader);
+                if (entry.IsAI)
+                    AI.Add(entry);
+                else
+                    Player = entry;
+            }
+        }
+
+        public void ReadEntryGenerateFromCache(ref BitStream reader)
+        {
+            uint magic = reader.ReadUInt32();
+            if (magic != 0xE5_E5_41_14 && magic != 0xE6_E6_41_14)
+                throw new System.IO.InvalidDataException($"Course magic did not match - Got {magic.ToString("X8")}, expected 0xE6E64114");
+
+            int version = reader.ReadInt32();
+
+            AIsToPickFromPool = reader.ReadInt32() - 1;
+            PlayerPos = reader.ReadInt32();
+            AIEntryGenerateType = (EntryGenerateType)reader.ReadInt32();
+            EnemyListType = (EnemyListType)reader.ReadInt32();
+            reader.ReadInt64();
+            AIBaseSkillStarting = (short)reader.ReadInt32();
+            AIBrakingSkillStarting = (short)reader.ReadInt32();
+            AICornerSkillStarting = (short)reader.ReadInt32();
+            AIAccelSkillStarting = reader.ReadSByte();
+            AIStartSkillStarting = reader.ReadSByte();
+            AIRoughness = reader.ReadSByte();
+            EnemyLevel = reader.ReadInt32();
+
+            int carThinCount = reader.ReadInt32();
+            for (int i = 0; i < carThinCount; i++)
+            {
+                var carThin = new MCarThin(0);
+                carThin.Read(ref reader);
+            }
+
+            int bases = reader.ReadInt32();
+            for (int i = 0; i < bases; i++)
+            {
+                EventEntry entry = new EventEntry();
+                entry.ReadEntryBaseFromCache(ref reader);
+                AIBases.Add(entry);
+            }
+
+            int delays = reader.ReadInt32();
+            EntryBaseDelays = new int[delays];
+            for (int i = 0; i < delays; i++)
+                EntryBaseDelays[i] = reader.ReadInt32();
+
+            EnemyBSpecLevel = reader.ReadSByte();
+            BSpecLevelOffset = reader.ReadSByte();
+            GapForRollingDistance = reader.ReadInt16();
+            RollingStartV = reader.ReadInt16();
+            reader.ReadBool(); // Rolling start param
+            EnemyListType = (EnemyListType)reader.ReadByte();
+        }
+
         public void WriteToCache(ref BitStream bs)
         {
             bs.WriteUInt32(0xE6_E6_00_2F);

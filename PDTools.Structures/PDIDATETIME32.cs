@@ -1,10 +1,14 @@
 ﻿using System;
+using PDTools.Utils;
 
 namespace PDTools
 {
 	public struct PDIDATETIME32
 	{
 		private uint _timeData;
+
+		public PDIDATETIME32(uint timeData)
+			=> _timeData = timeData;
 
 		public void SetDateTime(DateTime date)
 		{

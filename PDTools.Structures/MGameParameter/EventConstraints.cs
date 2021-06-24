@@ -198,7 +198,7 @@ namespace PDTools.Structures.MGameParameter
         {
             uint magic = reader.ReadUInt32();
             if (magic != 0xE5E5F33D && magic != 0xE6E6F33D)
-                ;
+                throw new System.IO.InvalidDataException($"Constraint magic did not match - Got {magic.ToString("X8")}, expected 0xE6E6F33D");
 
             uint contraintVersion = reader.ReadUInt32();
             TransmissionEnabled = reader.ReadBool4();

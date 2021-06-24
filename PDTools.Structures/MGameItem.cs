@@ -52,7 +52,7 @@ namespace PDTools.Structures
 
         public static MGameItem Read(Span<byte> buffer)
         {
-            var stream = new BitStream(buffer);
+            var stream = new BitStream(BitStreamMode.Read, buffer);
             if (stream.ReadUInt32() != SerializeMagic)
                 throw new ArgumentException("Provided MGameItem buffer is not valid, magic did not match.");
 
