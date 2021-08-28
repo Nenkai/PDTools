@@ -49,11 +49,8 @@ namespace PDTools.Compression
         /// </summary>
         public static bool TryInflate(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
         {
-            if (input.Length <= 8)
-                return false;
-
             var bs = new BinaryStream(input);
-          
+
             if (bs.ReadUInt32() != PS2ZIP_MAGIC)
                 return false;
 
@@ -82,9 +79,6 @@ namespace PDTools.Compression
         /// </summary>
         public static async Task<bool> TryInflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
         {
-            if (input.Length <= 8)
-                return false;
-
             var bs = new BinaryStream(input);
 
             if (await bs.ReadUInt32Async() != PS2ZIP_MAGIC)
