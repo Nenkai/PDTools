@@ -24,7 +24,7 @@ namespace PDTools.Compression
             input.ReadInt32s(3);
 
             // Calculate the fragment (or chunk) count for the file
-            uint fragmentCount = (expand_size + fragment_size - 1) / fragment_size;
+            uint fragmentCount = (compressed_size + fragment_size - 1) / fragment_size;
 
             // Set up inflater and buffers
             Inflater inflater = new Inflater(true);
