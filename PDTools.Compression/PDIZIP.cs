@@ -14,8 +14,11 @@ namespace PDTools.Compression
     {
         public const uint PDIZIP_MAGIC = 0xFF_F7_F3_2F;
 
-        public static bool Inflate(Stream input, Stream output)
+        public static bool Inflate(Stream input, Stream output, bool skipMagic = false)
         {
+            if (!skipMagic && input.ReadUInt32() == PDIZIP_MAGIC)
+                return false;
+
             // Read PDIZIP Header
             uint expand_size = input.ReadUInt32();
             uint compressed_size = input.ReadUInt32();

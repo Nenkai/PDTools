@@ -47,11 +47,11 @@ namespace PDTools.Compression
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path.
         /// </summary>
-        public static bool TryInflate(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
+        public static bool TryInflate(Stream input, Stream output, int maxDecompressedSize = -1, bool skipMagic = false)
         {
             var bs = new BinaryStream(input);
 
-            if (bs.ReadUInt32() != PS2ZIP_MAGIC)
+            if (!skipMagic && bs.ReadUInt32() != PS2ZIP_MAGIC)
                 return false;
 
             int sizeComplement = -bs.ReadInt32();
@@ -77,11 +77,11 @@ namespace PDTools.Compression
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path asynchronously.
         /// </summary>
-        public static async Task<bool> TryInflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
+        public static async Task<bool> TryInflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool skipMagic = false)
         {
             var bs = new BinaryStream(input);
 
-            if (await bs.ReadUInt32Async() != PS2ZIP_MAGIC)
+            if (!skipMagic && await bs.ReadUInt32Async() != PS2ZIP_MAGIC)
                 return false;
 
             int sizeComplement = -(await bs.ReadInt32Async());
