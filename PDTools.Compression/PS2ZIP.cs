@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 using System.IO.Compression;
+using System.Buffers;
 using System.Buffers.Binary;
 
 using Syroot.BinaryData;
@@ -49,24 +50,25 @@ namespace PDTools.Compression
         /// </summary>
         public static bool TryInflate(Stream input, Stream output, int maxDecompressedSize = -1, bool skipMagic = false)
         {
-            var bs = new BinaryStream(input);
-
-            if (!skipMagic && bs.ReadUInt32() != PS2ZIP_MAGIC)
+            if (!skipMagic && input.ReadUInt32() != PS2ZIP_MAGIC)
                 return false;
 
-            int sizeComplement = -bs.ReadInt32();
+            int sizeComplement = -input.ReadInt32();
             if (maxDecompressedSize != -1 && sizeComplement > maxDecompressedSize)
                 return false;
 
-            try
+            var ds = new DeflateStream(input, CompressionMode.Decompress);
+            int bytesLeft = (int)sizeComplement;
+            int read;
+            const int bufSize = 0x20000;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(bufSize);
+
+            while (bytesLeft > 0 && (read = ds.Read(buffer, 0, Math.Min(buffer.Length, bytesLeft))) > 0)
             {
-                var ds = new DeflateStream(bs, CompressionMode.Decompress);
-                ds.CopyTo(output);
+                output.Write(buffer, 0, read);
+                bytesLeft -= read;
             }
-            catch
-            {
-                return false;
-            }
+
 
             if (output.Length != sizeComplement)
                 return false;
@@ -79,23 +81,23 @@ namespace PDTools.Compression
         /// </summary>
         public static async Task<bool> TryInflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool skipMagic = false)
         {
-            var bs = new BinaryStream(input);
-
-            if (!skipMagic && await bs.ReadUInt32Async() != PS2ZIP_MAGIC)
+            if (!skipMagic && await input.ReadUInt32Async() != PS2ZIP_MAGIC)
                 return false;
 
-            int sizeComplement = -(await bs.ReadInt32Async());
+            int sizeComplement = -(await input.ReadInt32Async());
             if (maxDecompressedSize != -1 && sizeComplement > maxDecompressedSize)
                 return false;
 
-            try
+            var ds = new DeflateStream(input, CompressionMode.Decompress);
+            int bytesLeft = (int)sizeComplement;
+            int read;
+            const int bufSize = 0x20000;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(bufSize);
+
+            while (bytesLeft > 0 && (read = await ds.ReadAsync(buffer, 0, Math.Min(buffer.Length, bytesLeft))) > 0)
             {
-                var ds = new DeflateStream(bs, CompressionMode.Decompress);
-                await ds.CopyToAsync(output);
-            }
-            catch
-            {
-                return false;
+                await output.WriteAsync(buffer, 0, read);
+                bytesLeft -= read;
             }
 
             if (output.Length != sizeComplement)
