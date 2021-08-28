@@ -38,7 +38,7 @@ namespace PDTools.Structures.MGameParameter
             if (CourseLabel.Equals("coursemaker") && CustomCourse != null)
             {
                 xml.WriteElementInt("generated_course_id", 0);
-                var ted = Convert.ToBase64String(Deflater.ZlibCompress(CustomCourse.Data));
+                var ted = Convert.ToBase64String(PS2ZIP.Deflate(CustomCourse.Data));
                 xml.WriteElementValue("edit_data", ted);
             }
 

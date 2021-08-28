@@ -11,14 +11,14 @@ using ICSharpCodeDeflater = ICSharpCode.SharpZipLib.Zip.Compression.Deflater;
 
 namespace PDTools.Compression
 {
-    public class Deflater
+    public class PS2ZIP
     {
         public const uint CompressMagic = 0xFF_F7_EE_C5;
 
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path.
         /// </summary>
-        public static bool TryDeflate(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
+        public static bool TryInflate(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
         {
             if (input.Length <= 8)
                 return false;
@@ -51,7 +51,7 @@ namespace PDTools.Compression
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path asynchronously.
         /// </summary>
-        public static async Task<bool> TryDeflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
+        public static async Task<bool> TryInflateAsync(Stream input, Stream output, int maxDecompressedSize = -1, bool closeStream = true)
         {
             if (input.Length <= 8)
                 return false;
@@ -81,7 +81,7 @@ namespace PDTools.Compression
             return true;
         }
 
-        public static byte[] ZlibCompress(byte[] input)
+        public static byte[] Deflate(byte[] input)
         {
             using (var ms = new MemoryStream(input.Length))
             using (var bs = new BinaryStream(ms))
@@ -100,7 +100,7 @@ namespace PDTools.Compression
             }
         }
 
-        public static byte[] Deflate(byte[] data)
+        public static byte[] Inflate(byte[] data)
         {
             using (var ms = new MemoryStream(data))
             using (var bs = new BinaryStream(ms))

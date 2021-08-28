@@ -29,7 +29,7 @@ namespace PDTools.Utils
                 return false;
             else if (src.AsSpan(0, 4).SequenceEqual(new byte[] { 0xC5, 0xEE, 0xF7, 0xFF }))
             {
-                src = Deflater.Deflate(src);
+                src = PS2ZIP.Inflate(src);
                 File.WriteAllBytes(path, src);
                 return true;
             }
@@ -44,7 +44,7 @@ namespace PDTools.Utils
                 }
 
                 if (src.AsSpan(0, 4).SequenceEqual(new byte[] { 0xC5, 0xEE, 0xF7, 0xFF }))
-                    src = Deflater.Deflate(src);
+                    src = PS2ZIP.Inflate(src);
 
                 File.WriteAllBytes(path, src);
                 return true;
@@ -59,7 +59,7 @@ namespace PDTools.Utils
                 return false;
             else
             {
-                src = Deflater.ZlibCompress(src);
+                src = PS2ZIP.Deflate(src);
                 int j = 1;
                 for (int i = 0; i < src.Length; i++)
                 {

@@ -58,7 +58,7 @@ namespace PDTools.Structures.MGameParameter
             var course = new CustomCourse();
 
             if (BinaryPrimitives.ReadUInt32LittleEndian(bytes) == 0xFFF7EEC5)
-                bytes = Deflater.Deflate(bytes);
+                bytes = PS2ZIP.Inflate(bytes);
 
             course.Data = bytes;
             using (var bs = new BinaryStream(new MemoryStream(bytes), ByteConverter.Big))

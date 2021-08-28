@@ -2,7 +2,8 @@
 using System.Text;
 using System.Diagnostics;
 using System.IO;
-using System.Collections.Generic;
+
+using System.Buffers.Binary;
 
 namespace PDTools.Utils
 {
@@ -19,10 +20,22 @@ namespace PDTools.Utils
 
         public BitStreamMode Mode { get; }
 
+        /// <summary>
+        /// Bit order of the stream. This affects how values larger than a byte are read.
+        /// For LE, you should be using MSB. For BE, LSB.
+        /// </summary>
+        public BitStreamSignificantBitOrder Order { get; set; }
+
         public Span<byte> SourceBuffer { get; set; }
 
         private Span<byte> _currentBuffer { get; set; }
-        public uint RemainingByteBits { get; set; }
+
+        /// <summary>
+        /// If Writing: Bits written for the current byte
+        /// If Reading: Bits left for the current byte
+        /// </summary>
+        public uint BitCounter { get; set; }
+
         public byte CurrentByte { get; set; }
 
         // Not original implementation
@@ -70,11 +83,12 @@ namespace PDTools.Utils
         /// Creates a new bit stream based on an existing buffer.
         /// </summary>
         /// <param name="buffer"></param>
-        public BitStream(BitStreamMode mode, Span<byte> buffer)
+        public BitStream(BitStreamMode mode, Span<byte> buffer, BitStreamSignificantBitOrder order = BitStreamSignificantBitOrder.LSB)
         {
             Mode = mode;
+            Order = order;
 
-            RemainingByteBits = 0;
+            BitCounter = 0;
             CurrentByte = 0;
 
             SourceBuffer = buffer;
@@ -95,11 +109,12 @@ namespace PDTools.Utils
         /// <summary>
         /// Creates a new bit stream with a new buffer.
         /// </summary>
-        public BitStream(BitStreamMode mode, int capacity = 1024)
+        public BitStream(BitStreamMode mode, int capacity = 1024, BitStreamSignificantBitOrder endian = BitStreamSignificantBitOrder.LSB)
         {
             Mode = mode;
+            Order = endian;
 
-            RemainingByteBits = 0;
+            BitCounter = 0;
             CurrentByte = 0;
 
             SourceBuffer = new byte[capacity];
@@ -119,6 +134,41 @@ namespace PDTools.Utils
         public static int GetSizeOfVariablePrefixString(string str)
             => GetSizeOfVarInt(str.Length) + str.Length;
 
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int GetSizeOfVariablePrefixStringAlt(string str)
+            => GetSizeOfVarIntAlt((uint)str.Length) + str.Length;
+
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static int GetSizeOfVarIntAlt(uint value)
+        {
+            Span<byte> output = stackalloc byte[0x05];
+            int outputSize = 0;
+
+            while (value > 0x7F)
+            {
+                output[outputSize] = (byte)(value & 0x7F);
+                if (outputSize != 0)
+                    output[outputSize] |= 0x80;
+
+                value >>= 7;
+                value--;
+                outputSize++;
+            }
+            output[outputSize++] = (byte)(value & 0x7F);
+            if (outputSize > 1)
+                output[outputSize - 1] |= 0x80;
+
+            return outputSize;
+        }
+
         public static int GetSizeOfVarInt(int val)
         {
             return val switch
@@ -130,7 +180,6 @@ namespace PDTools.Utils
                 _ => 5,
             };
         }
-
 
         /// <summary>
         /// Returns a span of the stream at the current position.
@@ -168,7 +217,7 @@ namespace PDTools.Utils
 
             _currentBuffer = SourceBuffer.Slice(bytePos);
             CurrentByte = _currentBuffer[0];
-            RemainingByteBits = Byte_Bits - bitPos;
+            BitCounter = Byte_Bits - bitPos;
 
         }
 
@@ -188,7 +237,7 @@ namespace PDTools.Utils
                 _length = byteOffset;
 
             if (_length > SourceBuffer.Length)
-                EnsureCapacity((SourceBuffer.Length - _length) * Byte_Bits);
+                EnsureCapacity(_length * Byte_Bits);
 
             _currentBuffer = SourceBuffer.Slice(byteOffset);
 
@@ -197,7 +246,7 @@ namespace PDTools.Utils
             else
                 CurrentByte = _currentBuffer[0];
 
-            RemainingByteBits = 0;
+            BitCounter = 0;
         }
 
         public void SeekToByteFromCurrentPosition(int byteOffset)
@@ -217,7 +266,7 @@ namespace PDTools.Utils
 
             _currentBuffer = _currentBuffer.Slice(byteOffset);
             CurrentByte = _currentBuffer[0];
-            RemainingByteBits = 0;
+            BitCounter = 0;
         }
 
         /// <summary>
@@ -225,7 +274,7 @@ namespace PDTools.Utils
         /// </summary>
         public void AlignToNextByte()
         {
-            if (RemainingByteBits > 0 && RemainingByteBits != 8)
+            if (BitCounter > 0 && BitCounter != 8)
             {
                 if (_needsFlush)
                 {
@@ -233,9 +282,9 @@ namespace PDTools.Utils
                     _needsFlush = false;
                 }
 
-                _currentBuffer = _currentBuffer.Slice(1);
                 CurrentByte = _currentBuffer[0];
-                RemainingByteBits = 8;
+                _currentBuffer = _currentBuffer.Slice(1);
+                BitCounter = 8;
             }
         }
 
@@ -255,7 +304,7 @@ namespace PDTools.Utils
                    end = SourceBuffer.Slice(BufferByteSize - 1))
             {
                 long bitsLeft = ((end + 1) - start) * Byte_Bits;
-                bitsLeft += RemainingByteBits;
+                bitsLeft += BitCounter;
 
                 IsEndOfStream = bitsLeft < bitCountToRead;
                 return !IsEndOfStream;
@@ -266,7 +315,7 @@ namespace PDTools.Utils
         {
             bitCount += Byte_Bits; // Since we may slice to the next byte, better to be safe
 
-            uint bitsLeftThisByte = Byte_Bits - RemainingByteBits;
+            uint bitsLeftThisByte = Byte_Bits - BitCounter;
             long totalFreeBits = (_currentBuffer.Length * Byte_Bits) + bitsLeftThisByte;
 
             if (bitCount >= totalFreeBits)
@@ -275,7 +324,7 @@ namespace PDTools.Utils
 
                 // Expand our buffer by twice the size everytime - if possible
                 int newCapacity;
-                if (SourceBuffer.Length * 2 < bitCount / 8)
+                if (SourceBuffer.Length * 2 < cPos + (bitCount / 8))
                     newCapacity = (int)((bitCount / 8) * 2);
                 else
                     newCapacity = SourceBuffer.Length * 2;
@@ -292,7 +341,7 @@ namespace PDTools.Utils
         }
 
         public Span<byte> GetBuffer()
-            => SourceBuffer.Slice(0, Position);
+            => SourceBuffer.Slice(0, _length);
 
         /* ********************************************
          * *                                          *
@@ -356,14 +405,25 @@ namespace PDTools.Utils
             return value;
         }
 
-        public byte[] ReadByteDataPrefixed4()
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ulong ReadVarIntAlt()
         {
-            AlignToNextByte();
+            byte currentByte = ReadByte();
+            const int _7bits = 0b_111_1111;
 
-            int len = ReadInt32();
-            byte[] data = new byte[len];
-            ReadIntoByteArray(len, data, Byte_Bits);
-            return data;
+            int value = (int)(currentByte & _7bits);
+            while (((currentByte >> 7) & 1) > 0)
+            {
+                value++;
+                value <<= 7;
+                currentByte = ReadByte();
+                value += currentByte & _7bits;
+            }
+            return (ulong)value;
         }
 
         public string ReadVarPrefixString()
@@ -377,38 +437,25 @@ namespace PDTools.Utils
             return Encoding.ASCII.GetString(chars);
         }
 
-        public string ReadStringNullTerminated()
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public string ReadVarPrefixStringAlt()
         {
-            AlignToNextByte();
+            int strLen = (int)ReadVarIntAlt();
+            if (strLen < 0)
+                throw new Exception($"Attempted to read string length of {strLen}.");
 
-            List<byte> buf = new List<byte>();
-            StringBuilder sb = new StringBuilder();
-
-            byte nc;
-            while ((nc = ReadByte()) != 1)
-                buf.Add(nc);
-
-            
-            return Encoding.UTF8.GetString(buf.ToArray());
-        }
-
-        public string ReadStringRaw(int count)
-        {
-            AlignToNextByte();
-
-            byte[] chars = new byte[count];
-            ReadIntoByteArray(count, chars, Byte_Bits);
-            return Encoding.UTF8.GetString(chars);
+            byte[] chars = new byte[strLen];
+            ReadIntoByteArray(strLen, chars, Byte_Bits);
+            return Encoding.ASCII.GetString(chars);
         }
 
         public string ReadString4()
         {
-            AlignToNextByte();
-
             int strLen = ReadInt32();
-            if (strLen == 0)
-                return string.Empty;
-
             byte[] chars = new byte[strLen];
             ReadIntoByteArray(strLen, chars, Byte_Bits);
             return Encoding.ASCII.GetString(chars);
@@ -416,12 +463,7 @@ namespace PDTools.Utils
 
         public string ReadString4Aligned()
         {
-            AlignToNextByte();
-
             int strLen = ReadInt32();
-            if (strLen == 0)
-                return string.Empty;
-
             byte[] chars = new byte[strLen];
             ReadIntoByteArray(strLen, chars, Byte_Bits);
             string str = Encoding.UTF8.GetString(chars).TrimEnd('\0');
@@ -442,7 +484,9 @@ namespace PDTools.Utils
 
             ulong result = 0;
             ulong currentByte = CurrentByte;
-            ulong bitsLeftForThisByte = RemainingByteBits;
+            ulong bitsLeftForThisByte = BitCounter;
+
+            int currentBitOffset = 0;
 
             if (bitCount != 0x0)
             {
@@ -465,12 +509,27 @@ namespace PDTools.Utils
 
                     totalBitCountToRead -= bitsRead;
                     bitsLeftForThisByte -= bitsRead;
-                    result = result << (int)(bitsRead & 0x7f) | currentByte >> (int)(Byte_Bits - bitsRead & 0x7f);
-                    currentByte = currentByte << (int)(bitsRead & 0x7f) & 0xff;
+
+                    int nBitsToClear = (int)(Byte_Bits - bitsRead);
+                    if (Order == BitStreamSignificantBitOrder.MSB) // Non original, but for utility
+                    {
+                        // Could be better
+                        ulong bitsToAdd = (ulong)((byte)(currentByte << (byte)nBitsToClear) >> nBitsToClear);  // Clear unneeded bits
+                        result = (bitsToAdd << currentBitOffset) | result;
+
+                        currentByte >>= (int)bitsRead;
+                        currentBitOffset += (int)bitsRead;
+                    }
+                    else if (Order == BitStreamSignificantBitOrder.LSB)
+                    {
+                        result = result << (byte)bitsRead | currentByte >> nBitsToClear;
+                        currentByte <<= (int)bitsRead;
+                    }
+
                 } while (totalBitCountToRead != 0);
             }
 
-            RemainingByteBits = (uint)bitsLeftForThisByte;
+            BitCounter = (uint)bitsLeftForThisByte;
             _currentBuffer = buf;
             CurrentByte = (byte)currentByte;
             return result;
@@ -587,69 +646,78 @@ namespace PDTools.Utils
          * *                                          *
          * ******************************************** */
 
-        // Original Impl (except capacity ensuring & length)
-        public void WriteBits(ulong value, ulong bitCountToWrite)
+        // Original Impl (except capacity ensuring, MSB/LSB & length)
+        public void WriteBits(ulong value, ulong bitCount)
         {
             if (Mode == BitStreamMode.Read)
                 throw new IOException("Stream is read only.");
 
-            EnsureCapacity((long)bitCountToWrite);
+            EnsureCapacity((long)bitCount);
 
-            var buf = _currentBuffer;
-            ulong currentByte = CurrentByte;
-            ulong operatingByte = currentByte;
-            ulong bitsWritenForThisByte = RemainingByteBits;
-            ulong bitsWriten = RemainingByteBits;
-
-            if (bitCountToWrite != 0)
+            if (Order == BitStreamSignificantBitOrder.MSB)
             {
-                ulong val = value << (int)(Long_Bits - bitCountToWrite & 0x7f);
-                do
+                while (bitCount != 0)
                 {
-                    ulong bitsToAdd = val >> (int)(bitsWriten + 0x38 & 0x7f);
-                    ulong v3 = Byte_Bits - bitsWriten;
+                    ulong nBitsToWriteThisByte = bitCount;
+                    if (nBitsToWriteThisByte > Byte_Bits - BitCounter)
+                        nBitsToWriteThisByte = Byte_Bits - BitCounter;
 
-                    if ((int)bitCountToWrite < (int)v3)
-                        v3 = bitCountToWrite;
+                    CurrentByte |= (byte)(value << (int)BitCounter);
+                    BitCounter += (uint)nBitsToWriteThisByte;
+                    bitCount -= nBitsToWriteThisByte;
 
-                    bitsWriten += v3;
-                    bitCountToWrite -= v3;
-                    val <<= (int)(v3 & 0x7f);
+                    value >>= (int)nBitsToWriteThisByte;
 
-                    operatingByte |= bitsToAdd;
-                    if (bitsWriten == Byte_Bits)
+                    if (BitCounter == Byte_Bits)
                     {
-                        buf[0] = (byte)operatingByte;
-                        buf = buf.Slice(1);
-                        operatingByte = 0;
-                        bitsWriten = 0;
+                        _currentBuffer[0] = CurrentByte;
+                        _currentBuffer = _currentBuffer[1..];
+                        CurrentByte = 0;
+                        BitCounter = 0;
                     }
+                }
+            }
+            else if (Order == BitStreamSignificantBitOrder.LSB)
+            {
+                ulong val = value << (Long_Bits - (byte)bitCount);
+                while (bitCount != 0)
+                {
+                    ulong nBitsToWriteThisByte = bitCount;
+                    if (nBitsToWriteThisByte > Byte_Bits - BitCounter)
+                        nBitsToWriteThisByte = Byte_Bits - BitCounter;
 
-                    currentByte = operatingByte;
-                    bitsWritenForThisByte = bitsWriten;
-                } while (bitCountToWrite != 0);
+                    CurrentByte |= (byte)(val >> ((int)BitCounter + 56));
+                    BitCounter += (uint)nBitsToWriteThisByte;
+                    bitCount -= nBitsToWriteThisByte;
+
+                    val <<= (int)nBitsToWriteThisByte;
+
+                    if (BitCounter == Byte_Bits)
+                    {
+                        _currentBuffer[0] = CurrentByte;
+                        _currentBuffer = _currentBuffer[1..];
+                        CurrentByte = 0;
+                        BitCounter = 0;
+                    }
+                }
             }
 
-            if (RemainingByteBits != 0)
-                buf[0] = (byte)currentByte;
-
-            RemainingByteBits = (uint)bitsWritenForThisByte;
-            _currentBuffer = buf;
-            CurrentByte = (byte)currentByte;
+            if (BitCounter != 0)
+                _currentBuffer[0] = CurrentByte;
 
             if (Position > _length)
                 _length = Position;
 
-            _needsFlush = RemainingByteBits > 0;
+            _needsFlush = BitCounter > 0;
 #if DEBUG
-            _sw?.WriteLine($"[{Position} - {RemainingByteBits}/8] Wrote {value} ({bitCountToWrite} bits)");
+            _sw?.WriteLine($"[{Position} - {BitCounter}/8] Wrote {value} ({bitCount} bits)");
 #endif
         }
 
         public void WriteNullStringAligned4(string value)
         {
             // Require to seek to the next round byte incase we're currently in the middle of a byte's bits
-            if (RemainingByteBits != 0)
+            if (BitCounter != 0)
                 SeekToByteFromCurrentPosition(1);
 
             if (string.IsNullOrEmpty(value))
@@ -718,12 +786,55 @@ namespace PDTools.Utils
             WriteByteData(buffer, false);
         }
 
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void WriteVarIntAlt(uint value)
+        {
+            // If you pass by please make this better
+            // My brain blew out
+            Span<byte> output = stackalloc byte[0x05];
+            int outputSize = 0;
+
+            while (value > 0x7F)
+            {
+                output[outputSize] = (byte)(value & 0x7F);
+                if (outputSize != 0)
+                    output[outputSize] |= 0x80;
+
+                value >>= 7;
+                value--;
+                outputSize++;
+            }
+            output[outputSize++] = (byte)(value & 0x7F);
+            if (outputSize > 1)
+                output[outputSize - 1] |= 0x80;
+
+            for (int i = outputSize - 1; i >= 0; i--)
+                WriteByte(output[i]);
+        }
+
         public void WriteVarPrefixString(string str)
         {
             WriteVarInt(str.Length);
             if (!string.IsNullOrEmpty(str))
                 WriteByteData(Encoding.UTF8.GetBytes(str));
         }
+
+        /// <summary>
+        /// For GTPSP Volumes
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void WriteVarPrefixStringAlt(string str)
+        {
+            WriteVarIntAlt((uint)str.Length);
+            if (!string.IsNullOrEmpty(str))
+                WriteByteData(Encoding.UTF8.GetBytes(str));
+        }
+
 
         public void WriteByteData(Span<byte> data, bool withPrefixLength = false)
         {
@@ -820,6 +931,19 @@ namespace PDTools.Utils
 #endif
         }
         #endregion
+    }
+
+    public enum BitStreamSignificantBitOrder
+    {
+        /// <summary>
+        /// Least significant bit
+        /// </summary>
+        LSB,
+
+        /// <summary>
+        /// Most significant bit
+        /// </summary>
+        MSB,
     }
 
     public enum BitStreamMode
