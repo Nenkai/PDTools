@@ -13,7 +13,7 @@ namespace PDTools.Compression
 {
     public class PS2ZIP
     {
-        public const uint CompressMagic = 0xFF_F7_EE_C5;
+        public const uint PS2ZIP_MAGIC = 0xFF_F7_EE_C5;
 
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path.
@@ -25,7 +25,7 @@ namespace PDTools.Compression
 
             var bs = new BinaryStream(input);
           
-            if (bs.ReadUInt32() != CompressMagic)
+            if (bs.ReadUInt32() != PS2ZIP_MAGIC)
                 return false;
 
             int sizeComplement = -bs.ReadInt32();
@@ -58,7 +58,7 @@ namespace PDTools.Compression
 
             var bs = new BinaryStream(input);
 
-            if (await bs.ReadUInt32Async() != CompressMagic)
+            if (await bs.ReadUInt32Async() != PS2ZIP_MAGIC)
                 return false;
 
             int sizeComplement = -(await bs.ReadInt32Async());

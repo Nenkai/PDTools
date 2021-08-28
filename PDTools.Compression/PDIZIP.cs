@@ -12,9 +12,9 @@ namespace PDTools.Compression
 {
     public class PDIZIP
     {
-        public const uint PDIZIP_MAGIC = 0xFFF7F32F;
+        public const uint PDIZIP_MAGIC = 0xFF_F7_F3_2F;
 
-        private static bool Inflate(Stream input, Stream output)
+        public static bool Inflate(Stream input, Stream output)
         {
             // Read PDIZIP Header
             uint expand_size = input.ReadUInt32();
@@ -33,8 +33,6 @@ namespace PDTools.Compression
 
             for (uint i = 0; i < fragmentCount; i++)
             {
-                uint pos = i == 0 ? 0x20u : fragment_size * i;
-
                 if (input.ReadUInt32() != PDIZIP_MAGIC)
                     throw new Exception("PDIZip Fragment magic did not match expected magic.");
 
