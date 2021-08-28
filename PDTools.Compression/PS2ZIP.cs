@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 using System.IO.Compression;
+using System.Buffers.Binary;
 
 using Syroot.BinaryData;
 
@@ -14,6 +15,34 @@ namespace PDTools.Compression
     public class PS2ZIP
     {
         public const uint PS2ZIP_MAGIC = 0xFF_F7_EE_C5;
+
+        /// <summary>
+        /// Checks if compression is valid for the buffer.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="outSize"></param>
+        /// <returns></returns>
+        public unsafe static bool CheckCompression(Span<byte> data, ulong outSize)
+        {
+            if (outSize > uint.MaxValue)
+                return false;
+
+            // Inflated is always little
+            uint zlibMagic = BinaryPrimitives.ReadUInt32LittleEndian(data);
+            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data[4..]);
+
+            if ((long)zlibMagic != PS2ZIP_MAGIC)
+                return false;
+
+            if ((uint)outSize + sizeComplement != 0)
+                return false;
+
+            const int headerSize = 8;
+            if (data.Length <= headerSize) // Header size, if it's under, data is missing
+                return false;
+
+            return true;
+        }
 
         /// <summary>
         /// Safely decompress a file in a stream and saves it to the provided path.
@@ -114,6 +143,44 @@ namespace PDTools.Compression
 
                 return deflatedData;
             }
+        }
+
+        /// <summary>
+        /// Decompresses a file (in memory, unsuited for large files).
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="outSize"></param>
+        /// <param name="deflatedData"></param>
+        /// <returns></returns>
+        public unsafe static bool TryInflateInMemory(Span<byte> data, ulong outSize, out byte[] deflatedData)
+        {
+            deflatedData = Array.Empty<byte>();
+            if (outSize > uint.MaxValue)
+                return false;
+
+            // Inflated is always little
+            uint zlibMagic = BinaryPrimitives.ReadUInt32LittleEndian(data);
+            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data[4..]);
+
+            if ((long)zlibMagic != PS2ZIP_MAGIC)
+                return false;
+
+            if ((uint)outSize + sizeComplement != 0)
+                return false;
+
+            const int headerSize = 8;
+            if (data.Length <= headerSize) // Header size, if it's under, data is missing
+                return false;
+
+            deflatedData = new byte[(int)outSize];
+            fixed (byte* pBuffer = &data.Slice(headerSize)[0]) // Vol Header Size
+            {
+                using var ums = new UnmanagedMemoryStream(pBuffer, data.Length - headerSize);
+                using var ds = new DeflateStream(ums, CompressionMode.Decompress);
+                ds.Read(deflatedData, 0, (int)outSize);
+            }
+
+            return true;
         }
     }
 }
