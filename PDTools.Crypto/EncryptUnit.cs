@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace PDTools.Crypto
 {
-    public class SharedCrypto
+    public class EncryptUnit
     {
         /// <summary>
         /// Original implementation of EncryptUnit. Decrypts a buffer.
@@ -59,7 +59,7 @@ namespace PDTools.Crypto
             uintBuf[1] ^= crcSeed;
 
             // Verify checksum of the actual encrypted data.
-            if (uintBuf[1] == CRC32.crc32(buffer.Slice(8), actualDataSize))
+            if (uintBuf[1] == CRC32.crc32_0x77073096(buffer.Slice(8), actualDataSize))
                 return actualDataSize;
 
             return -1;

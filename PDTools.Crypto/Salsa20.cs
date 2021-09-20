@@ -87,6 +87,16 @@ namespace PDTools.Crypto
                 pos += StateLength;
                 length -= StateLength;
             }
+
+            if (length > 0)
+            {
+                Hash(o);
+                Increment();
+
+                // Remaining bytes
+                for (int i = 0; i < length; i++)
+                    bytes[pos + i] ^= o[i];
+            }
         }
 
         /// <summary>
