@@ -169,7 +169,7 @@ namespace GTReplayInfo
             }
 
             int basePos = sr.Position;
-            EntryName = sr.ReadStringNullTerminated();
+            EntryName = sr.ReadNullTerminatedString();
             sr.Position = basePos + 0x10;
             sr.Position += 4;
 

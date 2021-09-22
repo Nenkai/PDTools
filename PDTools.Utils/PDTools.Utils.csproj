@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PDTools.Compression\PDTools.Compression.csproj" />
+    <ProjectReference Include="..\PDTools.Crypto\PDTools.Crypto.csproj" />
   </ItemGroup>
 
 </Project>

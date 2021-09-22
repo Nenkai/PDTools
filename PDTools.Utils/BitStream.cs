@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 
 using System.Buffers.Binary;
+using System.Collections.Generic;
 
 namespace PDTools.Utils
 {
@@ -453,6 +454,27 @@ namespace PDTools.Utils
             return Encoding.ASCII.GetString(chars);
         }
 
+        public string ReadStringRaw(int length)
+        {
+            byte[] chars = new byte[length];
+            ReadIntoByteArray(length, chars, Byte_Bits);
+            return Encoding.ASCII.GetString(chars);
+        }
+
+        public string ReadNullTerminatedString()
+        {
+            List<byte> bytes = new List<byte>();
+
+            byte b = ReadByte();
+            while ((char)b != '\0')
+            {
+                bytes.Add(b);
+                b = ReadByte();
+            }
+
+            return Encoding.UTF8.GetString(bytes.ToArray());
+        }
+
         public string ReadString4()
         {
             int strLen = ReadInt32();
@@ -576,11 +598,12 @@ namespace PDTools.Utils
         /// <param name="dest">Bytes destination.</param>
         /// <param name="elemBitSize"></param>
         // Non original impl
-        public void ReadByteArrayPrefixed(byte[] dest)
+        public byte[] ReadByteArrayPrefixed()
         {
             uint len = this.ReadUInt32();
-            dest = new byte[len];
+            byte[] dest = new byte[len];
             this.ReadIntoByteArray(dest.Length, dest, Byte_Bits);
+            return dest;
         }
 
         /// <summary>

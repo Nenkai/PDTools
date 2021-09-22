@@ -84,7 +84,7 @@ namespace PDTools.Structures.MGameParameter
 
             CourseCode = (int)reader.ReadInt64();
 
-            byte[] edit_data = reader.ReadByteDataPrefixed4();
+            byte[] edit_data = reader.ReadByteArrayPrefixed();
             if (edit_data != null)         
                 CustomCourse = CustomCourse.Read(edit_data);
             

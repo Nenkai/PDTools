@@ -3,9 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+
+using System.Threading;
 
 using Syroot.BinaryData;
 using Syroot.BinaryData.Memory;
+
+using System.Buffers;
+
+using PDTools.Crypto;
 
 namespace PDTools.Utils
 {
@@ -30,6 +37,58 @@ namespace PDTools.Utils
             
             ReadOnlySpan<byte> chars = sr.Span.Slice(basePos, sr.Position - 1);
             return sr.Encoding.GetString(chars);
+        }
+
+        /// <summary>
+        /// Copies a stream to another, while also doing a crc of the data.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="target"></param>
+        /// <param name="bufferSize"></param>
+        /// <returns></returns>
+        public static uint CopyToChecksum(this Stream src, Stream target, int bufferSize)
+        {
+            uint crc = 0;
+
+            long len = src.Length;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+            while (len > 0)
+            {
+                int toWrite = (int)Math.Min(len, bufferSize);
+                src.Read(buffer);
+                target.Write(buffer, 0, toWrite);
+
+                crc = CRC32.CRC32_0x04C11DB7(buffer.AsSpan(0, toWrite), crc);
+                len -= toWrite;
+            }
+
+            return crc;
+        }
+
+        /// <summary>
+        /// Copies a stream to another asynchronously, while also doing a crc of the data.
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="target"></param>
+        /// <param name="bufferSize"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static async Task<uint> CopyToAsyncChecksum(this Stream src, Stream target, int bufferSize, CancellationToken token = default)
+        {
+            uint crc = 0;
+
+            long len = src.Length;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+            while (len > 0)
+            {
+                int toWrite = (int)Math.Min(len, bufferSize);
+                await src.ReadAsync(buffer, token);
+                await target.WriteAsync(buffer, 0, toWrite, token);
+
+                crc = CRC32.CRC32_0x04C11DB7(buffer.AsSpan(0, toWrite), crc);
+            }
+
+            return crc;
         }
 
         /// <summary>

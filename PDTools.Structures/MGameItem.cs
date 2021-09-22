@@ -65,7 +65,7 @@ namespace PDTools.Structures
             item.Argument3 = stream.ReadUInt32();
             item.Argument4 = stream.ReadUInt32();
             item.F_Name = stream.ReadString4Aligned();
-            stream.ReadByteArrayPrefixed(item.Blob);
+            item.Blob = stream.ReadByteArrayPrefixed();
 
             for (int i = 0; i < 0x40; i++)
                 stream.ReadByte();

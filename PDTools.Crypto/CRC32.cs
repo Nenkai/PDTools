@@ -20,6 +20,18 @@ namespace PDTools.Crypto
 			return crc;
 		}
 
+		public static uint CRC32_0x04C11DB7(Span<byte> bytes, uint initialValue)
+		{
+			uint crc = 0;
+			for (byte i = 0; i < bytes.Length; i++)
+			{
+				int b = bytes[i] & 0xFF;
+				crc = (crc << 8) ^ checksum_0x04C11DB7[(crc >> 24) ^ b];
+			}
+
+			return crc;
+		}
+
 		/// <summary>
 		/// For GT5P JP Demo
 		/// </summary>
