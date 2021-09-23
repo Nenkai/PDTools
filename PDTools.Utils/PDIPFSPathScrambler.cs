@@ -142,17 +142,47 @@ namespace PDTools.Utils
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		public static string GetRandomStringFromValue(uint val)
+		public static string GetRandomStringFromValue(ulong val)
 		{
 			string outStr = "";
 			while (val != 0)
 			{
-				uint newVal = (uint)(val / CharsetLower.Length);
-				outStr += CharsetLower[(int)(val % CharsetLower.Length)];
+				ulong newVal = (ulong)(val / (ulong)CharsetLower.Length);
+				outStr += CharsetLower[(int)(val % (ulong)CharsetLower.Length)];
 				val = newVal;
 			}
 
 			return outStr;
 		}
+
+		/// <summary>
+		/// For Grim/Online patching, for deciphering request hashes which are scrambled
+		/// </summary>
+		/// <param name="val"></param>
+		/// <returns></returns>
+		public static ulong GetValueFromScrambledString(string str)
+        {
+			ulong baseValue = 0;
+
+			if (str.Length == 0)
+				return baseValue;
+
+			char currentChar = str[^1];
+			ulong index = (ulong)CharsetLower.IndexOf(currentChar);
+			baseValue += index;
+
+			if (str.Length > 1)
+			{
+				for (int i = str.Length - 2; i >= 0; i--)
+				{
+					currentChar = str[i];
+					index = (ulong)CharsetLower.IndexOf(currentChar); // TODO: Make this more efficient (dictionary?)
+					baseValue = (baseValue * (uint)CharsetLower.Length) + index;
+				}
+			}
+
+			return baseValue;
+        }
+		
 	}
 }

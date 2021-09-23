@@ -32,31 +32,65 @@ namespace PDTools.Crypto
                 bitMask <<= 0x1;
             }
 
-            uint v1Crc = CRC32.CRC32_0x04C11DB7_UInt(v1);
-            uint v2Crc = CRC32.CRC32_0x04C11DB7_UInt(v2);
+            uint v1Crc = CRC32.CRC32_0x04C11DB7_UIntInverted(v1);
+            uint v2Crc = CRC32.CRC32_0x04C11DB7_UIntInverted(v2);
             
-            v1 = 0x1;
-            v2 = 0x0;
+            bitMask = 0x1;
+            ulong result = 0x0;
 
             int bitCount = 0x20;
             while (bitCount != 0x0)
             {
-                uint b1 = v1 & (v1Crc << 0x19 | v1Crc >> 0x7);
-                uint b2 = v2 & (v2Crc << 0x11 | v2Crc >> 0xf);
+                if (bitCount == 1)
+                    ;
 
-                v1 <<= 0x2;
-                v2 <<= 0x1;
+                uint b1 = bitMask & (v1Crc << 0x19 | v1Crc >> 0x7);
+                uint b2 = bitMask & (v2Crc << 0x11 | v2Crc >> 0xf);
 
+                result <<= 0x2;
+                
                 if (b1 != 0x0)
-                    v1 |= 0x1;
+                    result |= 0x1;
 
                 if (b2 != 0x0)
-                    v2 |= 0x2;
+                    result |= 0x2;
 
+                bitMask <<= 0x1;
                 bitCount--;
             } 
 
-            return v1;
+            return result;
         }
+
+        /*
+        public static ulong UpdateShiftValueReverse(ulong value)
+        {
+            ulong result = 0;
+
+            uint v1 = 0, v2 = 0;
+
+            int bitCount = 0x20;
+            uint bitMask = 0x80000000;
+
+            while (bitCount != 0x0)
+            {
+                if ((value & 1) != 0)
+                    v1 |= bitMask;
+
+                if ((value & 2) != 0)
+                    v2 |= bitMask;
+
+                value >>= 0x2;
+                bitMask >>= 0x1;
+
+                bitCount--;
+            }
+
+            uint ogCrc1 = (v1 >> 0x19) | (v1 << 0x7);
+            uint ogCrc2 = (v2 >> 0x11) | (v2 << 0xf);
+            CRC32.CRC32_0x04C11DB7_UIntInvertedReverse(ogCrc2);
+
+            return result;
+        }*/
     }
 }
