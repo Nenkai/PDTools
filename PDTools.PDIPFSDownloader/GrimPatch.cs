@@ -8,7 +8,7 @@ using System.IO;
 using PDTools.Crypto;
 using PDTools.Utils;
 
-namespace PDTools.PDIPFSDownloader
+namespace PDTools.GrimPFS
 {
     public class GrimPatch
     {
