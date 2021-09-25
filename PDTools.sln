@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.STStruct", "STStruc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Compression", "PDTools.Compression\PDTools.Compression.csproj", "{C424D395-BD31-49AB-BA53-841AC54FD8F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.GrimPFS", "PDTools.PDIPFSDownloader\PDTools.GrimPFS.csproj", "{A5286241-02A8-4C5C-8F7E-3A984A57C0BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.GrimPFS", "PDTools.GrimPFS\PDTools.GrimPFS.csproj", "{A5286241-02A8-4C5C-8F7E-3A984A57C0BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

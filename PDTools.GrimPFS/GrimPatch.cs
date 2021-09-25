@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 using System.IO;
 using PDTools.Crypto;
@@ -30,7 +31,7 @@ namespace PDTools.GrimPFS
             TargetVolumeSerial = targetSerial;
         }
 
-        public ulong DefaultChunkSize { get; } = 0x800000; // 8 MB
+        public ulong DefaultChunkSize { get; set;  } = 0x800000; // 8 MB
         public void AddFile(string gamePath, string pfsPath, uint fileIndex, ulong fileSize, ulong chunkSizeOverride = 0)
         {
             uint chunkId = 0;
@@ -87,6 +88,144 @@ namespace PDTools.GrimPFS
 
             foreach (var file in Files.Values)
                 sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.ChunkId} {file.DownloadPath}");
+        }
+
+        public bool Load(string inputFile)
+        {
+            using var sw = new StreamReader(inputFile);
+            if (sw.EndOfStream)
+                return false;
+
+            string patchTarget = sw.ReadLine();
+            if (!ReadPatchTarget(patchTarget))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            string chunkSize = sw.ReadLine();
+            if (!ReadChunkSize(chunkSize))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            string patchSeq = sw.ReadLine();
+            if (!ReadPatchSequence(patchSeq))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            string uni = sw.ReadLine();
+            if (!ReadUpdateNodeInfo(uni))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            string header = sw.ReadLine();
+            if (!ReadHeader(header))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            string toc = sw.ReadLine();
+            if (!ReadToC(header))
+                return false;
+            if (sw.EndOfStream)
+                return false;
+
+            return true;
+        }
+
+        private bool ReadPatchTarget(string line)
+        {
+            var patchTargetSpl = line.Split(' ');
+            if (patchTargetSpl.Length != 4 || patchTargetSpl[0] != "PatchTarget")
+                return false;
+
+            TitleID = patchTargetSpl[1];
+            if (!ulong.TryParse(patchTargetSpl[2], out ulong baseSerial))
+                return false;
+
+            if (!ulong.TryParse(patchTargetSpl[3], out ulong targetSerial))
+                return false;
+
+            BaseVolumeSerial = baseSerial;
+            TargetVolumeSerial = targetSerial;
+
+            return true;
+        }
+
+        private bool ReadChunkSize(string line)
+        {
+            var chunkSizeSpl = line.Split(' ');
+            if (chunkSizeSpl.Length != 2 || chunkSizeSpl[0] != "ChunkSize")
+                return false;
+
+            if (!uint.TryParse(chunkSizeSpl[1], NumberStyles.HexNumber, CultureInfo.CurrentCulture, out uint chunkSize))
+                return false;
+
+            DefaultChunkSize = chunkSize;
+            return true;
+        }
+
+        private bool ReadPatchSequence(string line)
+        {
+            string[] patchSeqSpl = line.Split(' ');
+            if (patchSeqSpl.Length != 2 || patchSeqSpl[0] != "PATCHSEQUENCE")
+                return false;
+
+            Files.Add(patchSeqSpl[1], new GrimPatchFile()
+            {
+                DownloadPath = patchSeqSpl[1],
+                FileType = GrimPatchFileType.PatchSequence,
+            });
+
+            return true;
+        }
+
+        private bool ReadUpdateNodeInfo(string line)
+        {
+            string[] uniSpl = line.Split(' ');
+            if (uniSpl.Length != 2 || uniSpl[0] != "UPDATENODEINFO")
+                return false;
+
+            Files.Add(uniSpl[1], new GrimPatchFile()
+            {
+                DownloadPath = uniSpl[1],
+                FileType = GrimPatchFileType.UpdateNodeInfo,
+            });
+
+            return true;
+        }
+
+        private bool ReadHeader(string line)
+        {
+            string[] headerSpl = line.Split(' ');
+            if (headerSpl.Length != 2 || headerSpl[0] != "Header")
+                return false;
+
+            Files.Add(headerSpl[1], new GrimPatchFile()
+            {
+                DownloadPath = headerSpl[1],
+                FileType = GrimPatchFileType.Header,
+            });
+
+            return true;
+        }
+
+        private bool ReadToC(string line)
+        {
+            string[] tocSpl = line.Split(' ');
+            if (tocSpl.Length != 4 || tocSpl[0] != "TOC")
+                return false;
+
+            Files.Add(tocSpl[3], new GrimPatchFile()
+            {
+                PFSPath = tocSpl[1],
+                DownloadPath = tocSpl[3],
+                FileType = GrimPatchFileType.GameFile,
+            });
+
+            return true;
         }
     }
 }
