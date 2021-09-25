@@ -86,11 +86,11 @@ namespace PDTools.GrimPFS
 
             ulong headerEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | HeaderSeed) << 0x14 | 0) ^ titleIdCrc);
             string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
-            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {headerHashStr}");
+            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(headerSeed)} {headerSeed} {headerHashStr}");
 
             ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
-            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {headerSeed} {tocHashStr}");
+            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
 
             foreach (var file in Files.Values)
                 sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.ChunkId} {file.DownloadPath}");
