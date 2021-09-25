@@ -88,7 +88,7 @@ namespace PDTools.GrimPFS
             string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
             sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {headerHashStr}");
 
-            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue(((tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
+            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
             sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {headerSeed} {tocHashStr}");
 
