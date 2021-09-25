@@ -15,6 +15,7 @@ namespace PDTools.GrimPFS
     {
         public const uint PatchSequenceSeed = 0;
         public const uint HeaderSeed = 1;
+        public const uint TOCSeed = 2;
         public const uint UpdateNodeInfoSeed = 3;
 
         public ulong BaseVolumeSerial { get; set; }
@@ -24,6 +25,11 @@ namespace PDTools.GrimPFS
 
         public Dictionary<string, GrimPatchFile> Files = new();
 
+        private GrimPatch()
+        {
+
+        }
+
         public GrimPatch(string titleId, ulong baseVolumeSerial, ulong targetSerial)
         {
             TitleID = titleId;
@@ -31,7 +37,7 @@ namespace PDTools.GrimPFS
             TargetVolumeSerial = targetSerial;
         }
 
-        public ulong DefaultChunkSize { get; set;  } = 0x800000; // 8 MB
+        public ulong DefaultChunkSize { get; set; } = 0x800000; // 8 MB
         public void AddFile(string gamePath, string pfsPath, uint fileIndex, ulong fileSize, ulong chunkSizeOverride = 0)
         {
             uint chunkId = 0;
@@ -62,7 +68,7 @@ namespace PDTools.GrimPFS
             }
         }
 
-        public void Save(string output, uint tocIndex, uint tocSize)
+        public void Save(string output, uint headerSeed, uint tocIndex)
         {
             uint titleIdCrc = ~CRC32.CRC32_0x04C11DB7(TitleID, 0);
 
@@ -80,58 +86,62 @@ namespace PDTools.GrimPFS
 
             ulong headerEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | HeaderSeed) << 0x14 | 0) ^ titleIdCrc);
             string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
-            sw.WriteLine($"Header {headerHashStr}");
+            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {headerHashStr}");
 
-            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | tocIndex) << 0x14 | 0) ^ titleIdCrc);
+            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue(((tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
-            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocSize} {tocHashStr}");
+            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
 
             foreach (var file in Files.Values)
                 sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.ChunkId} {file.DownloadPath}");
         }
 
-        public bool Load(string inputFile)
+        public static bool TryRead(string inputFile, out GrimPatch patch)
         {
+            patch = null;
+
+            var tmpPatch = new GrimPatch();
             using var sw = new StreamReader(inputFile);
             if (sw.EndOfStream)
                 return false;
 
             string patchTarget = sw.ReadLine();
-            if (!ReadPatchTarget(patchTarget))
+            if (!tmpPatch.ReadPatchTarget(patchTarget))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
             string chunkSize = sw.ReadLine();
-            if (!ReadChunkSize(chunkSize))
+            if (!tmpPatch.ReadChunkSize(chunkSize))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
             string patchSeq = sw.ReadLine();
-            if (!ReadPatchSequence(patchSeq))
+            if (!tmpPatch.ReadPatchSequence(patchSeq))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
             string uni = sw.ReadLine();
-            if (!ReadUpdateNodeInfo(uni))
+            if (!tmpPatch.ReadUpdateNodeInfo(uni))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
             string header = sw.ReadLine();
-            if (!ReadHeader(header))
+            if (!tmpPatch.ReadHeader(header))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
             string toc = sw.ReadLine();
-            if (!ReadToC(header))
+            if (!tmpPatch.ReadToC(toc))
                 return false;
             if (sw.EndOfStream)
                 return false;
 
+            patch = tmpPatch;
             return true;
         }
 
@@ -200,12 +210,13 @@ namespace PDTools.GrimPFS
         private bool ReadHeader(string line)
         {
             string[] headerSpl = line.Split(' ');
-            if (headerSpl.Length != 2 || headerSpl[0] != "Header")
+            if (headerSpl.Length != 3 || headerSpl[0] != "Header")
                 return false;
 
-            Files.Add(headerSpl[1], new GrimPatchFile()
+            Files.Add(headerSpl[2], new GrimPatchFile()
             {
-                DownloadPath = headerSpl[1],
+                DownloadPath = headerSpl[2],
+                PFSPath = headerSpl[1],
                 FileType = GrimPatchFileType.Header,
             });
 
@@ -218,9 +229,13 @@ namespace PDTools.GrimPFS
             if (tocSpl.Length != 4 || tocSpl[0] != "TOC")
                 return false;
 
+            if (!uint.TryParse(tocSpl[2], out uint tocFileIndex))
+                return false;
+
             Files.Add(tocSpl[3], new GrimPatchFile()
             {
                 PFSPath = tocSpl[1],
+                FileIndex = tocFileIndex,
                 DownloadPath = tocSpl[3],
                 FileType = GrimPatchFileType.GameFile,
             });

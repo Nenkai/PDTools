@@ -13,7 +13,7 @@ namespace PDTools.GrimPFS
         public uint FileIndex { get; set; }
 
         public string GamePath { get; set; }
-        
+
         public string PFSPath { get; set; }
 
         public uint ChunkId { get; set; }
@@ -26,6 +26,7 @@ namespace PDTools.GrimPFS
         PatchSequence,
         UpdateNodeInfo,
         Header,
+        TOC,
         GameFile,
     }
 }
