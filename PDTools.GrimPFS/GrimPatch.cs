@@ -90,7 +90,7 @@ namespace PDTools.GrimPFS
 
             ulong tocEncodedValue = MiscCrypto.UpdateShiftValue(((tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
-            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
+            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {headerSeed} {tocHashStr}");
 
             foreach (var file in Files.Values)
                 sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.ChunkId} {file.DownloadPath}");
