@@ -86,7 +86,7 @@ namespace PDTools.GrimPFS
 
             ulong headerEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | HeaderSeed) << 0x14 | 0) ^ titleIdCrc);
             string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
-            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {headerHashStr}");
+            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {headerHashStr}");
 
             ulong tocEncodedValue = MiscCrypto.UpdateShiftValue(((tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
@@ -210,13 +210,17 @@ namespace PDTools.GrimPFS
         private bool ReadHeader(string line)
         {
             string[] headerSpl = line.Split(' ');
-            if (headerSpl.Length != 3 || headerSpl[0] != "Header")
+            if (headerSpl.Length != 4 || headerSpl[0] != "Header")
                 return false;
 
-            Files.Add(headerSpl[2], new GrimPatchFile()
+            if (!uint.TryParse(headerSpl[2], out uint headerFileIndex))
+                return false;
+
+            Files.Add(headerSpl[3], new GrimPatchFile()
             {
-                DownloadPath = headerSpl[2],
+                DownloadPath = headerSpl[3],
                 PFSPath = headerSpl[1],
+                FileIndex = headerFileIndex,
                 FileType = GrimPatchFileType.Header,
             });
 
