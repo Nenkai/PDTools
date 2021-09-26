@@ -25,6 +25,15 @@ namespace PDTools.GrimPFS
 
         public Dictionary<string, GrimPatchFile> Files = new();
 
+        /* \!/ Major note regarding UpdateNodeInfo \!/
+         * If a file index specified in the file, and its scrambled path (i.e 9/AB/CD) is already present in the player's PDIPFS
+         * i.e person reverted their toc to vanilla, the game will check if the current iterated entry in the list exists and if so, it will be removed
+         * from the person's download list of files as it assumes its all good
+         * This can lead to improper patching, and should be used strictly starting from 1.22.
+         * 
+         * From BCES01893 1.22 EBOOT, at 0x0ABA240 (calls ab79d0 - CheckFileExists) - Nenkai
+         */
+
         private GrimPatch()
         {
 
@@ -47,7 +56,7 @@ namespace PDTools.GrimPFS
             uint titleIdCrc = ~CRC32.CRC32_0x04C11DB7(TitleID, 0);
             while (fileSize > 0)
             {
-                ulong encodedValue = MiscCrypto.UpdateShiftValue(((fileIndex << 0x4 | GameFileSeed) << 0x14 | chunkId) ^ titleIdCrc);
+                ulong encodedValue = MiscCrypto.UpdateShiftValue((((ulong)fileIndex << 0x4 | GameFileSeed) << 0x14 | chunkId) ^ titleIdCrc);
                 string hashStr = PDIPFSPathResolver.GetRandomStringFromValue(encodedValue);
 
                 var file = new GrimPatchFile()
