@@ -15,7 +15,7 @@ namespace PDTools.GrimPFS
     {
         public const uint PatchSequenceSeed = 0;
         public const uint HeaderSeed = 1;
-        public const uint TOCSeed = 2;
+        public const uint GameFileSeed = 2;
         public const uint UpdateNodeInfoSeed = 3;
 
         public ulong BaseVolumeSerial { get; set; }
@@ -24,6 +24,15 @@ namespace PDTools.GrimPFS
         public string TitleID { get; set; }
 
         public Dictionary<string, GrimPatchFile> Files = new();
+
+        /* \!/ Major note regarding UpdateNodeInfo \!/
+         * If a file index specified in the file, and its scrambled path (i.e 9/AB/CD) is already present in the player's PDIPFS
+         * i.e person reverted their toc to vanilla, the game will check if the current iterated entry in the list exists and if so, it will be removed
+         * from the person's download list of files as it assumes its all good
+         * This can lead to improper patching, and should be used strictly starting from 1.22.
+         * 
+         * From BCES01893 1.22 EBOOT, at 0x0ABA240 (calls ab79d0 - CheckFileExists) - Nenkai
+         */
 
         private GrimPatch()
         {
@@ -37,17 +46,17 @@ namespace PDTools.GrimPFS
             TargetVolumeSerial = targetSerial;
         }
 
-        public ulong DefaultChunkSize { get; set; } = 0x800000; // 8 MB
+        public ulong DefaultChunkSize { get; set; } = 0x200000; // 2 MB, can't be more (game allocates 0x210000)
         public void AddFile(string gamePath, string pfsPath, uint fileIndex, ulong fileSize, ulong chunkSizeOverride = 0)
         {
             uint chunkId = 0;
 
             ulong fileChunkSize = chunkSizeOverride == 0 ? DefaultChunkSize : chunkSizeOverride;
 
+            uint titleIdCrc = ~CRC32.CRC32_0x04C11DB7(TitleID, 0);
             while (fileSize > 0)
             {
-                uint titleIdCrc = ~CRC32.CRC32_0x04C11DB7(TitleID, 0);
-                ulong encodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | fileIndex) << 0x14 | chunkId) ^ titleIdCrc);
+                ulong encodedValue = MiscCrypto.UpdateShiftValue((((ulong)fileIndex << 0x4 | GameFileSeed) << 0x14 | chunkId) ^ titleIdCrc);
                 string hashStr = PDIPFSPathResolver.GetRandomStringFromValue(encodedValue);
 
                 var file = new GrimPatchFile()
@@ -56,6 +65,7 @@ namespace PDTools.GrimPFS
                     DownloadPath = hashStr,
                     ChunkId = chunkId,
                     PFSPath = pfsPath,
+                    FileIndex = fileIndex,
                 };
 
                 Files.Add(hashStr, file);
@@ -88,12 +98,12 @@ namespace PDTools.GrimPFS
             string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
             sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(headerSeed)} {headerSeed} {headerHashStr}");
 
-            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | TOCSeed) << 0x14 | 0) ^ titleIdCrc);
+            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | GameFileSeed) << 0x14 | 0) ^ titleIdCrc);
             string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
             sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
 
             foreach (var file in Files.Values)
-                sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.ChunkId} {file.DownloadPath}");
+                sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.FileIndex} {file.ChunkId} {file.DownloadPath}");
         }
 
         public static bool TryRead(string inputFile, out GrimPatch patch)
@@ -140,6 +150,15 @@ namespace PDTools.GrimPFS
                 return false;
             if (sw.EndOfStream)
                 return false;
+
+            while (!sw.EndOfStream)
+            {
+                string line = sw.ReadLine();
+                if (string.IsNullOrEmpty(line) || line.StartsWith("//"))
+                    continue;
+
+                tmpPatch.ReadFile(line);
+            }
 
             patch = tmpPatch;
             return true;
@@ -242,6 +261,31 @@ namespace PDTools.GrimPFS
                 FileIndex = tocFileIndex,
                 DownloadPath = tocSpl[3],
                 FileType = GrimPatchFileType.GameFile,
+            });
+
+            return true;
+        }
+
+        private bool ReadFile(string line)
+        {
+            string[] fileSpl = line.Split(' ');
+            if (fileSpl.Length != 6 || fileSpl[0] != "File")
+                return false;
+
+            if (!uint.TryParse(fileSpl[3], out uint fileIndex))
+                return false;
+
+            if (!uint.TryParse(fileSpl[4], out uint chunkId))
+                return false;
+
+            Files.Add(fileSpl[5], new GrimPatchFile()
+            {
+                PFSPath = fileSpl[2],
+                FileIndex = fileIndex,
+                ChunkId = chunkId,
+                GamePath = fileSpl[1],
+                DownloadPath = fileSpl[5],
+                FileType = GrimPatchFileType.TOC,
             });
 
             return true;

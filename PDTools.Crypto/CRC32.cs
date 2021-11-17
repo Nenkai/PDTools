@@ -64,7 +64,7 @@ namespace PDTools.Crypto
 		public static uint CRC32_0x04C11DB7(string keyMagic, uint initialValue = 0)
 		{
 			uint crc = initialValue;
-			for (byte i = 0; i < keyMagic.Length; i++)
+			for (int i = 0; i < keyMagic.Length; i++)
 			{
 				int b = keyMagic[i] & 0xFF;
 				crc = (crc << 8) ^ checksum_0x04C11DB7[(crc >> 24) ^ b];
@@ -76,7 +76,7 @@ namespace PDTools.Crypto
 		public static uint CRC32_0x04C11DB7(Span<byte> bytes, uint initialValue = 0)
 		{
 			uint crc = initialValue;
-			for (byte i = 0; i < bytes.Length; i++)
+			for (int i = 0; i < bytes.Length; i++)
 			{
 				int b = bytes[i] & 0xFF;
 				crc = (crc << 8) ^ checksum_0x04C11DB7[(crc >> 24) ^ b];
