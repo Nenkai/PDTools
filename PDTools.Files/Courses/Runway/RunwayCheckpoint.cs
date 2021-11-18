@@ -24,7 +24,9 @@ public class RunwayCheckpoint
             checkpoint.TrackV = bs.ReadSingle();
             bs.Position = basePos + 0x28;
         }
+
         checkpoint.Right = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+        checkpoint.TrackV = bs.ReadSingle();
 
         return checkpoint;
     }

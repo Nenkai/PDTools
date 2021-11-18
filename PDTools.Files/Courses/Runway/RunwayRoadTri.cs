@@ -7,11 +7,10 @@ public class RunwayRoadTri
     public uint VertA { get; set; }
     public uint VertB { get; set; }
     public uint VertC { get; set; }
-    public uint unk { get; set; }
     public byte SurfaceType { get; set; }
     public byte flagsA { get; set; }
-    public byte flagsB { get; set; }
-    public byte flagsC { get; set; }
+    public byte unk { get; set; }
+    public uint unkBits { get; set; }
 
     public static RunwayRoadTri FromStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
     {
@@ -30,9 +29,8 @@ public class RunwayRoadTri
 
             bs.Position = basePos + 0x9;
             roadTri.VertC = bs.ReadUInt16();
-            roadTri.flagsB = bs.Read1Byte();
-            roadTri.unk = bs.ReadUInt16();
-            roadTri.flagsC = bs.Read1Byte();
+            roadTri.unk = bs.Read1Byte();
+            roadTri.unkBits = bs.ReadUInt32();
         }
         else
         {
@@ -55,18 +53,13 @@ public class RunwayRoadTri
     {
         if (rwyVersionMajor >= 4)
         {
-            bs.WriteByte(0);
-            bs.WriteUInt16((ushort)VertA);
+            bs.WriteByte(0); bs.WriteUInt16((ushort)VertA); // int24 cheesing
             bs.WriteByte(SurfaceType);
-            bs.WriteByte(0);
-            bs.WriteUInt16((ushort)VertB);
+            bs.WriteByte(0); bs.WriteUInt16((ushort)VertB);
             bs.WriteByte(flagsA);
-            bs.WriteByte(0);
-            bs.WriteUInt16((ushort)VertC);
-            bs.WriteByte(flagsB);
-            bs.WriteUInt16((ushort)unk);
-            bs.WriteByte(flagsC);
-            bs.WriteByte(0);
+            bs.WriteByte(0);bs.WriteUInt16((ushort)VertC);
+            bs.WriteByte(unk);
+            bs.WriteUInt32(unkBits);
         }
         else
         {

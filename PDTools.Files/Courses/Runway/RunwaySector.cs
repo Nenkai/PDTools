@@ -28,8 +28,6 @@ namespace PDTools.Files.Courses.Runway
 
         public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
         {
-            bs.WriteUInt32((uint)SectorVCoords.Count);
-            bs.WriteUInt32((uint)bs.Position + 0x04);
             for (int i = 0; i < SectorVCoords.Count; i++)
             {
                 bs.WriteSingle(SectorVCoords[i]);

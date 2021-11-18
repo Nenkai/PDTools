@@ -182,7 +182,7 @@ namespace PDTools.Files.Courses.Runway
                     for (int i = 0; i < Data.Count; i++)
                     {
                         var data = Data[i];
-                        if (data.MainRoadTriIndex == 0 && data.RoadTriIndices.Count == 0)
+                        if (data.MainRoadTriIndex is null)
                         {
                             offsets.Add(0);
                             continue;

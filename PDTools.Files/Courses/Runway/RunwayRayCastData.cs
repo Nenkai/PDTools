@@ -10,13 +10,13 @@ namespace PDTools.Files.Courses.Runway
 {
     public class RunwayRayCastData
     {
-        public uint MainRoadTriIndex { get; set; }
+        public uint? MainRoadTriIndex { get; set; }
 
         public List<uint> RoadTriIndices { get; set; } = new();
 
         public void ToStream(BinaryStream bs)
         {
-            bs.WriteUInt32(MainRoadTriIndex);
+            bs.WriteUInt32(MainRoadTriIndex.Value);
 
             for (int j = 0; j < RoadTriIndices.Count; j++)
             {
@@ -26,7 +26,7 @@ namespace PDTools.Files.Courses.Runway
                 {
                     bs.WriteByte((byte)index);
                 }
-                else if (index < 0xC000)
+                else if (index <= 0x3FFF)
                 {
                     byte[] val = BitConverter.GetBytes(index);
 

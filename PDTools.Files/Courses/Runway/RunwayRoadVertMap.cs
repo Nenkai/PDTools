@@ -27,9 +27,8 @@ namespace PDTools.Files.Courses.Runway
                     bs.Position = basePos + (i * 0x0C);
                     vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
 
-                    bs.Position = basePos + (count * 0x0C) + (i * 0x04);
+                    bs.Position = basePos + (count * 0x0C) + (i * sizeof(ushort));
                     vert.Unk1 = bs.ReadUInt16();
-                    vert.Unk2 = bs.ReadUInt16();
                 }
                 else // V2 Confirmed
                 {
@@ -47,18 +46,31 @@ namespace PDTools.Files.Courses.Runway
 
         public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
         {
-            /*
-            for (int i = 0; i < Verts.Count; i++)
+            if (rwyVersionMajor >= 4)
             {
-                bs.WriteSingle(Verts[i].X);
-                bs.WriteSingle(Verts[i].Y);
-                bs.WriteSingle(Verts[i].Z);
-            }
+                for (int i = 0; i < Vertices.Count; i++)
+                {
+                    bs.WriteSingle(Vertices[i].Vertex.X);
+                    bs.WriteSingle(Vertices[i].Vertex.Y);
+                    bs.WriteSingle(Vertices[i].Vertex.Z);
+                }
 
-            for (int i = 0; i < Unk.Count; i++)
+                for (int i = 0; i < Vertices.Count; i++)
+                {
+                    bs.WriteUInt16(Vertices[i].Unk1);
+                }
+            }
+            else
             {
-                bs.WriteUInt16(Unk[i]);
-            }*/
+                for (int i = 0; i < Vertices.Count; i++)
+                {
+                    bs.WriteSingle(Vertices[i].Vertex.X);
+                    bs.WriteSingle(Vertices[i].Vertex.Y);
+                    bs.WriteSingle(Vertices[i].Vertex.Z);
+                    bs.WriteUInt16(Vertices[i].Unk1);
+                    bs.WriteUInt16(Vertices[i].Unk2);
+                }
+            }
         }
     }
 }

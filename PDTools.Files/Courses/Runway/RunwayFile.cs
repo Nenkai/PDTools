@@ -50,6 +50,11 @@ public class RunwayFile
     public uint UnkVal2 { get; set; }
 
     /// <summary>
+    /// Unknown (GT6 Apricot Hill has it set)
+    /// </summary>
+    public uint UnkVal3 { get; set; }
+
+    /// <summary>
     /// Track length in meters.
     /// </summary>
     public float TrackV { get; set; }
@@ -69,9 +74,14 @@ public class RunwayFile
     public List<ushort> CheckpointList = new();
 
     /// <summary>
-    /// List of defined lights for the runway.
+    /// List of defined lights for the runway. (GT6)
     /// </summary>
-    public List<RunwayLightSet> LightSets { get; set; } = new();
+    public List<RunwayLightDefinition> LightDefs { get; set; } = new();
+
+    /// <summary>
+    /// List of defined light sets for the runway. (GT6)
+    /// </summary>
+    public RunwayCarLightSetCollection LightSets { get; set; }
 
     /// <summary>
     /// Old gadgets for the runway, GT5 and 6 does not support it in the RWY file.
@@ -104,6 +114,11 @@ public class RunwayFile
     /// Positions of all adjacent pit stops in the runway.
     /// </summary>
     public List<Vec3R> PitStopAdjacents = new();
+
+    /// <summary>
+    /// GT6 Only
+    /// </summary>
+    public List<RunwayLightVFX> LightParticles = new();
 
     public const int RNW4_BE = 0x524E5734;
     public const int RNW4_LE = 0x34574E52;
@@ -139,8 +154,7 @@ public class RunwayFile
         rwy.BoundsMax = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
         rwy.UnkVal1 = bs.ReadUInt32();
         rwy.UnkVal2 = bs.ReadUInt32();
-        bs.Position += 4;
-
+        rwy.UnkVal3 = bs.ReadUInt32();
         uint sectorsMapCount = bs.ReadUInt32();
         uint sectorsMapOffset = bs.ReadUInt32();
         uint startingGridCount = bs.ReadUInt32();
@@ -149,10 +163,10 @@ public class RunwayFile
         int checkpointOffset = bs.ReadInt32();
         uint checkpointListCount = bs.ReadUInt32();
         int checkpointListOffset = bs.ReadInt32();
-        uint lightSetCount = bs.ReadUInt32();
-        uint lightSetOffset = bs.ReadUInt32();
-        uint carLightSourceCount = bs.ReadUInt32();
-        uint carLightSourcesOffset = bs.ReadUInt32();
+        uint lightDefCount = bs.ReadUInt32();
+        uint lightDefsOffset = bs.ReadUInt32();
+        uint lightSetsCount = bs.ReadUInt32();
+        uint lightSetsOffset = bs.ReadUInt32();
         uint gadgetCount = bs.ReadUInt32();
         uint gadgetOffset = bs.ReadUInt32();
         uint roadVertCount = bs.ReadUInt32();
@@ -169,10 +183,12 @@ public class RunwayFile
         int boundaryListOffset = bs.ReadInt32();
         uint pitStopCount = bs.ReadUInt32();
         int pitStopOffset = bs.ReadInt32();
-
-        bs.Position = basePos + 0xBC;
-        uint pitStopAdjacentCount = bs.ReadUInt32();
+        int unkCount = bs.ReadInt32();
+        int unkOffset = bs.ReadInt32();
+        bs.ReadInt32();
         int pitStopAdjacentOffset = bs.ReadInt32();
+        bs.ReadInt32();
+        int lightParticlesOffset = bs.ReadInt32();
 
         bs.Position = basePos + sectorsMapOffset;
         for (int i = 0; i < sectorsMapCount; i++)
@@ -201,11 +217,17 @@ public class RunwayFile
         for (int i = 0; i < checkpointListCount; i++)
             rwy.CheckpointList.Add(bs.ReadUInt16());
 
-        for (int i = 0; i < lightSetCount; i++)
+        for (int i = 0; i < lightDefCount; i++)
         {
-            bs.Position = basePos + lightSetOffset + (i * RunwayLightSet.GetSize(rwy.VersionMajor, rwy.VersionMinor));
-            RunwayLightSet lightSet = RunwayLightSet.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
-            rwy.LightSets.Add(lightSet);
+            bs.Position = basePos + lightDefsOffset + (i * RunwayLightDefinition.GetSize(rwy.VersionMajor, rwy.VersionMinor));
+            RunwayLightDefinition lightDef = RunwayLightDefinition.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
+            rwy.LightDefs.Add(lightDef);
+        }
+
+        for (int i = 0; i < lightSetsCount; i++)
+        {
+            bs.Position = basePos + lightSetsOffset;
+            rwy.LightSets = RunwayCarLightSetCollection.FromStream(bs, lightSetsCount, rwy.VersionMajor, rwy.VersionMinor);
         }
 
         for (int i = 0; i < gadgetCount; i++)
@@ -250,12 +272,28 @@ public class RunwayFile
             rwy.PitStops.Add(pitStopPos);
         }
 
-        bs.Position = basePos + pitStopAdjacentOffset;
-        for (int i = 0; i < pitStopAdjacentCount; i++)
+        if (pitStopAdjacentOffset != 0)
         {
-            bs.Position = basePos + pitStopAdjacentOffset + (i * Vec3R.Size);
-            Vec3R pitStopAdjacentPos = Vec3R.FromStream(bs);
-            rwy.PitStopAdjacents.Add(pitStopAdjacentPos);
+            bs.Position = basePos + pitStopAdjacentOffset - 4;
+            uint pitStopAdjacentCount = bs.ReadUInt32();
+            for (int i = 0; i < pitStopAdjacentCount; i++)
+            {
+                bs.Position = basePos + pitStopAdjacentOffset + (i * Vec3R.Size);
+                Vec3R pitStopAdjacentPos = Vec3R.FromStream(bs);
+                rwy.PitStopAdjacents.Add(pitStopAdjacentPos);
+            }
+        }
+
+        if (lightParticlesOffset != 0)
+        {
+            bs.Position = basePos + lightParticlesOffset - 4;
+            uint lightParticlesCount = bs.ReadUInt32();
+            for (int i = 0; i < lightParticlesCount; i++)
+            {
+                bs.Position = basePos + lightParticlesOffset + (i * RunwayLightVFX.GetSize(rwy.VersionMajor, rwy.VersionMinor));
+                RunwayLightVFX lightVFX = RunwayLightVFX.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
+                rwy.LightParticles.Add(lightVFX);
+            }
         }
 
         return rwy;
@@ -297,7 +335,7 @@ public class RunwayFile
         bs.Position = 0x100;
 
         long sectorInfoMapOffset = SectorInfos.Count != 0 ? bs.Position : 0;
-        WriteSectorInfos(bs); // To check
+        WriteSectorInfos(bs, basePos);
 
         long startingGridOffset = StartingGrid.Count != 0 ? bs.Position : 0;
         WriteStartingGrid(bs);
@@ -308,8 +346,10 @@ public class RunwayFile
         long checkpointListOffset = CheckpointList.Count != 0 ? bs.Position : 0;
         WriteCheckpointList(bs);
 
-        long lightSetOffset = LightSets.Count != 0 ? bs.Position : 0;
-        WriteLightSet(bs);
+        long lightDefsOffset = WriteLightDefs(bs);
+
+        long lightSetsOffset = LightSets?.Sets?.Count != 0 ? bs.Position : 0;
+        WriteLightSets(bs);
 
         long gadgetsOffset = Gadgets.Count != 0 ? bs.Position : 0;
         WriteOldGadgets(bs);
@@ -332,6 +372,10 @@ public class RunwayFile
         long pitStopsOffset = PitStops.Count != 0 ? bs.Position : 0;
         WritePitStops(bs);
 
+        long pitStopsAdjacentsOffset = WritePitStopsAdjacents(bs);
+
+        long lightParticlesOffset = WriteLightParticles(bs);
+
         long fileSize = bs.Position - basePos;
 
         /* Writing Header */
@@ -350,7 +394,7 @@ public class RunwayFile
         bs.WriteSingle(BoundsMax.Z);
         bs.WriteUInt32(UnkVal1);
         bs.WriteUInt32(UnkVal2);
-        bs.Position += 4;
+        bs.WriteUInt32(UnkVal3);
 
         bs.WriteUInt32((uint)SectorInfos.Count);
         bs.WriteUInt32((uint)(sectorInfoMapOffset - basePos));
@@ -360,10 +404,10 @@ public class RunwayFile
         bs.WriteUInt32((uint)(checkpointsOffset - basePos));
         bs.WriteUInt32((uint)CheckpointList.Count);
         bs.WriteUInt32((uint)(checkpointListOffset - basePos));
-        bs.WriteUInt32((uint)LightSets.Count);
-        bs.WriteUInt32((uint)(lightSetOffset - basePos));
-        
-        bs.Position += 0x08;
+        bs.WriteUInt32((uint)LightDefs.Count);
+        bs.WriteUInt32((uint)(lightDefsOffset - basePos));
+        bs.WriteUInt32((uint)LightSets?.Sets?.Count != 0 ? (uint)(LightSets.Sets.Count + 1u) : 0u);
+        bs.WriteUInt32((uint)(lightSetsOffset - basePos));
         bs.WriteUInt32((uint)Gadgets.Count);
         bs.WriteUInt32((uint)(gadgetsOffset - basePos));
         bs.WriteUInt32((uint)RoadVerts.Vertices.Count);
@@ -377,17 +421,30 @@ public class RunwayFile
         bs.WriteUInt32((uint)BoundaryVerts.Count);
         bs.WriteUInt32((uint)boundaryVertsOffset);
         bs.WriteUInt32((uint)BoundaryFaces.Count);
-        bs.WriteUInt32((uint)boundaryFacesOffset);
+        bs.WriteUInt32((uint)(boundaryFacesOffset - basePos));
         bs.WriteUInt32((uint)PitStops.Count);
-        bs.WriteUInt32((uint)pitStopsOffset);
+        bs.WriteUInt32((uint)(pitStopsOffset - basePos));
+
+        bs.Position += 0x0C;
+        bs.WriteUInt32((uint)(pitStopsAdjacentsOffset - basePos));
+        bs.Position += 4;
+        bs.WriteUInt32((uint)(lightParticlesOffset - basePos));
     }
 
-    private void WriteSectorInfos(BinaryStream bs)
+    private void WriteSectorInfos(BinaryStream bs, long baseRwyPos)
     {
+        long offsetsPos = bs.Position;
+        long lastDataPos = bs.Position + (SectorInfos.Count * 0x08);
+
         for (int i = 0; i < SectorInfos.Count; i++)
         {
             RunwaySector sectorInfo = SectorInfos[i];
+            bs.Position = offsetsPos + (i * 0x08);
+            bs.WriteUInt32((uint)sectorInfo.SectorVCoords.Count);
+            bs.WriteUInt32((uint)(lastDataPos - baseRwyPos));
+
             sectorInfo.ToStream(bs, VersionMajor, VersionMinor);
+            lastDataPos = bs.Position;
         }
 
         bs.Align(0x10, grow: true);
@@ -415,14 +472,37 @@ public class RunwayFile
         bs.Align(0x08, grow: true);
     }
 
-    private void WriteLightSet(BinaryStream bs)
+    private long WriteLightDefs(BinaryStream bs)
     {
-        for (int i = 0; i < LightSets.Count; i++)
+        // Write count before data (its read that way)
+        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
         {
-            RunwayLightSet lightSet = LightSets[i];
-            lightSet.ToStream(bs, VersionMajor, VersionMinor);
+            bs.Align(0x10, grow: true);
+            bs.Position -= 4;
+            bs.WriteInt32(LightDefs.Count);
+        }
+        else // Start new padding + write count
+        {
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(LightDefs.Count);
         }
 
+        long offset = LightDefs.Count != 0 ? bs.Position : 0;
+        for (int i = 0; i < LightDefs.Count; i++)
+        {
+            RunwayLightDefinition lightDef = LightDefs[i];
+            lightDef.ToStream(bs, VersionMajor, VersionMinor);
+        }
+
+        bs.Align(0x08, grow: true);
+        return offset;
+    }
+
+    private void WriteLightSets(BinaryStream bs)
+    {
+        LightSets.ToStream(bs, VersionMajor, VersionMinor);
         bs.Align(0x08, grow: true);
     }
 
@@ -433,8 +513,6 @@ public class RunwayFile
             ushort chkIdx = CheckpointList[i];
             bs.WriteUInt16(chkIdx);
         }
-
-        bs.Align(0x10, grow: true);
     }
 
     private void WriteOldGadgets(BinaryStream bs)
@@ -500,7 +578,65 @@ public class RunwayFile
             pitStopPos.ToStream(bs);
         }
 
-        bs.Align(0x10, grow: true);
+         // No align
+    }
+
+    private long WritePitStopsAdjacents(BinaryStream bs)
+    {
+        // Write count before data (its read that way)
+        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+        {
+            bs.Align(0x10, grow: true);
+            bs.Position -= 4;
+            bs.WriteInt32(PitStopAdjacents.Count);
+        }
+        else // Start new padding + write count
+        {
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(PitStopAdjacents.Count);
+        }
+
+        long offset = PitStopAdjacents.Count != 0 ? bs.Position : 0;
+        for (int i = 0; i < PitStopAdjacents.Count; i++)
+        {
+            Vec3R pitStopAdjPos = PitStopAdjacents[i];
+            pitStopAdjPos.ToStream(bs);
+        }
+
+        bs.Align(0x08, grow: true);
+
+        return offset;
+    }
+
+    private long WriteLightParticles(BinaryStream bs)
+    {
+        // Write count before data (its read that way)
+        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+        {
+            bs.Align(0x10, grow: true);
+            bs.Position -= 4;
+            bs.WriteInt32(LightParticles.Count);
+        }
+        else // Start new padding + write count
+        {
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(LightParticles.Count);
+        }
+
+        long offset = LightParticles.Count != 0 ? bs.Position : 0;
+        for (int i = 0; i < LightParticles.Count; i++)
+        {
+            RunwayLightVFX lightVFX = LightParticles[i];
+            lightVFX.ToStream(bs, VersionMajor, VersionMinor);
+        }
+
+        bs.Align(0x08, grow: true);
+
+        return offset;
     }
 }
 
