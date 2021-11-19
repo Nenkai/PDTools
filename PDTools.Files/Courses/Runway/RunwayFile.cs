@@ -64,7 +64,7 @@ public class RunwayFile
     /// <summary>
     /// List of starts from the grid, as X Y Z angle.
     /// </summary>
-    public List<Vec3R> StartingGrid { get; set; } = new();
+    public List<RunwayStartingGridPosition> StartingGrid { get; set; } = new();
 
     /// <summary>
     /// List of checkpoints.
@@ -198,11 +198,11 @@ public class RunwayFile
             rwy.SectorInfos.Add(sector);
         }
 
-        rwy.StartingGrid = new List<Vec3R>((int)startingGridCount);
+        rwy.StartingGrid = new List<RunwayStartingGridPosition>((int)startingGridCount);
         for (int i = 0; i < startingGridCount; i++)
         {
             bs.Position = basePos + startingGridOffset + (i * Vec3R.Size);
-            Vec3R gridPos = Vec3R.FromStream(bs);
+            RunwayStartingGridPosition gridPos = RunwayStartingGridPosition.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
             rwy.StartingGrid.Add(gridPos);
         }
 
@@ -454,8 +454,8 @@ public class RunwayFile
     {
         for (int i = 0; i < StartingGrid.Count; i++)
         {
-            Vec3R startingGridPos = StartingGrid[i];
-            startingGridPos.ToStream(bs);
+            RunwayStartingGridPosition startingGridPos = StartingGrid[i];
+            startingGridPos.ToStream(bs, VersionMajor, VersionMinor);
         }
 
         bs.Align(0x10, grow: true);
