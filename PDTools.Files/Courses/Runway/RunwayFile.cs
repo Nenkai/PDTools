@@ -81,7 +81,7 @@ public class RunwayFile
     /// <summary>
     /// List of defined light sets for the runway. (GT6)
     /// </summary>
-    public RunwayCarLightSetCollection LightSets { get; set; }
+    public RunwayCarLightSetCollection LightSets { get; set; } = new();
 
     /// <summary>
     /// Old gadgets for the runway, GT5 and 6 does not support it in the RWY file.
@@ -348,7 +348,7 @@ public class RunwayFile
 
         long lightDefsOffset = WriteLightDefs(bs);
 
-        long lightSetsOffset = LightSets?.Sets?.Count != 0 ? bs.Position : 0;
+        long lightSetsOffset = LightSets.Sets.Count != 0 ? bs.Position : 0;
         WriteLightSets(bs);
 
         long gadgetsOffset = Gadgets.Count != 0 ? bs.Position : 0;
@@ -475,18 +475,21 @@ public class RunwayFile
     private long WriteLightDefs(BinaryStream bs)
     {
         // Write count before data (its read that way)
-        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+        if (LightDefs.Count > 0)
         {
-            bs.Align(0x10, grow: true);
-            bs.Position -= 4;
-            bs.WriteInt32(LightDefs.Count);
-        }
-        else // Start new padding + write count
-        {
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(LightDefs.Count);
+            if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+            {
+                bs.Align(0x10, grow: true);
+                bs.Position -= 4;
+                bs.WriteInt32(LightDefs.Count);
+            }
+            else // Start new padding + write count
+            {
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(LightDefs.Count);
+            }
         }
 
         long offset = LightDefs.Count != 0 ? bs.Position : 0;
@@ -496,7 +499,7 @@ public class RunwayFile
             lightDef.ToStream(bs, VersionMajor, VersionMinor);
         }
 
-        bs.Align(0x08, grow: true);
+        bs.Align(0x10, grow: true);
         return offset;
     }
 
@@ -568,6 +571,8 @@ public class RunwayFile
         {
             bs.WriteUInt16(BoundaryFaces[i]);
         }
+
+        bs.Align(0x10, grow: true);
     }
 
     private void WritePitStops(BinaryStream bs)
@@ -583,19 +588,22 @@ public class RunwayFile
 
     private long WritePitStopsAdjacents(BinaryStream bs)
     {
-        // Write count before data (its read that way)
-        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+        if (PitStopAdjacents.Count > 0)
         {
-            bs.Align(0x10, grow: true);
-            bs.Position -= 4;
-            bs.WriteInt32(PitStopAdjacents.Count);
-        }
-        else // Start new padding + write count
-        {
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(PitStopAdjacents.Count);
+            // Write count before data (its read that way)
+            if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+            {
+                bs.Align(0x10, grow: true);
+                bs.Position -= 4;
+                bs.WriteInt32(PitStopAdjacents.Count);
+            }
+            else // Start new padding + write count
+            {
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(PitStopAdjacents.Count);
+            }
         }
 
         long offset = PitStopAdjacents.Count != 0 ? bs.Position : 0;
@@ -612,20 +620,24 @@ public class RunwayFile
 
     private long WriteLightParticles(BinaryStream bs)
     {
-        // Write count before data (its read that way)
-        if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+        if (LightParticles.Count > 0)
         {
-            bs.Align(0x10, grow: true);
-            bs.Position -= 4;
-            bs.WriteInt32(LightParticles.Count);
+            // Write count before data (its read that way)
+            if (bs.Position % 0x10 >= 4) // Try to write using padding if possible
+            {
+                bs.Align(0x10, grow: true);
+                bs.Position -= 4;
+                bs.WriteInt32(LightParticles.Count);
+            }
+            else // Start new padding + write count
+            {
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(LightParticles.Count);
+            }
         }
-        else // Start new padding + write count
-        {
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(LightParticles.Count);
-        }
+        
 
         long offset = LightParticles.Count != 0 ? bs.Position : 0;
         for (int i = 0; i < LightParticles.Count; i++)
@@ -634,7 +646,7 @@ public class RunwayFile
             lightVFX.ToStream(bs, VersionMajor, VersionMinor);
         }
 
-        bs.Align(0x08, grow: true);
+        bs.Align(0x10, grow: true);
 
         return offset;
     }

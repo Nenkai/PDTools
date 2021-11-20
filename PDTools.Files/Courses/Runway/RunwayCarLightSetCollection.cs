@@ -34,6 +34,9 @@ namespace PDTools.Files.Courses.Runway
 
         public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
         {
+            if (Sets.Count == 0)
+                return;
+
             long basePos = bs.Position;
             long lastDataPos = bs.Position + 
                                sizeof(int) + (Sets.Count * sizeof(int)) // First 0 offset + entire offset list
