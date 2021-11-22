@@ -25,7 +25,7 @@ namespace PDTools.Files.Courses.Minimap
         public List<CourseMapFace> RoadFaces { get; set; } = new();
         public List<CourseMapFace> PitLaneFaces { get; set; } = new();
         public List<CourseMapFace> SectionFaces { get; set; } = new();
-        public List<CourseMapFace> UnkFaces { get; set; } = new();
+        public List<CourseMapFace> FullRoadLine { get; set; } = new();
 
         /// <summary>
         /// VCoord
@@ -124,7 +124,7 @@ namespace PDTools.Files.Courses.Minimap
                 for (int i = 0; i < unkMeshCount; i++)
                 {
                     CourseMapFace face = CourseMapFace.FromStream(bs);
-                    map.UnkFaces.Add(face);
+                    map.FullRoadLine.Add(face);
                 }
             }
 
