@@ -129,7 +129,9 @@ namespace PDTools.Files.Models
             var mesh = Meshes[meshIndex];
 
             MDL3FVFDefinition fvfDef = FVFs[mesh.FVFIndex];
-            if (!fvfDef.FieldDefinitions.TryGetValue("position", out var field))
+            if (!fvfDef.FieldDefinitions.TryGetValue("position", out var field) 
+                && !fvfDef.FieldDefinitions.TryGetValue("position_1", out field)
+                && !fvfDef.FieldDefinitions.TryGetValue("position_2", out field))
                 throw new InvalidOperationException("FVF does not contain 'position' field.");
 
             if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F)
@@ -139,17 +141,11 @@ namespace PDTools.Files.Models
 
             if (mesh.VerticesOffset != 0)
             {
-                Span<byte> buffer = new byte[fvfDef.VertexSize];
+                Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
-                    GetVerticesData(mesh, fvfDef, i, buffer);
-                    SpanReader sr = new SpanReader(buffer, Endian.Big);
-
-                    sr.Position += field.StartOffset;
-                    float x = sr.ReadSingle();
-                    float y = sr.ReadSingle();
-                    float z = sr.ReadSingle();
-                    arr[i] = new Vector3(x, y, z);
+                    GetVerticesData(mesh, fvfDef, field, i, vertBuffer);
+                    arr[i] = field.GetFVFFieldVector3(vertBuffer);
                 }
             }
             else
@@ -196,39 +192,24 @@ namespace PDTools.Files.Models
         public Vector2[] GetUVsOfMesh(ushort meshIndex)
         {
             var mesh = Meshes[meshIndex];
+            if (meshIndex == 1710)
+                ;
 
             MDL3FVFDefinition fvfDef = FVFs[mesh.FVFIndex];
-            if (!fvfDef.FieldDefinitions.TryGetValue("map12", out var field))
+            if (!fvfDef.FieldDefinitions.TryGetValue("map1", out var field) && 
+                !fvfDef.FieldDefinitions.TryGetValue("map12", out field) &&
+                !fvfDef.FieldDefinitions.TryGetValue("map12_2", out field))
                 return Array.Empty<Vector2>();
 
            var arr = new Vector2[mesh.VertexCount];
 
             if (mesh.VerticesOffset != 0)
             {
-                Span<byte> buffer = new byte[fvfDef.VertexSize];
+                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
-                    GetVerticesData(mesh, fvfDef, i, buffer);
-                    SpanReader sr = new SpanReader(buffer, Endian.Big);
-
-                    sr.Position += field.StartOffset;
-                    float u = 0, v = 0;
-                    if (field.FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1)
-                    {
-                        u = ((float)sr.ReadUInt16() * (1f / (float)short.MaxValue));
-                        v = ((float)sr.ReadUInt16() * (1f / (float)short.MaxValue));
-                    }
-                    else if (field.FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_UB)
-                    {
-                        u = ((float)sr.ReadByte() * (1f / (float)sbyte.MaxValue));
-                        v = ((float)sr.ReadByte() * (1f / (float)sbyte.MaxValue));
-                    }
-                    else
-                    {
-                        ;
-                    }
-
-                    arr[i] = new Vector2(u, v);
+                    GetVerticesData(mesh, fvfDef, field, i, buffer);
+                    arr[i] = field.GetFVFFieldVector2(buffer);
                 }
             }
             else
@@ -240,10 +221,20 @@ namespace PDTools.Files.Models
             return arr;
         }
 
-        public void GetVerticesData(MDL3Mesh meshInfo, MDL3FVFDefinition fvfDef, int vertIndex, Span<byte> buffer)
+
+        public void GetVerticesData(MDL3Mesh meshInfo, MDL3FVFDefinition fvfDef, MDL3FVFFieldDefinition field, int vertIndex, Span<byte> buffer)
         {
-            Stream.Position = BasePosition + meshInfo.VerticesOffset + (vertIndex * fvfDef.VertexSize);
-            Stream.Read(buffer);
+            if (field.ArrayIndex == 0)
+            {
+                Stream.Position = BasePosition + meshInfo.VerticesOffset + (vertIndex * fvfDef.VertexSize);
+                Stream.Read(buffer);
+            }
+            else
+            {
+                Stream.Position = BasePosition + meshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + (fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex);
+                Stream.Position += (vertIndex * fvfDef.ArrayDefinition.VertexSize);
+                Stream.Read(buffer);
+            }
         }
 
         private void ReadModelRenderParams(BinaryStream bs, long baseMdlPos, uint offset, uint count)

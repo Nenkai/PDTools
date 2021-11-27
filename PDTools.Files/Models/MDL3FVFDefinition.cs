@@ -12,6 +12,7 @@ namespace PDTools.Files.Models
     {
         public byte VertexSize { get; set; }
         public Dictionary<string, MDL3FVFFieldDefinition> FieldDefinitions = new();
+        public MDL3FVFFieldArrayDefinition ArrayDefinition { get; set; }
 
         public static MDL3FVFDefinition FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
         {
@@ -33,6 +34,11 @@ namespace PDTools.Files.Models
                 def.FieldDefinitions.Add(field.Name, field);
             }
 
+            if (unkOffset_0x74 != 0)
+            {
+                bs.Position = baseMdlPos + unkOffset_0x74;
+                def.ArrayDefinition = MDL3FVFFieldArrayDefinition.FromStream(bs, baseMdlPos, mdl3Version);
+            }
             return def;
         }
 
