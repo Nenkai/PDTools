@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Compression", "PDTo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.GrimPFS", "PDTools.GrimPFS\PDTools.GrimPFS.csproj", "{A5286241-02A8-4C5C-8F7E-3A984A57C0BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.Files", "PDTools.Files\PDTools.Files.csproj", "{72D26FBA-E068-43AE-B5C1-492E45586C13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Files", "PDTools.Files\PDTools.Files.csproj", "{72D26FBA-E068-43AE-B5C1-492E45586C13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
