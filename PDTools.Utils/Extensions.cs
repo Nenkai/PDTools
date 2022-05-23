@@ -39,6 +39,16 @@ namespace PDTools.Utils
             return sr.Encoding.GetString(chars);
         }
 
+        public static string AlignString(this string value, int align)
+        {
+            var sb = new StringBuilder(value);
+            while (sb.Length % align != 0)
+            {
+                sb.Append('\0');
+            }
+            return sb.ToString();
+        }
+
         /// <summary>
         /// Copies a stream to another, while also doing a crc of the data.
         /// </summary>
