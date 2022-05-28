@@ -27,10 +27,10 @@ using System.Numerics;
 
 namespace PDTools.Crypto
 {
-    /// <summary>
-    /// Class that can be used for ChaCha20 encryption / decryption
-    /// </summary>
-    public sealed class ChaCha20 : IDisposable
+	/// <summary>
+	/// Class that can be used for ChaCha20 encryption / decryption
+	/// </summary>
+	public sealed class ChaCha20 : IDisposable
 	{
 		/// <summary>
 		/// Only allowed key lenght in bytes
@@ -216,9 +216,9 @@ namespace PDTools.Crypto
 			// Align to next 0x40 block
 			int blockOffset = (int)(globalOffset & 0x3F);
 			if (blockOffset != 0)
-            {
+			{
 				while (blockOffset < 0x40 && numBytes > 0)
-                {
+				{
 					bytes[0] ^= tmp[blockOffset++];
 
 					bytes = bytes[1..];
@@ -248,10 +248,10 @@ namespace PDTools.Crypto
 					LongXor(x, tmp, bytes, numBytes);
 				}
 			}
-        }
+		}
 
 		private void AVX2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
-        {
+		{
 			Span<Vector256<byte>> tmpStateBlocks = MemoryMarshal.Cast<byte, Vector256<byte>>(tmpState);
 			Span<Vector256<byte>> blocks = MemoryMarshal.Cast<byte, Vector256<byte>>(inputBytes);
 
@@ -261,26 +261,26 @@ namespace PDTools.Crypto
 			long rem = inputSize;
 
 			while (rem >= 0x40)
-            {
-                blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[0]); blockI++;
-                blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[1]); blockI++;
+			{
+				blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[0]); blockI++;
+				blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[1]); blockI++;
 
-                Increment();
-                Hash(x, tmpState);
+				Increment();
+				Hash(x, tmpState);
 
-                pos += 0x40;
-                rem -= 0x40;
-            }
+				pos += 0x40;
+				rem -= 0x40;
+			}
 
-            int i = 0;
+			int i = 0;
 			while (rem > 0)
-            {
+			{
 				inputBytes[pos++] ^= tmpState[i++];
 				rem--;
 			}
 		}
 
-        private void SSE2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
+		private void SSE2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
 		{
 			Span<Vector128<byte>> tmpStateBlocks = MemoryMarshal.Cast<byte, Vector128<byte>>(tmpState);
 			Span<Vector128<byte>> blocks = MemoryMarshal.Cast<byte, Vector128<byte>>(inputBytes);
@@ -349,27 +349,27 @@ namespace PDTools.Crypto
 		}
 
 		private void Hash(Span<uint> x, Span<byte> tmp)
-        {
+		{
 			this.state.CopyTo(x);
 
 			for (int i = 0; i < 10; i++)
-            {
-                QuarterRound(x, 0, 4, 8, 12);
-                QuarterRound(x, 1, 5, 9, 13);
-                QuarterRound(x, 2, 6, 10, 14);
-                QuarterRound(x, 3, 7, 11, 15);
+			{
+				QuarterRound(x, 0, 4, 8, 12);
+				QuarterRound(x, 1, 5, 9, 13);
+				QuarterRound(x, 2, 6, 10, 14);
+				QuarterRound(x, 3, 7, 11, 15);
 
-                QuarterRound(x, 0, 5, 10, 15);
-                QuarterRound(x, 1, 6, 11, 12);
-                QuarterRound(x, 2, 7, 8, 13);
-                QuarterRound(x, 3, 4, 9, 14);
-            }
+				QuarterRound(x, 0, 5, 10, 15);
+				QuarterRound(x, 1, 6, 11, 12);
+				QuarterRound(x, 2, 7, 8, 13);
+				QuarterRound(x, 3, 4, 9, 14);
+			}
 
-            for (int i = 0; i < stateLength; i++)
-            {
-                Util.ToBytes(tmp, Util.Add(x[i], this.state[i]), 4 * i);
-            }
-        }
+			for (int i = 0; i < stateLength; i++)
+			{
+				Util.ToBytes(tmp, Util.Add(x[i], this.state[i]), 4 * i);
+			}
+		}
 
 		private void Increment()
 		{
