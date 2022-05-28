@@ -18,17 +18,19 @@
 // Re-adapted to use Span - Nenkai
 
 using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.CompilerServices; // For MethodImplOptions.AggressiveInlining
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
+using System.Numerics;
 
 namespace PDTools.Crypto
 {
-	/// <summary>
-	/// Class that can be used for ChaCha20 encryption / decryption
-	/// </summary>
-	public sealed class ChaCha20 : IDisposable
+    /// <summary>
+    /// Class that can be used for ChaCha20 encryption / decryption
+    /// </summary>
+    public sealed class ChaCha20 : IDisposable
 	{
 		/// <summary>
 		/// Only allowed key lenght in bytes
@@ -198,44 +200,157 @@ namespace PDTools.Crypto
 		/// <param name="output">Output byte array</param>
 		/// <param name="input">Input byte array</param>
 		/// <param name="numBytes">How many bytes to process</param>
-		private void WorkBytes(Span<byte> bytes, int numBytes, ulong globalOffset = 0, int offset = 0)
+		private void WorkBytes(Span<byte> bytes, int numBytes, ulong globalOffset = 0)
 		{
 			if (isDisposed)
 			{
 				throw new ObjectDisposedException("state", "The ChaCha state has been disposed");
 			}
 
-
-			uint[] x = new uint[stateLength];    // Working buffer
-			byte[] tmp = new byte[processBytesAtTime];  // Temporary buffer
-
-			ulong current = globalOffset & 0x3f;
+			Span<uint> x = stackalloc uint[stateLength];    // Working buffer
+			Span<byte> tmp = stackalloc byte[processBytesAtTime];  // Temporary buffer
 
 			this.state[12] = (uint)globalOffset / 0x40;
 			Hash(x, tmp);
-			
-			int pos = 0;
-			while (pos < offset + numBytes)
-			{
-				bytes[pos++] ^= tmp[(int)current++];
 
-				if (current >= 0x40)
+			// Align to next 0x40 block
+			int blockOffset = (int)(globalOffset & 0x3F);
+			if (blockOffset != 0)
+            {
+				while (blockOffset < 0x40 && numBytes > 0)
+                {
+					bytes[0] ^= tmp[blockOffset++];
+
+					bytes = bytes[1..];
+					numBytes--;
+				}
+
+				// Prepare for next blocks if there are some remaining
+				if (blockOffset >= 0x40 && numBytes > 0)
 				{
-					state[12]++;
-					if (state[12] == 0)
-						state[13]++;
-
+					Increment();
 					Hash(x, tmp);
+				}
+			}
 
-					current = 0;
+			if (numBytes > 0)
+			{
+				if (Avx2.IsSupported)
+				{
+					AVX2Xor(x, tmp, bytes, numBytes);
+				}
+				else if (Sse2.IsSupported)
+				{
+					SSE2Xor(x, tmp, bytes, numBytes);
+				}
+				else
+				{
+					LongXor(x, tmp, bytes, numBytes);
 				}
 			}
         }
 
-
-        private void Hash(uint[] x, byte[] tmp)
+		private void AVX2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
         {
-			Buffer.BlockCopy(this.state, 0, x, 0, stateLength * sizeof(uint));
+			Span<Vector256<byte>> tmpStateBlocks = MemoryMarshal.Cast<byte, Vector256<byte>>(tmpState);
+			Span<Vector256<byte>> blocks = MemoryMarshal.Cast<byte, Vector256<byte>>(inputBytes);
+
+			int blockI = 0;
+
+			int pos = 0;
+			long rem = inputSize;
+
+			while (rem >= 0x40)
+            {
+                blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[0]); blockI++;
+                blocks[blockI] = Avx2.Xor(blocks[blockI], tmpStateBlocks[1]); blockI++;
+
+                Increment();
+                Hash(x, tmpState);
+
+                pos += 0x40;
+                rem -= 0x40;
+            }
+
+            int i = 0;
+			while (rem > 0)
+            {
+				inputBytes[pos++] ^= tmpState[i++];
+				rem--;
+			}
+		}
+
+        private void SSE2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
+		{
+			Span<Vector128<byte>> tmpStateBlocks = MemoryMarshal.Cast<byte, Vector128<byte>>(tmpState);
+			Span<Vector128<byte>> blocks = MemoryMarshal.Cast<byte, Vector128<byte>>(inputBytes);
+
+			int blockI = 0;
+
+			int pos = 0;
+			long rem = inputSize;
+
+			while (rem >= 0x40)
+			{
+				blocks[blockI] = Sse2.Xor(blocks[blockI], tmpStateBlocks[0]); blockI++;
+				blocks[blockI] = Sse2.Xor(blocks[blockI], tmpStateBlocks[1]); blockI++;
+				blocks[blockI] = Sse2.Xor(blocks[blockI], tmpStateBlocks[2]); blockI++;
+				blocks[blockI] = Sse2.Xor(blocks[blockI], tmpStateBlocks[3]); blockI++;
+
+				Increment();
+				Hash(x, tmpState);
+
+				pos += 0x40;
+				rem -= 0x40;
+			}
+
+			int i = 0;
+			while (rem > 0)
+			{
+				inputBytes[pos++] ^= tmpState[i++];
+				rem--;
+			}
+		}
+
+		private void LongXor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
+		{
+			Span<long> tmpStateBlocks = MemoryMarshal.Cast<byte, long>(tmpState);
+			Span<long> blocks = MemoryMarshal.Cast<byte, long>(inputBytes);
+
+			int blockI = 0;
+
+			int pos = 0;
+			long rem = inputSize;
+
+			while (rem >= 0x40)
+			{
+				blocks[blockI++] ^= tmpStateBlocks[0];
+				blocks[blockI++] ^= tmpStateBlocks[1];
+				blocks[blockI++] ^= tmpStateBlocks[2];
+				blocks[blockI++] ^= tmpStateBlocks[3];
+				blocks[blockI++] ^= tmpStateBlocks[4];
+				blocks[blockI++] ^= tmpStateBlocks[5];
+				blocks[blockI++] ^= tmpStateBlocks[6];
+				blocks[blockI++] ^= tmpStateBlocks[7];
+
+				Increment();
+				Hash(x, tmpState);
+
+				pos += 0x40;
+				rem -= 0x40;
+			}
+
+			int i = 0;
+			while (rem > 0)
+			{
+				inputBytes[pos++] ^= tmpState[i++];
+				rem--;
+			}
+		}
+
+		private void Hash(Span<uint> x, Span<byte> tmp)
+        {
+			this.state.CopyTo(x);
 
 			for (int i = 0; i < 10; i++)
             {
@@ -256,31 +371,38 @@ namespace PDTools.Crypto
             }
         }
 
-        /// <summary>
-        /// The ChaCha Quarter Round operation. It operates on four 32-bit unsigned integers within the given buffer at indices a, b, c, and d.
-        /// </summary>
-        /// <remarks>
-        /// The ChaCha state does not have four integer numbers: it has 16. So the quarter-round operation works on only four of them -- hence the name. Each quarter round operates on four predetermined numbers in the ChaCha state.
-        /// See <a href="https://tools.ietf.org/html/rfc7539#page-4">ChaCha20 Spec Sections 2.1 - 2.2</a>.
-        /// </remarks>
-        /// <param name="x">A ChaCha state (vector). Must contain 16 elements.</param>
-        /// <param name="a">Index of the first number</param>
-        /// <param name="b">Index of the second number</param>
-        /// <param name="c">Index of the third number</param>
-        /// <param name="d">Index of the fourth number</param>
-        private static void QuarterRound(uint[] x, uint a, uint b, uint c, uint d)
+		private void Increment()
 		{
-			x[a] = Util.Add(x[a], x[b]);
-			x[d] = Util.Rotate(Util.XOr(x[d], x[a]), 16);
+			state[12]++;
+			if (state[12] == 0)
+				state[13]++;
+		}
+
+		/// <summary>
+		/// The ChaCha Quarter Round operation. It operates on four 32-bit unsigned integers within the given buffer at indices a, b, c, and d.
+		/// </summary>
+		/// <remarks>
+		/// The ChaCha state does not have four integer numbers: it has 16. So the quarter-round operation works on only four of them -- hence the name. Each quarter round operates on four predetermined numbers in the ChaCha state.
+		/// See <a href="https://tools.ietf.org/html/rfc7539#page-4">ChaCha20 Spec Sections 2.1 - 2.2</a>.
+		/// </remarks>
+		/// <param name="x">A ChaCha state (vector). Must contain 16 elements.</param>
+		/// <param name="a">Index of the first number</param>
+		/// <param name="b">Index of the second number</param>
+		/// <param name="c">Index of the third number</param>
+		/// <param name="d">Index of the fourth number</param>
+		private static void QuarterRound(Span<uint> x, int a, int b, int c, int d)
+		{
+			x[a] = x[a] + x[b];
+			x[d] = BitOperations.RotateLeft(x[d] ^ x[a], 16);
 
 			x[c] = Util.Add(x[c], x[d]);
-			x[b] = Util.Rotate(Util.XOr(x[b], x[c]), 12);
+			x[b] = BitOperations.RotateLeft(x[b] ^ x[c], 12);
 
 			x[a] = Util.Add(x[a], x[b]);
-			x[d] = Util.Rotate(Util.XOr(x[d], x[a]), 8);
+			x[d] = BitOperations.RotateLeft(x[d] ^ x[a], 8);
 
 			x[c] = Util.Add(x[c], x[d]);
-			x[b] = Util.Rotate(Util.XOr(x[b], x[c]), 7);
+			x[b] = BitOperations.RotateLeft(x[b] ^ x[c], 7);
 		}
 
 		#region Destructor and Disposer
@@ -340,21 +462,6 @@ namespace PDTools.Crypto
 	/// </summary>
 	public static class Util
 	{
-		/// <summary>
-		/// n-bit left rotation operation (towards the high bits) for 32-bit integers.
-		/// </summary>
-		/// <param name="v"></param>
-		/// <param name="c"></param>
-		/// <returns>The result of (v LEFTSHIFT c)</returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static uint Rotate(uint v, int c)
-		{
-			unchecked
-			{
-				return (v << c) | (v >> (32 - c));
-			}
-		}
-
 		/// <summary>
 		/// Unchecked integer exclusive or (XOR) operation.
 		/// </summary>
@@ -421,7 +528,7 @@ namespace PDTools.Crypto
 		/// <param name="input"></param>
 		/// <param name="outputOffset"></param>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void ToBytes(byte[] output, uint input, int outputOffset)
+		public static void ToBytes(Span<byte> output, uint input, int outputOffset)
 		{
 			unchecked
 			{

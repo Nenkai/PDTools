@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace PDTools.Crypto
+using PDTools.Crypto;
+
+namespace GTToolsSharp.Encryption
 {
     public class ChaCha20Stream : Stream
     {
@@ -32,7 +34,7 @@ namespace PDTools.Crypto
 
         public override void Flush()
         {
-            throw new NotImplementedException();
+            BaseStream.Flush();
         }
 
         public override int Read(byte[] buffer, int offset, int count)
