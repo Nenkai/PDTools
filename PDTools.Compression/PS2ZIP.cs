@@ -168,13 +168,22 @@ namespace PDTools.Compression
             if (data.Length <= headerSize) // Header size, if it's under, data is missing
                 return false;
 
+            var d = data.ToArray();
+
             deflatedData = new byte[(int)outSize];
+            var inflater = new ICSharpCode.SharpZipLib.Zip.Compression.Inflater(noHeader: true);
+            inflater.SetInput(d.ToArray(), 8, d.Length - 8);
+            inflater.Inflate(deflatedData);
+            
+
+            /* .NET 6 broke this
             fixed (byte* pBuffer = &data.Slice(headerSize)[0]) // Vol Header Size
             {
                 using var ums = new UnmanagedMemoryStream(pBuffer, data.Length - headerSize);
                 using var ds = new DeflateStream(ums, CompressionMode.Decompress);
-                ds.Read(deflatedData, 0, (int)outSize);
+                int read = ds.Read(deflatedData, 0, (int)outSize);
             }
+            */
 
             return true;
         }
