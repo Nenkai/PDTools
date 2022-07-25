@@ -7,12 +7,12 @@ using System.IO;
 
 using System.Buffers.Binary;
 
-namespace PDTools.Crypto
+namespace PDTools.Crypto.SimulationInterface
 {
     /// <summary>
     /// Used to decrypt packets from GT6's Simulator Interface.
     /// </summary>
-    public class SimulatorInterfaceCryptor
+    public class SimulatorInterfaceCryptor : ISimulationInterfaceCryptor
     {
         private Salsa20 _salsa;
 

@@ -31,7 +31,7 @@ namespace PDTools.Crypto
             m_state = new uint[0x10];
 
             // memcpy(vector, key, keyLength)
-            var keyUints = MemoryMarshal.Cast<byte, uint>(key);
+            var keyUints = MemoryMarshal.Cast<byte, uint>(key.AsSpan(0, keyLength));
             keyUints.CopyTo(m_state.AsSpan(1, keyLength / 4));
 
             byte[] constants = keyLength == 32 ? c_sigma : c_tau;
