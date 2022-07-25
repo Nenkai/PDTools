@@ -56,6 +56,10 @@ namespace SimulatorInterface
 
             Console.WriteLine("- Done. Waiting on packets.. (If this gets stuck, it failed to connect.)");
 
+            SimulatorPacketGT7 packet = new SimulatorPacketGT7();
+
+            bool firstPacket = true;
+
             // Will send a packet per tick - 60fps
             while (true)
             {
@@ -63,133 +67,67 @@ namespace SimulatorInterface
                     udpClient.Send(new byte[1] { (byte)'A' }, _endpoint);
 
                 byte[] data = udpClient.Receive(ref RemoteIpEndPoint);
+
+                if (firstPacket)
+                {
+                    Console.Clear();
+                    firstPacket = false;
+                }
+
                 if (data.Length != 0x128)
                     throw new InvalidDataException($"Expected packet size to be 0x128. Was {data.Length:X4} bytes.");
 
                 _cryptor.Decrypt(data);
+                packet.Read(data);
 
-                SpanReader sr = new SpanReader(data);
-                int magic = sr.ReadInt32();
-                if (magic != 0x47375330) // 0S7G - G7S0
-                    throw new InvalidDataException($"Unexpected packet magic '{magic}'.");
-
-                var dataPacket = new SimulatorPacketGT7();
-
-                dataPacket.Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Coords to track
-                dataPacket.Acceleration = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());  // Accel in track pixels
-                dataPacket.Rotation = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Pitch/Yaw/Roll all -1 to 1
-                dataPacket.RelativeOrientationToNorth = sr.ReadSingle();
-                dataPacket.Unknown_0x2C = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
-                dataPacket.Unknown_0x38 = sr.ReadSingle();
-                dataPacket.RPM = sr.ReadSingle();
-
-                // Skip IV
-                sr.Position += 8;
-
-                dataPacket.Unknown_0x48 = sr.ReadSingle();
-                dataPacket.MetersPerSecond = sr.ReadSingle();
-                dataPacket.TurboBoost = sr.ReadSingle();
-                dataPacket.Unknown_0x54 = sr.ReadSingle();
-                dataPacket.Unknown_Always85_0x58 = sr.ReadSingle();
-                dataPacket.Unknown_Always110_0x5C = sr.ReadSingle();
-                dataPacket.TireSurfaceTemperatureFL = sr.ReadSingle();
-                dataPacket.TireSurfaceTemperatureFR = sr.ReadSingle();
-                dataPacket.TireSurfaceTemperatureRL = sr.ReadSingle();
-                dataPacket.TireSurfaceTemperatureRR = sr.ReadSingle();
-                dataPacket.TotalTimeTicks = sr.ReadInt32(); // can't be more than MAX_LAPTIME1000 - which is 1209599999, or else it's set to -1
-                dataPacket.CurrentLap = sr.ReadInt32();
-                dataPacket.BestLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
-                dataPacket.LastLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
-                dataPacket.DayProgressionMS = sr.ReadInt32();
-                dataPacket.PreRaceStartPositionOrQualiPos = sr.ReadInt16();
-                dataPacket.NumCarsAtPreRace = sr.ReadInt16();
-                dataPacket.MinAlertRPM = sr.ReadInt16();
-                dataPacket.MaxAlertRPM = sr.ReadInt16();
-                dataPacket.CalculatedMaxSpeed = sr.ReadInt16();
-                dataPacket.Flags = (SimulatorFlags)sr.ReadInt16();
-
-                int bits = sr.ReadByte();
-                dataPacket.CurrentGear = (byte)(bits & 0b1111);
-                dataPacket.SuggestedGear = (byte)(bits >> 4);
-
-                dataPacket.Throttle = sr.ReadByte();
-                dataPacket.Brake = sr.ReadByte();
-
-                //short throttleAndBrake = sr.ReadInt16();
-                byte unknown = sr.ReadByte();
-
-                dataPacket.TireFL_Unknown0x94_0 = sr.ReadSingle();
-                dataPacket.TireFR_Unknown0x94_1 = sr.ReadSingle();
-                dataPacket.TireRL_Unknown0x94_2 = sr.ReadSingle();
-                dataPacket.TireRR_Unknown0x94_3 = sr.ReadSingle();
-                dataPacket.TireFL_Accel = sr.ReadSingle();
-                dataPacket.TireFR_Accel = sr.ReadSingle();
-                dataPacket.TireRL_Accel = sr.ReadSingle();
-                dataPacket.TireRR_Accel = sr.ReadSingle();
-                dataPacket.TireFL_UnknownB4 = sr.ReadSingle();
-                dataPacket.TireFR_UnknownB4 = sr.ReadSingle();
-                dataPacket.TireRL_UnknownB4 = sr.ReadSingle();
-                dataPacket.TireRR_UnknownB4 = sr.ReadSingle();
-                dataPacket.TireFL_UnknownC4 = sr.ReadSingle();
-                dataPacket.TireFR_UnknownC4 = sr.ReadSingle();
-                dataPacket.TireRL_UnknownC4 = sr.ReadSingle();
-                dataPacket.TireRR_UnknownC4 = sr.ReadSingle();
-
-                sr.Position += sizeof(int) * 8; // Seems to be reserved - server does not set that
-
-                dataPacket.Unknown_0xF4 = sr.ReadSingle();
-                dataPacket.Unknown_0xF8 = sr.ReadSingle();
-                dataPacket.RPMUnknown_0xFC = sr.ReadSingle();
-
-                dataPacket.Unknown_0x100_GearRelated = sr.ReadSingle();
-                for (var i = 0; i < 7; i++)
-                    dataPacket.GearRatios[i] = sr.ReadSingle();
-
-                // Normally this one is not set at all. The game memcpy's the gear ratios without bound checking
-                // The LC500 which has 10 gears even overrides the car code 😂
-                float empty_or_gearRatio8 = sr.ReadSingle();
-
-                dataPacket.CarCode = sr.ReadInt32();
-
-                PrintStatus(dataPacket);
+                PrintStatus(packet);
             }
         }
 
         private static void PrintStatus(SimulatorPacketGT7 packet)
         {
-            Console.Clear();
+            Console.SetCursorPosition(0, 0);
             Console.WriteLine($"Simulator Interface Packet");
             Console.WriteLine("[Car Data]");
-            Console.WriteLine($"- Car Code: {packet.CarCode}");
-            Console.WriteLine($"- Throttle: {packet.Throttle}");
-            Console.WriteLine($"- Brake: {packet.Brake}");
-            Console.WriteLine($"- RPM: {packet.RPM} - KPH: {Math.Round(packet.MetersPerSecond * 3.6, 2)}");
-            Console.WriteLine($"- Turbo Boost: {packet.TurboBoost}");
+            Console.WriteLine($"- Car Code: {packet.CarCode}   ");
+            Console.WriteLine($"- Throttle: {packet.Throttle}   ");
+            Console.WriteLine($"- Brake: {packet.Brake}   ");
+            Console.WriteLine($"- RPM: {packet.RPM} - KPH: {Math.Round(packet.MetersPerSecond * 3.6, 2)}   ");
+            Console.WriteLine($"- Turbo Boost: {((packet.TurboBoost - 1.0) * 100.0):F2}kPa   ");
 
             if (packet.SuggestedGear == 15)
-                Console.WriteLine($"- Gear: {packet.CurrentGear}");
+                Console.WriteLine($"- Gear: {packet.CurrentGear}                                    ");
             else
                 Console.WriteLine($"- Gear: {packet.CurrentGear} (Suggested: {packet.SuggestedGear})");
 
-            Console.WriteLine($"- Flags: {packet.Flags}");
+            Console.WriteLine($"- Flags: {packet.Flags,-100}");
             Console.WriteLine($"- Tires");
-            Console.WriteLine($"    FL:{Math.Round(packet.TireSurfaceTemperatureFL, 2)} FR:{Math.Round(packet.TireSurfaceTemperatureFR, 2)}");
-            Console.WriteLine($"    RL:{Math.Round(packet.TireSurfaceTemperatureRL, 2)} RR:{Math.Round(packet.TireSurfaceTemperatureRR, 2)}");
+            Console.WriteLine($"    FL:{packet.TireSurfaceTemperatureFL:F2} FR:{packet.TireSurfaceTemperatureFR:F2}");
+            Console.WriteLine($"    RL:{packet.TireSurfaceTemperatureRL:F2} RR:{packet.TireSurfaceTemperatureRR:F2}");
 
             Console.WriteLine();
             Console.WriteLine("[Race Data]");
 
-            Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(packet.TotalTimeTicks / 60)}");
-            Console.WriteLine($"- Current Lap: {packet.CurrentLap}");
-            Console.WriteLine($"- Best: {packet.BestLapTime}");
-            Console.WriteLine($"- Last: {packet.LastLapTime}");
-            Console.WriteLine($"- Time of Day: {TimeSpan.FromMilliseconds(packet.DayProgressionMS)}");
+            Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(packet.TotalTimeTicks / 60)}     ");
+            Console.WriteLine($"- Current Lap: {packet.CurrentLap}  ");
+
+            if (packet.BestLapTime.TotalMilliseconds == -1)
+                Console.WriteLine($"- Best: N/A      ");
+            else
+                Console.WriteLine($"- Best: {packet.BestLapTime:mm\\:ss\\.fff}     ");
+
+            if (packet.LastLapTime.TotalMilliseconds == -1)
+                Console.WriteLine($"- Last: N/A      ");
+            else
+                Console.WriteLine($"- Last: {packet.LastLapTime:mm\\:ss\\.fff}     ");
+
+            Console.WriteLine($"- Time of Day: {TimeSpan.FromMilliseconds(packet.DayProgressionMS):hh\\:mm\\:ss}     ");
 
             Console.WriteLine();
             Console.WriteLine("[Positional Information]");
-            Console.WriteLine($"- Position: {packet.Position}");
-            Console.WriteLine($"- Accel: {packet.Acceleration}");
-            Console.WriteLine($"- Rotation: {packet.Rotation}");
+            Console.WriteLine($"- Position: {packet.Position:F3}     ");
+            Console.WriteLine($"- Accel: {packet.Acceleration:F3}    ");
+            Console.WriteLine($"- Rotation: {packet.Rotation:F3}     ");
         }
     }
 }

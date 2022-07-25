@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Numerics;
+using Syroot.BinaryData.Memory;
 
 namespace SimulatorInterface
 {
@@ -160,26 +161,115 @@ namespace SimulatorInterface
         public float[] GearRatios { get; set; } = new float[7];
 
         public int CarCode { get; set; }
+
+        public void Read(Span<byte> data)
+        {
+            SpanReader sr = new SpanReader(data);
+            int magic = sr.ReadInt32();
+            if (magic != 0x47375330) // 0S7G - G7S0
+                throw new InvalidDataException($"Unexpected packet magic '{magic}'.");
+
+            var dataPacket = new SimulatorPacketGT7();
+
+            Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Coords to track
+            Acceleration = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());  // Accel in track pixels
+            Rotation = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Pitch/Yaw/Roll all -1 to 1
+            RelativeOrientationToNorth = sr.ReadSingle();
+            Unknown_0x2C = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
+            Unknown_0x38 = sr.ReadSingle();
+            RPM = sr.ReadSingle();
+
+            // Skip IV
+            sr.Position += 8;
+
+            Unknown_0x48 = sr.ReadSingle();
+            MetersPerSecond = sr.ReadSingle();
+            TurboBoost = sr.ReadSingle();
+            Unknown_0x54 = sr.ReadSingle();
+            Unknown_Always85_0x58 = sr.ReadSingle();
+            Unknown_Always110_0x5C = sr.ReadSingle();
+            TireSurfaceTemperatureFL = sr.ReadSingle();
+            TireSurfaceTemperatureFR = sr.ReadSingle();
+            TireSurfaceTemperatureRL = sr.ReadSingle();
+            TireSurfaceTemperatureRR = sr.ReadSingle();
+            TotalTimeTicks = sr.ReadInt32(); // can't be more than MAX_LAPTIME1000 - which is 1209599999, or else it's set to -1
+            CurrentLap = sr.ReadInt32();
+            BestLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
+            LastLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
+            DayProgressionMS = sr.ReadInt32();
+            PreRaceStartPositionOrQualiPos = sr.ReadInt16();
+            NumCarsAtPreRace = sr.ReadInt16();
+            MinAlertRPM = sr.ReadInt16();
+            MaxAlertRPM = sr.ReadInt16();
+            CalculatedMaxSpeed = sr.ReadInt16();
+            Flags = (SimulatorFlags)sr.ReadInt16();
+
+            int bits = sr.ReadByte();
+            CurrentGear = (byte)(bits & 0b1111);
+            SuggestedGear = (byte)(bits >> 4);
+
+            Throttle = sr.ReadByte();
+            Brake = sr.ReadByte();
+
+            //short throttleAndBrake = sr.ReadInt16();
+            byte unknown = sr.ReadByte();
+
+            TireFL_Unknown0x94_0 = sr.ReadSingle();
+            TireFR_Unknown0x94_1 = sr.ReadSingle();
+            TireRL_Unknown0x94_2 = sr.ReadSingle();
+            TireRR_Unknown0x94_3 = sr.ReadSingle();
+            TireFL_Accel = sr.ReadSingle();
+            TireFR_Accel = sr.ReadSingle();
+            TireRL_Accel = sr.ReadSingle();
+            TireRR_Accel = sr.ReadSingle();
+            TireFL_UnknownB4 = sr.ReadSingle();
+            TireFR_UnknownB4 = sr.ReadSingle();
+            TireRL_UnknownB4 = sr.ReadSingle();
+            TireRR_UnknownB4 = sr.ReadSingle();
+            TireFL_UnknownC4 = sr.ReadSingle();
+            TireFR_UnknownC4 = sr.ReadSingle();
+            TireRL_UnknownC4 = sr.ReadSingle();
+            TireRR_UnknownC4 = sr.ReadSingle();
+
+            sr.Position += sizeof(int) * 8; // Seems to be reserved - server does not set that
+
+            dataPacket.Unknown_0xF4 = sr.ReadSingle();
+            dataPacket.Unknown_0xF8 = sr.ReadSingle();
+            dataPacket.RPMUnknown_0xFC = sr.ReadSingle();
+
+            dataPacket.Unknown_0x100_GearRelated = sr.ReadSingle();
+            for (var i = 0; i < 7; i++)
+                dataPacket.GearRatios[i] = sr.ReadSingle();
+
+            // Normally this one is not set at all. The game memcpy's the gear ratios without bound checking
+            // The LC500 which has 10 gears even overrides the car code 😂
+            float empty_or_gearRatio8 = sr.ReadSingle();
+
+            dataPacket.CarCode = sr.ReadInt32();
+        }
     }
 
     [Flags]
     public enum SimulatorFlags : short
     {
+        None = 0,
+
         OnTrack = 1 << 0,
         Paused = 1 << 1,
-        Unknown3 = 1 << 2,
+        LoadingOrProcessing = 1 << 2,
 
         /// <summary>
         /// Needs more investigation
         /// </summary>
-        NoAssistsActive = 1 << 3,
-        Unknown5 = 1 << 4,
-        RevLimiterActive = 1 << 5,
+        HasThrottleControlMaybe = 1 << 3,
+
+        HasTurbo = 1 << 4,
+        RevLimiterBlinkAlertActive = 1 << 5,
         HandBrakeActive = 1 << 6,
         LightsActive = 1 << 7,
         HighBeamActive = 1 << 8,
         LowBeamActive = 1 << 9,
-        Unknown11 = 1 << 10,
+        ASMActive = 1 << 10,
         TCSActive = 1 << 11,
     }
 }
