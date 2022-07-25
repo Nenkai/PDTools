@@ -78,7 +78,7 @@ namespace SimulatorInterface
                 dataPacket.Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Coords to track
                 dataPacket.Acceleration = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());  // Accel in track pixels
                 dataPacket.Rotation = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Pitch/Yaw/Roll all -1 to 1
-                dataPacket.Unknown_0x28 = sr.ReadSingle();
+                dataPacket.RelativeOrientationToNorth = sr.ReadSingle();
                 dataPacket.Unknown_0x2C = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
                 dataPacket.Unknown_0x38 = sr.ReadSingle();
                 dataPacket.RPM = sr.ReadSingle();
@@ -141,10 +141,14 @@ namespace SimulatorInterface
                 dataPacket.Unknown_0xF8 = sr.ReadSingle();
                 dataPacket.RPMUnknown_0xFC = sr.ReadSingle();
 
+                dataPacket.Unknown_0x100_GearRelated = sr.ReadSingle();
                 for (var i = 0; i < 7; i++)
-                    dataPacket.Unknown_0x100[i] = sr.ReadSingle();
+                    dataPacket.GearRatios[i] = sr.ReadSingle();
 
-                sr.Position += 8;
+                // Normally this one is not set at all. The game memcpy's the gear ratios without bound checking
+                // The LC500 which has 10 gears even overrides the car code 😂
+                float empty_or_gearRatio8 = sr.ReadSingle();
+
                 dataPacket.CarCode = sr.ReadInt32();
 
                 PrintStatus(dataPacket);
@@ -175,8 +179,6 @@ namespace SimulatorInterface
             Console.WriteLine();
             Console.WriteLine("[Race Data]");
 
-            int a = (int)(packet.TotalTimeTicks * 0.16667);
-            TimeSpan.FromSeconds(a / 10);
             Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(packet.TotalTimeTicks / 60)}");
             Console.WriteLine($"- Current Lap: {packet.CurrentLap}");
             Console.WriteLine($"- Best: {packet.BestLapTime}");

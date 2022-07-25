@@ -25,7 +25,7 @@ namespace SimulatorInterface
         /// </summary>
         public Vector3 Rotation { get; set; }
 
-        public float Unknown_0x28 { get; set; }
+        public float RelativeOrientationToNorth { get; set; }
 
         /// <summary>
         /// Unknown. May be related to orientation.
@@ -155,10 +155,9 @@ namespace SimulatorInterface
         /// </summary>
         public float RPMUnknown_0xFC { get; set; }
 
-        /// <summary>
-        /// Constant depending on the car? Car dimensions? Actual array of 7 elements
-        /// </summary>
-        public float[] Unknown_0x100 { get; set; } = new float[7];
+        public float Unknown_0x100_GearRelated { get; set; }
+
+        public float[] GearRatios { get; set; } = new float[7];
 
         public int CarCode { get; set; }
     }
