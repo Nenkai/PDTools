@@ -24,14 +24,21 @@ namespace PDTools.SimulatorInterface
 
         public const int SendDelaySeconds = 10;
 
-        public const int ReceivePort = 33739;
-        public const int BindPort = 33740;
+        public const int ReceivePortDefault = 33339;
+        public const int BindPortDefault = 33340;
+
+        public const int ReceivePortGT7 = 33739;
+        public const int BindPortGT7 = 33740;
+
+        public int ReceivePort { get; }
+        public int BindPort { get; }
 
         public delegate void SimulatorDeletate(SimulatorPacketBase packet);
         public event SimulatorDeletate OnReceive;
 
         public bool Started { get; private set; }
         public SimulatorInterfaceGameType SimulatorGameType { get; private set; }
+
         /// <summary>
         /// Creates a new simulator interface.
         /// </summary>
@@ -41,6 +48,23 @@ namespace PDTools.SimulatorInterface
         {
             if (!IPAddress.TryParse(address, out IPAddress addr))
                 throw new ArgumentException("Could not parse IP Address.");
+
+            switch (gameType)
+            {
+                case SimulatorInterfaceGameType.GT7:
+                    ReceivePort = ReceivePortGT7;
+                    BindPort = BindPortGT7;
+                    break;
+
+                case SimulatorInterfaceGameType.GT6:
+                case SimulatorInterfaceGameType.GTSport:
+                    ReceivePort = ReceivePortDefault;
+                    BindPort = BindPortDefault;
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid game type.");
+            }
 
             _endpoint = new IPEndPoint(addr, ReceivePort);
             InitCryptor(gameType);
@@ -100,6 +124,10 @@ namespace PDTools.SimulatorInterface
             {
                 _cryptor = new SimulatorInterfaceCryptorGT7();
             }
+            else if (gameType == SimulatorInterfaceGameType.GTSport)
+            {
+                _cryptor = new SimulatorInterfaceCryptorGTSport();
+            }
             else if (gameType == SimulatorInterfaceGameType.GT6)
             {
                 throw new NotSupportedException($"'{gameType}' is not supported yet.");
@@ -116,7 +144,8 @@ namespace PDTools.SimulatorInterface
         {
             var packet = gameType switch
             {
-                SimulatorInterfaceGameType.GT7 => new SimulatorPacketGT7(),
+                SimulatorInterfaceGameType.GT7 => new SimulatorPacketG7S0(),
+                SimulatorInterfaceGameType.GTSport => new SimulatorPacketG7S0(),
                 _ => throw new NotSupportedException($"'{gameType}' is not supported yet."),
             };
 

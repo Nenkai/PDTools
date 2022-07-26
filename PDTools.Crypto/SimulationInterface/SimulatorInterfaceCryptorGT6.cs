@@ -30,8 +30,8 @@ namespace PDTools.Crypto.SimulationInterface
             // Reset offset
             _salsa.Set(0);
 
-            int iv1 = BinaryPrimitives.ReadInt32BigEndian(bytes.Slice(0x40)); // Seed IV is always located there
-            int iv2 = (int)(iv1 ^ 0xDEADBEEF) + 0x40; // Lol
+            int iv1 = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(0x40)); // Seed IV is always located there
+            int iv2 = (int)(iv1 ^ 0xDEADBEAF) + 0x40; // Lol
 
             Span<byte> iv = stackalloc byte[8];
             BinaryPrimitives.WriteInt32LittleEndian(iv, iv2);

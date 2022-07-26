@@ -10,7 +10,10 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SimulatorInterface
 {
-    public class SimulatorPacketGT7 : SimulatorPacketBase
+    /// <summary>
+    /// Used by GT7 and GT Sport.
+    /// </summary>
+    public class SimulatorPacketG7S0 : SimulatorPacketBase
     {
         /// <summary>
         /// Position on the track.
@@ -172,7 +175,7 @@ namespace PDTools.SimulatorInterface
             if (magic != 0x47375330) // 0S7G - G7S0
                 throw new InvalidDataException($"Unexpected packet magic '{magic}'.");
 
-            var dataPacket = new SimulatorPacketGT7();
+            var dataPacket = new SimulatorPacketG7S0();
 
             Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Coords to track
             Acceleration = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());  // Accel in track pixels

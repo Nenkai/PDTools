@@ -13,20 +13,21 @@ namespace SimulatorInterfaceTest
         {
             /* Mostly a test sample for using the Simulator Interface library */
 
-            Console.WriteLine("Simulator Interface GT7 - Nenkai#9075");
+            Console.WriteLine("Simulator Interface GT7/GTSport - Nenkai#9075");
             Console.WriteLine();
 
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: SimulatorInterface.exe <IP address of PS4/PS5>");
+                Console.WriteLine("Usage: SimulatorInterface.exe <IP address of PS4/PS5> ('--gtsport' for GT Sport support, optional: '--debug' to show unknown values)");
                 return;
             }
 
             _showUnknown = args.Contains("--debug");
+            bool gtsport = args.Contains("--gtsport");
 
             Console.WriteLine("Starting interface..");
 
-            SimulatorInterface simInterface = new SimulatorInterface(args[0], SimulatorInterfaceGameType.GT7);
+            SimulatorInterface simInterface = new SimulatorInterface(args[0], !gtsport ? SimulatorInterfaceGameType.GT7 : SimulatorInterfaceGameType.GTSport);
             simInterface.OnReceive += SimInterface_OnReceive;
 
             var cts = new CancellationTokenSource();
