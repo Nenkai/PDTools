@@ -140,9 +140,9 @@ namespace SimulatorInterface
                 Console.WriteLine($"0x38 (Float): {packet.Unknown_0x38:F2}   ");
                 Console.WriteLine($"0x48 (Float): {packet.Unknown_0x48:F2}   ");
                 Console.WriteLine($"0x54 (Float): {packet.Unknown_0x54:F2}   ");
-                Console.WriteLine($"0x94 (Float): {packet.TireFL_Unknown0x94_0:F2} {packet.TireFR_Unknown0x94_1} {packet.TireRL_Unknown0x94_2} {packet.TireRR_Unknown0x94_3}   ");
-                Console.WriteLine($"0xB4 (Float): {packet.TireFL_UnknownB4:F2} {packet.TireFR_UnknownB4} {packet.TireRL_UnknownB4} {packet.TireRL_UnknownB4}   ");
-                Console.WriteLine($"0xC4 (Float): {packet.TireFL_UnknownC4:F2} {packet.TireFR_UnknownC4} {packet.TireRL_UnknownC4} {packet.TireRL_UnknownC4}   ");
+                Console.WriteLine($"0x94 (Float): {packet.TireFL_Unknown0x94_0:F2} {packet.TireFR_Unknown0x94_1:F2} {packet.TireRL_Unknown0x94_2:F2} {packet.TireRR_Unknown0x94_3:F2}   ");
+                Console.WriteLine($"0xB4 (Float): {packet.TireFL_UnknownB4:F2} {packet.TireFR_UnknownB4:F2} {packet.TireRL_UnknownB4:F2} {packet.TireRL_UnknownB4:F2}   ");
+                Console.WriteLine($"0xC4 (Float): {packet.TireFL_UnknownC4:F2} {packet.TireFR_UnknownC4:F2} {packet.TireRL_UnknownC4:F2} {packet.TireRL_UnknownC4:F2}   ");
 
                 Console.WriteLine($"0xF4 (Float): {packet.Unknown_0xF4:F2}   ");
                 Console.WriteLine($"0xF8 (Float): {packet.Unknown_0xF8:F2}   ");
