@@ -86,7 +86,9 @@ namespace SimulatorInterface
         /// </summary>
         public int TotalTimeTicks { get; set; }
 
-        public int CurrentLap { get; set; }
+        public short LapCount { get; set; }
+
+        public short LapsInRace { get; set; }
 
         public TimeSpan BestLapTime { get; set; }
 
@@ -193,7 +195,8 @@ namespace SimulatorInterface
             TireSurfaceTemperatureRL = sr.ReadSingle();
             TireSurfaceTemperatureRR = sr.ReadSingle();
             TotalTimeTicks = sr.ReadInt32(); // can't be more than MAX_LAPTIME1000 - which is 1209599999, or else it's set to -1
-            CurrentLap = sr.ReadInt32();
+            LapCount = sr.ReadInt16();
+            LapsInRace = sr.ReadInt16();
             BestLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
             LastLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
             DayProgressionMS = sr.ReadInt32();

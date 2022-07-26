@@ -13,12 +13,12 @@ namespace SimulatorInterface
 
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: SimulatorInterface.exe <IP Address of PS4/PS5>");
+                Console.WriteLine("Usage: SimulatorInterface.exe <IP Address of PS4/PS5, i.e 192.168.0.20> (optional: '--debug' to show unknowns)");
                 return;
             }
 
 
-            SimulatorInterface simInterface = new SimulatorInterface(args[0]);
+            SimulatorInterface simInterface = new SimulatorInterface(args[0], args.Contains("--debug"));
             simInterface.Start();
         }
     }

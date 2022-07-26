@@ -22,13 +22,16 @@ namespace SimulatorInterface
         public const int ReceivePort = 33739;
         public const int BindPort = 33740;
 
-        public SimulatorInterface(string address)
+        public bool _debugUnknowns = false;
+
+        public SimulatorInterface(string address, bool debugUnknowns)
         {
             if (!IPAddress.TryParse(address, out IPAddress addr))
                 throw new ArgumentException("Could not parse IP Address.");
 
             _endpoint = new IPEndPoint(addr, ReceivePort);
             _cryptor = new SimulatorInterfaceCryptorGT7();
+            _debugUnknowns = debugUnknowns;
         }
 
         public bool Start()
@@ -80,11 +83,11 @@ namespace SimulatorInterface
                 _cryptor.Decrypt(data);
                 packet.Read(data);
 
-                PrintStatus(packet);
+                PrintStatus(packet, _debugUnknowns);
             }
         }
 
-        private static void PrintStatus(SimulatorPacketGT7 packet)
+        private static void PrintStatus(SimulatorPacketGT7 packet, bool showUnknown)
         {
             Console.SetCursorPosition(0, 0);
             Console.WriteLine($"Simulator Interface Packet");
@@ -92,7 +95,7 @@ namespace SimulatorInterface
             Console.WriteLine($"- Car Code: {packet.CarCode}   ");
             Console.WriteLine($"- Throttle: {packet.Throttle}   ");
             Console.WriteLine($"- Brake: {packet.Brake}   ");
-            Console.WriteLine($"- RPM: {packet.RPM} - KPH: {Math.Round(packet.MetersPerSecond * 3.6, 2)}   ");
+            Console.WriteLine($"- RPM: {packet.RPM} - KPH: {Math.Round(packet.MetersPerSecond * 3.6, 2)}     ");
             Console.WriteLine($"- Turbo Boost: {((packet.TurboBoost - 1.0) * 100.0):F2}kPa   ");
 
             if (packet.SuggestedGear == 15)
@@ -109,7 +112,7 @@ namespace SimulatorInterface
             Console.WriteLine("[Race Data]");
 
             Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(packet.TotalTimeTicks / 60)}     ");
-            Console.WriteLine($"- Current Lap: {packet.CurrentLap}  ");
+            Console.WriteLine($"- Current Lap: {packet.LapCount}  ");
 
             if (packet.BestLapTime.TotalMilliseconds == -1)
                 Console.WriteLine($"- Best: N/A      ");
@@ -128,6 +131,24 @@ namespace SimulatorInterface
             Console.WriteLine($"- Position: {packet.Position:F3}     ");
             Console.WriteLine($"- Accel: {packet.Acceleration:F3}    ");
             Console.WriteLine($"- Rotation: {packet.Rotation:F3}     ");
+
+            if (showUnknown)
+            {
+                Console.WriteLine();
+                Console.WriteLine("[Unknowns]");
+                Console.WriteLine($"0x2C (Vec3): {packet.Unknown_0x2C:F2}   ");
+                Console.WriteLine($"0x38 (Float): {packet.Unknown_0x38:F2}   ");
+                Console.WriteLine($"0x48 (Float): {packet.Unknown_0x48:F2}   ");
+                Console.WriteLine($"0x54 (Float): {packet.Unknown_0x54:F2}   ");
+                Console.WriteLine($"0x94 (Float): {packet.TireFL_Unknown0x94_0:F2} {packet.TireFR_Unknown0x94_1} {packet.TireRL_Unknown0x94_2} {packet.TireRR_Unknown0x94_3}   ");
+                Console.WriteLine($"0xB4 (Float): {packet.TireFL_UnknownB4:F2} {packet.TireFR_UnknownB4} {packet.TireRL_UnknownB4} {packet.TireRL_UnknownB4}   ");
+                Console.WriteLine($"0xC4 (Float): {packet.TireFL_UnknownC4:F2} {packet.TireFR_UnknownC4} {packet.TireRL_UnknownC4} {packet.TireRL_UnknownC4}   ");
+
+                Console.WriteLine($"0xF4 (Float): {packet.Unknown_0xF4:F2}   ");
+                Console.WriteLine($"0xF8 (Float): {packet.Unknown_0xF8:F2}   ");
+                Console.WriteLine($"0xFC (Float): {packet.RPMUnknown_0xFC:F2}   ");
+
+            }
         }
     }
 }
