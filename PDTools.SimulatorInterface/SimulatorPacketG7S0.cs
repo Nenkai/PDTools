@@ -142,10 +142,10 @@ namespace PDTools.SimulatorInterface
         public float TireRL_UnknownB4 { get; set; }
         public float TireRR_UnknownB4 { get; set; }
 
-        public float TireFL_UnknownC4 { get; set; }
-        public float TireFR_UnknownC4 { get; set; }
-        public float TireRL_UnknownC4 { get; set; }
-        public float TireRR_UnknownC4 { get; set; }
+        public float TireFL_SusHeight { get; set; }
+        public float TireFR_SusHeight { get; set; }
+        public float TireRL_SusHeight { get; set; }
+        public float TireRR_SusHeight { get; set; }
 
         /// <summary>
         /// Seems to be related to assist, set to 1 when shifting, or handbraking
@@ -174,8 +174,6 @@ namespace PDTools.SimulatorInterface
             int magic = sr.ReadInt32();
             if (magic != 0x47375330) // 0S7G - G7S0
                 throw new InvalidDataException($"Unexpected packet magic '{magic}'.");
-
-            var dataPacket = new SimulatorPacketG7S0();
 
             Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle()); // Coords to track
             Acceleration = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());  // Accel in track pixels
@@ -233,26 +231,27 @@ namespace PDTools.SimulatorInterface
             TireFR_UnknownB4 = sr.ReadSingle();
             TireRL_UnknownB4 = sr.ReadSingle();
             TireRR_UnknownB4 = sr.ReadSingle();
-            TireFL_UnknownC4 = sr.ReadSingle();
-            TireFR_UnknownC4 = sr.ReadSingle();
-            TireRL_UnknownC4 = sr.ReadSingle();
-            TireRR_UnknownC4 = sr.ReadSingle();
+            TireFL_SusHeight = sr.ReadSingle();
+            TireFR_SusHeight = sr.ReadSingle();
+            TireRL_SusHeight = sr.ReadSingle();
+            TireRR_SusHeight = sr.ReadSingle();
 
             sr.Position += sizeof(int) * 8; // Seems to be reserved - server does not set that
 
-            dataPacket.Unknown_0xF4 = sr.ReadSingle();
-            dataPacket.Unknown_0xF8 = sr.ReadSingle();
-            dataPacket.RPMUnknown_0xFC = sr.ReadSingle();
+            Unknown_0xF4 = sr.ReadSingle();
+            Unknown_0xF8 = sr.ReadSingle();
+            RPMUnknown_0xFC = sr.ReadSingle();
 
-            dataPacket.Unknown_0x100_GearRelated = sr.ReadSingle();
+            Unknown_0x100_GearRelated = sr.ReadSingle();
+
             for (var i = 0; i < 7; i++)
-                dataPacket.GearRatios[i] = sr.ReadSingle();
+                GearRatios[i] = sr.ReadSingle();
 
             // Normally this one is not set at all. The game memcpy's the gear ratios without bound checking
             // The LC500 which has 10 gears even overrides the car code 😂
             float empty_or_gearRatio8 = sr.ReadSingle();
 
-            dataPacket.CarCode = sr.ReadInt32();
+            CarCode = sr.ReadInt32();
         }
 
         public override void PrintPacket(bool debug = false)
@@ -270,11 +269,16 @@ namespace PDTools.SimulatorInterface
                 Console.WriteLine($"- Gear: {CurrentGear}                                    ");
             else
                 Console.WriteLine($"- Gear: {CurrentGear} (Suggested: {SuggestedGear})");
+            Console.WriteLine($"- Calculated Max Speed: {CalculatedMaxSpeed}  ");
+            Console.WriteLine($"- Min/Max RPM Alerts: {MinAlertRPM} - {MaxAlertRPM}  ");
 
             Console.WriteLine($"- Flags: {Flags,-100}");
-            Console.WriteLine($"- Tires");
-            Console.WriteLine($"    FL:{TireSurfaceTemperatureFL:F2} FR:{TireSurfaceTemperatureFR:F2}");
-            Console.WriteLine($"    RL:{TireSurfaceTemperatureRL:F2} RR:{TireSurfaceTemperatureRR:F2}");
+            Console.WriteLine($"- Gear Ratios: {string.Join(", ", GearRatios)}");
+            Console.WriteLine($"- Tire Heights / FL:{TireFL_SusHeight:F2} FR:{TireFR_SusHeight:F2} RL:{TireRL_SusHeight:F2} RR:{TireRR_SusHeight:F2}");
+
+            Console.WriteLine($"- Tire Temperature");
+            Console.WriteLine($"    FL: {TireSurfaceTemperatureFL:F2}°C | FR: {TireSurfaceTemperatureFR:F2}°C   ");
+            Console.WriteLine($"    RL: {TireSurfaceTemperatureRL:F2}°C | RR: {TireSurfaceTemperatureRR:F2}°C   ");
 
             Console.WriteLine();
             Console.WriteLine("[Race Data]");
@@ -293,6 +297,8 @@ namespace PDTools.SimulatorInterface
                 Console.WriteLine($"- Last: {LastLapTime:mm\\:ss\\.fff}     ");
 
             Console.WriteLine($"- Time of Day: {TimeSpan.FromMilliseconds(DayProgressionMS):hh\\:mm\\:ss}     ");
+            Console.WriteLine($"- PreRaceStartPositionOrQualiPos: {PreRaceStartPositionOrQualiPos}");
+            Console.WriteLine($"- NumCarsAtPreRace: {NumCarsAtPreRace}");
 
             Console.WriteLine();
             Console.WriteLine("[Positional Information]");
@@ -308,13 +314,12 @@ namespace PDTools.SimulatorInterface
                 Console.WriteLine($"0x38 (Float): {Unknown_0x38:F2}   ");
                 Console.WriteLine($"0x48 (Float): {Unknown_0x48:F2}   ");
                 Console.WriteLine($"0x54 (Float): {Unknown_0x54:F2}   ");
-                Console.WriteLine($"0x94 (Float): {TireFL_Unknown0x94_0:F2} {TireFR_Unknown0x94_1:F2} {TireRL_Unknown0x94_2:F2} {TireRR_Unknown0x94_3:F2}   ");
-                Console.WriteLine($"0xB4 (Float): {TireFL_UnknownB4:F2} {TireFR_UnknownB4:F2} {TireRL_UnknownB4:F2} {TireRL_UnknownB4:F2}   ");
-                Console.WriteLine($"0xC4 (Float): {TireFL_UnknownC4:F2} {TireFR_UnknownC4:F2} {TireRL_UnknownC4:F2} {TireRL_UnknownC4:F2}   ");
-
+                Console.WriteLine($"0x94 Tire/Wheel Related (Float): {TireFL_Unknown0x94_0:F2} {TireFR_Unknown0x94_1:F2} {TireRL_Unknown0x94_2:F2} {TireRR_Unknown0x94_3:F2}   ");
+                Console.WriteLine($"0xB4 Tire/Wheel Related (Float): {TireFL_UnknownB4:F2} {TireFR_UnknownB4:F2} {TireRL_UnknownB4:F2} {TireRL_UnknownB4:F2}   ");
                 Console.WriteLine($"0xF4 (Float): {Unknown_0xF4:F2}   ");
                 Console.WriteLine($"0xF8 (Float): {Unknown_0xF8:F2}   ");
                 Console.WriteLine($"0xFC (Float): {RPMUnknown_0xFC:F2}   ");
+                Console.WriteLine($"0x100 Gear Ratio Related (Float): {Unknown_0x100_GearRelated}   ");
 
             }
         }

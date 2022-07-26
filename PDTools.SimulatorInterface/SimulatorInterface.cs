@@ -100,6 +100,7 @@ namespace PDTools.SimulatorInterface
                 _cryptor.Decrypt(result.Buffer);
 
                 SimulatorPacketBase packet = InitPacket(SimulatorGameType);
+                packet.SetPacketInfo(result.RemoteEndPoint, DateTimeOffset.Now);
                 packet.Read(result.Buffer);
 
                 if (cts.IsCancellationRequested)
