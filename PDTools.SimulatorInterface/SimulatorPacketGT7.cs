@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
 
 using System.Numerics;
 using Syroot.BinaryData.Memory;
 
-namespace SimulatorInterface
+namespace PDTools.SimulatorInterface
 {
-    public class SimulatorPacketGT7
+    public class SimulatorPacketGT7 : SimulatorPacketBase
     {
         /// <summary>
         /// Position on the track.
@@ -164,7 +165,7 @@ namespace SimulatorInterface
 
         public int CarCode { get; set; }
 
-        public void Read(Span<byte> data)
+        public override void Read(Span<byte> data)
         {
             SpanReader sr = new SpanReader(data);
             int magic = sr.ReadInt32();
@@ -249,6 +250,70 @@ namespace SimulatorInterface
             float empty_or_gearRatio8 = sr.ReadSingle();
 
             dataPacket.CarCode = sr.ReadInt32();
+        }
+
+        public override void PrintPacket(bool debug = false)
+        {
+            Console.SetCursorPosition(0, 0);
+            Console.WriteLine($"Simulator Interface Packet                    ");
+            Console.WriteLine("[Car Data]          ");
+            Console.WriteLine($"- Car Code: {CarCode}         ");
+            Console.WriteLine($"- Throttle: {Throttle}   ");
+            Console.WriteLine($"- Brake: {Brake}   ");
+            Console.WriteLine($"- RPM: {RPM} - KPH: {Math.Round(MetersPerSecond * 3.6, 2)}     ");
+            Console.WriteLine($"- Turbo Boost: {((TurboBoost - 1.0) * 100.0):F2}kPa   ");
+
+            if (SuggestedGear == 15)
+                Console.WriteLine($"- Gear: {CurrentGear}                                    ");
+            else
+                Console.WriteLine($"- Gear: {CurrentGear} (Suggested: {SuggestedGear})");
+
+            Console.WriteLine($"- Flags: {Flags,-100}");
+            Console.WriteLine($"- Tires");
+            Console.WriteLine($"    FL:{TireSurfaceTemperatureFL:F2} FR:{TireSurfaceTemperatureFR:F2}");
+            Console.WriteLine($"    RL:{TireSurfaceTemperatureRL:F2} RR:{TireSurfaceTemperatureRR:F2}");
+
+            Console.WriteLine();
+            Console.WriteLine("[Race Data]");
+
+            Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(TotalTimeTicks / 60)}     ");
+            Console.WriteLine($"- Current Lap: {LapCount}  ");
+
+            if (BestLapTime.TotalMilliseconds == -1)
+                Console.WriteLine($"- Best: N/A      ");
+            else
+                Console.WriteLine($"- Best: {BestLapTime:mm\\:ss\\.fff}     ");
+
+            if (LastLapTime.TotalMilliseconds == -1)
+                Console.WriteLine($"- Last: N/A      ");
+            else
+                Console.WriteLine($"- Last: {LastLapTime:mm\\:ss\\.fff}     ");
+
+            Console.WriteLine($"- Time of Day: {TimeSpan.FromMilliseconds(DayProgressionMS):hh\\:mm\\:ss}     ");
+
+            Console.WriteLine();
+            Console.WriteLine("[Positional Information]");
+            Console.WriteLine($"- Position: {Position:F3}     ");
+            Console.WriteLine($"- Accel: {Acceleration:F3}    ");
+            Console.WriteLine($"- Rotation: {Rotation:F3}     ");
+
+            if (debug)
+            {
+                Console.WriteLine();
+                Console.WriteLine("[Unknowns]");
+                Console.WriteLine($"0x2C (Vec3): {Unknown_0x2C:F2}   ");
+                Console.WriteLine($"0x38 (Float): {Unknown_0x38:F2}   ");
+                Console.WriteLine($"0x48 (Float): {Unknown_0x48:F2}   ");
+                Console.WriteLine($"0x54 (Float): {Unknown_0x54:F2}   ");
+                Console.WriteLine($"0x94 (Float): {TireFL_Unknown0x94_0:F2} {TireFR_Unknown0x94_1:F2} {TireRL_Unknown0x94_2:F2} {TireRR_Unknown0x94_3:F2}   ");
+                Console.WriteLine($"0xB4 (Float): {TireFL_UnknownB4:F2} {TireFR_UnknownB4:F2} {TireRL_UnknownB4:F2} {TireRL_UnknownB4:F2}   ");
+                Console.WriteLine($"0xC4 (Float): {TireFL_UnknownC4:F2} {TireFR_UnknownC4:F2} {TireRL_UnknownC4:F2} {TireRL_UnknownC4:F2}   ");
+
+                Console.WriteLine($"0xF4 (Float): {Unknown_0xF4:F2}   ");
+                Console.WriteLine($"0xF8 (Float): {Unknown_0xF8:F2}   ");
+                Console.WriteLine($"0xFC (Float): {RPMUnknown_0xFC:F2}   ");
+
+            }
         }
     }
 

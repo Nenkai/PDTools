@@ -23,7 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Files", "PDTools.Fi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.RText", "PDTools.RText\PDTools.RText.csproj", "{6A553661-9746-4CC4-8DF8-DA036E8031C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimulatorInterface", "SimulatorInterface\SimulatorInterface.csproj", "{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimulatorInterfaceTest", "SimulatorInterfaceTest\SimulatorInterfaceTest.csproj", "{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.SimulatorInterface", "PDTools.SimulatorInterface\PDTools.SimulatorInterface.csproj", "{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

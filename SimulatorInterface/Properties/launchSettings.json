@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "SimulatorInterface": {
-      "commandName": "Project",
-      "commandLineArgs": "192.168.0.25"
-    }
-  }
-}

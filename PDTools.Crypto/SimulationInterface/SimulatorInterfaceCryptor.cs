@@ -12,13 +12,13 @@ namespace PDTools.Crypto.SimulationInterface
     /// <summary>
     /// Used to decrypt packets from GT6's Simulator Interface.
     /// </summary>
-    public class SimulatorInterfaceCryptor : ISimulationInterfaceCryptor
+    public class SimulatorInterfaceCryptorGT6 : ISimulationInterfaceCryptor
     {
         private Salsa20 _salsa;
 
         public const string Key = "Simulator Interface Packet ver 0.0";
 
-        public SimulatorInterfaceCryptor()
+        public SimulatorInterfaceCryptorGT6()
         {
             _salsa = new Salsa20(Encoding.ASCII.GetBytes(Key), 0x22);
         }
