@@ -9,7 +9,14 @@ namespace PDTools.SimulatorInterface
 {
     public abstract class SimulatorPacketBase
     {
+        /// <summary>
+        /// Peer address.
+        /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
+
+        /// <summary>
+        /// Date when this packet was received.
+        /// </summary>
         public DateTimeOffset DateReceived { get; private set; }
 
         public void SetPacketInfo(IPEndPoint remoteEndPoint, DateTimeOffset dateReceived)

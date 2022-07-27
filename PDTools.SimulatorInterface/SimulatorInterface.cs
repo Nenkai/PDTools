@@ -33,8 +33,8 @@ namespace PDTools.SimulatorInterface
         public int ReceivePort { get; }
         public int BindPort { get; }
 
-        public delegate void SimulatorDeletate(SimulatorPacketBase packet);
-        public event SimulatorDeletate OnReceive;
+        public delegate void SimulatorDelegate(SimulatorPacketBase packet);
+        public event SimulatorDelegate OnReceive;
 
         public bool Started { get; private set; }
         public SimulatorInterfaceGameType SimulatorGameType { get; private set; }
