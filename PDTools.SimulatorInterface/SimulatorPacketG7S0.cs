@@ -56,7 +56,7 @@ namespace PDTools.SimulatorInterface
         public float Unknown_0x48 { get; set; }
 
         /// <summary>
-        /// Current speed in meters per second. <see cref="Math.Round(MetersPerSecond * 3.6, 2)"/> to get it in KPH.
+        /// Current speed in meters per second. <see cref="MetersPerSecond * 3.6"/> to get it in KPH.
         /// </summary>
         public float MetersPerSecond { get; set; }
 
@@ -188,22 +188,22 @@ namespace PDTools.SimulatorInterface
         public float TireRR_Unknown0x94_3 { get; set; }
 
         /// <summary>
-        /// Front Left Tire - Revolutions Per Second
+        /// Front Left Tire - Revolutions Per Second (in Radians)
         /// </summary>
         public float TireFL_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Front Right Tire - Revolutions Per Second
+        /// Front Right Tire - Revolutions Per Second (in Radians)
         /// </summary>
         public float TireFR_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Rear Left Tire - Revolutions Per Second
+        /// Rear Left Tire - Revolutions Per Second (in Radians)
         /// </summary>
         public float TireRL_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Rear Right Tire - Revolutions Per Second
+        /// Rear Right Tire - Revolutions Per Second (in Radians)
         /// </summary>
         public float TireRR_RevPerSecond { get; set; }
 
