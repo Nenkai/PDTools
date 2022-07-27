@@ -36,9 +36,9 @@ namespace PDTools.SimulatorInterface
         public float RelativeOrientationToNorth { get; set; }
 
         /// <summary>
-        /// Unknown. May be related to orientation.
+        /// How fast the car turns around axes. (In radians/second, -1 to 1).
         /// </summary>
-        public Vector3 Unknown_0x2C { get; set; }
+        public Vector3 AngularVelocity { get; set; }
 
         /// <summary>
         /// Body height.
@@ -71,14 +71,14 @@ namespace PDTools.SimulatorInterface
         public float OilPressure { get; set; }
 
         /// <summary>
-        /// Game will always send this.
+        /// Games will always send 85.
         /// </summary>
-        public float Unknown_Always85_0x58 { get; set; }
+        public float WaterTemperature { get; set; }
 
         /// <summary>
-        /// Game will always send this.
+        /// Games will always send 110.
         /// </summary>
-        public float Unknown_Always110_0x5C { get; set; }
+        public float OilTemperature { get; set; }
 
         /// <summary>
         /// Front Left Tire - Surface Temperature (in °C)
@@ -101,9 +101,9 @@ namespace PDTools.SimulatorInterface
         public float TireRR_SurfaceTemperature { get; set; }
 
         /// <summary>
-        /// Can't be more than 1000 laps worth - which is 1209599999, or else it's set to -1
+        /// Id of the packet for proper ordering.
         /// </summary>
-        public int TotalTimeTicks { get; set; }
+        public int PacketId { get; set; }
 
         /// <summary>
         /// Current lap count.
@@ -285,7 +285,7 @@ namespace PDTools.SimulatorInterface
             Velocity = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
             Rotation = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
             RelativeOrientationToNorth = sr.ReadSingle();
-            Unknown_0x2C = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
+            AngularVelocity = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
             BodyHeight = sr.ReadSingle();
             EngineRPM = sr.ReadSingle();
 
@@ -296,13 +296,13 @@ namespace PDTools.SimulatorInterface
             MetersPerSecond = sr.ReadSingle();
             TurboBoost = sr.ReadSingle();
             OilPressure = sr.ReadSingle();
-            Unknown_Always85_0x58 = sr.ReadSingle();
-            Unknown_Always110_0x5C = sr.ReadSingle();
+            WaterTemperature = sr.ReadSingle();
+            OilTemperature = sr.ReadSingle();
             TireFL_SurfaceTemperature = sr.ReadSingle();
             TireFR_SurfaceTemperature = sr.ReadSingle();
             TireRL_SurfaceTemperature = sr.ReadSingle();
             TireRR_SurfaceTemperature = sr.ReadSingle();
-            TotalTimeTicks = sr.ReadInt32();
+            PacketId = sr.ReadInt32();
             LapCount = sr.ReadInt16();
             LapsInRace = sr.ReadInt16();
             BestLapTime = TimeSpan.FromMilliseconds(sr.ReadInt32());
@@ -396,7 +396,7 @@ namespace PDTools.SimulatorInterface
             Console.WriteLine();
             Console.WriteLine("[Race Data]");
 
-            Console.WriteLine($"- Total Session Time: {TimeSpan.FromSeconds(TotalTimeTicks / 60)}     ");
+            Console.WriteLine($"- Packet Id: {PacketId}     ");
             Console.WriteLine($"- Current Lap: {LapCount}  ");
 
             if (BestLapTime.TotalMilliseconds == -1)
@@ -416,14 +416,14 @@ namespace PDTools.SimulatorInterface
             Console.WriteLine();
             Console.WriteLine("[Positional Information]");
             Console.WriteLine($"- Position: {Position:F3}     ");
-            Console.WriteLine($"- Accel: {Velocity:F3}    ");
+            Console.WriteLine($"- Velocity: {Velocity:F3}    ");
             Console.WriteLine($"- Rotation: {Rotation:F3}     ");
+            Console.WriteLine($"- Angular Velocity: {AngularVelocity:F2}   ");
 
             if (debug)
             {
                 Console.WriteLine();
                 Console.WriteLine("[Unknowns]");
-                Console.WriteLine($"0x2C (Vec3): {Unknown_0x2C:F2}   ");
                 Console.WriteLine($"0x48 (Float): {Unknown_0x48:F2}   ");
                 Console.WriteLine($"0x93 (byte): {Unknown0x93:F2}   ");
                 Console.WriteLine($"0x94 Tire/Wheel Related (Float): {TireFL_Unknown0x94_0:F2} {TireFR_Unknown0x94_1:F2} {TireRL_Unknown0x94_2:F2} {TireRR_Unknown0x94_3:F2}   ");
