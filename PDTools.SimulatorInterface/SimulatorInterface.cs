@@ -5,8 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using Syroot.BinaryData.Memory;
 using System.Numerics;
+using System.Threading;
+using System.IO;
+
+using Syroot.BinaryData.Memory;
 
 using PDTools.Crypto.SimulationInterface;
 
@@ -92,15 +95,20 @@ namespace PDTools.SimulatorInterface
             {
                 if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
                     await SendHeartbeat(cts.Token);
-  
+
+#if NET6_0_OR_GREATER
                 UdpReceiveResult result = await _udpClient.ReceiveAsync(cts.Token);
+#else
+                UdpReceiveResult result = await _udpClient.ReceiveAsync().WithCancellation(cts.Token);
+#endif
+
                 if (result.Buffer.Length != 0x128)
                     throw new InvalidDataException($"Expected packet size to be 0x128. Was {result.Buffer.Length:X4} bytes.");
 
                 _cryptor.Decrypt(result.Buffer);
 
                 SimulatorPacketBase packet = InitPacket(SimulatorGameType);
-                packet.SetPacketInfo(result.RemoteEndPoint, DateTimeOffset.Now);
+                packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
                 packet.Read(result.Buffer);
 
                 if (cts.IsCancellationRequested)
@@ -115,7 +123,11 @@ namespace PDTools.SimulatorInterface
 
         private async Task SendHeartbeat(CancellationToken ct)
         {
+#if NET6_0_OR_GREATER
             await _udpClient.SendAsync(new byte[1] { (byte)'A' }, _endpoint, ct);
+#else
+            await _udpClient.SendAsync(new byte[1] { (byte)'A' }, 1, _endpoint).WithCancellation(ct);
+#endif
             _lastSentHeartbeat = DateTime.UtcNow;
         }
 
@@ -143,14 +155,15 @@ namespace PDTools.SimulatorInterface
 
         private SimulatorPacketBase InitPacket(SimulatorInterfaceGameType gameType)
         {
-            var packet = gameType switch
+            switch (gameType)
             {
-                SimulatorInterfaceGameType.GT7 => new SimulatorPacketG7S0(),
-                SimulatorInterfaceGameType.GTSport => new SimulatorPacketG7S0(),
-                _ => throw new NotSupportedException($"'{gameType}' is not supported yet."),
-            };
+                case SimulatorInterfaceGameType.GT7:
+                case SimulatorInterfaceGameType.GTSport:
+                    return new SimulatorPacketG7S0();
 
-            return packet;
+                default:
+                    throw new NotSupportedException($"'{gameType}' is not supported yet.");
+            }
         }
 
         public void Dispose()

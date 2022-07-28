@@ -1,6 +1,11 @@
-﻿
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Net;
+
 using PDTools.SimulatorInterface;
 
 namespace SimulatorInterfaceTest
@@ -44,6 +49,10 @@ namespace SimulatorInterfaceTest
             {
                 Console.WriteLine($"Simulator Interface ending..");
             }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Errored during simulation: {e.Message}");
+            }
             finally
             {
                 // Important to clear up underlaying socket
@@ -55,6 +64,9 @@ namespace SimulatorInterfaceTest
         {
             Console.SetCursorPosition(0, 0);
             packet.PrintPacket(_showUnknown);
+
+            // Do something with game specific packet
+            var gt7Packet = packet as SimulatorPacketG7S0;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace PDTools.Crypto.SimulationInterface
 
             Span<byte> iv = stackalloc byte[8];
             BinaryPrimitives.WriteInt32LittleEndian(iv, iv2);
-            BinaryPrimitives.WriteInt32LittleEndian(iv[4..], iv1);
+            BinaryPrimitives.WriteInt32LittleEndian(iv.Slice(4), iv1);
             _salsa.SetIV(iv);
 
             _salsa.Decrypt(bytes, bytes.Length);

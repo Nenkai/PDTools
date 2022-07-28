@@ -34,7 +34,7 @@ namespace PDTools.Crypto
                 bufLongs[0] = BinaryPrimitives.ReverseEndianness(decValue ^ seed);
                 seed = PDIPFSDownloaderCrypto.UpdateShiftValue(decValue ^ seed); // seed using encrypted long
 
-                bufLongs = bufLongs[1..];
+                bufLongs = bufLongs.Slice(1);
                 offset += sizeof(long);
             }
 
@@ -43,7 +43,7 @@ namespace PDTools.Crypto
             if (nRemBytes != 0)
             {
                 Span<byte> remBytes = stackalloc byte[8];
-                buffer[offset..].CopyTo(remBytes);
+                buffer.Slice(offset).CopyTo(remBytes);
 
                 ulong decValue = BinaryPrimitives.ReadUInt64LittleEndian(remBytes);
                 decValue = BinaryPrimitives.ReverseEndianness(decValue);
@@ -51,7 +51,7 @@ namespace PDTools.Crypto
                 seed = PDIPFSDownloaderCrypto.UpdateShiftValue(decValue ^ seed);
 
                 byte[] res = BitConverter.GetBytes(result);
-                res.AsSpan(0, nRemBytes).CopyTo(buffer[offset..]);
+                res.AsSpan(0, nRemBytes).CopyTo(buffer.Slice(offset));
             }
         }
 
@@ -73,7 +73,7 @@ namespace PDTools.Crypto
                 bufLongs[0] = BinaryPrimitives.ReverseEndianness(encValue ^ seed);
                 seed = PDIPFSDownloaderCrypto.UpdateShiftValue(encValue); // seed using encrypted long
 
-                bufLongs = bufLongs[1..];
+                bufLongs = bufLongs.Slice(1);
                 offset += sizeof(long);
             }
 
@@ -91,7 +91,7 @@ namespace PDTools.Crypto
                 }*/
 
                 Span<byte> remBytes = stackalloc byte[8];
-                buffer[offset..].CopyTo(remBytes);
+                buffer.Slice(offset).CopyTo(remBytes);
 
                 ulong encValue = BinaryPrimitives.ReadUInt64LittleEndian(remBytes);
                 encValue = BinaryPrimitives.ReverseEndianness(encValue);
@@ -99,7 +99,7 @@ namespace PDTools.Crypto
                 seed = PDIPFSDownloaderCrypto.UpdateShiftValue(encValue);
 
                 byte[] res = BitConverter.GetBytes(result);
-                res.AsSpan(0, nRemBytes).CopyTo(buffer[offset..]);
+                res.AsSpan(0, nRemBytes).CopyTo(buffer.Slice(offset));
             }
         }
 

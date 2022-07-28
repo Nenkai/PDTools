@@ -19,8 +19,14 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         public DateTimeOffset DateReceived { get; private set; }
 
-        public void SetPacketInfo(IPEndPoint remoteEndPoint, DateTimeOffset dateReceived)
+        /// <summary>
+        /// Game Type linked to this packet.
+        /// </summary>
+        public SimulatorInterfaceGameType GameType { get; set; }
+
+        public void SetPacketInfo(SimulatorInterfaceGameType gameType, IPEndPoint remoteEndPoint, DateTimeOffset dateReceived)
         {
+            GameType = gameType;
             RemoteEndPoint = remoteEndPoint;
             DateReceived = dateReceived;
         }

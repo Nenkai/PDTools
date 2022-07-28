@@ -8,6 +8,6 @@ namespace PDTools.Crypto.SimulationInterface
 {
     public interface ISimulationInterfaceCryptor
     {
-        public void Decrypt(Span<byte> bytes);
+        void Decrypt(Span<byte> bytes);
     }
 }

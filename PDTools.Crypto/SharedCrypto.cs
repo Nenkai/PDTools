@@ -83,7 +83,7 @@ namespace PDTools.Crypto
             shifted += or;
             shifted += 0x101;
 
-            return (int)(or ^ BitOperations.RotateRight(shifted, 0x10));
+            return (int)(or ^ Util.RotateRight(shifted, 0x10));
         }
 
     private static uint BitReverse(uint value)
@@ -229,7 +229,7 @@ namespace PDTools.Crypto
                 data[0] = (byte)result;
 
                 pos++;
-                data = data[1..];
+                data = data.Slice(1);
             }
         }
     }

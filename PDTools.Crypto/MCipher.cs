@@ -16,7 +16,7 @@ namespace PDTools.Crypto
         {
             int size = EncryptUnit.EncryptUnit_Decrypt(buffer, length, crcSeed, 0.327032387256622, 0.858476877212524, false);
             if (size > -1)
-                buffer[8..].CopyTo(outBuffer);
+                buffer.Slice(8).CopyTo(outBuffer);
             return size > -1;
         }
 
@@ -40,7 +40,7 @@ namespace PDTools.Crypto
         {
             int size = EncryptUnit.EncryptUnit_Decrypt(buffer, length, crcSeed, 0.262591, 0.753459f, false);
             if (size > -1)
-                buffer[8..].CopyTo(outBuffer);
+                buffer.Slice(8).CopyTo(outBuffer);
             return size > -1;
         }
 
