@@ -80,7 +80,7 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         /// <param name="cts">Cancellation token to stop the interface.</param>
         /// <returns></returns>
-        public async Task Start(CancellationTokenSource cts = default)
+        public async Task Start(CancellationToken token = default)
         {
             if (Started)
                 throw new InvalidOperationException("Simulator Interface already started.");
@@ -94,12 +94,12 @@ namespace PDTools.SimulatorInterface
             while (true)
             {
                 if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
-                    await SendHeartbeat(cts.Token);
+                    await SendHeartbeat(token);
 
 #if NET6_0_OR_GREATER
-                UdpReceiveResult result = await _udpClient.ReceiveAsync(cts.Token);
+                UdpReceiveResult result = await _udpClient.ReceiveAsync(token);
 #else
-                UdpReceiveResult result = await _udpClient.ReceiveAsync().WithCancellation(cts.Token);
+                UdpReceiveResult result = await _udpClient.ReceiveAsync().WithCancellation(token);
 #endif
 
                 if (result.Buffer.Length != 0x128)
@@ -111,13 +111,13 @@ namespace PDTools.SimulatorInterface
                 packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
                 packet.Read(result.Buffer);
 
-                if (cts.IsCancellationRequested)
-                    cts.Token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested)
+                    token.ThrowIfCancellationRequested();
 
                 this.OnReceive(packet);
 
-                if (cts.IsCancellationRequested)
-                    cts.Token.ThrowIfCancellationRequested();
+                if (token.IsCancellationRequested)
+                    token.ThrowIfCancellationRequested();
             }
         }
 
