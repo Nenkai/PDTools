@@ -27,6 +27,7 @@ namespace PDTools.Crypto.SimulationInterface
         {
             _salsa.Set(0);
 
+            // Grab IV int (seed?) and transform it into a 8 bytes IV
             int iv1 = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(0x40)); // Seed IV is always located there
             int iv2 = (int)(iv1 ^ 0xDEADBEAF); // Notice DEADBEAF, not DEADBEEF
 

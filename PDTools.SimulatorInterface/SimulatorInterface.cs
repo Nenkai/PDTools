@@ -77,6 +77,7 @@ namespace PDTools.SimulatorInterface
 
         /// <summary>
         /// Starts the simulator interface.
+        /// This can be started anytime - during the game's boot process or in a race.
         /// </summary>
         /// <param name="cts">Cancellation token to stop the interface.</param>
         /// <returns></returns>

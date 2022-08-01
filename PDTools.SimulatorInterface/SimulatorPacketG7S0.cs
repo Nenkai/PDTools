@@ -52,9 +52,15 @@ namespace PDTools.SimulatorInterface
         public float EngineRPM { get; set; }
 
         /// <summary>
+        /// Percentage from 0 to 100
+        /// Note: This may change from 0 when regenerative braking with electric cars, check accordingly with <see cref="MaxFuelCapacity"/>.
+        /// </summary>
+        public float FuelLevel { get; set; }
+
+        /// <summary>
         /// Stays at 100, not fuel, nor tyre wear
         /// </summary>
-        public float Unknown_0x48 { get; set; }
+        public float MaxFuelCapacity { get; set; }
 
         /// <summary>
         /// Current speed in meters per second. <see cref="MetersPerSecond * 3.6"/> to get it in KPH.
@@ -132,27 +138,28 @@ namespace PDTools.SimulatorInterface
         public TimeSpan TimeOfDayProgression { get; set; }
 
         /// <summary>
-        /// Needs more investigation
+        /// Position of the car before the race has started.
         /// </summary>
         public short PreRaceStartPositionOrQualiPos { get; set; }
 
         /// <summary>
-        /// Needs more investigation
+        /// Number of cars in the race before the race has started.
         /// </summary>
         public short NumCarsAtPreRace { get; set; }
 
         /// <summary>
-        /// Minimum RPM to which the car shows an alert.
+        /// Minimum RPM to which the rev limiter shows an alert.
         /// </summary>
         public short MinAlertRPM { get; set; }
 
         /// <summary>
-        /// Maximum RPM to the alert.
+        /// Maximum RPM to the rev limiter alert.
         /// </summary>
         public short MaxAlertRPM { get; set; }
 
         /// <summary>
-        /// Updates weirdly, needs investigation
+        /// Possible max speed achievable using the current transmission settings.
+        /// Will change depending on transmission settings.
         /// </summary>
         public short CalculatedMaxSpeed { get; set; }
 
@@ -163,11 +170,13 @@ namespace PDTools.SimulatorInterface
 
         /// <summary>
         /// Current Gear for the car.
+        /// This value will never be more than 15 (4 bits).
         /// </summary>
         public byte CurrentGear { get; set; }
 
         /// <summary>
-        /// (Assist) Suggested Gear to downshift to.
+        /// (Assist) Suggested Gear to downshift to. 
+        /// This value will never be more than 15 (4 bits), All bits on (aka 15) implies there is no current suggested gear.
         /// </summary>
         public byte SuggestedGear { get; set; }
 
@@ -181,50 +190,49 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         public byte Brake { get; set; }
 
-        public byte Unknown0x93 { get; set; }
+        public byte Empty_0x93 { get; set; }
 
-        public float TireFL_Unknown0x94_0 { get; set; }
-        public float TireFR_Unknown0x94_1 { get; set; }
-        public float TireRL_Unknown0x94_2 { get; set; }
-        public float TireRR_Unknown0x94_3 { get; set; }
+        public Vector3 RoadPlane { get; set; }
+
+        public float RoadPlaneDistance { get; set; }
 
         /// <summary>
-        /// Front Left Tire - Revolutions Per Second (in Radians)
+        /// Front Left Wheel - Revolutions Per Second (in Radians)
         /// </summary>
-        public float TireFL_RevPerSecond { get; set; }
+        public float WheelFL_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Front Right Tire - Revolutions Per Second (in Radians)
+        /// Front Right Wheel - Revolutions Per Second (in Radians)
         /// </summary>
-        public float TireFR_RevPerSecond { get; set; }
+        public float WheelFR_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Rear Left Tire - Revolutions Per Second (in Radians)
+        /// Rear Left Wheel - Revolutions Per Second (in Radians)
         /// </summary>
-        public float TireRL_RevPerSecond { get; set; }
+        public float WheelRL_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Rear Right Tire - Revolutions Per Second (in Radians)
+        /// Rear Right Wheel - Revolutions Per Second (in Radians)
         /// </summary>
-        public float TireRR_RevPerSecond { get; set; }
+        public float WheelRR_RevPerSecond { get; set; }
 
         /// <summary>
-        /// Front Left Tire - Tire Radius
+        /// Front Left Tire - Tire Radius (in Meters)
         /// </summary>
         public float TireFL_TireRadius { get; set; }
 
         /// <summary>
-        /// Front Right Tire - Tire Radius
+        /// Front Right Tire - Tire Radius (in Meters)
         /// </summary>
         public float TireFR_TireRadius { get; set; }
 
         /// <summary>
-        /// Rear Left Tire - Tire Radius
+        /// Rear Left Tire - Tire Radius (in Meters)
         /// </summary>
         public float TireRL_TireRadius { get; set; }
 
         /// <summary>
-        /// Rear Right Tire - Tire Radius
+        /// Rear Right Tire - Tire Radius (in Meters)
         /// </summary>
         public float TireRR_TireRadius { get; set; }
 
@@ -263,7 +271,10 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         public float RPMFromClutchToGearbox { get; set; }
 
-        public float Unknown_0x100_GearRelated { get; set; }
+        /// <summary>
+        /// Top Speed (as a Gear Ratio value)
+        /// </summary>
+        public float TransmissionTopSpeed { get; set; }
 
         /// <summary>
         /// Gear ratios for the car. Up to 7.
@@ -289,11 +300,9 @@ namespace PDTools.SimulatorInterface
             AngularVelocity = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
             BodyHeight = sr.ReadSingle();
             EngineRPM = sr.ReadSingle();
-
-            // Skip IV
-            sr.Position += 8;
-
-            Unknown_0x48 = sr.ReadSingle();
+            sr.Position += sizeof(int); // Skip IV
+            FuelLevel = sr.ReadSingle();
+            MaxFuelCapacity = sr.ReadSingle();
             MetersPerSecond = sr.ReadSingle();
             TurboBoost = sr.ReadSingle();
             OilPressure = sr.ReadSingle();
@@ -322,17 +331,15 @@ namespace PDTools.SimulatorInterface
 
             Throttle = sr.ReadByte();
             Brake = sr.ReadByte();
+            Empty_0x93 = sr.ReadByte();
 
-            Unknown0x93 = sr.ReadByte();
+            RoadPlane = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
+            RoadPlaneDistance = sr.ReadSingle();
 
-            TireFL_Unknown0x94_0 = sr.ReadSingle();
-            TireFR_Unknown0x94_1 = sr.ReadSingle();
-            TireRL_Unknown0x94_2 = sr.ReadSingle();
-            TireRR_Unknown0x94_3 = sr.ReadSingle();
-            TireFL_RevPerSecond = sr.ReadSingle();
-            TireFR_RevPerSecond = sr.ReadSingle();
-            TireRL_RevPerSecond = sr.ReadSingle();
-            TireRR_RevPerSecond = sr.ReadSingle();
+            WheelFL_RevPerSecond = sr.ReadSingle();
+            WheelFR_RevPerSecond = sr.ReadSingle();
+            WheelRL_RevPerSecond = sr.ReadSingle();
+            WheelRR_RevPerSecond = sr.ReadSingle();
             TireFL_TireRadius = sr.ReadSingle();
             TireFR_TireRadius = sr.ReadSingle();
             TireRL_TireRadius = sr.ReadSingle();
@@ -348,8 +355,9 @@ namespace PDTools.SimulatorInterface
             ClutchEngagement = sr.ReadSingle();
             RPMFromClutchToGearbox = sr.ReadSingle();
 
-            Unknown_0x100_GearRelated = sr.ReadSingle();
+            TransmissionTopSpeed = sr.ReadSingle();
 
+            // Always read as a fixed 7 gears
             for (var i = 0; i < 7; i++)
                 GearRatios[i] = sr.ReadSingle();
 
@@ -363,18 +371,21 @@ namespace PDTools.SimulatorInterface
         public override void PrintPacket(bool debug = false)
         {
             Console.SetCursorPosition(0, 0);
-            Console.WriteLine($"Simulator Interface Packet                    ");
+            Console.WriteLine($"[{DateReceived} - ID {PacketId}] Simulator Interface Packet                      ");
             Console.WriteLine("[Car Data]          ");
             Console.WriteLine($"- Car Code: {CarCode}         ");
             Console.WriteLine($"- Throttle: {Throttle}   ");
             Console.WriteLine($"- Brake: {Brake}   ");
             Console.WriteLine($"- RPM: {EngineRPM} - KPH: {Math.Round(MetersPerSecond * 3.6, 2)}     ");
             Console.WriteLine($"- Turbo Boost: {((TurboBoost - 1.0) * 100.0):F2}kPa   ");
+            Console.WriteLine($"- Fuel Level: {FuelLevel:F2}   ");
+            Console.WriteLine($"- Max Fuel Capacity: {MaxFuelCapacity:F2}   ");
+
             Console.WriteLine($"- Oil Pressure: {OilPressure:F2}   ");
             Console.WriteLine($"- Body Height: {BodyHeight:F2}   ");
             Console.WriteLine($"- Clutch Pedal: {ClutchPedal:F2}   ");
             Console.WriteLine($"- Clutch Engagement: {ClutchEngagement:F2}   ");
-            Console.WriteLine($"- RPM From Clutch To Gearbox: {RPMFromClutchToGearbox}   ");
+            Console.WriteLine($"- RPM From Clutch To Gearbox: {RPMFromClutchToGearbox:F2}   ");
 
 
             if (SuggestedGear == 15)
@@ -386,9 +397,9 @@ namespace PDTools.SimulatorInterface
 
             Console.WriteLine($"- Flags: {Flags,-100}");
             Console.WriteLine($"- Gear Ratios: {string.Join(", ", GearRatios)}");
-            Console.WriteLine($"- Tire Height / FL:{TireFL_SusHeight:F2} FR:{TireFR_SusHeight:F2} RL:{TireRL_SusHeight:F2} RR:{TireRR_SusHeight:F2}");
-            Console.WriteLine($"- Tire RPS / FL:{TireFL_RevPerSecond:F2} FR:{TireFR_RevPerSecond:F2} RL:{TireRL_RevPerSecond:F2} RR:{TireRR_RevPerSecond:F2}");
-            Console.WriteLine($"- Tire Radius / FL:{TireFL_TireRadius:F2} FR:{TireFR_TireRadius:F2} RL:{TireRL_TireRadius:F2} RR:{TireRR_TireRadius:F2}");
+            Console.WriteLine($"- Tire Height / FL:{TireFL_SusHeight:F2} FR:{TireFR_SusHeight:F2} RL:{TireRL_SusHeight:F2} RR:{TireRR_SusHeight:F2}    ");
+            Console.WriteLine($"- Tire RPS / FL:{WheelFL_RevPerSecond:F2} FR:{WheelFR_RevPerSecond:F2} RL:{WheelRL_RevPerSecond:F2} RR:{WheelRR_RevPerSecond:F2}    ");
+            Console.WriteLine($"- Tire Radius / FL:{TireFL_TireRadius:F2} FR:{TireFR_TireRadius:F2} RL:{TireRL_TireRadius:F2} RR:{TireRR_TireRadius:F2}    ");
 
             Console.WriteLine($"- Tire Temperature");
             Console.WriteLine($"    FL: {TireFL_SurfaceTemperature:F2}°C | FR: {TireFR_SurfaceTemperature:F2}°C   ");
@@ -396,8 +407,6 @@ namespace PDTools.SimulatorInterface
 
             Console.WriteLine();
             Console.WriteLine("[Race Data]");
-
-            Console.WriteLine($"- Packet Id: {PacketId}     ");
             Console.WriteLine($"- Current Lap: {LapCount}  ");
 
             if (BestLapTime.TotalMilliseconds == -1)
@@ -420,41 +429,86 @@ namespace PDTools.SimulatorInterface
             Console.WriteLine($"- Velocity: {Velocity:F3}    ");
             Console.WriteLine($"- Rotation: {Rotation:F3}     ");
             Console.WriteLine($"- Angular Velocity: {AngularVelocity:F2}   ");
+            Console.WriteLine($"- Road Plane: {RoadPlane:F2}   ");
 
             if (debug)
             {
                 Console.WriteLine();
                 Console.WriteLine("[Unknowns]");
-                Console.WriteLine($"0x48 (Float): {Unknown_0x48:F2}   ");
-                Console.WriteLine($"0x93 (byte): {Unknown0x93:F2}   ");
-                Console.WriteLine($"0x94 Tire/Wheel Related (Float): {TireFL_Unknown0x94_0:F2} {TireFR_Unknown0x94_1:F2} {TireRL_Unknown0x94_2:F2} {TireRR_Unknown0x94_3:F2}   ");
-                Console.WriteLine($"0x100 Gear Ratio Related (Float): {Unknown_0x100_GearRelated}   ");
+                Console.WriteLine($"0x48 (Float): {MaxFuelCapacity:F2}   ");
+                Console.WriteLine($"0x93 (byte): {Empty_0x93:F2}   ");
 
             }
         }
     }
 
+    /// <summary>
+    /// Flags/States of the simulation.
+    /// </summary>
     [Flags]
     public enum SimulatorFlags : short
     {
         None = 0,
 
-        OnTrack = 1 << 0,
+        /// <summary>
+        /// The car is on the track or paddock, with data available.
+        /// </summary>
+        CarOnTrack = 1 << 0,
+
+        /// <summary>
+        /// The game's simulation is paused. 
+        /// Note: The simulation will not be paused while in the pause menu in online modes.
+        /// </summary>
         Paused = 1 << 1,
+
+        /// <summary>
+        /// Track or car is currently being loaded onto the track.
+        /// </summary>
         LoadingOrProcessing = 1 << 2,
 
         /// <summary>
         /// Needs more investigation
         /// </summary>
-        HasThrottleControlMaybe = 1 << 3,
+        InGear = 1 << 3,
 
+        /// <summary>
+        /// Current car has a Turbo.
+        /// </summary>
         HasTurbo = 1 << 4,
+
+        /// <summary>
+        /// Rev Limiting is active.
+        /// </summary>
         RevLimiterBlinkAlertActive = 1 << 5,
+
+        /// <summary>
+        /// Hand Brake is active.
+        /// </summary>
         HandBrakeActive = 1 << 6,
+
+        /// <summary>
+        /// Lights are active.
+        /// </summary>
         LightsActive = 1 << 7,
+
+        /// <summary>
+        /// High Beams are turned on.
+        /// </summary>
         HighBeamActive = 1 << 8,
+
+        /// <summary>
+        /// Low Beams are turned on.
+        /// </summary>
         LowBeamActive = 1 << 9,
+
+        /// <summary>
+        /// ASM is active.
+        /// </summary>
         ASMActive = 1 << 10,
+
+        /// <summary>
+        /// Traction Control is active.
+        /// </summary>
         TCSActive = 1 << 11,
     }
 }

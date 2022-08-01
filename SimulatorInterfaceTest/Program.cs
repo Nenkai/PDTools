@@ -39,7 +39,7 @@ namespace SimulatorInterfaceTest
 
             // Cancel token from outside source to end simulator
             
-            var task = simInterface.Start(cts);
+            var task = simInterface.Start(cts.Token);
             
             try
             {
@@ -63,10 +63,16 @@ namespace SimulatorInterfaceTest
         private static void SimInterface_OnReceive(SimulatorPacketBase packet)
         {
             Console.SetCursorPosition(0, 0);
+
+            // Print the packet contents to the console
             packet.PrintPacket(_showUnknown);
 
-            // Do something with game specific packet
-            var gt7Packet = packet as SimulatorPacketG7S0;
+            if (packet.GameType == SimulatorInterfaceGameType.GT7 || packet.GameType == SimulatorInterfaceGameType.GTSport)
+            {
+                // Do something with game specific packet
+                var gt7Packet = packet as SimulatorPacketG7S0;
+            }
+            
         }
     }
 }
