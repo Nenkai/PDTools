@@ -20,7 +20,7 @@ namespace PDTools.Crypto.SimulationInterface
 
         public SimulatorInterfaceCryptorGT7()
         {
-            _salsa = new Salsa20(Encoding.ASCII.GetBytes(Key), 0x26);
+            _salsa = new Salsa20(Encoding.ASCII.GetBytes(Key), Key.Length);
         }
 
         public void Decrypt(Span<byte> bytes)

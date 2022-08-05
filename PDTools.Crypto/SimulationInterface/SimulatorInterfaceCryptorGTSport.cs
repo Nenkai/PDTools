@@ -20,12 +20,12 @@ namespace PDTools.Crypto.SimulationInterface
 
         public SimulatorInterfaceCryptorGTSport()
         {
-            _salsa = new Salsa20(Encoding.ASCII.GetBytes(Key), 0x22);
+            _salsa = new Salsa20(Encoding.ASCII.GetBytes(Key), Key.Length);
         }
 
         public void Decrypt(Span<byte> bytes)
         {
-            // Input should be 0x94 (or 0x128 in certain cases?)
+            // Input should be 0x128
 
             // Reset offset
             _salsa.Set(0);
@@ -40,7 +40,7 @@ namespace PDTools.Crypto.SimulationInterface
 
             _salsa.Decrypt(bytes, bytes.Length);
 
-            // Magic should be "G6S0" when decrypted 
+            // Magic should be "G7S0" when decrypted 
         }
     }
 }

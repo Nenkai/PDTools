@@ -6,15 +6,18 @@ using System.Threading.Tasks;
 
 namespace PDTools.SimulatorInterface
 {
+    /// <summary>
+    /// Games supporting a Simulation Interface.
+    /// </summary>
     public enum SimulatorInterfaceGameType
     {
         /// <summary>
-        /// Unsupported
+        /// Gran Turismo 6
         /// </summary>
         GT6,
 
         /// <summary>
-        /// Unsupported
+        /// Gran Turismo Sport
         /// </summary>
         GTSport,
 

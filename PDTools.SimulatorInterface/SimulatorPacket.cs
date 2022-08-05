@@ -12,10 +12,25 @@ using Syroot.BinaryData.Memory;
 namespace PDTools.SimulatorInterface
 {
     /// <summary>
-    /// Used by GT7 and GT Sport.
+    /// Packet from the GT Engine Simulation.
     /// </summary>
-    public class SimulatorPacketG7S0 : SimulatorPacketBase
+    public class SimulatorPacket
     {
+        /// <summary>
+        /// Peer address.
+        /// </summary>
+        public IPEndPoint RemoteEndPoint { get; private set; }
+
+        /// <summary>
+        /// Date when this packet was received.
+        /// </summary>
+        public DateTimeOffset DateReceived { get; private set; }
+
+        /// <summary>
+        /// Game Type linked to this packet.
+        /// </summary>
+        public SimulatorInterfaceGameType GameType { get; set; }
+
         /// <summary>
         /// Position on the track. Track units are in meters.
         /// </summary>
@@ -52,15 +67,16 @@ namespace PDTools.SimulatorInterface
         public float EngineRPM { get; set; }
 
         /// <summary>
-        /// Percentage from 0 to 100
-        /// Note: This may change from 0 when regenerative braking with electric cars, check accordingly with <see cref="MaxFuelCapacity"/>.
+        /// Gas level for the current car (in liters, from 0 to <see cref="GasCapacity"/>).
+        /// <para> Note: This may change from 0 when regenerative braking with electric cars, check accordingly with <see cref="GasCapacity"/>. </para>
         /// </summary>
-        public float FuelLevel { get; set; }
+        public float GasLevel { get; set; }
 
         /// <summary>
-        /// Stays at 100, not fuel, nor tyre wear
+        /// Max gas capacity for the current car.
+        /// Will be 100 for most cars, 5 for karts, 0 for electric cars
         /// </summary>
-        public float MaxFuelCapacity { get; set; }
+        public float GasCapacity { get; set; }
 
         /// <summary>
         /// Current speed in meters per second. <see cref="MetersPerSecond * 3.6"/> to get it in KPH.
@@ -123,12 +139,14 @@ namespace PDTools.SimulatorInterface
         public short LapsInRace { get; set; }
 
         /// <summary>
-        /// Best Lap Time. Defaults to -1 millisecond when not set.
+        /// Best Lap Time. 
+        /// <para>Defaults to -1 millisecond when not set.</para>
         /// </summary>
         public TimeSpan BestLapTime { get; set; }
 
         /// <summary>
-        /// Last Lap Time. Defaults to -1 millisecond when not set.
+        /// Last Lap Time.
+        /// <para>Defaults to -1 millisecond when not set.</para>
         /// </summary>
         public TimeSpan LastLapTime { get; set; }
 
@@ -139,11 +157,13 @@ namespace PDTools.SimulatorInterface
 
         /// <summary>
         /// Position of the car before the race has started.
+        /// <para>Will be -1 once the race is started.</para>
         /// </summary>
         public short PreRaceStartPositionOrQualiPos { get; set; }
 
         /// <summary>
         /// Number of cars in the race before the race has started.
+        /// <para>Will be -1 once the race is started.</para>
         /// </summary>
         public short NumCarsAtPreRace { get; set; }
 
@@ -159,7 +179,7 @@ namespace PDTools.SimulatorInterface
 
         /// <summary>
         /// Possible max speed achievable using the current transmission settings.
-        /// Will change depending on transmission settings.
+        /// <para> Will change depending on transmission settings.</para>
         /// </summary>
         public short CalculatedMaxSpeed { get; set; }
 
@@ -170,13 +190,13 @@ namespace PDTools.SimulatorInterface
 
         /// <summary>
         /// Current Gear for the car.
-        /// This value will never be more than 15 (4 bits).
+        /// <para> This value will never be more than 15 (4 bits).</para>
         /// </summary>
         public byte CurrentGear { get; set; }
 
         /// <summary>
         /// (Assist) Suggested Gear to downshift to. 
-        /// This value will never be more than 15 (4 bits), All bits on (aka 15) implies there is no current suggested gear.
+        /// <para> This value will never be more than 15 (4 bits), All bits on (aka 15) implies there is no current suggested gear.</para>
         /// </summary>
         public byte SuggestedGear { get; set; }
 
@@ -282,15 +302,20 @@ namespace PDTools.SimulatorInterface
         public float[] GearRatios { get; set; } = new float[7];
 
         /// <summary>
-        /// Internal code that identifies the car. This value may be overriden if using a car that uses 9 or more gears.
+        /// Internal code that identifies the car.
+        /// <para>This value may be overriden if using a car that uses 9 or more gears (oversight).</para>
         /// </summary>
         public int CarCode { get; set; }
 
-        public override void Read(Span<byte> data)
+        public void Read(Span<byte> data)
         {
             SpanReader sr = new SpanReader(data);
             int magic = sr.ReadInt32();
-            if (magic != 0x47375330) // 0S7G - G7S0
+            if (magic == 0x30533647) // G6S0 - GT6
+                sr.Endian = Syroot.BinaryData.Core.Endian.Big; // GT6 is on PS3, it'll be sending a big endian packet
+            else if (magic == 0x47375330) // 0S7G - GTSport/GT7
+                sr.Endian = Syroot.BinaryData.Core.Endian.Little;
+            else
                 throw new InvalidDataException($"Unexpected packet magic '{magic}'.");
 
             Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
@@ -301,8 +326,8 @@ namespace PDTools.SimulatorInterface
             BodyHeight = sr.ReadSingle();
             EngineRPM = sr.ReadSingle();
             sr.Position += sizeof(int); // Skip IV
-            FuelLevel = sr.ReadSingle();
-            MaxFuelCapacity = sr.ReadSingle();
+            GasLevel = sr.ReadSingle();
+            GasCapacity = sr.ReadSingle();
             MetersPerSecond = sr.ReadSingle();
             TurboBoost = sr.ReadSingle();
             OilPressure = sr.ReadSingle();
@@ -368,7 +393,14 @@ namespace PDTools.SimulatorInterface
             CarCode = sr.ReadInt32();
         }
 
-        public override void PrintPacket(bool debug = false)
+        public void SetPacketInfo(SimulatorInterfaceGameType gameType, IPEndPoint remoteEndPoint, DateTimeOffset dateReceived)
+        {
+            GameType = gameType;
+            RemoteEndPoint = remoteEndPoint;
+            DateReceived = dateReceived;
+        }
+
+        public void PrintPacket(bool debug = false)
         {
             Console.SetCursorPosition(0, 0);
             Console.WriteLine($"[{DateReceived} - ID {PacketId}] Simulator Interface Packet                      ");
@@ -378,8 +410,8 @@ namespace PDTools.SimulatorInterface
             Console.WriteLine($"- Brake: {Brake}   ");
             Console.WriteLine($"- RPM: {EngineRPM} - KPH: {Math.Round(MetersPerSecond * 3.6, 2)}     ");
             Console.WriteLine($"- Turbo Boost: {((TurboBoost - 1.0) * 100.0):F2}kPa   ");
-            Console.WriteLine($"- Fuel Level: {FuelLevel:F2}   ");
-            Console.WriteLine($"- Max Fuel Capacity: {MaxFuelCapacity:F2}   ");
+            Console.WriteLine($"- Fuel Level: {GasLevel:F2}   ");
+            Console.WriteLine($"- Max Fuel Capacity: {GasCapacity:F2}   ");
 
             Console.WriteLine($"- Oil Pressure: {OilPressure:F2}   ");
             Console.WriteLine($"- Body Height: {BodyHeight:F2}   ");
@@ -392,7 +424,7 @@ namespace PDTools.SimulatorInterface
                 Console.WriteLine($"- Gear: {CurrentGear}                                    ");
             else
                 Console.WriteLine($"- Gear: {CurrentGear} (Suggested: {SuggestedGear})");
-            Console.WriteLine($"- Calculated Max Speed: {CalculatedMaxSpeed}  ");
+            Console.WriteLine($"- Calculated Max Speed: {CalculatedMaxSpeed}kph  ");
             Console.WriteLine($"- Min/Max RPM Alerts: {MinAlertRPM} - {MaxAlertRPM}  ");
 
             Console.WriteLine($"- Flags: {Flags,-100}");
@@ -435,7 +467,7 @@ namespace PDTools.SimulatorInterface
             {
                 Console.WriteLine();
                 Console.WriteLine("[Unknowns]");
-                Console.WriteLine($"0x48 (Float): {MaxFuelCapacity:F2}   ");
+                Console.WriteLine($"0x48 (Float): {GasCapacity:F2}   ");
                 Console.WriteLine($"0x93 (byte): {Empty_0x93:F2}   ");
 
             }

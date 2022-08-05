@@ -36,7 +36,11 @@ namespace PDTools.SimulatorInterface
         public int ReceivePort { get; }
         public int BindPort { get; }
 
-        public delegate void SimulatorDelegate(SimulatorPacketBase packet);
+        public delegate void SimulatorDelegate(SimulatorPacket packet);
+
+        /// <summary>
+        /// Fired from a packet from the GT Engine Simulation is sent.
+        /// </summary>
         public event SimulatorDelegate OnReceive;
 
         public bool Started { get; private set; }
@@ -108,7 +112,7 @@ namespace PDTools.SimulatorInterface
 
                 _cryptor.Decrypt(result.Buffer);
 
-                SimulatorPacketBase packet = InitPacket(SimulatorGameType);
+                SimulatorPacket packet = new SimulatorPacket();
                 packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
                 packet.Read(result.Buffer);
 
@@ -144,26 +148,11 @@ namespace PDTools.SimulatorInterface
             }
             else if (gameType == SimulatorInterfaceGameType.GT6)
             {
-                throw new NotSupportedException($"'{gameType}' is not supported yet.");
-
                 _cryptor = new SimulatorInterfaceCryptorGT6();
             }
             else
             {
-                throw new NotSupportedException($"'{gameType}' is not supported yet.");
-            }
-        }
-
-        private SimulatorPacketBase InitPacket(SimulatorInterfaceGameType gameType)
-        {
-            switch (gameType)
-            {
-                case SimulatorInterfaceGameType.GT7:
-                case SimulatorInterfaceGameType.GTSport:
-                    return new SimulatorPacketG7S0();
-
-                default:
-                    throw new NotSupportedException($"'{gameType}' is not supported yet.");
+                throw new NotSupportedException($"'{gameType}' is not supported.");
             }
         }
 

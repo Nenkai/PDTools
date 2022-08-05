@@ -153,7 +153,7 @@ namespace PDTools.Structures
 
             if (version == 110)
             {
-                car.GarageID = reader.ReadInt32();
+                car.GarageID = reader.ReadInt32(); // Upper bit means rentacar
                 car.RideCount = reader.ReadInt16();
                 car.WinCount = reader.ReadInt16();
                 reader.ReadByte();
@@ -235,7 +235,7 @@ namespace PDTools.Structures
 
             if (carParamVersion != 110)
             {
-                reader.ReadInt16();
+                reader.ReadInt16(); // 5 bits, 6 bits, 5 bits
                 WheelDirtFront = reader.ReadByte();
                 WheelDirtRear = reader.ReadByte();
 
@@ -243,7 +243,7 @@ namespace PDTools.Structures
                 reader.ReadInt32();
                 reader.ReadInt32();
                 Scratch = reader.ReadInt32(); // Scratch
-                reader.ReadInt32();
+                reader.ReadInt32(); // Scratch related
 
                 // Grouped
                 reader.ReadByte();
@@ -383,7 +383,7 @@ namespace PDTools.Structures
         private byte wheel_color;
         public short BodyPaintID { get; set; } = -1;
         public short WheelPaintID { get; set; } = -1;
-        public short BrakePaintID { get; set; } = -1;
+        public short BrakeCaliperPaintID { get; set; } = -1;
         public short CustomRearWingPaintID { get; set; } = -1;
         public short FrontWheelWidth { get; set; }
         public short FrontWheelDiameter { get; set; }
@@ -615,7 +615,7 @@ namespace PDTools.Structures
                 wheel_color = reader.ReadByte();
                 BodyPaintID = reader.ReadInt16();
                 WheelPaintID = reader.ReadInt16();
-                BrakePaintID = reader.ReadInt16();
+                BrakeCaliperPaintID = reader.ReadInt16();
 
                 if (partsVersion >= 1_17)
                     CustomRearWingPaintID = reader.ReadInt16();
@@ -674,7 +674,7 @@ namespace PDTools.Structures
                     reader.ReadByte();
                     reader.ReadByte();
 
-                    reader.ReadInt16();
+                    reader.ReadInt16(); // Extra Meter Count
                     reader.ReadInt16();
                     reader.ReadInt16();
 
@@ -689,7 +689,7 @@ namespace PDTools.Structures
                     reader.ReadBits(2);
                     reader.ReadBits(2);
 
-                    reader.ReadBits(10);
+                    reader.ReadBits(10); // Extra Meter Count
                     reader.ReadBits(10);
                     reader.ReadBits(10);
 
@@ -839,7 +839,7 @@ namespace PDTools.Structures
             bs.WriteByte(wheel_color);
             bs.WriteInt16(BodyPaintID);
             bs.WriteInt16(WheelPaintID);
-            bs.WriteInt16(BrakePaintID);
+            bs.WriteInt16(BrakeCaliperPaintID);
             bs.WriteInt16(CustomRearWingPaintID);
             bs.WriteInt16(FrontWheelWidth);
             bs.WriteInt16(FrontWheelDiameter);
@@ -873,98 +873,5 @@ namespace PDTools.Structures
             bs.WriteInt16(0);
             bs.Write(PurchaseBits, 0, PurchaseBits.Length);
         }
-    }
-
-    public enum PurchaseFlagsA : ulong
-    {
-        Brake_Stock = 0x02,
-        Racing_Brake_Calipers = 0x04,
-
-        Suspension_Stock = 0x01_00,
-        Suspension_RacingSoft = 0x02_00,
-        Suspension_RacingHard = 0x04_00,
-        Suspension_Rally = 0x08_00,
-        Suspension_Custom = 0x10_00,
-
-        Weight_Stage1 = 0x08_00_00,
-        Weight_Stage2 = 0x10_00_00,
-        Weight_Stage3 = 0x20_00_00,
-        Weight_Stage4 = 0x40_00_00,
-        Weight_Stage5 = 0x80_00_00,
-
-        Transmission_Stock = 0x40_00_00_00,
-        Transmission_FiveSpeed = 0x80_00_00_00,
-        Transmission_SixSpeed = 0x01_00_00_00_00,
-        Transmission_Custom = 0x02_00_00_00_00,
-
-        Engine_Stock = 0x04_00_00_00_00,
-        Engine_Stage1 = 0x08_00_00_00_00,
-        Engine_Stage2 = 0x10_00_00_00_00,
-        Engine_Stage3 = 0x20_00_00_00_00,
-        Engine_Stage4 = 0x40_00_00_00_00,
-        Engine_Stage5 = 0x80_00_00_00_00,
-
-        Turbo_Stock = 0x01_00_00_00_00_00,
-        Turbo_Low = 0x02_00_00_00_00_00,
-        Turbo_Mid = 0x04_00_00_00_00_00,
-        Turbo_High = 0x08_00_00_00_00_00,
-        Turbo_Super = 0x10_00_00_00_00_00,
-        Turbo_Ultra = 0x20_00_00_00_00_00,
-
-        Computer_Sports = 0x08_00_00_00_00_00_00,
-
-        Exhaust_Sports = 0x08_00_00_00_00_00_00_00,
-        Exhaust_SemiRacing = 0x10_00_00_00_00_00_00_00,
-        Exhaust_Racing = 0x20_00_00_00_00_00_00_00,
-
-        Clutch_SinglePlate = 0x40_00_00_00_00_00_00_00,
-        Clutch_TwinPlate = 0x80_00_00_00_00_00_00_00,
-    }
-
-    public enum PurchaseFlagsB : ulong
-    {
-        Clutch_TriplePlate = 0x01,
-        Clutch_Unk = 0x02,
-
-        PropellerShaft_Carbon = 0x80,
-
-        LSD_Stock = 0x01_00,
-        LSD_Custom = 0x02_00,
-        LSD_Custom2 = 0x04_00,
-        FrontTire_ComfortHard = 0x80_00,
-        FrontTire_ComfortMedium = 0x01_00_00,
-        FrontTire_ComfortSoft = 0x02_00_00,
-        FrontTire_SportsHard = 0x04_00_00,
-        FrontTire_SportsMedium = 0x08_00_00,
-        FrontTire_SportsSoft = 0x10_00_00,
-        FrontTire_SportsSuperSoft = 0x20_00_00,
-        FrontTire_RacingHard = 0x40_00_00,
-        FrontTire_RacingMedium = 0x80_00_00,
-        FrontTire_RacingSoft = 0x01_00_00_00,
-        FrontTire_RacingSuperSoft = 0x02_00_00_00,
-        FrontTire_Intermediate = 0x04_00_00_00,
-        FrontTire_HeavyWet = 0x08_00_00_00,
-        FrontTire_Dirt = 0x10_00_00_00,
-        FrontTire_Snow = 0x20_00_00_00,
-        RearTire_ComfortHard = 0x40_00_00_00,
-        RearTire_ComfortMedium = 0x80_00_00_00,
-        RearTire_ComfortSoft = 0x01_00_00_00_00,
-        RearTire_SportsHard = 0x02_00_00_00_00,
-        RearTire_SportsMedium = 0x04_00_00_00_00,
-        RearTire_SportsSoft = 0x08_00_00_00_00,
-        RearTire_SportsSuperSoft = 0x10_00_00_00_00,
-        RearTire_RacingHard = 0x20_00_00_00_00,
-        RearTire_RacingMedium = 0x40_00_00_00_00,
-        RearTire_RacingSoft = 0x80_00_00_00_00,
-        RearTire_RacingSuperSoft = 0x01_00_00_00_00_00,
-        RearTire_Intermediate = 0x02_00_00_00_00_00,
-        RearTire_HeavyWet = 0x04_00_00_00_00_00,
-        RearTire_Dirt = 0x08_00_00_00_00_00,
-        RearTire_Snow = 0x10_00_00_00_00_00,
-
-        Supercharger = 0x40_00_00_00_00_00,
-
-        IntakeManifold_Tuning = 0x01_00_00_00_00_00_00,
-        ExhaustManifold_Isometric = 0x02_00_00_00_00_00_00,
     }
 }
