@@ -40,14 +40,13 @@ namespace PDTools.STStruct
 
         public NodeBase GetField(string path)
         {
-            if (RootNode is not STObject obj)
+            if (!(RootNode is STObject obj))
                 return null;
 
             string[] attributes = path.Split('.');
 
             int currentIndex = 0;
             return Find(obj.Child, attributes, ref currentIndex);
-            
         }
 
         private NodeBase Find(NodeBase currentNode, string[] attrs, ref int currentIndex)

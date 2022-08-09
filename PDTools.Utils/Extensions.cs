@@ -34,9 +34,16 @@ namespace PDTools.Utils
                 val = sr.ReadByte();
             while (val != 0 || sr.Position >= endPos);
 
-            
+#if NETCOREAPP2_1_OR_GREATER
             ReadOnlySpan<byte> chars = sr.Span.Slice(basePos, sr.Position - 1);
             return sr.Encoding.GetString(chars);
+#else
+            unsafe
+            { 
+                fixed (byte* bp = sr.Span)
+                    return sr.Encoding.GetString(bp, sr.Position - 1);
+            }
+#endif
         }
 
         public static string AlignString(this string value, int align)
@@ -65,7 +72,7 @@ namespace PDTools.Utils
             while (len > 0)
             {
                 int toWrite = (int)Math.Min(len, bufferSize);
-                src.Read(buffer);
+                src.Read(buffer, 0, buffer.Length);
                 target.Write(buffer, 0, toWrite);
 
                 crc = CRC32.CRC32_0x04C11DB7(buffer.AsSpan(0, toWrite), crc);
@@ -92,7 +99,7 @@ namespace PDTools.Utils
             while (len > 0)
             {
                 int toWrite = (int)Math.Min(len, bufferSize);
-                await src.ReadAsync(buffer, token);
+                await src.ReadAsync(buffer, 0, buffer.Length, token);
                 await target.WriteAsync(buffer, 0, toWrite, token);
 
                 crc = CRC32.CRC32_0x04C11DB7(buffer.AsSpan(0, toWrite), crc);

@@ -30,7 +30,7 @@ namespace PDTools.Compression
 
             // Inflated is always little
             uint zlibMagic = BinaryPrimitives.ReadUInt32LittleEndian(data);
-            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data[4..]);
+            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(4));
 
             if ((long)zlibMagic != PS2ZIP_MAGIC)
                 return false;
@@ -156,7 +156,7 @@ namespace PDTools.Compression
 
             // Inflated is always little
             uint zlibMagic = BinaryPrimitives.ReadUInt32LittleEndian(data);
-            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data[4..]);
+            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(4));
 
             if ((long)zlibMagic != PS2ZIP_MAGIC)
                 return false;

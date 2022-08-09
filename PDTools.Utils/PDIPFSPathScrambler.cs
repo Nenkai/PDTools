@@ -19,7 +19,9 @@ namespace PDTools.Utils
 		{
 			get
 			{
-				_default ??= GetPathFromSeed(1);
+				if (_default is null)
+					_default = GetPathFromSeed(1);
+
 				return _default;
 			}
 		}
@@ -29,7 +31,9 @@ namespace PDTools.Utils
 		{
 			get
 			{
-				_defaultOld ??= GetPathFromSeed(1, true);
+				if (_defaultOld is null)
+					_defaultOld = GetPathFromSeed(1, true);
+
 				return _defaultOld;
 			}
 		}
@@ -167,7 +171,7 @@ namespace PDTools.Utils
 			if (str.Length == 0)
 				return baseValue;
 
-			char currentChar = str[^1];
+			char currentChar = str[str.Length - 1];
 			ulong index = (ulong)CharsetLower.IndexOf(currentChar);
 			baseValue += index;
 

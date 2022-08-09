@@ -55,14 +55,14 @@ namespace PDTools.Compression
 
                         byte[] chunkBuffer = ArrayPool<byte>.Shared.Rent(chunk_uncompressed_size);
                         byte[] inputBuffer = ArrayPool<byte>.Shared.Rent(chunk_compressed_size);
-                        stream.Read(inputBuffer.AsSpan(0, chunk_compressed_size));
+                        stream.Read(inputBuffer, 0, chunk_compressed_size);
 
                         decompressor.Decompress(
                              chunkBuffer.AsSpan(0, chunk_uncompressed_size),
                              inputBuffer.AsSpan(0, chunk_compressed_size)
                              );
 
-                        outputStream.Write(chunkBuffer.AsSpan(0, chunk_uncompressed_size));
+                        outputStream.Write(chunkBuffer, 0, chunk_uncompressed_size);
 
                         stream.Align(0x10000);
 
@@ -127,14 +127,14 @@ namespace PDTools.Compression
                         byte[] chunkBuffer = ArrayPool<byte>.Shared.Rent(chunk_uncompressed_size);
                         byte[] inputBuffer = ArrayPool<byte>.Shared.Rent(chunk_compressed_size);
 
-                        stream.Read(inputBuffer.AsSpan(0, chunk_compressed_size));
+                        stream.Read(inputBuffer, 0, chunk_compressed_size);
 
                         decompressor.Decompress(
                             chunkBuffer.AsSpan(0, chunk_uncompressed_size),
                             inputBuffer.AsSpan(0, chunk_compressed_size)
                             );
 
-                        outputStream.Write(chunkBuffer.AsSpan(0, chunk_uncompressed_size));
+                        outputStream.Write(chunkBuffer, 0, chunk_uncompressed_size);
 
                         stream.Align(0x10000);
 

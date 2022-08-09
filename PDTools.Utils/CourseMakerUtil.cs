@@ -25,7 +25,7 @@ namespace PDTools.Utils
             byte[] src = File.ReadAllBytes(path);
             
 
-            if (Encoding.ASCII.GetString(src.AsSpan(0, 6)) == "GT6TED")
+            if (Encoding.ASCII.GetString(src, 0, 6) == "GT6TED")
                 return false;
             else if (src.AsSpan(0, 4).SequenceEqual(new byte[] { 0xC5, 0xEE, 0xF7, 0xFF }))
             {

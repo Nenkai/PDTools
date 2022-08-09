@@ -25,10 +25,12 @@ namespace GTOnlineDiscordBot.Services.SpecDB
             com.CommandText = "SELECT * FROM GENERIC_CAR WHERE id = $id";
             com.Parameters.AddWithValue("$code", code);
 
-            using var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token);
-            while (reader.Read())
+            using (var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token))
             {
-               
+                while (reader.Read())
+                {
+
+                }
             }
         }
 
@@ -40,10 +42,12 @@ namespace GTOnlineDiscordBot.Services.SpecDB
             com.CommandText = "SELECT * FROM GENERIC_CAR WHERE label = $label";
             com.Parameters.AddWithValue("$label", label);
 
-            using var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token);
-            while (reader.Read())
+            using (var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token))
             {
-                
+                while (reader.Read())
+                {
+
+                }
             }
         }
 
@@ -56,10 +60,12 @@ namespace GTOnlineDiscordBot.Services.SpecDB
             com.Parameters.AddWithValue("$table", table);
             com.Parameters.AddWithValue("$id", code);
 
-            using var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token);
-            while (reader.Read())
+            using (var reader = await com.ExecuteReaderAsync(cancellationTokenSrc.Token))
             {
+                while (reader.Read())
+                {
 
+                }
             }
         }
     }

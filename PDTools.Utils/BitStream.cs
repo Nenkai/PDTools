@@ -172,14 +172,16 @@ namespace PDTools.Utils
 
         public static int GetSizeOfVarInt(int val)
         {
-            return val switch
-            {
-                < 0x80 => 1,
-                < 0x4000 => 2,
-                < 0x200000 => 3,
-                < 0x10000000 => 4,
-                _ => 5,
-            };
+            if (val < 0x80)
+                return 1;
+            else if (val < 0x4000)
+                return 2;
+            else if (val < 0x200000)
+                return 3;
+            else if (val < 0x10000000)
+                return 4;
+            else
+                return 5;
         }
 
         /// <summary>
@@ -694,7 +696,7 @@ namespace PDTools.Utils
                     if (BitCounter == Byte_Bits)
                     {
                         _currentBuffer[0] = CurrentByte;
-                        _currentBuffer = _currentBuffer[1..];
+                        _currentBuffer = _currentBuffer.Slice(1);
                         CurrentByte = 0;
                         BitCounter = 0;
                     }
@@ -718,7 +720,7 @@ namespace PDTools.Utils
                     if (BitCounter == Byte_Bits)
                     {
                         _currentBuffer[0] = CurrentByte;
-                        _currentBuffer = _currentBuffer[1..];
+                        _currentBuffer = _currentBuffer.Slice(1);
                         CurrentByte = 0;
                         BitCounter = 0;
                     }

@@ -10,12 +10,12 @@ namespace GTOnlineDiscordBot.Services
 {
     public interface ISpecDB
     {
-        public Task InitializeAsync(string path, CancellationTokenSource cancellationTokenSrc);
+        Task InitializeAsync(string path, CancellationTokenSource cancellationTokenSrc);
 
-        public Task GetCarRowByCodeAsync(int code, CancellationTokenSource cancellationTokenSrc);
-        public Task GetCarRowByLabelAsync(string label, CancellationTokenSource cancellationTokenSrc);
+        Task GetCarRowByCodeAsync(int code, CancellationTokenSource cancellationTokenSrc);
+        Task GetCarRowByLabelAsync(string label, CancellationTokenSource cancellationTokenSrc);
 
-        public Task GetRowAsync(string table, int code, CancellationTokenSource cancellationTokenSrc);
+        Task GetRowAsync(string table, int code, CancellationTokenSource cancellationTokenSrc);
     }
 
     public enum SpecDBKind

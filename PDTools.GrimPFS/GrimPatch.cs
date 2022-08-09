@@ -23,7 +23,7 @@ namespace PDTools.GrimPFS
 
         public string TitleID { get; set; }
 
-        public Dictionary<string, GrimPatchFile> Files = new();
+        public Dictionary<string, GrimPatchFile> Files = new Dictionary<string, GrimPatchFile>();
 
         /* \!/ Major note regarding UpdateNodeInfo \!/
          * If a file index specified in the file, and its scrambled path (i.e 9/AB/CD) is already present in the player's PDIPFS
@@ -82,28 +82,30 @@ namespace PDTools.GrimPFS
         {
             uint titleIdCrc = ~CRC32.CRC32_0x04C11DB7(TitleID, 0);
 
-            using var sw = new StreamWriter(output);
-            sw.WriteLine($"PatchTarget {TitleID} {BaseVolumeSerial} {TargetVolumeSerial}");
-            sw.WriteLine($"ChunkSize {DefaultChunkSize:X8}");
+            using (var sw = new StreamWriter(output))
+            {
+                sw.WriteLine($"PatchTarget {TitleID} {BaseVolumeSerial} {TargetVolumeSerial}");
+                sw.WriteLine($"ChunkSize {DefaultChunkSize:X8}");
 
-            ulong psEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | PatchSequenceSeed) << 0x14 | 0) ^ titleIdCrc);
-            string psHashStr = PDIPFSPathResolver.GetRandomStringFromValue(psEncodedValue);
-            sw.WriteLine($"PATCHSEQUENCE {psHashStr}");
+                ulong psEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | PatchSequenceSeed) << 0x14 | 0) ^ titleIdCrc);
+                string psHashStr = PDIPFSPathResolver.GetRandomStringFromValue(psEncodedValue);
+                sw.WriteLine($"PATCHSEQUENCE {psHashStr}");
 
-            ulong uniEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | UpdateNodeInfoSeed) << 0x14 | 0) ^ titleIdCrc);
-            string uniHashStr = PDIPFSPathResolver.GetRandomStringFromValue(uniEncodedValue);
-            sw.WriteLine($"UPDATENODEINFO {uniHashStr}");
+                ulong uniEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | UpdateNodeInfoSeed) << 0x14 | 0) ^ titleIdCrc);
+                string uniHashStr = PDIPFSPathResolver.GetRandomStringFromValue(uniEncodedValue);
+                sw.WriteLine($"UPDATENODEINFO {uniHashStr}");
 
-            ulong headerEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | HeaderSeed) << 0x14 | 0) ^ titleIdCrc);
-            string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
-            sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(headerSeed)} {headerSeed} {headerHashStr}");
+                ulong headerEncodedValue = MiscCrypto.UpdateShiftValue(((TargetVolumeSerial << 0x4 | HeaderSeed) << 0x14 | 0) ^ titleIdCrc);
+                string headerHashStr = PDIPFSPathResolver.GetRandomStringFromValue(headerEncodedValue);
+                sw.WriteLine($"Header {PDIPFSPathResolver.GetPathFromSeed(headerSeed)} {headerSeed} {headerHashStr}");
 
-            ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | GameFileSeed) << 0x14 | 0) ^ titleIdCrc);
-            string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
-            sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
+                ulong tocEncodedValue = MiscCrypto.UpdateShiftValue((((ulong)tocIndex << 0x4 | GameFileSeed) << 0x14 | 0) ^ titleIdCrc);
+                string tocHashStr = PDIPFSPathResolver.GetRandomStringFromValue(tocEncodedValue);
+                sw.WriteLine($"TOC {PDIPFSPathResolver.GetPathFromSeed(tocIndex)} {tocIndex} {tocHashStr}");
 
-            foreach (var file in Files.Values)
-                sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.FileIndex} {file.ChunkId} {file.DownloadPath}");
+                foreach (var file in Files.Values)
+                    sw.WriteLine($"File {file.GamePath} {file.PFSPath} {file.FileIndex} {file.ChunkId} {file.DownloadPath}");
+            }
         }
 
         public static bool TryRead(string inputFile, out GrimPatch patch)
@@ -111,53 +113,55 @@ namespace PDTools.GrimPFS
             patch = null;
 
             var tmpPatch = new GrimPatch();
-            using var sw = new StreamReader(inputFile);
-            if (sw.EndOfStream)
-                return false;
-
-            string patchTarget = sw.ReadLine();
-            if (!tmpPatch.ReadPatchTarget(patchTarget))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            string chunkSize = sw.ReadLine();
-            if (!tmpPatch.ReadChunkSize(chunkSize))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            string patchSeq = sw.ReadLine();
-            if (!tmpPatch.ReadPatchSequence(patchSeq))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            string uni = sw.ReadLine();
-            if (!tmpPatch.ReadUpdateNodeInfo(uni))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            string header = sw.ReadLine();
-            if (!tmpPatch.ReadHeader(header))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            string toc = sw.ReadLine();
-            if (!tmpPatch.ReadToC(toc))
-                return false;
-            if (sw.EndOfStream)
-                return false;
-
-            while (!sw.EndOfStream)
+            using (var sw = new StreamReader(inputFile))
             {
-                string line = sw.ReadLine();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("//"))
-                    continue;
+                if (sw.EndOfStream)
+                    return false;
 
-                tmpPatch.ReadFile(line);
+                string patchTarget = sw.ReadLine();
+                if (!tmpPatch.ReadPatchTarget(patchTarget))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                string chunkSize = sw.ReadLine();
+                if (!tmpPatch.ReadChunkSize(chunkSize))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                string patchSeq = sw.ReadLine();
+                if (!tmpPatch.ReadPatchSequence(patchSeq))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                string uni = sw.ReadLine();
+                if (!tmpPatch.ReadUpdateNodeInfo(uni))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                string header = sw.ReadLine();
+                if (!tmpPatch.ReadHeader(header))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                string toc = sw.ReadLine();
+                if (!tmpPatch.ReadToC(toc))
+                    return false;
+                if (sw.EndOfStream)
+                    return false;
+
+                while (!sw.EndOfStream)
+                {
+                    string line = sw.ReadLine();
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("//"))
+                        continue;
+
+                    tmpPatch.ReadFile(line);
+                }
             }
 
             patch = tmpPatch;
