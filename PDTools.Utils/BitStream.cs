@@ -874,8 +874,8 @@ namespace PDTools.Utils
         public void WriteUInt64(ulong value)
             => WriteBits(value, Long_Bits);
 
-        public void WriteInt64(uint value)
-            => WriteBits(value, Long_Bits);
+        public void WriteInt64(long value)
+            => WriteBits((ulong)value, Long_Bits);
 
         public void WriteUInt32(uint value)
             => WriteBits(value, Int_Bits);

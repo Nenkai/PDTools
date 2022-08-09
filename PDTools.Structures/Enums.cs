@@ -24,7 +24,7 @@ namespace PDTools.Structures
 
     public enum CarPartsType
     {
-        BRAKE,
+        BRAKE = 2,
         BRAKE_CONTROLLER,
         SUSPENSION,
         ASCC,
