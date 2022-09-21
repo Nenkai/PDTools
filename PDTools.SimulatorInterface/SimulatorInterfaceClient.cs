@@ -18,7 +18,7 @@ namespace PDTools.SimulatorInterface
     /// <summary>
     /// Simulator Interface for GT7. (Disposable object).
     /// </summary>
-    public class SimulatorInterface : IDisposable
+    public class SimulatorInterfaceClient : IDisposable
     {
         private ISimulationInterfaceCryptor _cryptor;
         private IPEndPoint _endpoint;
@@ -51,7 +51,7 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         /// <param name="address">Target address.</param>
         /// <exception cref="ArgumentException"></exception>
-        public SimulatorInterface(string address, SimulatorInterfaceGameType gameType)
+        public SimulatorInterfaceClient(string address, SimulatorInterfaceGameType gameType)
         {
             if (!IPAddress.TryParse(address, out IPAddress addr))
                 throw new ArgumentException("Could not parse IP Address.");

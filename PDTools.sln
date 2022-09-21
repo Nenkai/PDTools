@@ -23,9 +23,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Files", "PDTools.Fi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.RText", "PDTools.RText\PDTools.RText.csproj", "{6A553661-9746-4CC4-8DF8-DA036E8031C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimulatorInterfaceTest", "SimulatorInterfaceTest\SimulatorInterfaceTest.csproj", "{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.SimulatorInterfaceTestTool", "PDTools.SimulatorInterfaceTestTool\PDTools.SimulatorInterfaceTestTool.csproj", "{B5733B05-0BE0-4B61-B8CB-4C88E77B5443}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.SimulatorInterface", "PDTools.SimulatorInterface\PDTools.SimulatorInterface.csproj", "{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.LiveTimingApi", "PDTools.LiveTimingApi\PDTools.LiveTimingApi.csproj", "{D9B9F4AF-DFF6-44F6-B66B-2411725DEA5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.LiveTimingApiTestTool", "PDTools.LiveTimingApiTestTool\PDTools.LiveTimingApiTestTool.csproj", "{84CEDEC9-3189-4F76-8451-69F209E7D353}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +85,14 @@ Global
 		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC7126E9-161D-47C7-89ED-A8D2EC2BDC4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9B9F4AF-DFF6-44F6-B66B-2411725DEA5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9B9F4AF-DFF6-44F6-B66B-2411725DEA5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9B9F4AF-DFF6-44F6-B66B-2411725DEA5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9B9F4AF-DFF6-44F6-B66B-2411725DEA5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84CEDEC9-3189-4F76-8451-69F209E7D353}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84CEDEC9-3189-4F76-8451-69F209E7D353}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84CEDEC9-3189-4F76-8451-69F209E7D353}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84CEDEC9-3189-4F76-8451-69F209E7D353}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

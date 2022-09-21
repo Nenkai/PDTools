@@ -8,7 +8,7 @@ using System.Net;
 
 using PDTools.SimulatorInterface;
 
-namespace SimulatorInterfaceTest
+namespace PDTools.SimulatorInterfaceTestTool
 {
     internal class Program
     {
@@ -45,7 +45,7 @@ namespace SimulatorInterfaceTest
             else if (gt6)
                 type = SimulatorInterfaceGameType.GT6;
 
-            SimulatorInterface simInterface = new SimulatorInterface(args[0], type);
+            SimulatorInterfaceClient simInterface = new SimulatorInterfaceClient(args[0], type);
             simInterface.OnReceive += SimInterface_OnReceive;
 
             var cts = new CancellationTokenSource();
