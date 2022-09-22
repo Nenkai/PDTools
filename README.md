@@ -9,11 +9,12 @@ A collection of utilities for working around certain Gran Turismo games.
 * `PDTools.GrimPFS` - Online Patching (GT5P/GT6)
 * `PDTools.RText` - Localization File handling
 * `PDTools.SimulatorInterface` - Simulation Interface API implementation (GT6/Sport/7)
+* `PDTools.SimulatorInterfaceTestTool` - Tool for testing the simulator interface
 * `PDTools.SpecDB` - GT4/5 SpecDB utils
 * `PDTools.Structures` - Internal structures (GT5/6)
 * `PDTools.Utils` - Various utilities
 * `STStruct` - Handling serialized adhoc objects (GT5/6/Sport?)
-* `SimulatorInterfaceTest` - Tool for testing the simulator interface
+
 
 # Credits
 * xFileFIN & Others - Crypto, Tooling, General help
