@@ -13,14 +13,14 @@ namespace PDTools.LiveTimingApi
 {
     public class LiveTimingClient : IDisposable
     {
-        private Uri _uri;
+        private string _host;
         private ClientWebSocket _client;
 
         public const int BufferSize = 0x2000;
 
-        public LiveTimingClient(Uri uri)
+        public LiveTimingClient(string host)
         {
-            _uri = uri;
+            _host = host;
         }
 
         public delegate void LiveTimingRaceStateDelegate(LiveTimingRaceState raceState);
@@ -73,7 +73,7 @@ namespace PDTools.LiveTimingApi
         public async Task Start(CancellationToken token = default)
         {
             _client = new ClientWebSocket();
-            await _client.ConnectAsync(_uri, token);
+            await _client.ConnectAsync(new Uri($"ws://{_host}/livetimingapi/"), token);
 
 #if NETCOREAPP3_0_OR_GREATER
             Memory<byte> buffer = new byte[BufferSize];

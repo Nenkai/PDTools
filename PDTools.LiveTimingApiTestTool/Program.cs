@@ -37,7 +37,7 @@ namespace PDTools.LiveTimingApiTestTool
 
             Console.WriteLine("Starting client..");
 
-            LiveTimingClient liveTimingClient = new LiveTimingClient(new Uri($"ws://{args[0]}/livetimingapi/"));
+            LiveTimingClient liveTimingClient = new LiveTimingClient(args[0]);
             liveTimingClient.OnBestLapEntryUpdate += LiveTimingClient_OnBestLapEntryUpdate;
             liveTimingClient.OnConditionUpdate += LiveTimingClient_OnConditionUpdate;
             liveTimingClient.OnConsumeStateUpdate += LiveTimingClient_OnConsumeStateUpdate;
@@ -58,7 +58,7 @@ namespace PDTools.LiveTimingApiTestTool
             }
             catch (OperationCanceledException e)
             {
-                Console.WriteLine($"Simulator Interface ending..");
+                Console.WriteLine($"Live Timing API client ending..");
             }
             catch (WebSocketException webSocketException)
             {
