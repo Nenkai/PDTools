@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2015, 2018 Scott Bennett
  *           (c) 2018-2021 Kaarlo Räihä
  *
@@ -20,12 +20,8 @@
 using System;
 using System.Runtime.CompilerServices; // For MethodImplOptions.AggressiveInlining
 using System.Runtime.InteropServices;
-
-#if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-#endif
-
 using System.Text;
 using System.Numerics;
 
@@ -85,6 +81,11 @@ namespace PDTools.Crypto
 
 			this.KeySetup(key);
 			this.IvSetup(nonce, counter);
+		}
+
+		public ChaCha20(uint[] initialState)
+		{
+			state = initialState;
 		}
 
 		/// <summary>
@@ -173,14 +174,14 @@ namespace PDTools.Crypto
 		}
 
 
-#region Encryption methods
+		#region Encryption methods
 
 
 
-#endregion // Encryption methods
+		#endregion // Encryption methods
 
 
-#region // Decryption methods
+		#region // Decryption methods
 
 		/// <summary>
 		/// Decrypt arbitrary-length byte array (input), writing the resulting byte array to the output buffer.
@@ -196,7 +197,7 @@ namespace PDTools.Crypto
 
 
 
-#endregion // Decryption methods
+		#endregion // Decryption methods
 
 		/// <summary>
 		/// Encrypt or decrypt an arbitrary-length byte array (input), writing the resulting byte array to the output buffer. The number of bytes to read from the input buffer is determined by numBytes.
@@ -225,7 +226,7 @@ namespace PDTools.Crypto
 				{
 					bytes[0] ^= tmp[blockOffset++];
 
-					bytes = bytes.Slice(1);
+					bytes = bytes[1..];
 					numBytes--;
 				}
 
@@ -239,7 +240,6 @@ namespace PDTools.Crypto
 
 			if (numBytes > 0)
 			{
-#if NETCOREAPP3_0_OR_GREATER
 				if (Avx2.IsSupported)
 				{
 					AVX2Xor(x, tmp, bytes, numBytes);
@@ -252,13 +252,9 @@ namespace PDTools.Crypto
 				{
 					LongXor(x, tmp, bytes, numBytes);
 				}
-#else
-				LongXor(x, tmp, bytes, numBytes);
-#endif
 			}
 		}
 
-#if NETCOREAPP3_0_OR_GREATER
 		private void AVX2Xor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
 		{
 			Span<Vector256<byte>> tmpStateBlocks = MemoryMarshal.Cast<byte, Vector256<byte>>(tmpState);
@@ -320,7 +316,6 @@ namespace PDTools.Crypto
 				rem--;
 			}
 		}
-#endif
 
 		private void LongXor(Span<uint> x, Span<byte> tmpState, Span<byte> inputBytes, int inputSize)
 		{
@@ -403,19 +398,19 @@ namespace PDTools.Crypto
 		private static void QuarterRound(Span<uint> x, int a, int b, int c, int d)
 		{
 			x[a] = x[a] + x[b];
-			x[d] = Util.RotateLeft(x[d] ^ x[a], 16);
+			x[d] = BitOperations.RotateLeft(x[d] ^ x[a], 16);
 
 			x[c] = Util.Add(x[c], x[d]);
-			x[b] = Util.RotateLeft(x[b] ^ x[c], 12);
+			x[b] = BitOperations.RotateLeft(x[b] ^ x[c], 12);
 
 			x[a] = Util.Add(x[a], x[b]);
-			x[d] = Util.RotateLeft(x[d] ^ x[a], 8);
+			x[d] = BitOperations.RotateLeft(x[d] ^ x[a], 8);
 
 			x[c] = Util.Add(x[c], x[d]);
-			x[b] = Util.RotateLeft(x[b] ^ x[c], 7);
+			x[b] = BitOperations.RotateLeft(x[b] ^ x[c], 7);
 		}
 
-#region Destructor and Disposer
+		#region Destructor and Disposer
 
 		/// <summary>
 		/// Clear and dispose of the internal state. The finalizer is only called if Dispose() was never called on this cipher.
@@ -464,6 +459,89 @@ namespace PDTools.Crypto
 			isDisposed = true;
 		}
 
-#endregion // Destructor and Disposer
+		#endregion // Destructor and Disposer
+	}
+
+	/// <summary>
+	/// Utilities that are used during compression
+	/// </summary>
+	public static class Util
+	{
+		/// <summary>
+		/// Unchecked integer exclusive or (XOR) operation.
+		/// </summary>
+		/// <param name="v"></param>
+		/// <param name="w"></param>
+		/// <returns>The result of (v XOR w)</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static uint XOr(uint v, uint w)
+		{
+			return unchecked(v ^ w);
+		}
+
+		/// <summary>
+		/// Unchecked integer addition. The ChaCha spec defines certain operations to use 32-bit unsigned integer addition modulo 2^32.
+		/// </summary>
+		/// <remarks>
+		/// See <a href="https://tools.ietf.org/html/rfc7539#page-4">ChaCha20 Spec Section 2.1</a>.
+		/// </remarks>
+		/// <param name="v"></param>
+		/// <param name="w"></param>
+		/// <returns>The result of (v + w) modulo 2^32</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static uint Add(uint v, uint w)
+		{
+			return unchecked(v + w);
+		}
+
+		/// <summary>
+		/// Add 1 to the input parameter using unchecked integer addition. The ChaCha spec defines certain operations to use 32-bit unsigned integer addition modulo 2^32.
+		/// </summary>
+		/// <remarks>
+		/// See <a href="https://tools.ietf.org/html/rfc7539#page-4">ChaCha20 Spec Section 2.1</a>.
+		/// </remarks>
+		/// <param name="v"></param>
+		/// <returns>The result of (v + 1) modulo 2^32</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static uint AddOne(uint v)
+		{
+			return unchecked(v + 1);
+		}
+
+		/// <summary>
+		/// Convert four bytes of the input buffer into an unsigned 32-bit integer, beginning at the inputOffset.
+		/// </summary>
+		/// <param name="p"></param>
+		/// <param name="inputOffset"></param>
+		/// <returns>An unsigned 32-bit integer</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static uint U8To32Little(byte[] p, int inputOffset)
+		{
+			unchecked
+			{
+				return ((uint)p[inputOffset]
+					| ((uint)p[inputOffset + 1] << 8)
+					| ((uint)p[inputOffset + 2] << 16)
+					| ((uint)p[inputOffset + 3] << 24));
+			}
+		}
+
+		/// <summary>
+		/// Serialize the input integer into the output buffer. The input integer will be split into 4 bytes and put into four sequential places in the output buffer, starting at the outputOffset.
+		/// </summary>
+		/// <param name="output"></param>
+		/// <param name="input"></param>
+		/// <param name="outputOffset"></param>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void ToBytes(Span<byte> output, uint input, int outputOffset)
+		{
+			unchecked
+			{
+				output[outputOffset] = (byte)input;
+				output[outputOffset + 1] = (byte)(input >> 8);
+				output[outputOffset + 2] = (byte)(input >> 16);
+				output[outputOffset + 3] = (byte)(input >> 24);
+			}
+		}
 	}
 }
