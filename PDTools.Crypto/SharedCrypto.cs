@@ -11,6 +11,8 @@ namespace PDTools.Crypto
 {
     public class SharedCrypto
     {
+        public const int EncryptUnit_HdrLen = 0x08;
+
         /// <summary>
         /// Original implementation of EncryptUnit. Decrypts a buffer.
         /// </summary>
@@ -31,15 +33,15 @@ namespace PDTools.Crypto
 
             if (useMt)
             {
-                
+                // TODO
             }
 
             GT4MC_swapPlace(buffer.Slice(4), length - 4, buffer.Slice(4), 4, mult);
 
             // PDISTD::MTRandom::MTRandom(rand, (uint*)buffer[1] + *(uint*)buffer);
-            int firstVal = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer) : BinaryPrimitives.ReadInt32LittleEndian(buffer);
-            int secondVal = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer.Slice(4)) : BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(4));
-            uint seed = (uint)(secondVal + firstVal);
+            int cryptoRand = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer) : BinaryPrimitives.ReadInt32LittleEndian(buffer);
+            int dataCrc = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer.Slice(4)) : BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(4));
+            uint seed = (uint)(dataCrc + cryptoRand);
             var rand = new MTRandom(seed);
 
             // GT4MC::easyDecrypt((uint*)buffer + 2, dataSize, rand, startCipher);
@@ -51,7 +53,7 @@ namespace PDTools.Crypto
             }
 
             // Create the cipher based on the two key ints, decrypt the actual data 
-            uint startCipher = (uint)(secondVal ^ firstVal);
+            uint startCipher = (uint)(dataCrc ^ cryptoRand);
             GT4MC_easyDecrypt(buffer.Slice(8), actualDataSize, rand, ref startCipher, bigEndian);
 
             // Seed potential CRC based on key
@@ -63,6 +65,109 @@ namespace PDTools.Crypto
                 return actualDataSize;
 
             return -1;
+        }
+
+        /// <summary>
+        /// Original implementation of EncryptUnit. Encrypts a buffer.
+        /// </summary>
+        /// <param name="buffer">Input buffer. The first 8 bytes must be reserved! Actual input comes after the first 8 bytes.</param>
+        /// <param name="length">Length of the buffer to work with.</param>
+        /// <param name="crcSeed">Value for seeding the crc in the buffer to then verify the buffer's crc.</param>
+        /// <param name="mult">Swap bytes multiplier 1, between 0 and 1.</param>
+        /// <param name="mult">Swap bytes multiplier 2, between 0 and 1.</param>
+        /// <param name="useMt">Whether to have an extra (undocumented) step.</param>
+        /// <param name="bigEndian">Non original, but to specify for the type of endianess to work with.</param>
+        public static void EncryptUnit_Encrypt(Span<byte> buffer, int length, uint crcSeed, double mult, double mult2, bool useMt, bool bigEndian = true)
+        {
+            uint dataCrc = CRC32.crc32_0x77073096(buffer.Slice(8), length - 8) ^ crcSeed;
+            uint randVal = (uint)new Random().Next();
+            if (bigEndian)
+            {
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(0), randVal);
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), dataCrc);
+            }
+            else
+            {
+                BinaryPrimitives.WriteUInt32LittleEndian(buffer.Slice(0), randVal);
+                BinaryPrimitives.WriteUInt32LittleEndian(buffer.Slice(4), dataCrc);
+            }
+
+            var rand = new MTRandom(dataCrc + randVal);
+            uint startCipher = (dataCrc ^ randVal);
+            GT4MC_easyEncrypt(buffer.Slice(8), length - 8, rand, ref startCipher, bigEndian);
+
+            Span<uint> dataInts = MemoryMarshal.Cast<byte, uint>(buffer);
+            if (bigEndian) // Non original, just adapted to work with both endianess
+            {
+                for (int i = 0; i < dataInts.Length; i++)
+                    dataInts[i] = BinaryPrimitives.ReverseEndianness(dataInts[i]);
+            }
+
+            GT4MC_swapPlace(buffer.Slice(4), length - 4, buffer.Slice(4), 4, mult);
+
+            if (useMt)
+            {
+                // TODO
+            }
+
+            GT4MC_swapPlace(buffer, length, buffer, 4, mult2);
+        }
+
+        private static void GT4MC_easyDecrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian)
+        {
+            int pos = 0;
+            while (pos != len && pos + 4 <= len)
+            {
+                int pseudoRandVal = rand.getInt32();
+                int updated = RandomUpdateOld1(ref seed);
+
+                Span<uint> current = MemoryMarshal.Cast<byte, uint>(data);
+
+                uint result = (uint)((current[0] + updated) ^ pseudoRandVal);
+                current[0] = bigEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
+
+                pos += 4;
+                data = data.Slice(4);
+            }
+
+            while (pos != len)
+            {
+                int pseudoRandVal = rand.getInt32();
+                int updated = RandomUpdateOld1(ref seed);
+
+                uint result = (uint)((data[0] + updated) ^ pseudoRandVal);
+                data[0] = (byte)result;
+
+                pos++;
+                data = data.Slice(1);
+            }
+        }
+
+        private static void GT4MC_easyEncrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian)
+        {
+            while (len >= 4)
+            {
+                int val = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(data) : BinaryPrimitives.ReadInt32LittleEndian(data);
+                int res = val ^ rand.getInt32();
+                int updated = RandomUpdateOld1(ref seed);
+
+                BinaryPrimitives.WriteInt32LittleEndian(data, res - updated);
+
+                len -= 4;
+                data = data.Slice(4);
+            }
+
+            while (len > 0)
+            {
+                int val = data[0];
+                int res = val ^ rand.getInt32();
+                int updated = RandomUpdateOld1(ref seed);
+
+                data[0] = (byte)(res - updated);
+
+                len--;
+                data = data.Slice(1);
+            }
         }
 
         public static int RandomUpdateOld1(ref uint value)
@@ -200,36 +305,6 @@ namespace PDTools.Crypto
 
                 data[(int)(offsetToSwapAt + i)] = swapB;
                 data2[i] = swapA;
-            }
-        }
-
-        private static void GT4MC_easyDecrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian)
-        {
-            int pos = 0;
-            while (pos != len && pos + 4 <= len)
-            {
-                int pseudoRandVal = rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
-
-                Span<uint> current = MemoryMarshal.Cast<byte, uint>(data);
-
-                uint result = (uint)((current[0] + updated) ^ pseudoRandVal);
-                current[0] = bigEndian ? BinaryPrimitives.ReverseEndianness(result) : result;
-
-                pos += 4;
-                data = data.Slice(4);
-            }
-
-            while (pos != len)
-            {
-                int pseudoRandVal = rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
-
-                uint result = (uint)((data[0] + updated) ^ pseudoRandVal);
-                data[0] = (byte)result;
-
-                pos++;
-                data = data.Slice(1);
             }
         }
     }

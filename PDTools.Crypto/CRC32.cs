@@ -123,12 +123,10 @@ namespace PDTools.Crypto
 		public static uint crc32_0x77073096(Span<byte> data, int length)
         {
             uint checksum = 0xFFFFFFFF;
-            if (length > 0)
-            {
-                for (int i = 0; i < data.Length; i++)
-                    checksum = checksum_0x77073096[(byte)(checksum ^ data[i])] ^ (checksum >> 8);
-            }
-
+           
+            for (int i = 0; i < length; i++)
+                checksum = checksum_0x77073096[(byte)(checksum ^ data[i])] ^ (checksum >> 8);
+            
             return ~checksum;
         }
 	}
