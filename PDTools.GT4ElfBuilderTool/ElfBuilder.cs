@@ -7,10 +7,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.GT4ElfBuilderTool
 {
-    // Warning: Dirty
     public class ElfBuilder
     {
-        public const int BssSize = 0x200000;
+        public const int BssSize = 0x800000;
 
         public void BuildFromInfo(string fileName, GTImageLoader file)
         {

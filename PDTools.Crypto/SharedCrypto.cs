@@ -24,7 +24,7 @@ namespace PDTools.Crypto
         /// <param name="useMt">Whether to have an extra (undocumented) step.</param>
         /// <param name="bigEndian">Non original, but to specify for the type of endianess to work with.</param>
         /// <returns>Size of the decrypted data. -1 if incorrect.</returns>
-        public static int EncryptUnit_Decrypt(Span<byte> buffer, int length, uint crcSeed, double mult, double mult2, bool useMt, bool bigEndian = true)
+        public static int EncryptUnit_Decrypt(Span<byte> buffer, int length, uint crcSeed, double mult, double mult2, bool useMt, bool bigEndian = true, bool randomUpdateOld1_OldVersion = false)
         {
             // First 8 reserved for encryption
             int actualDataSize = buffer.Length - 8;
@@ -54,7 +54,7 @@ namespace PDTools.Crypto
 
             // Create the cipher based on the two key ints, decrypt the actual data 
             uint startCipher = (uint)(dataCrc ^ cryptoRand);
-            GT4MC_easyDecrypt(buffer.Slice(8), actualDataSize, rand, ref startCipher, bigEndian);
+            GT4MC_easyDecrypt(buffer.Slice(8), actualDataSize, rand, ref startCipher, bigEndian, randomUpdateOld1_OldVersion);
 
             // Seed potential CRC based on key
             Span<uint> uintBuf = MemoryMarshal.Cast<byte, uint>(buffer);
@@ -113,13 +113,13 @@ namespace PDTools.Crypto
             GT4MC_swapPlace(buffer, length, buffer, 4, mult2);
         }
 
-        private static void GT4MC_easyDecrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian)
+        private static void GT4MC_easyDecrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian, bool randomUpdateOld1_OldVersion)
         {
             int pos = 0;
             while (pos != len && pos + 4 <= len)
             {
                 int pseudoRandVal = rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
+                int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 Span<uint> current = MemoryMarshal.Cast<byte, uint>(data);
 
@@ -133,7 +133,7 @@ namespace PDTools.Crypto
             while (pos != len)
             {
                 int pseudoRandVal = rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
+                int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 uint result = (uint)((data[0] + updated) ^ pseudoRandVal);
                 data[0] = (byte)result;
@@ -170,25 +170,29 @@ namespace PDTools.Crypto
             }
         }
 
-        public static int RandomUpdateOld1(ref uint value)
+        public static int RandomUpdateOld1(ref uint value, bool useOld = false)
         {
             uint v1 = 17 * value + 17;
             value = v1;
 
-            // Old LE method
-            // uint low = (v1 << 16);
-            // uint high = (v1 & 0xFFFF0000) >> 16;
+            // GT4 retail uses this..
+            if (useOld)
+            {
+                return (int)(v1 ^ (int)((v1 << 16) | (v1 >> 16)));
+            }
+            else
+            {
+                // Starting from GT4O?
 
-            //uint swapped = low + high;
+                var bitReverse = BitReverse(value);
 
-            var bitReverse = BitReverse(value);
+                var or = bitReverse << 0x18 | (bitReverse & 0xFF00) << 0x8 | bitReverse >> 0x18 | (bitReverse >> 0x8) & 0xFF00;
+                var shifted = or << 0x8;
+                shifted += or;
+                shifted += 0x101;
 
-            var or = bitReverse << 0x18 | (bitReverse & 0xFF00) << 0x8 | bitReverse >> 0x18 | (bitReverse >> 0x8) & 0xFF00;
-            var shifted = or << 0x8;
-            shifted += or;
-            shifted += 0x101;
-
-            return (int)(or ^ Util.RotateRight(shifted, 0x10));
+                return (int)(or ^ Util.RotateRight(shifted, 0x10));
+            }
         }
 
     private static uint BitReverse(uint value)

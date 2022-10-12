@@ -19,32 +19,51 @@ namespace PDTools.SaveFile.GT4
         public const int SerializePackHeaderLength = 0x10;
 
         public byte[] Buffer { get; set; }
+
+        public bool UseOldRandomUpdateCrypto { get; set; } = true;
+
         public void LoadFile(string gameDataFilePath)
         {
-#if DEBUG
-            if (File.Exists("file.bin"))
-                File.Delete("file.bin");
+            byte[] rawSaveFile = File.ReadAllBytes(gameDataFilePath);
 
-            File.Copy(gameDataFilePath, "file.bin");
-
-            byte[] rawSaveFile = File.ReadAllBytes("file.bin");
-#endif
-
-            // 240c8e8d
             // Decrypt whole file
-            int decryptedLen = SharedCrypto.EncryptUnit_Decrypt(rawSaveFile, rawSaveFile.Length, 0, Mult, Mult2, useMt: false, bigEndian: false);
-            if (decryptedLen == -1)
-                throw new Exception("Failed to decrypt the GT4 save.");
+            DecryptSave(rawSaveFile);
 
-            Span<byte> packBuffer = rawSaveFile.AsSpan(SharedCrypto.EncryptUnit_HdrLen, rawSaveFile.Length - SharedCrypto.EncryptUnit_HdrLen);
+            if (Buffer.Length == 0x3A070)
+            {
+                // GT4 (EU)
+            }
+            else if (Buffer.Length == 0x3A160)
+            {
+                // GT4O (US)
+            }
+#if DEBUG
+            File.WriteAllBytes("gt4_eu_save.out", Buffer);
+#endif
+        }
+
+        private void DecryptSave(byte[] rawSaveFile)
+        {
+            byte[] workBuffer = new byte[rawSaveFile.Length];
+            rawSaveFile.AsSpan().CopyTo(workBuffer);
+
+            int decryptedLen = SharedCrypto.EncryptUnit_Decrypt(workBuffer, workBuffer.Length, 0, Mult, Mult2, useMt: false, bigEndian: false, randomUpdateOld1_OldVersion: true);
+            if (decryptedLen == -1)
+            {
+                // GT4O and above uses a tweaked version of RandomUpdateOld1, try it
+                rawSaveFile.AsSpan().CopyTo(workBuffer);
+                decryptedLen = SharedCrypto.EncryptUnit_Decrypt(workBuffer, workBuffer.Length, 0, Mult, Mult2, useMt: false, bigEndian: false, randomUpdateOld1_OldVersion: false);
+                if (decryptedLen == -1)
+                    throw new Exception("Failed to decrypt the GT4 Save.");
+
+                UseOldRandomUpdateCrypto = false;
+            }
+
+            Span<byte> packBuffer = workBuffer.AsSpan(SharedCrypto.EncryptUnit_HdrLen, workBuffer.Length - SharedCrypto.EncryptUnit_HdrLen);
             if (!VerifyPackHeader(packBuffer, out Span<byte> saveBuffer))
                 throw new Exception("Failed to decrypt the GT4 Pack Header save.");
 
             Buffer = saveBuffer.ToArray();
-
-#if DEBUG
-            File.WriteAllBytes("save.out", Buffer);
-#endif
         }
 
         private static byte[] EncryptGameDataFileBuffer(Span<byte> saveBuffer)
