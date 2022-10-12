@@ -21,7 +21,15 @@ namespace PDTools.SaveFile.GT4
         public byte[] Buffer { get; set; }
         public void LoadFile(string gameDataFilePath)
         {
-            byte[] rawSaveFile = File.ReadAllBytes(gameDataFilePath);
+#if DEBUG
+            if (File.Exists("file.bin"))
+                File.Delete("file.bin");
+
+            File.Copy(gameDataFilePath, "file.bin");
+
+            byte[] rawSaveFile = File.ReadAllBytes("file.bin");
+#endif
+
             // 240c8e8d
             // Decrypt whole file
             int decryptedLen = SharedCrypto.EncryptUnit_Decrypt(rawSaveFile, rawSaveFile.Length, 0, Mult, Mult2, useMt: false, bigEndian: false);
@@ -33,6 +41,10 @@ namespace PDTools.SaveFile.GT4
                 throw new Exception("Failed to decrypt the GT4 Pack Header save.");
 
             Buffer = saveBuffer.ToArray();
+
+#if DEBUG
+            File.WriteAllBytes("save.out", Buffer);
+#endif
         }
 
         private static byte[] EncryptGameDataFileBuffer(Span<byte> saveBuffer)
