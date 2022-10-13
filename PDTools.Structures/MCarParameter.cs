@@ -8,6 +8,7 @@ using System.IO;
 using Syroot.BinaryData;
 
 using PDTools.Utils;
+using PDTools.Enums.PS3;
 
 namespace PDTools.Structures
 {

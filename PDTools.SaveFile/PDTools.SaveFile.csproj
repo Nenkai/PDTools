@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PDTools.Crypto\PDTools.Crypto.csproj" />
+    <ProjectReference Include="..\PDTools.Enums\PDTools.Enums.csproj" />
+    <ProjectReference Include="..\PDTools.Structures\PDTools.Structures.csproj" />
     <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
   </ItemGroup>
 

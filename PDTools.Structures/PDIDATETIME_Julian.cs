@@ -4,7 +4,10 @@ using System.Text;
 
 namespace PDTools.Structures
 {
-    public class JulianTime
+    /// <summary>
+    /// 64 bits julian date + time 
+    /// </summary>
+    public class PDIDATETIME_Julian
     {
         public static readonly uint[] DaysInYear = new uint[] { 0, 365, 730, 1095, 1461 };
 

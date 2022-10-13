@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Memory;
 using Syroot.BinaryData.Core;
 
+using PDTools.Enums.PS3;
+
 namespace PDTools.Structures
 {
     public class RankingStats

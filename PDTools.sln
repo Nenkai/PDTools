@@ -33,9 +33,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.LiveTimingApiTestTo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.SaveFile", "PDTools.SaveFile\PDTools.SaveFile.csproj", "{CFCF601B-1EAB-49E6-96DC-4368428FBEC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{F1D8E65B-734B-4961-A217-8C889AE190B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{F1D8E65B-734B-4961-A217-8C889AE190B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.GT4ElfBuilderTool", "PDTools.GT4ElfBuilderTool\PDTools.GT4ElfBuilderTool.csproj", "{E0686DA4-1290-4E93-8887-7DF9DE5B92DC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.GT4ElfBuilderTool", "PDTools.GT4ElfBuilderTool\PDTools.GT4ElfBuilderTool.csproj", "{E0686DA4-1290-4E93-8887-7DF9DE5B92DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.Enums", "PDTools.Enums\PDTools.Enums.csproj", "{E82E7A17-658E-4D96-BFC1-7CB952511404}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +113,10 @@ Global
 		{E0686DA4-1290-4E93-8887-7DF9DE5B92DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0686DA4-1290-4E93-8887-7DF9DE5B92DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0686DA4-1290-4E93-8887-7DF9DE5B92DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E82E7A17-658E-4D96-BFC1-7CB952511404}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E82E7A17-658E-4D96-BFC1-7CB952511404}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E82E7A17-658E-4D96-BFC1-7CB952511404}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E82E7A17-658E-4D96-BFC1-7CB952511404}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

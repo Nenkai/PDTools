@@ -24,24 +24,40 @@ namespace PDTools.Utils
         /// <param name="sr"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public static string ReadFixedString(this SpanReader sr, int size)
+        public static string ReadFixedString(this ref SpanReader sr, int size)
         {
             int basePos = sr.Position;
-            int endPos = basePos + size;
+            int maxPos = basePos + size;
             byte val;
 
+            int endStrPos = basePos;
             do
+            {
                 val = sr.ReadByte();
-            while (val != 0 || sr.Position >= endPos);
+                endStrPos++;
+            }
+            while (val != 0 || sr.Position >= maxPos);
+
+            if (endStrPos - 1 <= basePos)
+            {
+                sr.Position = maxPos;
+                return string.Empty;
+            }
 
 #if NETCOREAPP2_1_OR_GREATER
-            ReadOnlySpan<byte> chars = sr.Span.Slice(basePos, sr.Position - 1);
+            ReadOnlySpan<byte> chars = sr.Span.Slice(basePos, (endStrPos - basePos) - 1);
+             sr.Position = maxPos;
+
             return sr.Encoding.GetString(chars);
 #else
             unsafe
-            { 
+            {
                 fixed (byte* bp = sr.Span)
-                    return sr.Encoding.GetString(bp, sr.Position - 1);
+                {
+                    string str = sr.Encoding.GetString(bp, (endStrPos - basePos) - 1);
+                    sr.Position = maxPos;
+                    return str;
+                }
             }
 #endif
         }

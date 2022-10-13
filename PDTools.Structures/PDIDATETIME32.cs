@@ -3,6 +3,9 @@ using PDTools.Utils;
 
 namespace PDTools
 {
+	/// <summary>
+	/// Used in GT5/6
+	/// </summary>
 	public struct PDIDATETIME32
 	{
 		private uint _timeData;

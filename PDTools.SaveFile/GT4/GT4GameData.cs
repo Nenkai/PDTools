@@ -5,9 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Buffers.Binary;
 using System.IO;
+using Syroot.BinaryData.Memory;
 
 using PDTools.Crypto;
 using PDTools.Utils;
+
+using PDTools.SaveFile.GT4.UserProfile;
+using PDTools.SaveFile.GT4.Option;
 
 namespace PDTools.SaveFile.GT4
 {
@@ -22,7 +26,11 @@ namespace PDTools.SaveFile.GT4
 
         public bool UseOldRandomUpdateCrypto { get; set; } = true;
 
-        public void LoadFile(string gameDataFilePath)
+        public UserProfileGT4 Profile { get; set; } = new UserProfileGT4();
+        public OptionGT4 Option { get; set; } = new OptionGT4();
+        public ContextGT4 Context { get; set; } = new ContextGT4();
+
+        public void LoadFile(GT4Save gt4Save, string gameDataFilePath)
         {
             byte[] rawSaveFile = File.ReadAllBytes(gameDataFilePath);
 
@@ -31,15 +39,48 @@ namespace PDTools.SaveFile.GT4
 
             if (Buffer.Length == 0x3A070)
             {
-                // GT4 (EU)
+                gt4Save.GameType = GT4GameType.GT4_EU;
             }
             else if (Buffer.Length == 0x3A160)
             {
                 // GT4O (US)
+                if (gt4Save.GameType == GT4GameType.GT4_US)
+                    gt4Save.GameType = GT4GameType.GT4O_US;
             }
+
+            ReadSave(gt4Save);
+
 #if DEBUG
-            File.WriteAllBytes("gt4_eu_save.out", Buffer);
+            // For testing whether saves are decrypted -> read -> written -> encrypted fine
+            File.WriteAllBytes("save.out", Buffer);
+
+            byte[] resaved = WriteSave(gt4Save);
+            File.WriteAllBytes("save.out_repacked", resaved);
+
+            byte[] encrypted = EncryptSave(resaved);
+            DecryptSave(encrypted);
+
+            File.WriteAllBytes("save.out_repak_encr_decrypt", resaved);
 #endif
+        }
+
+        private void ReadSave(GT4Save gt4Save)
+        {
+            SpanReader sr = new SpanReader(Buffer);
+            Profile.Unpack(gt4Save, ref sr);
+            Option.Unpack(gt4Save, ref sr);
+            Context.Unpack(gt4Save, ref sr);
+        }
+
+        private byte[] WriteSave(GT4Save gt4Save)
+        {
+            byte[] output = new byte[Buffer.Length];
+            SpanWriter sw = new SpanWriter(output);
+            Profile.Pack(gt4Save, ref sw);
+            Option.Pack(gt4Save, ref sw);
+            Context.Pack(gt4Save, ref sw);
+
+            return output;
         }
 
         private void DecryptSave(byte[] rawSaveFile)
@@ -66,7 +107,7 @@ namespace PDTools.SaveFile.GT4
             Buffer = saveBuffer.ToArray();
         }
 
-        private static byte[] EncryptGameDataFileBuffer(Span<byte> saveBuffer)
+        private static byte[] EncryptSave(Span<byte> saveBuffer)
         {
             byte[] packBuffer = SerializePack(saveBuffer);
 
@@ -118,7 +159,7 @@ namespace PDTools.SaveFile.GT4
         public static void EncryptGameDataSaveFile(string inputFile)
         {
             byte[] saveBuffer = File.ReadAllBytes(inputFile);
-            byte[] encryptedSaveFile = EncryptGameDataFileBuffer(saveBuffer);
+            byte[] encryptedSaveFile = EncryptSave(saveBuffer);
             File.WriteAllBytes(inputFile + ".enc", encryptedSaveFile);
         }
     }

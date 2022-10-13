@@ -1,0 +1,96 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Syroot.BinaryData.Memory;
+
+using PDTools.SaveFile.GT4.UserProfile.DayEvents;
+using PDTools.Enums.PS2;
+
+namespace PDTools.SaveFile.GT4.UserProfile
+{
+    public class Calendar : IGameSerializeBase
+    {
+        public const int MAX_EVENTS = 2922;
+
+        public int Days { get; set; }
+        public DayEvent[] Events { get; set; } = new DayEvent[MAX_EVENTS];
+        public int Date { get; set; }
+
+        public void Pack(GT4Save save, ref SpanWriter sw)
+        {
+            sw.WriteInt32(Days);
+
+            for (var i = 0; i < MAX_EVENTS; i++)
+            {
+                DayEvent @event = Events[i];
+                sw.WriteByte((byte)@event.EventType);
+                @event.Pack(save, ref sw);
+
+            }
+            sw.WriteInt32(Date);
+
+            sw.Align(GT4Save.ALIGNMENT);
+        }
+
+        public void Unpack(GT4Save save, ref SpanReader sr)
+        {
+            Days = sr.ReadInt32();
+
+            for (var i = 0; i < MAX_EVENTS; i++)
+            {
+                DayEventType type = (DayEventType)sr.ReadByte();
+                DayEvent @event;
+                switch (type)
+                {
+                    case DayEventType.NO_EVENT:
+                        @event = new NoEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+
+                    case DayEventType.GET_CAR:
+                        @event = new GetCarEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.SELL_CAR:
+                        @event = new SellCarEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.RUN_RACE:
+                        @event = new RunRaceEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.RUN_LICENSE:
+                        @event = new RunLicenseEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.RUN_MISSION:
+                        @event = new RunMissionEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.BUY_WHEEL:
+                        @event = new BuyWheelEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.BUY_WING:
+                        @event = new BuyWingEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+                    case DayEventType.RUN_COURSE:
+                        @event = new RunCourseEvent();
+                        @event.Unpack(save, ref sr);
+                        break;
+
+                    default:
+                        throw new Exception($"Unsupported day event type: {type}");
+                        break;
+                }
+
+                Events[i] = @event;
+            }
+
+            Date = sr.ReadInt32();
+
+            sr.Align(GT4Save.ALIGNMENT);
+        }
+    }
+}
