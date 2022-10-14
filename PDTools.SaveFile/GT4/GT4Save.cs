@@ -24,8 +24,12 @@ namespace PDTools.SaveFile.GT4
 
         public static Dictionary<string, GT4GameType> GameDataRegionNames = new Dictionary<string, GT4GameType>()
         {
-            {"BESCES-51719GAMEDATA", GT4GameType.GT4_EU }, // GT4 EU
-            {"BASCUS-97436GAMEDATA", GT4GameType.GT4_US }, // GT4 US, GT4O US
+            { "BE" + "SCES-51719" + "GAMEDATA", GT4GameType.GT4_EU }, // GT4 EU
+            { "BA" + "SCUS-97328" + "GAMEDATA", GT4GameType.GT4_US }, // GT4 US
+            { "BI" + "SCPS-17001" + "GAMEDATA", GT4GameType.GT4_JP }, // GT4 JP
+            { "BK" + "SCKA-30001" + "GAMEDATA", GT4GameType.GT4_KR }, // GT4 KR
+            { "BA" + "SCUS-97436" + "GAMEDATA", GT4GameType.GT4O_US }, // GT4 Onilne Beta Test US
+            { "BI" + "PAPX-90523" + "GAMEDATA", GT4GameType.GT4O_JP }, // GT4 Online Test Version JP
         };
 
         public static GT4Save Load(string directory)
@@ -70,12 +74,12 @@ namespace PDTools.SaveFile.GT4
 
         public bool IsGT4Retail()
         {
-            return GameType == GT4GameType.GT4_EU || GameType == GT4GameType.GT4_US;
+            return GameType == GT4GameType.GT4_EU || GameType == GT4GameType.GT4_US || GameType == GT4GameType.GT4_JP || GameType == GT4GameType.GT4_KR;
         }
 
         public bool IsGT4Online()
         {
-            return GameType == GT4GameType.GT4O_US;
+            return GameType == GT4GameType.GT4O_US || GameType == GT4GameType.GT4O_JP;
         }
     }
 
@@ -84,6 +88,9 @@ namespace PDTools.SaveFile.GT4
         Unknown,
         GT4_EU,
         GT4_US,
-        GT4O_US
+        GT4_JP,
+        GT4_KR,
+        GT4O_US,
+        GT4O_JP,
     }
 }

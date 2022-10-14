@@ -40,24 +40,33 @@ namespace PDTools.SaveFile.GT4
                 throw new Exception("Failed to decrypt the GT4 save.");
             }
 
+#if DEBUG
+            // For testing whether saves are decrypted -> read -> written -> encrypted fine
+            File.WriteAllBytes("save.out", decrypted.ToArray());
+#endif
+
             if (decrypted.Length == 0x3A070)
             {
-                gt4Save.GameType = GT4GameType.GT4_EU;
+                if (gt4Save.IsGT4Retail())
+                {
+                    // Warn
+                }
             }
             else if (decrypted.Length == 0x3A160)
             {
-                // GT4O (US)
-                if (gt4Save.GameType == GT4GameType.GT4_US)
-                    gt4Save.GameType = GT4GameType.GT4O_US;
+                // GT4O (US, JP)
+                if (!gt4Save.IsGT4Online())
+                {
+                    // Warn
+                }
+
             }
 
             SaveLength = decrypted.Length;
             ReadSave(gt4Save, decrypted);
 
-#if DEBUG
-            // For testing whether saves are decrypted -> read -> written -> encrypted fine
-            File.WriteAllBytes("save.out", decrypted.ToArray());
 
+#if DEBUG
             byte[] resaved = WriteSave(gt4Save);
             File.WriteAllBytes("save.out_repacked", resaved);
 
