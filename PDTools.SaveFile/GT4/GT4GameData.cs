@@ -107,7 +107,7 @@ namespace PDTools.SaveFile.GT4
             Buffer = saveBuffer.ToArray();
         }
 
-        private static byte[] EncryptSave(Span<byte> saveBuffer)
+        private byte[] EncryptSave(Span<byte> saveBuffer)
         {
             byte[] packBuffer = SerializePack(saveBuffer);
 
@@ -115,7 +115,7 @@ namespace PDTools.SaveFile.GT4
             byte[] fileBuffer = new byte[fileLength];
             packBuffer.CopyTo(fileBuffer.AsSpan(SharedCrypto.EncryptUnit_HdrLen));
 
-            SharedCrypto.EncryptUnit_Encrypt(fileBuffer, fileBuffer.Length, 0, Mult, Mult2, useMt: false, bigEndian: false);
+            SharedCrypto.EncryptUnit_Encrypt(fileBuffer, fileBuffer.Length, 0, Mult, Mult2, useMt: false, bigEndian: false, UseOldRandomUpdateCrypto);
             return fileBuffer;
         }
 
@@ -154,13 +154,6 @@ namespace PDTools.SaveFile.GT4
                 saveBuffer = default;
                 return false;
             }
-        }
-
-        public static void EncryptGameDataSaveFile(string inputFile)
-        {
-            byte[] saveBuffer = File.ReadAllBytes(inputFile);
-            byte[] encryptedSaveFile = EncryptSave(saveBuffer);
-            File.WriteAllBytes(inputFile + ".enc", encryptedSaveFile);
         }
     }
 }

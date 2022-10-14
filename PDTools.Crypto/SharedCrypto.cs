@@ -77,7 +77,7 @@ namespace PDTools.Crypto
         /// <param name="mult">Swap bytes multiplier 2, between 0 and 1.</param>
         /// <param name="useMt">Whether to have an extra (undocumented) step.</param>
         /// <param name="bigEndian">Non original, but to specify for the type of endianess to work with.</param>
-        public static void EncryptUnit_Encrypt(Span<byte> buffer, int length, uint crcSeed, double mult, double mult2, bool useMt, bool bigEndian = true)
+        public static void EncryptUnit_Encrypt(Span<byte> buffer, int length, uint crcSeed, double mult, double mult2, bool useMt, bool bigEndian = true, bool randomUpdateOld1_OldVersion = false)
         {
             uint dataCrc = CRC32.crc32_0x77073096(buffer.Slice(8), length - 8) ^ crcSeed;
             uint randVal = (uint)new Random().Next();
@@ -94,7 +94,7 @@ namespace PDTools.Crypto
 
             var rand = new MTRandom(dataCrc + randVal);
             uint startCipher = (dataCrc ^ randVal);
-            GT4MC_easyEncrypt(buffer.Slice(8), length - 8, rand, ref startCipher, bigEndian);
+            GT4MC_easyEncrypt(buffer.Slice(8), length - 8, rand, ref startCipher, bigEndian, randomUpdateOld1_OldVersion);
 
             Span<uint> dataInts = MemoryMarshal.Cast<byte, uint>(buffer);
             if (bigEndian) // Non original, just adapted to work with both endianess
@@ -143,13 +143,13 @@ namespace PDTools.Crypto
             }
         }
 
-        private static void GT4MC_easyEncrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian)
+        private static void GT4MC_easyEncrypt(Span<byte> data, int len, MTRandom rand, ref uint seed, bool bigEndian, bool randomUpdateOld1_OldVersion)
         {
             while (len >= 4)
             {
                 int val = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(data) : BinaryPrimitives.ReadInt32LittleEndian(data);
                 int res = val ^ rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
+                int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 BinaryPrimitives.WriteInt32LittleEndian(data, res - updated);
 
@@ -161,7 +161,7 @@ namespace PDTools.Crypto
             {
                 int val = data[0];
                 int res = val ^ rand.getInt32();
-                int updated = RandomUpdateOld1(ref seed);
+                int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 data[0] = (byte)(res - updated);
 
@@ -195,26 +195,32 @@ namespace PDTools.Crypto
             }
         }
 
-    private static uint BitReverse(uint value)
-    {
-        var left = (uint)1 << 31;
-        uint right = 1;
-        uint result = 0;
-
-        for (var i = 31; i >= 1; i -= 2)
+        private static uint BitReverse(uint value)
         {
-            result |= (value & left) >> i;
-            result |= (value & right) << i;
-            left >>= 1;
-            right <<= 1;
+            var left = (uint)1 << 31;
+            uint right = 1;
+            uint result = 0;
+
+            for (var i = 31; i >= 1; i -= 2)
+            {
+                result |= (value & left) >> i;
+                result |= (value & right) << i;
+                left >>= 1;
+                right <<= 1;
+            }
+            return result;
         }
-        return result;
-    }
 
-    public static void r_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
-            => Shuffle(buffer, 8 * size, randomizer, swapbit);
+        /// <summary>
+        /// Reverse shuffle bits - Original name: r_shufflebit
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="size"></param>
+        /// <param name="randomizer"></param>
+        public static void reverse_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
+            => r_shufflebit(buffer, 8 * size, randomizer, swapbit);
 
-        public static void Shuffle(Memory<byte> buffer, int size, MTRandom randomizer,
+        private static void r_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer,
             Action<Memory<byte>, int, int> shuffler)
         {
             int max = size - 1;
@@ -232,13 +238,7 @@ namespace PDTools.Crypto
                     float randVal = randomizer.getFloat();
 
                     int h = i + 1;
-                    float index;
-                    if (h < 0)
-                        index = randVal * ((h & 1 | (h >> 1)) + (h & 1 | (h >> 1)));
-                    else
-                        index = randVal * h;
-
-                    temp[i - 1] = (short)index;
+                    temp[i - 1] = (short)(float)(randVal * h);
                 }
             }
 
@@ -251,9 +251,21 @@ namespace PDTools.Crypto
                     shuffler(buffer, i, pos);
                 }
             }
-
-
         }
+
+        public static void shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
+            => shufflebit(buffer, 8 * size, randomizer, swapbit);
+
+        private static void shufflebit(Memory<byte> buffer, int size, MTRandom randomizer,
+            Action<Memory<byte>, int, int> shuffler)
+        {
+            for (var len = size - 1; len > 0; len--)
+            {
+                float r = randomizer.getFloat();
+                shuffler(buffer, len, (int)(r * (len + 1)));
+            }
+        }
+
 
         public static void swapbit(Memory<byte> data, int oldIndex, int newIndex)
         {

@@ -20,7 +20,12 @@ namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
 
         public override void Pack(GT4Save save, ref SpanWriter sw)
         {
-            throw new NotImplementedException();
+            sw.WriteByte((byte)WheelCategory);
+            sw.WriteByte(Unk);
+            sw.WriteByte(Unk2);
+            sw.WriteInt32(0);
+            sw.WriteInt32(WheelCode.Code);
+            sw.WriteInt32(WheelCode.TableId);
         }
 
         public override void Unpack(GT4Save save, ref SpanReader sr)

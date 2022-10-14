@@ -54,7 +54,7 @@ namespace PDTools.SaveFile.GT4
             if (!File.Exists(garageFilePath))
                 throw new FileNotFoundException("Garage file is missing from directory.");
 
-            save.GarageFile.Load(garageFilePath, 0x240C8E8D); // TODO: Grab key from GameData file
+            save.GarageFile.Load(save, garageFilePath, save.GameData.Profile.Garage.UniqueID, save.GameData.UseOldRandomUpdateCrypto);
 
             return save;
         }

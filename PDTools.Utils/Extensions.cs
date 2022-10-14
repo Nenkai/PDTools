@@ -36,7 +36,7 @@ namespace PDTools.Utils
                 val = sr.ReadByte();
                 endStrPos++;
             }
-            while (val != 0 || sr.Position >= maxPos);
+            while (val != 0 && sr.Position < maxPos);
 
             if (endStrPos - 1 <= basePos)
             {
