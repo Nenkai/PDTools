@@ -251,6 +251,8 @@ namespace PDTools.Crypto
                     shuffler(buffer, i, pos);
                 }
             }
+
+
         }
 
         public static void shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
@@ -259,10 +261,10 @@ namespace PDTools.Crypto
         private static void shufflebit(Memory<byte> buffer, int size, MTRandom randomizer,
             Action<Memory<byte>, int, int> shuffler)
         {
-            for (var len = size - 1; len > 0; len--)
+            for (var i = size - 1; i > 0; i--)
             {
-                float r = randomizer.getFloat();
-                shuffler(buffer, len, (int)(r * (len + 1)));
+                float f = randomizer.getFloat();
+                shuffler(buffer, i, (int)(long)(float)((float)f * (float)(uint)(i + 1)));
             }
         }
 

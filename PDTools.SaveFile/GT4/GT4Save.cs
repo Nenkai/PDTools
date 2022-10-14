@@ -17,6 +17,7 @@ namespace PDTools.SaveFile.GT4
         public const int ALIGNMENT = 0x10;
 
         public GT4GameType GameType { get; set; }
+        public string GameDataName { get; set; }
 
         public GT4GameData GameData { get; set; } = new GT4GameData();
         public GarageFile GarageFile { get; set; } = new GarageFile();
@@ -29,7 +30,7 @@ namespace PDTools.SaveFile.GT4
 
         public static GT4Save Load(string directory)
         {
-            string gameDataFilePath = "";
+            string gameDataName = "";
             GT4GameType gameType = GT4GameType.Unknown;
 
             foreach (var saveFileName in GameDataRegionNames)
@@ -37,18 +38,19 @@ namespace PDTools.SaveFile.GT4
                 string saveFilePath = Path.Combine(directory, saveFileName.Key);
                 if (File.Exists(saveFilePath))
                 {
-                    gameDataFilePath = saveFileName.Key;
+                    gameDataName = saveFileName.Key;
                     gameType = saveFileName.Value;
                     break;
                 }
             }
             
-            if (string.IsNullOrEmpty(gameDataFilePath))
+            if (string.IsNullOrEmpty(gameDataName))
                 throw new FileNotFoundException("Main save file is missing from directory.");
 
             GT4Save save = new GT4Save();
             save.GameType = gameType;
-            save.GameData.LoadFile(save, Path.Combine(directory, gameDataFilePath));
+            save.GameDataName = gameDataName;
+            save.GameData.LoadFile(save, Path.Combine(directory, gameDataName));
 
             string garageFilePath = Path.Combine(directory, "garage");
             if (!File.Exists(garageFilePath))
@@ -57,6 +59,13 @@ namespace PDTools.SaveFile.GT4
             save.GarageFile.Load(save, garageFilePath, save.GameData.Profile.Garage.UniqueID, save.GameData.UseOldRandomUpdateCrypto);
 
             return save;
+        }
+
+        public void SaveToDirectory(string directory)
+        {
+            string gameDataPath = Path.Combine(directory, GameDataName);
+            GameData.SaveTo(this, gameDataPath);
+            GarageFile.Save(Path.Combine(directory, "garage"));
         }
 
         public bool IsGT4Retail()

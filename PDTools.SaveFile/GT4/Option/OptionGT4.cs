@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 using Syroot.BinaryData.Memory;
 
@@ -11,18 +12,18 @@ namespace PDTools.SaveFile.GT4.Option
 {
     public class OptionGT4 : IGameSerializeBase
     {
-
-        public Locale Locale { get; set; }
-        public bool WideMode { get; set; }
+        public Locale language { get; set; }
+        public bool wide_mode { get; set; }
         
         public UnitVelocityType unit_velocity { get; set; }
         public UnitPowerType unit_power { get; set; }
         public UnitTorqueType unit_torque { get; set; }
-        public DTVType race_display_mode;
+        public DTVType race_display_mode { get; set; }
         public int screen_adjust_h { get; set; }
         public int screen_adjust_v { get; set; }
         public int sharpness { get; set; }
 
+        [Browsable(false)]
         public PhysicalMonitorSize monitor_size { get; set; } = new PhysicalMonitorSize();
 
         public int unk1 { get; set; }
@@ -42,7 +43,10 @@ namespace PDTools.SaveFile.GT4.Option
         public int replay_se_volume { get; set; }
         public int slide_bgm_volume { get; set; }
 
+        [Browsable(false)]
         public BGMPlaylist bgm_playlist { get; set; } = new BGMPlaylist();
+
+        [Browsable(false)]
         public BGMPlaylist slide_playlist { get; set; } = new BGMPlaylist();
 
         public SoundType sound_type { get; set; }
@@ -108,7 +112,10 @@ namespace PDTools.SaveFile.GT4.Option
         public int ustorage_photo_quality { get; set; }
         public int album_slide_transition_time { get; set; }
 
+        [Browsable(false)]
         public ColorCorrection race_color_correction { get; set; } = new ColorCorrection();
+
+        [Browsable(false)]
         public ColorCorrection replay_color_correction { get; set; } = new ColorCorrection();
 
         public string entrance_addr { get; set; }
@@ -116,14 +123,29 @@ namespace PDTools.SaveFile.GT4.Option
         public int use_upnp { get; set; }
         public int udp_bind_port_setting { get; set; }
         public int udp_bind_port { get; set; }
+
+        [Browsable(false)]
         public byte[] unk_udpdata { get; set; }
+
+        [Browsable(false)]
         public byte[] unk_end_data { get; set; }
 
+        [Browsable(false)]
         public GameZone GameZone { get; set; } = new GameZone();
+
+        [Browsable(false)]
         public OptionRaceControllerPS2 Controller = new OptionRaceControllerPS2();
+
+        [Browsable(false)]
         public OptionLANBattle LANBattle = new OptionLANBattle();
+
+        [Browsable(false)]
         public OptionNetConfig NetConf = new OptionNetConfig();
+
+        [Browsable(false)]
         public OptionEvent Event = new OptionEvent();
+
+        [Browsable(false)]
         public OptionLogger Logger = new OptionLogger();
 
         public void Pack(GT4Save save, ref SpanWriter sw)
@@ -133,11 +155,11 @@ namespace PDTools.SaveFile.GT4.Option
             else
                 sw.WriteInt32(0x1228);
 
-            sw.WriteInt32((int)Locale);
+            sw.WriteInt32((int)language);
             sw.WriteByte((byte)unit_velocity);
             sw.WriteByte((byte)unit_power);
             sw.WriteByte((byte)unit_torque);
-            sw.WriteBoolean(WideMode);
+            sw.WriteBoolean(wide_mode);
 
             sw.WriteInt32((int)race_display_mode);
             sw.WriteInt32(screen_adjust_h);
@@ -254,11 +276,11 @@ namespace PDTools.SaveFile.GT4.Option
         public void Unpack(GT4Save save, ref SpanReader sr)
         {
             int optionSize = sr.ReadInt32();
-            Locale = (Locale)sr.ReadInt32();
+            language = (Locale)sr.ReadInt32();
             unit_velocity = (UnitVelocityType)sr.ReadByte();
             unit_power = (UnitPowerType)sr.ReadByte();
             unit_torque = (UnitTorqueType)sr.ReadByte();
-            WideMode = sr.ReadBoolean();
+            wide_mode = sr.ReadBoolean();
 
             race_display_mode = (DTVType)sr.ReadInt32();
             screen_adjust_h = sr.ReadInt32();

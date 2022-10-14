@@ -7,6 +7,8 @@ using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.IO;
 
+using Syroot.BinaryData.Memory;
+
 using PDTools.Crypto;
 
 namespace PDTools.SaveFile.GT4
@@ -19,6 +21,15 @@ namespace PDTools.SaveFile.GT4
 
         public int GarageCarSize { get; set; }
         public bool UseOldRandomUpdateCrypto { get; set; } = true;
+
+        public ulong Money { get; set; }
+        public int Key1 { get; set; }
+        public int Key2 { get; set; }
+        public int LastSystemTimeMicrosecond { get; set; }
+        public int UniqueID { get; set; }
+        public int SystemTimeMicrosecond { get; set; }
+
+        public List<Memory<byte>> Cars { get; set; } = new List<Memory<byte>>(1000);
 
         public void Load(GT4Save save, string garageFilePath, uint key, bool useOldRandomUpdateCrypto)
         {
@@ -33,11 +44,58 @@ namespace PDTools.SaveFile.GT4
 
             decryptHeader(garageFile, key);
 
+            File.WriteAllBytes("garage_dec", garageFile);
+
+            ReadHeader(garageFile);
+
             for (uint i = 0; i < 1000; i++)
             {
-                Memory<byte> carBuffer = garageFile.AsMemory(GarageFileHeaderSize + (GarageCarSize * (int)i));
-                DecryptCar(carBuffer, key, i);
+                Memory<byte> carBuffer = garageFile.AsMemory(GarageFileHeaderSize + (GarageCarSize * (int)i), GarageCarSize);
+                //DecryptCar(carBuffer, key, i);
+
+                Cars.Add(carBuffer);
             }
+        }
+
+        public void Save(string fileName)
+        {
+            byte[] buffer = new byte[GarageFileHeaderSize + (GarageCarSize * 1000)];
+            SpanWriter sw = new SpanWriter(buffer);
+            sw.WriteUInt32((uint)(Money >> 32));
+            sw.WriteUInt32((uint)Money);
+
+            for (var i = 0; i < 9; i++)
+                sw.WriteInt32(0);
+
+            sw.WriteInt32(Key1);
+            sw.WriteInt32(Key2);
+            sw.WriteInt32(LastSystemTimeMicrosecond);
+            sw.WriteInt32(UniqueID);
+            sw.WriteInt32(SystemTimeMicrosecond);
+
+            encryptHeader(buffer.AsMemory(0, GarageFileHeaderSize));
+
+            for (var i = 0; i < 1000; i++)
+                sw.WriteBytes(Cars[i].Span);
+
+            File.WriteAllBytes(fileName, buffer);
+
+            File.WriteAllBytes("garage_enc", buffer);
+        }
+
+        private void ReadHeader(Span<byte> buffer)
+        {
+            SpanReader sr = new SpanReader(buffer);
+            Money = (ulong)sr.ReadInt32() << 32 | (ulong)sr.ReadInt32();
+
+            for (var i = 0; i < 9; i++)
+                sr.ReadInt32();
+
+            Key1 = sr.ReadInt32();
+            Key2 = sr.ReadInt32();
+            LastSystemTimeMicrosecond = sr.ReadInt32();
+            UniqueID = sr.ReadInt32();
+            SystemTimeMicrosecond = sr.ReadInt32();
         }
 
         public void decryptHeader(Memory<byte> buffer, uint key)
@@ -72,7 +130,7 @@ namespace PDTools.SaveFile.GT4
             for (int i = 0; i < 0x3C; i++)
                 buffer.Span[i] ^= (byte)rand.getInt32();
 
-            hdr[15] = (uint)SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
+            hdr[15] ^= (uint)SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
             var updated = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
 
             rand = new MTRandom((uint)updated);
