@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Collections;
 
 using Syroot.BinaryData.Memory;
 
@@ -8,8 +9,25 @@ namespace PDTools.SaveFile.GT4.UserProfile
 {
     public class UsedCar
     {
+        public const int _80sCars_StartID = 0;
+        public const int Early90sCars_StartID = 80;
+        public const int Late90sCars_StartID = 160;
+
         public byte[] Bits { get; set; } = new byte[0x20];
         public int Week { get; set; }
+
+        public void SetUsedCarStatus(int idx, bool soldout)
+        {
+            if (soldout)
+                Bits[idx / 8] |= (byte)(1 << (idx % 8));
+            else
+                Bits[idx / 8] &= (byte)~(1 << (idx % 8));
+        }
+
+        public bool IsCarSoldout(int idx)
+        {
+            return ((Bits[idx / 8] >> (idx % 8)) & 1) == 1;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
