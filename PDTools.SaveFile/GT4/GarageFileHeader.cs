@@ -26,7 +26,7 @@ namespace PDTools.SaveFile.GT4
         public int Key1 { get; set; }
         public int Key2 { get; set; }
         public int LastSystemTimeMicrosecond { get; set; }
-        public int UniqueID { get; set; }
+        public uint UniqueID { get; set; }
         public int SystemTimeMicrosecond { get; set; }
 
         public List<Memory<byte>> Cars { get; set; } = new List<Memory<byte>>(1000);
@@ -41,20 +41,19 @@ namespace PDTools.SaveFile.GT4
                 GarageCarSize = GarageCarSize_Retail;
 
             byte[] garageFile = File.ReadAllBytes(garageFilePath);
-
             decryptHeader(garageFile, key);
-
-            File.WriteAllBytes("garage_dec", garageFile);
 
             ReadHeader(garageFile);
 
             for (uint i = 0; i < 1000; i++)
             {
                 Memory<byte> carBuffer = garageFile.AsMemory(GarageFileHeaderSize + (GarageCarSize * (int)i), GarageCarSize);
-                //DecryptCar(carBuffer, key, i);
-
                 Cars.Add(carBuffer);
             }
+
+#if DEBUG
+            File.WriteAllBytes("garage_with_decrypted_header.bin", garageFile);
+#endif
         }
 
         public void Save(string fileName)
@@ -70,7 +69,7 @@ namespace PDTools.SaveFile.GT4
             sw.WriteInt32(Key1);
             sw.WriteInt32(Key2);
             sw.WriteInt32(LastSystemTimeMicrosecond);
-            sw.WriteInt32(UniqueID);
+            sw.WriteUInt32(UniqueID);
             sw.WriteInt32(SystemTimeMicrosecond);
 
             encryptHeader(buffer.AsMemory(0, GarageFileHeaderSize));
@@ -79,14 +78,12 @@ namespace PDTools.SaveFile.GT4
                 sw.WriteBytes(Cars[i].Span);
 
             File.WriteAllBytes(fileName, buffer);
-
-            File.WriteAllBytes("garage_enc", buffer);
         }
 
         private void ReadHeader(Span<byte> buffer)
         {
             SpanReader sr = new SpanReader(buffer);
-            Money = (ulong)sr.ReadInt32() << 32 | (ulong)sr.ReadInt32();
+            Money = (ulong)sr.ReadUInt32() << 32 | sr.ReadUInt32();
 
             for (var i = 0; i < 9; i++)
                 sr.ReadInt32();
@@ -94,7 +91,7 @@ namespace PDTools.SaveFile.GT4
             Key1 = sr.ReadInt32();
             Key2 = sr.ReadInt32();
             LastSystemTimeMicrosecond = sr.ReadInt32();
-            UniqueID = sr.ReadInt32();
+            UniqueID = sr.ReadUInt32();
             SystemTimeMicrosecond = sr.ReadInt32();
         }
 
@@ -109,7 +106,7 @@ namespace PDTools.SaveFile.GT4
             int seed2 = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
 
             var rand = new MTRandom((uint)seed2);
-            SharedCrypto.reverse_shufflebit(buffer, 0x40, rand);
+            SharedCrypto.reverse_shufflebit(buffer, 0x40, rand); // "de" shuffle encrypted bytes
 
             uint ciph = (uint)(hdr[15] ^ seed1);
             hdr[15] = ciph;
@@ -134,9 +131,39 @@ namespace PDTools.SaveFile.GT4
             var updated = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
 
             rand = new MTRandom((uint)updated);
-            SharedCrypto.shufflebit(buffer, 0x40, rand); // Shuffle back to normal, no reverse
+            SharedCrypto.shufflebit(buffer, 0x40, rand); // Shuffle back to encrypted
         }
 
+        /* Major note regarding the garage file encryption (more specifically: cars):
+         * To begin with: each car is encrypted, normally with a key tweaked with the car index.
+         * 
+         * When the game first creates the garage file, it encrypts the header normally, and it mallocs the size of 1000 car entries all initialized to 0. 
+         * The key only is taken as a seed, RandomUpdateOld1 + rand value is used only, no shuffling.
+         * It happens in one go until the end of the file - 0x40 to the end. There is no CRC.
+         * 
+         * When car slots are in use, the method below with the car index are used. 
+         * For documentation purposes, the method CreateEntriesEncrypt below describes how it's done.
+         * 
+         * This is done so that even if no data is actually stored in the garage, garbage is generated that cannot be decrypted
+         * because: 
+         * - it doesn't care about the input buffer, it's not xorred against it even if it's not 0's. It's only creating garbage anyway.
+         * - when the first slot is used by valid data, it then means that the initial state is compromised anyway since it started at 0x40 (after header length).
+         * 
+         * Basically just obfuscation >_<
+         */
+
+        private void CreateGarageData(uint uniqueIdKey)
+        {
+            byte[] data = new byte[GarageFileHeaderSize + (1000 * GarageCarSize)];
+
+            var rand = new MTRandom(uniqueIdKey);
+            for (var i = 0x40; i < data.Length; i++)
+                data[i] = (byte)(rand.getInt32() ^ (byte)SharedCrypto.RandomUpdateOld1(ref uniqueIdKey, UseOldRandomUpdateCrypto));
+
+            // Header creation would go here
+        }
+
+        /* This one is the one that decrypts cars normally when the slots are in use. */
         private void DecryptCar(Memory<byte> carBuffer, uint uniqueIdKey, uint carIndex)
         {
             var rand = new MTRandom(uniqueIdKey + carIndex);
@@ -152,6 +179,11 @@ namespace PDTools.SaveFile.GT4
             {
                 bufInts[0] = (bufInts[0] + (uint)SharedCrypto.RandomUpdateOld1(ref crc, UseOldRandomUpdateCrypto)) ^ (uint)rand.getInt32();
                 bufInts = bufInts.Slice(1);
+            }
+
+            if (crc == CRC32.crc32_0x77073096(carBuffer.Span.Slice(8), 0x4C0))
+            {
+                
             }
         }
     }

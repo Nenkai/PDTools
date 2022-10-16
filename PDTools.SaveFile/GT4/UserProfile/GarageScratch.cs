@@ -4,6 +4,8 @@ using System.Text;
 
 using Syroot.BinaryData.Memory;
 
+using PDTools.Structures.PS2;
+
 namespace PDTools.SaveFile.GT4.UserProfile
 {
     public class GarageScratch : IGameSerializeBase
@@ -24,7 +26,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sw.WriteInt32(RidingCarIndex);
             sw.WriteUInt32(UniqueID);
             sw.WriteBytes(Unk);
-            CurrentCar.Pack(save, ref sw);
+            CurrentCar.Pack(ref sw);
 
             sw.Align(GT4Save.ALIGNMENT);
         }
@@ -40,9 +42,19 @@ namespace PDTools.SaveFile.GT4.UserProfile
             RidingCarIndex = sr.ReadInt32();
             UniqueID = sr.ReadUInt32();
             Unk = sr.ReadBytes(0x14);
-            CurrentCar.Unpack(save, ref sr);
+            CurrentCar.Unpack(ref sr);
 
             sr.Align(GT4Save.ALIGNMENT);
+        }
+
+        public int GetCarCount()
+        {
+            for (var i = 0; i < MAX_CARS; i++)
+            {
+
+            }
+
+            return 0;
         }
     }
 }

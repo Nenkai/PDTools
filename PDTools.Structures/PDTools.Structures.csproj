@@ -22,8 +22,4 @@
     <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="MGameParameter\" />
-  </ItemGroup>
-
 </Project>

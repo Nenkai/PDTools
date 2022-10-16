@@ -4,6 +4,53 @@ using System.Text;
 
 namespace PDTools.Enums.PS2
 {
+    public enum PartsTypeGT4
+    {
+        GENERIC_CAR,
+        BRAKE,
+        BRAKECONTROLLER,
+        SUSPENSION,
+        ASCC,
+        TCSC,
+        CHASSIS,
+        RACINGMODIFY,
+        LIGHTWEIGHT,
+        STEER,
+        DRIVETRAIN,
+        GEAR,
+        ENGINE,
+        NATUNE,
+        TURBINEKIT,
+        PORTPOLISH,
+        ENGINEBALANCE,
+        DISPLACEMENT,
+        COMPUTER,
+        INTERCOOLER,
+        MUFFLER,
+        CLUTCH,
+        FLYWHEEL,
+        PROPELLERSHAFT,
+        LSD,
+        FRONTTIRE,
+        REARTIRE,
+        NOS,
+        SUPERCHARGER,
+        WHEEL,
+        WING,
+        TIRESIZE,
+        TIRECOMPOUND,
+        TIREFORCEVOL,
+        COURSE,
+        RACE,
+        DEFAULT_PARTS,
+        DEFAULT_PARAM,
+        ENEMY_CARS,
+        CAR_NAME,
+        COURSE_NAME,
+        CAR_VARIATION,
+        VARIATION,
+    }
+
     public enum Locale
     {
         JP,
