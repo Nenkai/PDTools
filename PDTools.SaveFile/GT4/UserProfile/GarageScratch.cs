@@ -47,14 +47,38 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sr.Align(GT4Save.ALIGNMENT);
         }
 
-        public int GetCarCount()
+        public bool IsFull()
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-
+                if (!Cars[i].IsValid())
+                    return false;
             }
 
-            return 0;
+            return true;
+        }
+
+        public int GetCarCount()
+        {
+            int count = 0;
+            for (var i = 0; i < MAX_CARS; i++)
+            {
+                if (Cars[i].IsValid())
+                    count++;
+            }
+
+            return count;
+        }
+
+        public int GetFirstUnusedSlotIndex()
+        {
+            for (var i = 0; i < MAX_CARS; i++)
+            {
+                if (!Cars[i].IsValid())
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

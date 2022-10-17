@@ -16,6 +16,31 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public int Odometer { get; set; }
         public ulong Flags2 { get; set; }
 
+        public bool IsValid()
+        {
+            return (Flags & 1) != 0; // First bit
+        }
+
+        public bool GetUnkBit()
+        {
+            return ((Flags >> 1) & 1) != 0;
+        }
+
+        public uint GetVariationIndex()
+        {
+            return (uint)((Flags >> 2) & 0b1111111); // 7 bits
+        }
+
+        public uint GetShowroomPower()
+        {
+            return (uint)((Flags >> 9) & 0b11_11111111_11111111); // 18 bits
+        }
+
+        public uint GetShowroomWeight()
+        {
+            return (uint)((Flags >> 32) & 0b111_11111111); // 11 bits
+        }
+
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteInt32(CarCode.Code);
@@ -34,5 +59,6 @@ namespace PDTools.SaveFile.GT4.UserProfile
             Odometer = sr.ReadInt32();
             Flags2 = sr.ReadUInt64();
         }
+
     }
 }

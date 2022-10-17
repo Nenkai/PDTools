@@ -51,14 +51,8 @@ namespace PDTools.Crypto
 
         public float getFloat()
         {
-            int val = getInt32();
-            float v;
-            if (val < 0)
-                v = (val & 1 | ((uint)val >> 1)) + (val & 1 | ((uint)val >> 1));
-            else
-                v = (float)val;
-
-            return v * (1.0f / uint.MaxValue);
+            uint val = (uint)getInt32();
+            return val * (1.0f / uint.MaxValue);
         }
 
         private static ulong shift()

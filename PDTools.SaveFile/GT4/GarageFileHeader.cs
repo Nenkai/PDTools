@@ -10,16 +10,22 @@ using System.IO;
 using Syroot.BinaryData.Memory;
 
 using PDTools.Crypto;
+using PDTools.Structures.PS2;
 
 namespace PDTools.SaveFile.GT4
 {
     public class GarageFile
     {
         public const int GarageFileHeaderSize = 0x40;
-        public const int GarageCarSize_Retail = 0x500;
-        public const int GarageCarSize_New = 0x540;
 
+        public const int GarageCarSizeAligned_Retail = 0x500;
+        public const int GarageCarSizeAligned_New = 0x540;
+
+        public const int GarageCarSize_Retail = 0x4C0; // Used for CRC
+
+        public int GarageCarSizeAligned { get; set; }
         public int GarageCarSize { get; set; }
+
         public bool UseOldRandomUpdateCrypto { get; set; } = true;
 
         public ulong Money { get; set; }
@@ -31,14 +37,27 @@ namespace PDTools.SaveFile.GT4
 
         public List<Memory<byte>> Cars { get; set; } = new List<Memory<byte>>(1000);
 
+        /// <summary>
+        /// Loads the garage.
+        /// </summary>
+        /// <param name="save"></param>
+        /// <param name="garageFilePath"></param>
+        /// <param name="key"></param>
+        /// <param name="useOldRandomUpdateCrypto"></param>
         public void Load(GT4Save save, string garageFilePath, uint key, bool useOldRandomUpdateCrypto)
         {
             UseOldRandomUpdateCrypto = useOldRandomUpdateCrypto;
 
             if (save.IsGT4Online())
-                GarageCarSize = GarageCarSize_New;
+            {
+                GarageCarSizeAligned = GarageCarSizeAligned_New;
+                GarageCarSize = GarageCarSize_Retail; // FIXME
+            }
             else
+            {
+                GarageCarSizeAligned = GarageCarSizeAligned_Retail;
                 GarageCarSize = GarageCarSize_Retail;
+            }
 
             byte[] garageFile = File.ReadAllBytes(garageFilePath);
             decryptHeader(garageFile, key);
@@ -47,7 +66,7 @@ namespace PDTools.SaveFile.GT4
 
             for (uint i = 0; i < 1000; i++)
             {
-                Memory<byte> carBuffer = garageFile.AsMemory(GarageFileHeaderSize + (GarageCarSize * (int)i), GarageCarSize);
+                Memory<byte> carBuffer = garageFile.AsMemory(GarageFileHeaderSize + (GarageCarSizeAligned * (int)i), GarageCarSizeAligned);
                 Cars.Add(carBuffer);
             }
 
@@ -56,9 +75,50 @@ namespace PDTools.SaveFile.GT4
 #endif
         }
 
+        /// <summary>
+        /// Gets a car by index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public CarGarage GetCar(uint index)
+        {
+            if (index >= 1000)
+                return null;
+
+            var carBuffer = Cars[(int)index];
+            if (!DecryptCar(carBuffer, UniqueID, index))
+                return null;
+
+            SpanReader sr = new SpanReader(carBuffer.Span);
+            sr.Position += 8; // Skip encrypt header
+
+            CarGarage car = new CarGarage();
+            car.Unpack(ref sr);
+
+            return car;
+        }
+
+        public void PushCar(CarGarage garageCar, uint key, uint carIndex)
+        {
+            if (carIndex >= 1000)
+                throw new IndexOutOfRangeException("Can't push a car to index > 1000.");
+
+            Memory<byte> buffer = Cars[(int)carIndex];
+            buffer.Span.Fill(0);
+
+            SpanWriter sw = new SpanWriter(buffer.Span);
+            sw.Position = 8;
+            garageCar.Pack(ref sw);
+            EncryptCarBuffer(buffer, key, carIndex);
+        }
+
+        /// <summary>
+        /// Save the garage file to the file system.
+        /// </summary>
+        /// <param name="fileName"></param>
         public void Save(string fileName)
         {
-            byte[] buffer = new byte[GarageFileHeaderSize + (GarageCarSize * 1000)];
+            byte[] buffer = new byte[GarageFileHeaderSize + (GarageCarSizeAligned * 1000)];
             SpanWriter sw = new SpanWriter(buffer);
             sw.WriteUInt32((uint)(Money >> 32));
             sw.WriteUInt32((uint)Money);
@@ -80,6 +140,10 @@ namespace PDTools.SaveFile.GT4
             File.WriteAllBytes(fileName, buffer);
         }
 
+        /// <summary>
+        /// Reads the header.
+        /// </summary>
+        /// <param name="buffer"></param>
         private void ReadHeader(Span<byte> buffer)
         {
             SpanReader sr = new SpanReader(buffer);
@@ -95,6 +159,11 @@ namespace PDTools.SaveFile.GT4
             SystemTimeMicrosecond = sr.ReadInt32();
         }
 
+        /// <summary>
+        /// Decrypts the garage file header.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="key"></param>
         public void decryptHeader(Memory<byte> buffer, uint key)
         {
             Span<uint> hdr = MemoryMarshal.Cast<byte, uint>(buffer.Span);
@@ -105,18 +174,23 @@ namespace PDTools.SaveFile.GT4
             int seed1 = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
             int seed2 = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
 
+            // reverse shuffle decrypt bytes
             var rand = new MTRandom((uint)seed2);
-            SharedCrypto.reverse_shufflebit(buffer, 0x40, rand); // "de" shuffle encrypted bytes
+            SharedCrypto.reverse_shufflebit(buffer, 0x40, rand); 
 
             uint ciph = (uint)(hdr[15] ^ seed1);
             hdr[15] = ciph;
 
+            // Decrypt data
             rand = new MTRandom(ogKey + ciph);
-
             for (int i = 0; i < 0x3C; i++)
                 buffer.Span[i] ^= (byte)rand.getInt32();
         }
 
+        /// <summary>
+        /// Encrypts the garage file header.
+        /// </summary>
+        /// <param name="buffer"></param>
         public void encryptHeader(Memory<byte> buffer)
         {
             Span<uint> hdr = MemoryMarshal.Cast<byte, uint>(buffer.Span);
@@ -131,7 +205,7 @@ namespace PDTools.SaveFile.GT4
             var updated = SharedCrypto.RandomUpdateOld1(ref key, UseOldRandomUpdateCrypto);
 
             rand = new MTRandom((uint)updated);
-            SharedCrypto.shufflebit(buffer, 0x40, rand); // Shuffle back to encrypted
+            SharedCrypto.shufflebit(buffer, 0x40, rand); // Shuffle encrypt
         }
 
         /* Major note regarding the garage file encryption (more specifically: cars):
@@ -154,7 +228,7 @@ namespace PDTools.SaveFile.GT4
 
         private void CreateGarageData(uint uniqueIdKey)
         {
-            byte[] data = new byte[GarageFileHeaderSize + (1000 * GarageCarSize)];
+            byte[] data = new byte[GarageFileHeaderSize + (1000 * GarageCarSizeAligned)];
 
             var rand = new MTRandom(uniqueIdKey);
             for (var i = 0x40; i < data.Length; i++)
@@ -164,27 +238,52 @@ namespace PDTools.SaveFile.GT4
         }
 
         /* This one is the one that decrypts cars normally when the slots are in use. */
-        private void DecryptCar(Memory<byte> carBuffer, uint uniqueIdKey, uint carIndex)
+        private bool DecryptCar(Memory<byte> carBuffer, uint uniqueIdKey, uint carIndex)
         {
+            // Reverse shuffle decrypt whole blob
             var rand = new MTRandom(uniqueIdKey + carIndex);
-            SharedCrypto.reverse_shufflebit(carBuffer, GarageCarSize, rand);
+            SharedCrypto.reverse_shufflebit(carBuffer, GarageCarSizeAligned, rand);
 
-            uint seed = BinaryPrimitives.ReadUInt32LittleEndian(carBuffer.Span);
+            uint time = BinaryPrimitives.ReadUInt32LittleEndian(carBuffer.Span);
             uint crc = BinaryPrimitives.ReadUInt32LittleEndian(carBuffer.Span.Slice(4));
 
-            rand = new MTRandom(uniqueIdKey ^ seed);
-
+            // Decrypt data
+            uint seed = crc;
+            rand = new MTRandom(uniqueIdKey ^ time);
             Span<uint> bufInts = MemoryMarshal.Cast<byte, uint>(carBuffer.Span.Slice(8));
-            for (var i = 0; i < (GarageCarSize - 8) / 4; i++)
-            {
-                bufInts[0] = (bufInts[0] + (uint)SharedCrypto.RandomUpdateOld1(ref crc, UseOldRandomUpdateCrypto)) ^ (uint)rand.getInt32();
-                bufInts = bufInts.Slice(1);
-            }
+            for (var i = 0; i < (GarageCarSizeAligned - 8) / 4; i++)
+                bufInts[i] = (bufInts[i] + (uint)SharedCrypto.RandomUpdateOld1(ref seed, UseOldRandomUpdateCrypto)) ^ (uint)rand.getInt32();
 
-            if (crc == CRC32.crc32_0x77073096(carBuffer.Span.Slice(8), 0x4C0))
-            {
-                
-            }
+            if (crc == CRC32.crc32_0x77073096(carBuffer.Span.Slice(8), GarageCarSize))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Decrypts a car buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="key"></param>
+        /// <param name="carIndex"></param>
+        private void EncryptCarBuffer(Memory<byte> buffer, uint key, uint carIndex)
+        {
+            // Header
+            uint time = (uint)new Random().Next(); // Normally PDISTD::GetSystemTimeMicroSecond();
+            uint crc = CRC32.crc32_0x77073096(buffer.Slice(8).Span, GarageCarSize);
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer.Slice(0).Span, time);
+            BinaryPrimitives.WriteUInt32LittleEndian(buffer.Slice(4).Span, crc);
+
+            // Encrypt data
+            var rand = new MTRandom(key ^ time);
+            Span<uint> bufInts = MemoryMarshal.Cast<byte, uint>(buffer.Span);
+            uint seed = crc;
+            for (var i = 2; i < GarageCarSizeAligned / sizeof(int); i++)
+                bufInts[i] = (bufInts[i] ^ (uint)rand.getInt32()) - (uint)SharedCrypto.RandomUpdateOld1(ref seed, UseOldRandomUpdateCrypto);
+
+            // Shuffle encrypt whole buffer
+            rand = new MTRandom(key + carIndex);
+            SharedCrypto.shufflebit(buffer, GarageCarSizeAligned, rand);
         }
     }
 }

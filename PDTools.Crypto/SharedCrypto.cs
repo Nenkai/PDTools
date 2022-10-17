@@ -118,7 +118,7 @@ namespace PDTools.Crypto
             int pos = 0;
             while (pos != len && pos + 4 <= len)
             {
-                int pseudoRandVal = rand.getInt32();
+                int pseudoRandVal = (int)rand.getInt32();
                 int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 Span<uint> current = MemoryMarshal.Cast<byte, uint>(data);
@@ -132,7 +132,7 @@ namespace PDTools.Crypto
 
             while (pos != len)
             {
-                int pseudoRandVal = rand.getInt32();
+                int pseudoRandVal = (int)rand.getInt32();
                 int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 uint result = (uint)((data[0] + updated) ^ pseudoRandVal);
@@ -148,7 +148,7 @@ namespace PDTools.Crypto
             while (len >= 4)
             {
                 int val = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(data) : BinaryPrimitives.ReadInt32LittleEndian(data);
-                int res = val ^ rand.getInt32();
+                int res = val ^ (int)rand.getInt32();
                 int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 BinaryPrimitives.WriteInt32LittleEndian(data, res - updated);
@@ -160,7 +160,7 @@ namespace PDTools.Crypto
             while (len > 0)
             {
                 int val = data[0];
-                int res = val ^ rand.getInt32();
+                int res = val ^ (int)rand.getInt32();
                 int updated = RandomUpdateOld1(ref seed, randomUpdateOld1_OldVersion);
 
                 data[0] = (byte)(res - updated);
@@ -170,10 +170,10 @@ namespace PDTools.Crypto
             }
         }
 
-        public static int RandomUpdateOld1(ref uint value, bool useOld = false)
+        public static int RandomUpdateOld1(ref uint randValue, bool useOld = false)
         {
-            uint v1 = 17 * value + 17;
-            value = v1;
+            uint v1 = 17 * randValue + 17;
+            randValue = v1;
 
             // GT4 retail uses this..
             if (useOld)
@@ -184,7 +184,7 @@ namespace PDTools.Crypto
             {
                 // Starting from GT4O?
 
-                var bitReverse = BitReverse(value);
+                var bitReverse = BitReverse(randValue);
 
                 var or = bitReverse << 0x18 | (bitReverse & 0xFF00) << 0x8 | bitReverse >> 0x18 | (bitReverse >> 0x8) & 0xFF00;
                 var shifted = or << 0x8;
@@ -220,39 +220,37 @@ namespace PDTools.Crypto
         public static void reverse_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
             => r_shufflebit(buffer, 8 * size, randomizer, swapbit);
 
-        private static void r_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer,
-            Action<Memory<byte>, int, int> shuffler)
+        public static void r_shufflebit(Memory<byte> buffer, int size, MTRandom randomizer,
+             Action<Memory<byte>, int, int> shuffler)
         {
-            int max = size - 1;
-
             short[] temp;
             if (size == 1)
-                temp = new short[0];
+                temp = Array.Empty<short>();
             else
                 temp = new short[size];
 
             if (size != 1)
             {
-                for (int i = max; i > 0; i--)
-                {
-                    float randVal = randomizer.getFloat();
-
-                    int h = i + 1;
-                    temp[i - 1] = (short)(float)(randVal * h);
+                for (var i = size - 1; i > 0; i--)
+                { 
+                    /* ON PCSX2 it was not matching shuffled values due to a rounding Error - 623.00 something instead of 622.99999934434891
+                     * Enough to cause an invalid bit
+                     * 
+                     * Don't know if it's a difference between rounding with floats in C++ vs C#
+                     * But use double instead */
+                    temp[i - 1] = (short)(double)(randomizer.getFloat() * (double)(int)(i + 1));
                 }
             }
 
             if (size != 1)
             {
                 int cPos = 0;
-                for (int i = 1; i < size; i++)
+                for (var i = 1; i < size; i++)
                 {
                     int pos = temp[cPos++];
                     shuffler(buffer, i, pos);
                 }
             }
-
-
         }
 
         public static void shufflebit(Memory<byte> buffer, int size, MTRandom randomizer)
@@ -262,44 +260,41 @@ namespace PDTools.Crypto
             Action<Memory<byte>, int, int> shuffler)
         {
             for (var i = size - 1; i > 0; i--)
-            {
-                float f = randomizer.getFloat();
-                shuffler(buffer, i, (int)(long)(float)((float)f * (float)(uint)(i + 1)));
-            }
+                shuffler(buffer, i, (int)((double)randomizer.getFloat() * (i + 1))); // Same thing here
         }
 
 
         public static void swapbit(Memory<byte> data, int oldIndex, int newIndex)
         {
-            int indexA = oldIndex >> 3;
-            int posA = newIndex >> 3;
-            int indexB = oldIndex & 7;
-            int posB = newIndex & 7;
+            int oldByteIdx = oldIndex / 8;
+            int newByteIdx = newIndex / 8;
+            int oldBitIdx = oldIndex % 8;
+            int newBitIdx = newIndex % 8;
 
             if (oldIndex != newIndex)
             {
-                byte old = data.Span[posA];
+                byte old = data.Span[newByteIdx];
 
-                uint v9 = 1u << posB;
-                uint v10 = 1u << indexB;
+                uint newBitToAdd = 1u << newBitIdx;
+                uint oldBitToAdd = 1u << oldBitIdx;
 
-                int v11 = ~(1 << posB);
-                int v12 = ~(1 << indexB);
+                int newBitToRemove = ~(1 << newBitIdx);
+                int oldBitToRemove = ~(1 << oldBitIdx);
 
-                bool unkBool = (old & v9) != 0;
+                bool unkBool = (old & newBitToAdd) != 0;
 
                 byte unk;
-                if ((data.Span[indexA] & v10) != 0)
-                    unk = (byte)(data.Span[posA] | v9);
+                if ((data.Span[oldByteIdx] & oldBitToAdd) != 0)
+                    unk = (byte)(data.Span[newByteIdx] | newBitToAdd);
                 else
-                    unk = (byte)(data.Span[posA] & v11);
+                    unk = (byte)(data.Span[newByteIdx] & newBitToRemove);
 
-                data.Span[posA] = unk;
+                data.Span[newByteIdx] = unk;
 
                 if (unkBool)
-                    data.Span[indexA] |= (byte)v10;
+                    data.Span[oldByteIdx] |= (byte)oldBitToAdd;
                 else
-                    data.Span[indexA] &= (byte)v12;
+                    data.Span[oldByteIdx] &= (byte)oldBitToRemove;
             }
         }
 
