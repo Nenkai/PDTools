@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 
 namespace PDTools.Enums.PS2
 {
@@ -196,22 +197,54 @@ namespace PDTools.Enums.PS2
     }
 
     public enum Result
-    { 
-        _1, 
-        _2, 
-        _3, 
-        _4, 
-        _5, 
-        _6, 
-        _7, 
-        _8, 
-        abandon, 
-        gold, 
-        silver, 
-        bronze, 
-        red, 
-        failed, 
-        view 
+    {
+        [Description("1st")]
+        _1,
+
+        [Description("2nd")]
+        _2,
+
+        [Description("3rd")]
+        _3,
+
+        [Description("4th")]
+        _4,
+
+        [Description("5th")]
+        _5,
+
+        [Description("6th")]
+        _6,
+
+        [Description("7th")]
+        _7,
+
+        [Description("8th")]
+        _8,
+
+        [Description("Abandon")]
+        abandon,
+
+        [Description("Gold")]
+        gold,
+
+        [Description("Silver")]
+        silver,
+
+        [Description("Bronze")]
+        bronze,
+
+        [Description("Red")]
+        red,
+
+        [Description("Failed")]
+        failed,
+
+        [Description("View")]
+        view,
+
+        [Description("No Result")]
+        none,
     }
 
     public enum DayEventType
@@ -225,6 +258,14 @@ namespace PDTools.Enums.PS2
         BUY_WHEEL,
         BUY_WING,
         RUN_COURSE
+    }
+
+    public enum EventType
+    {
+        None,
+        License,
+        Event,
+        Mission
     }
 
     public enum WheelCategoryType
