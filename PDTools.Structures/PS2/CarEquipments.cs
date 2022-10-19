@@ -129,9 +129,9 @@ namespace PDTools.Structures.PS2
         public byte field_16F { get; set; }
         public byte field_170 { get; set; }
         public byte field_171 { get; set; }
+        public byte[] Unk_GT4OData { get; set; }
 
-
-        public void Unpack(ref SpanReader sr)
+        public void Unpack(ref SpanReader sr, bool gt4o = false)
         {
             CarCode = DbCode.Unpack(ref sr);
             TunedCarCode = DbCode.Unpack(ref sr);
@@ -254,9 +254,12 @@ namespace PDTools.Structures.PS2
             field_16F = sr.ReadByte();
             field_170 = sr.ReadByte();
             field_171 = sr.ReadByte();
+
+            if (gt4o)
+                Unk_GT4OData = sr.ReadBytes(0x18);
         }
 
-        public void Pack(ref SpanWriter sw)
+        public void Pack(ref SpanWriter sw, bool gt4o = false)
         {
             CarCode.Pack(ref sw);
             TunedCarCode.Pack(ref sw);
@@ -379,6 +382,9 @@ namespace PDTools.Structures.PS2
             sw.WriteByte(field_16F);
             sw.WriteByte(field_170);
             sw.WriteByte(field_171);
+
+            if (gt4o)
+                sw.WriteBytes(Unk_GT4OData);
         }
     }
 }

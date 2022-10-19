@@ -42,7 +42,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             RidingCarIndex = sr.ReadInt32();
             UniqueID = sr.ReadUInt32();
             Unk = sr.ReadBytes(0x14);
-            CurrentCar.Unpack(ref sr);
+            CurrentCar.Unpack(ref sr, save.IsGT4Online());
 
             sr.Align(GT4Save.ALIGNMENT);
         }

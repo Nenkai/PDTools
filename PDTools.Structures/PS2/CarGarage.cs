@@ -17,12 +17,12 @@ namespace PDTools.Structures.PS2
         public byte[] Unk2 { get; set; }
         public AutomobileAccumulatedStatus Status { get; set; } = new AutomobileAccumulatedStatus();
 
-        public void Unpack(ref SpanReader sr)
+        public void Unpack(ref SpanReader sr, bool gt4o = false)
         {
             for (var i = 0; i < MAX_SHEETS; i++)
             {
                 Sheets[i] = new CarEquipments();
-                Sheets[i].Unpack(ref sr);
+                Sheets[i].Unpack(ref sr, gt4o);
             }
 
             UnkData = sr.ReadBytes(0x20);
@@ -31,10 +31,10 @@ namespace PDTools.Structures.PS2
             Status.Unpack(ref sr);
         }
 
-        public void Pack(ref SpanWriter sw)
+        public void Pack(ref SpanWriter sw, bool gt4o = false)
         {
             for (var i = 0; i < MAX_SHEETS; i++)
-                Sheets[i].Pack(ref sw);
+                Sheets[i].Pack(ref sw, gt4o);
 
             sw.WriteBytes(UnkData);
             sw.WriteInt32(Unk);
