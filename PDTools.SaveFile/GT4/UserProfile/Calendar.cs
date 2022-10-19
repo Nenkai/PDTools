@@ -5,6 +5,7 @@ using Syroot.BinaryData.Memory;
 
 using PDTools.SaveFile.GT4.UserProfile.DayEvents;
 using PDTools.Enums.PS2;
+using PDTools.Structures;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
@@ -14,7 +15,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
         public int Days { get; set; }
         public DayEvent[] Events { get; set; } = new DayEvent[MAX_EVENTS];
-        public int Date { get; set; }
+        public DateTime Date { get; set; }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
@@ -27,9 +28,15 @@ namespace PDTools.SaveFile.GT4.UserProfile
                 @event.Pack(save, ref sw);
 
             }
-            sw.WriteInt32(Date);
+
+            sw.WriteInt32(PDIDATETIME.DateTimeToDay(Date));
 
             sw.Align(GT4Save.ALIGNMENT);
+        }
+
+        public static DateTime GetOriginDate()
+        {
+            return new DateTime(2005, 4, 2);
         }
 
         public void Unpack(GT4Save save, ref SpanReader sr)
@@ -88,7 +95,10 @@ namespace PDTools.SaveFile.GT4.UserProfile
                 Events[i] = @event;
             }
 
-            Date = sr.ReadInt32();
+            Date = PDIDATETIME.DayToDateTime(sr.ReadInt32());
+
+            if (Date.Year < 2005)
+                Date = GetOriginDate(); // Reset to origin
 
             sr.Align(GT4Save.ALIGNMENT);
         }

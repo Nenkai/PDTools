@@ -54,7 +54,7 @@ namespace GTReplayInfo
             var rply = new MReplayInfo();
             rply.GTBehaviorVersion = bs.ReadUInt32();
             rply.SpecDBVersion = bs.ReadUInt32();
-            rply.RecordedDateTime = PDIDATETIME_Julian.FromJulianDateValue(bs.ReadUInt64());
+            rply.RecordedDateTime = PDIDATETIME.JulianToDateTime_64(bs.ReadUInt64());
             rply.SpecDBName = bs.ReadStringRaw(0x30).TrimEnd('\0');
 
             bs.Position = 0x70;

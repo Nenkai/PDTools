@@ -1,10 +1,10 @@
 ﻿using System;
 using PDTools.Utils;
 
-namespace PDTools
+namespace PDTools.Structures
 {
 	/// <summary>
-	/// Used in GT5/6
+	/// Some other version. Not Julian, Used in GT5/6 game/car parameters
 	/// </summary>
 	public struct PDIDATETIME32
 	{

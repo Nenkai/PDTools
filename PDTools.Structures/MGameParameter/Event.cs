@@ -188,8 +188,8 @@ namespace PDTools.Structures.MGameParameter
             WriteRankingsToBuffer(ref bs);
             Replay.WriteToCache(ref bs);
             Information.WriteToCache(ref bs);
-            bs.WriteDouble(PDIDATETIME_Julian.DateTimeToJulian(StartDate)); 
-            bs.WriteDouble(PDIDATETIME_Julian.DateTimeToJulian(EndDate));
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(StartDate)); 
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(EndDate));
             StageData.WriteToCache(ref bs);
             bs.WriteNullStringAligned4(PenaltyScript);
             bs.WriteNullStringAligned4(AIScript);
@@ -206,8 +206,8 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteInt16(0); // replay_rank_limit
             bs.WriteInt16(100); // display_rank_limit
             bs.WriteUInt64(EventID); // board_id
-            bs.WriteDouble(PDIDATETIME_Julian.DateTimeToJulian(RankingStartDate)); // begin_date todo
-            bs.WriteDouble(PDIDATETIME_Julian.DateTimeToJulian(RankingEndDate)); // end_date todo
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(RankingStartDate)); // begin_date todo
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(RankingEndDate)); // end_date todo
             bs.WriteInt16(0); // registration
             bs.WriteSByte(0); // registration_type
         }

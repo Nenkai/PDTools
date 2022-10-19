@@ -32,7 +32,15 @@ namespace PDTools.SaveFile.GT4
 
         public void LoadFile(GT4Save gt4Save, string gameDataFilePath)
         {
-            byte[] rawSaveFile = File.ReadAllBytes(gameDataFilePath);
+            byte[] rawSaveFile;
+            try
+            {
+                rawSaveFile = File.ReadAllBytes(gameDataFilePath);
+            }
+            catch (Exception e)
+            {
+                throw new IOException("Save folder access was denied, make sure that another program such as PCSX2 is not running.");
+            }
 
             // Decrypt whole file
             if (!DecryptSave(rawSaveFile, out Memory<byte> decrypted))
