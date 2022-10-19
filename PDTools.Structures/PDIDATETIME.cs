@@ -14,9 +14,9 @@ namespace PDTools.Structures
         public static int[][] Days_To_Month = new int[2][]
         {
             // non-leap year
-            new int[12] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 },
+            new int[13] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
             // leap year
-            new int[12] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 },
+            new int[13] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 },
         };
 
         const int HalfSecondsInDay = 43200; // 0xA8C0
@@ -110,36 +110,35 @@ namespace PDTools.Structures
         /// </summary>
         public static (int Year, int Month, int Day) DayToDate(int value)
         {
-            int dayOfYear = value - (Jan11JulianDay - 1);
-            int n400 = dayOfYear / DaysPer400Years;
-            dayOfYear %= DaysPer400Years;
-
+            int n400 = (value - (Jan11JulianDay - 1)) / DaysPer400Years;
+            int dayOfYear = (value - (Jan11JulianDay - 1)) % DaysPer400Years;
+            
             int n100 = dayOfYear / DaysPer100Years;
-            int v6 = dayOfYear % DaysPer100Years;
+            dayOfYear %= DaysPer100Years;
 
             if (dayOfYear / DaysPer100Years == 4)
             {
                 n100 = 3;
-                v6 = DaysPer100Years;
+                dayOfYear %= DaysPer100Years;
             }
 
-            int n4 = v6 / DaysPer4Years;
-            int day = v6 % DaysPer4Years;
-            int n1 = search_day(day, DaysInYear, 5);
-            bool isLeapYear = n1 == 3;
+            int n4 = dayOfYear / DaysPer4Years;
+            dayOfYear %= DaysPer4Years;
 
-            int year = 4 * (25 * (4 * n400 + n100) + n4) + n1 + 1;
-            day -= DaysInYear[n1];
+            int n1 = search_day(dayOfYear, DaysInYear, 5);
+            bool isLeapYear = n1 == 3 && n100 == 3;
+            if (n4 != 24)
+                isLeapYear = n100 == 3;
+
+            var day = (dayOfYear - DaysInYear[n1]);
+            var year = n1 + 4 * (n4 + 25 * (n100 + 4 * n400)) + 1;
+            var month = search_day(day, Days_To_Month[isLeapYear ? 1 : 0], 13);
 
 
-            if (n4 == 24)
-                isLeapYear = isLeapYear & (n100 == 3);
+            int actualDay = (byte)(day - Days_To_Month[isLeapYear ? 1 : 0][month] + 1);
+            int actualMonth = (byte)(month + 1);
 
-            int _month = search_day(day, Days_To_Month[isLeapYear ? 1 : 0], 13);
-            int month = _month + 1;
-            day = (byte)day - Days_To_Month[isLeapYear ? 1 : 0][_month] + 1;
-
-            return (year, month, day);
+            return ((short)year, actualMonth, actualDay);
         }
 
 #if NET6_0_OR_GREATER
@@ -198,21 +197,20 @@ namespace PDTools.Structures
                 + (Jan11JulianDay - 1);
         }
 
-        private static int search_day(int value, int[] values, int max)
+        static int search_day(int target, int[] values, int max)
         {
+            int mid; // $v0
             int min = 0;
-
-            do
+            for (mid = max; ; mid = min + max)
             {
-                int mid = (min + max) / 2;
-                if (value < values[mid])
-                {
-                    max = mid;
-                    mid = min;
-                }
+                if (target < values[mid / 2] )
+                    max = mid / 2;
+                else
+                    min = mid / 2;
 
-                min = mid;
-            } while (min + 1 < max);
+                if ((int)min + 1 >= max)
+                    break;
+            }
 
             return min;
         }
