@@ -13,26 +13,25 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public const int MAX_USERNAME_LENGTH = 32;
         public string UserName { get; set; }
 
-        public const int MAX_UNUSED_PASSWORD_LENGTH = 8;
-        public string UnusedPassword { get; set; }
+        public const int MAX_PASSWORD_LENGTH = 8;
+        public string Password { get; set; }
 
         public const int MAX_ENTRY_NAME_LENGTH = 16;
         public string LastEntryName { get; set; }
 
-        public int Unk1 { get; set; }
-        public int Unk2 { get; set; }
-        public int Unk3 { get; set; }
-        public int Unk4 { get; set; }
-        public int Unk5 { get; set; }
-        public int Unk6 { get; set; }
-        public int Unk7 { get; set; }
-        public int Unk8 { get; set; }
+        public long Score { get; set; }
+        public long TotalPrizeMoney { get; set; }
+        public int TotalPrizeCars { get; set; }
+        public int[] RankCounts { get; set; } = new int[7];
+        public long TotalASpecDistanceMeters { get; set; }
+        public long TotalBSpecDistanceMeters { get; set; }
+        public bool WithdrawnGT3 { get; set; }
+        public bool WithdrawnGT4P { get; set; }
+        public int MetType { get; set; }
+
+        public byte[] BSpecData { get; set; }
 
         public byte[] Unk { get; set; }
-        public string Account { get; set; }
-        public string Password { get; set; }
-
-        public byte[] UnkData { get; set; }
 
         public Calendar Calendar { get; set; } = new Calendar();
         public GarageScratch Garage { get; set; } = new GarageScratch();
@@ -50,23 +49,22 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteStringFix(UserName, MAX_USERNAME_LENGTH);
-            sw.WriteStringFix(UnusedPassword, MAX_UNUSED_PASSWORD_LENGTH);
+            sw.WriteStringFix(Password, MAX_PASSWORD_LENGTH);
             sw.WriteStringFix(LastEntryName, MAX_ENTRY_NAME_LENGTH);
+            sw.WriteInt64(Score);
+            sw.WriteInt64(TotalPrizeMoney);
+            sw.WriteInt32(TotalPrizeCars);
 
-            sw.WriteInt32(Unk1);
-            sw.WriteInt32(Unk2);
-            sw.WriteInt32(Unk3);
-            sw.WriteInt32(Unk4);
-            sw.WriteInt32(Unk5);
-            sw.WriteInt32(Unk6);
-            sw.WriteInt32(Unk7);
-            sw.WriteInt32(Unk8);
+            for (var i = 0; i < RankCounts.Length; i++)
+                sw.WriteInt32(RankCounts[i]);
 
-            sw.WriteBytes(Unk);
-            sw.WriteStringFix(Account, 32);
-            sw.WriteStringFix(Password, 32);
-
-            sw.WriteBytes(UnkData);
+            sw.WriteInt64(TotalASpecDistanceMeters);
+            sw.WriteInt64(TotalBSpecDistanceMeters);
+            sw.WriteBoolean4(WithdrawnGT3);
+            sw.WriteBoolean4(WithdrawnGT4P);
+            sw.WriteInt32(MetType);
+            sw.Position += 0x10;
+            sw.WriteBytes(BSpecData);
             sw.Align(GT4Save.ALIGNMENT);
 
             Calendar.Pack(save, ref sw);
@@ -86,26 +84,22 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public void Unpack(GT4Save save, ref SpanReader sr)
         {
             UserName = sr.ReadFixedString(MAX_USERNAME_LENGTH);
-            UnusedPassword = sr.ReadFixedString(MAX_UNUSED_PASSWORD_LENGTH);
+            Password = sr.ReadFixedString(MAX_PASSWORD_LENGTH);
             LastEntryName = sr.ReadFixedString(MAX_ENTRY_NAME_LENGTH);
+            Score = sr.ReadInt64();
+            TotalPrizeMoney = sr.ReadInt64();
+            TotalPrizeCars = sr.ReadInt32();
 
-            Unk1 = sr.ReadInt32();
-            Unk2 = sr.ReadInt32();
-            Unk3 = sr.ReadInt32();
-            Unk4 = sr.ReadInt32();
-            Unk5 = sr.ReadInt32();
-            Unk6 = sr.ReadInt32();
-            Unk7 = sr.ReadInt32();
-            Unk8 = sr.ReadInt32();
+            for (var i = 0; i < 7; i++)
+                RankCounts[i] = sr.ReadInt32();
 
-            Unk = sr.ReadBytes(36);
-            Account = sr.ReadFixedString(32);
-            Password = sr.ReadFixedString(32);
-
-            if (save.IsGT4Retail())
-                UnkData = sr.ReadBytes(0x15C);
-            else
-                UnkData = sr.ReadBytes(0x19C);
+            TotalASpecDistanceMeters = sr.ReadInt64();
+            TotalBSpecDistanceMeters = sr.ReadInt64();
+            WithdrawnGT3 = sr.ReadBoolean4();
+            WithdrawnGT4P = sr.ReadBoolean4();
+            MetType = sr.ReadInt32();
+            sr.Position += 0x10;
+            BSpecData = sr.ReadBytes((2 * (sizeof(long) * 8)) + (2 * (sizeof(long)) * 8) + (2 * (sizeof(long)) * 8));
             sr.Align(GT4Save.ALIGNMENT);
 
             Calendar.Unpack(save, ref sr);

@@ -232,13 +232,14 @@ namespace PDTools.Crypto
             if (size != 1)
             {
                 for (var i = size - 1; i > 0; i--)
-                { 
+                {
                     /* ON PCSX2 it was not matching shuffled values due to a rounding Error - 623.00 something instead of 622.99999934434891
                      * Enough to cause an invalid bit
                      * 
                      * Don't know if it's a difference between rounding with floats in C++ vs C#
                      * But use double instead */
-                    temp[i - 1] = (short)(double)(randomizer.getFloat() * (double)(int)(i + 1));
+                    float s = randomizer.getFloat();
+                    temp[i - 1] = (short)(double)(s * (double)(i + 1));
                 }
             }
 

@@ -12,7 +12,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
     {
         public const int MAX_CARS = 1000;
 
-        public GarageCar[] Cars { get; set; } = new GarageCar[MAX_CARS];
+        public GarageScratchUnit[] Cars { get; set; } = new GarageScratchUnit[MAX_CARS];
         public int RidingCarIndex { get; set; }
         public uint UniqueID { get; set; }
         public byte[] Unk { get; set; } = new byte[0x14];
@@ -35,7 +35,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-                Cars[i] = new GarageCar();
+                Cars[i] = new GarageScratchUnit();
                 Cars[i].Unpack(save, ref sr);
             }
 
@@ -51,7 +51,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (!Cars[i].IsValid())
+                if (!Cars[i].IsFreeSlot())
                     return false;
             }
 
@@ -63,7 +63,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             int count = 0;
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (Cars[i].IsValid())
+                if (Cars[i].IsFreeSlot())
                     count++;
             }
 
@@ -74,7 +74,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (!Cars[i].IsValid())
+                if (!Cars[i].IsFreeSlot())
                     return i;
             }
 

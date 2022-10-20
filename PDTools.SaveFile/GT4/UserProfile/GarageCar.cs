@@ -8,7 +8,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class GarageCar : IGameSerializeBase
+    public class GarageScratchUnit : IGameSerializeBase
     {
         public DbCode CarCode { get; set; }
         public ulong Flags { get; set; }
@@ -16,29 +16,34 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public int Odometer { get; set; }
         public ulong Flags2 { get; set; }
 
-        public bool IsValid()
+        public uint ShowroomWeight
+        {
+            get => (uint)((Flags >> 32) & 0b111_11111111); // 11 bits
+        }
+
+        public uint ShowroomPower
+        {
+            get => (uint)((Flags >> 9) & 0b11_11111111_11111111); // 18 bits
+        }
+
+        public uint VariationIndex
+        {
+            get => (uint)((Flags >> 2) & 0b1111111); // 7 bits
+        }
+
+        public bool IsFreeSlot()
         {
             return (Flags & 1) != 0; // First bit
         }
 
-        public bool GetUnkBit()
+        public bool GarageDataExists
         {
-            return ((Flags >> 1) & 1) != 0;
+            get => ((Flags >> 1) & 1) != 0;
         }
 
-        public uint GetVariationIndex()
+        public uint RideHistory
         {
-            return (uint)((Flags >> 2) & 0b1111111); // 7 bits
-        }
-
-        public uint GetShowroomPower()
-        {
-            return (uint)((Flags >> 9) & 0b11_11111111_11111111); // 18 bits
-        }
-
-        public uint GetShowroomWeight()
-        {
-            return (uint)((Flags >> 32) & 0b111_11111111); // 11 bits
+            get => (uint)(Flags2 & 0b11_11111111); // 10 bits
         }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
