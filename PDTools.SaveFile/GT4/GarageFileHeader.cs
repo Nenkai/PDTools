@@ -19,7 +19,7 @@ namespace PDTools.SaveFile.GT4
         public const int GarageFileHeaderSize = 0x40;
 
         public const int GarageCarSizeAligned_Retail = 0x500;
-        public const int GarageCarSizeAligned_New = 0x540;
+        public const int GarageCarSizeAligned_GT4O = 0x540;
 
         public const int GarageCarSize_Retail = 0x4C0; // Used for CRC
 
@@ -50,7 +50,7 @@ namespace PDTools.SaveFile.GT4
 
             if (save.IsGT4Online())
             {
-                GarageCarSizeAligned = GarageCarSizeAligned_New;
+                GarageCarSizeAligned = GarageCarSizeAligned_GT4O;
                 GarageCarSize = GarageCarSize_Retail; // FIXME
             }
             else
@@ -108,7 +108,7 @@ namespace PDTools.SaveFile.GT4
 
             SpanWriter sw = new SpanWriter(buffer.Span);
             sw.Position = 8;
-            garageCar.Pack(ref sw);
+            garageCar.Pack(ref sw, GarageCarSizeAligned == GarageCarSizeAligned_GT4O);
             EncryptCarBuffer(buffer, key, carIndex);
         }
 

@@ -97,7 +97,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
             Date = PDIDATETIME.DayToDateTime(sr.ReadInt32());
 
-            if (Date.Year < 2005)
+            if (Date < GetOriginDate())
                 Date = GetOriginDate(); // Reset to origin
 
             sr.Align(GT4Save.ALIGNMENT);

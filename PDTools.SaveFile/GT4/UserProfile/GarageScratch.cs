@@ -26,7 +26,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sw.WriteInt32(RidingCarIndex);
             sw.WriteUInt32(UniqueID);
             sw.WriteBytes(Unk);
-            CurrentCar.Pack(ref sw);
+            CurrentCar.Pack(ref sw, save.IsGT4Online());
 
             sw.Align(GT4Save.ALIGNMENT);
         }
@@ -51,7 +51,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (!Cars[i].IsFreeSlot())
+                if (!Cars[i].IsSlotTaken)
                     return false;
             }
 
@@ -63,7 +63,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             int count = 0;
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (Cars[i].IsFreeSlot())
+                if (Cars[i].IsSlotTaken)
                     count++;
             }
 
@@ -74,11 +74,22 @@ namespace PDTools.SaveFile.GT4.UserProfile
         {
             for (var i = 0; i < MAX_CARS; i++)
             {
-                if (!Cars[i].IsFreeSlot())
+                if (!Cars[i].IsSlotTaken)
                     return i;
             }
 
             return -1;
+        }
+
+        public bool HasCarCode(int code)
+        {
+            for (var i = 0; i < MAX_CARS; i++)
+            {
+                if (Cars[i].IsSlotTaken && Cars[i].CarCode.Code == code)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
