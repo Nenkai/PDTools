@@ -32,7 +32,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public byte[] BSpecData { get; set; }
 
         public byte[] Unk { get; set; }
-
+        public byte[] UnkGT4OData { get; set; }
         public Calendar Calendar { get; set; } = new Calendar();
         public GarageScratch Garage { get; set; } = new GarageScratch();
         public RaceRecord RaceRecords { get; set; } = new RaceRecord();
@@ -64,7 +64,13 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sw.WriteBoolean4(WithdrawnGT4P);
             sw.WriteInt32(MetType);
             sw.Position += 0x10;
+
+            if (save.IsGT4Online())
+                sw.WriteBytes(UnkGT4OData);
+
             sw.WriteBytes(BSpecData);
+
+
             sw.Align(GT4Save.ALIGNMENT);
 
             Calendar.Pack(save, ref sw);
@@ -99,6 +105,10 @@ namespace PDTools.SaveFile.GT4.UserProfile
             WithdrawnGT4P = sr.ReadBoolean4();
             MetType = sr.ReadInt32();
             sr.Position += 0x10;
+
+            if (save.IsGT4Online())
+                UnkGT4OData = sr.ReadBytes(0x40);
+
             BSpecData = sr.ReadBytes((2 * (sizeof(long) * 8)) + (2 * (sizeof(long)) * 8) + (2 * (sizeof(long)) * 8));
             sr.Align(GT4Save.ALIGNMENT);
 
