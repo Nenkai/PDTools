@@ -42,7 +42,6 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
-            Bits.AsSpan().Fill(0xFF);
             sw.WriteBytes(Bits);
 
             sw.Align(GT4Save.ALIGNMENT);
