@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using libdebug;
+
+namespace PDTools.GTPatcher.MemoryPatches
+{
+    public interface IMemoryPatch
+    {
+        void OnAttach(GTPatcher dbg);
+
+        Task Patch(GTPatcher dbg, GeneralRegisters regs);
+    }
+}

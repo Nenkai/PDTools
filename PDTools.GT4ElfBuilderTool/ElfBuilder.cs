@@ -11,6 +11,10 @@ namespace PDTools.GT4ElfBuilderTool
     {
         public const int BssSize = 0x800000;
 
+        // GT4_EU ctors: 0x616F24 to 0x6174F4
+        // GT4_EU dtors: 0x6174F4 to 0x6179FC
+        // GT4_EU .rodata: 0x68BA80
+        // GT4_EU: vtables at 0x659A24 to 0x68A418
         public void BuildFromInfo(string fileName, GTImageLoader file)
         {
             using var ms = new FileStream(fileName, FileMode.Create);
