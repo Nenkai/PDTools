@@ -7,6 +7,7 @@ A collection of utilities for working around certain Gran Turismo games.
 * `PDTools.Crypto` - Shared encryption utilities and implementations (GT4 <-> GT7)
 * `PDTools.Files` - File formats (mostly GT5/6)
 * `PDTools.GT4ElfBuilderTool` - Builds elf executables based on compressed/encrypted CORE.GT4 files for reverse-engineering (GT4)
+* `PDTools.GTPatcher` - Patcher for PS4 GTs to inject command line arguments & more (GTS)
 * `PDTools.GrimPFS` - Online Patching (GT5P/GT6)
 * `PDTools.LiveTimingApi` - Library Interface for the LiveTimingAPI (GT7, requires live event permissions)
 * `PDTools.LiveTimingApiTestTool` - Test tool for LiveTimingAPI (GT7)
