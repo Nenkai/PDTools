@@ -6,28 +6,28 @@ namespace PDTools.GT4ElfBuilderTool
 {
     public class BufferReverser
     {
-        private int field_4;
-        private int PositionInt;
+        public int RefCount;
+        public int PositionInt;
         private int SizeInt;
-        private int field_10;
-        private int[] OperatingBuffer;
+        public int field_10;
+        public uint[] OperatingBuffer;
 
         public void InitReverse(Span<byte> data) // 102FCC0
         {
-            field_4 = 0;
+            RefCount = 0;
             PositionInt = 0;
             SizeInt = 0;
             field_10 = 0;
             OperatingBuffer = null;
 
-            InitInternalBuffer((data.Length + 3) >> 2, true);
+            InitInternalBuffer((data.Length + 3) / 4, true);
 
             // This does the reverse
             for (int i = 0; i < data.Length; i++)
             {
                 var target = OperatingBuffer.AsSpan(i / 4); // don't ask.. seems to be that way
 
-                int currentByte = data[(data.Length - 1) - i] << (8 * (i & 3));
+                uint currentByte = (uint)data[(data.Length - 1) - i] << (8 * (i % 4));
                 target[0] |= currentByte;
             }
 
@@ -41,7 +41,7 @@ namespace PDTools.GT4ElfBuilderTool
             }
         }
 
-        private void InitInternalBuffer(int size, bool clearBuffer) // 10300C8
+        public void InitInternalBuffer(int size, bool clearBuffer) // 10300C8
         {
             if (SizeInt < size)
             {
@@ -52,14 +52,18 @@ namespace PDTools.GT4ElfBuilderTool
                         ;
                 }
 
-                int[] buf = new int[i];
+                uint[] buf = new uint[i];
                 if (OperatingBuffer != null)
                 {
-
+                    // memcpy(arrayBUffer, OperatingBuffer, PositionInt * 4)
+                    OperatingBuffer.AsSpan(PositionInt).CopyTo(buf);
                 }
 
                 if (clearBuffer)
-                    buf.AsSpan().Fill(0); // memset
+                {
+                    // memset(&arrayBuffer[PositionInt], 0, (i - PositionInt) * 4);
+                    buf.AsSpan(PositionInt * sizeof(uint), i - PositionInt).Fill(0);
+                }
 
                 SizeInt = i;
                 OperatingBuffer = buf;

@@ -12,11 +12,22 @@ namespace PDTools.GTPatcher.MemoryPatches
     {
         public static bool _argvPatched;
 
-        public const int Argc_Offset = 0x3196120;
-        public const int Argv_Offset = 0x3196128;
+        public const ulong GTS_V168_Argc_Offset = 0x3196120;
+        public const ulong GTS_V168_Argv_Offset = 0x3196128;
+        public const ulong GTS_V168_SafeAddr = 0x1EDFD00;
 
-        public const int PFSVolumePath_Offset = 0x2B72F80;
+        public const ulong GT7_V100_Argc_Offset = 0x70EA218;
+        public const ulong GT7_V100_Argv_Offset = 0x70EA220;
 
+        public const ulong GT7_V125_Argc_Offset = 0x62918C0;
+        public const ulong GT7_V125_Argv_Offset = 0x62918C8;
+        public const ulong GT7_V125_SafeAddr = 0x3CFE840;
+
+        public const ulong PFSVolumePath_Offset = 0x2B72F80;
+
+        public ulong Argc_Offset { get; set; }
+        public ulong Argv_Offset { get; set; }
+        public ulong Safe_Addr { get; set; }
         private string[] _args;
 
         public CommandLineInjector(string[] args)
@@ -27,6 +38,29 @@ namespace PDTools.GTPatcher.MemoryPatches
             _args = args;
         }
 
+        public void Init(GTPatcher dbg)
+        {
+            switch (dbg.GameType)
+            {
+                case GameType.GTS_V168:
+                    Argc_Offset = GTS_V168_Argc_Offset;
+                    Argv_Offset = GTS_V168_Argv_Offset;
+                    Safe_Addr = GTS_V168_SafeAddr;
+                    break;
+
+                case GameType.GT7_V100:
+                    Argc_Offset = GT7_V100_Argc_Offset;
+                    Argv_Offset = GT7_V100_Argv_Offset;
+                    break;
+
+                case GameType.GT7_V125:
+                    Argc_Offset = GT7_V125_Argc_Offset;
+                    Argv_Offset = GT7_V125_Argv_Offset;
+                    Safe_Addr = GT7_V125_SafeAddr;
+                    break;
+            }
+        }
+
         public void OnAttach(GTPatcher dbg)
         {
             dbg.PS4.ChangeWatchpoint(0, true, WATCHPT_LENGTH.DBREG_DR7_LEN_4, WATCHPT_BREAKTYPE.DBREG_DR7_RDWR, dbg.ImageBase + Argv_Offset);
@@ -34,7 +68,9 @@ namespace PDTools.GTPatcher.MemoryPatches
 
         public async Task Patch(GTPatcher dbg, GeneralRegisters regs)
         {
-            await dbg.PS4.Notify(222, "Caught main, injecting argc/argv...");
+            await dbg.Notify("Caught main, injecting argc/argv...");
+
+            
             await PatchArgcArgv(_args, dbg);
 
             foreach (var arg in _args)
@@ -42,25 +78,25 @@ namespace PDTools.GTPatcher.MemoryPatches
                 if (arg.StartsWith("fsroot"))
                     await PatchFSRoot(dbg);
             }
+            
 
             await dbg.PS4.ChangeWatchpoint(0, false, WATCHPT_LENGTH.DBREG_DR7_LEN_4, WATCHPT_BREAKTYPE.DBREG_DR7_RDWR, 0);
 
-            await dbg.PS4.Notify(222, "Arguments injected!");
+            await dbg.Notify("Arguments injected!");
         }
 
-        public static async Task PatchArgcArgv(string[] args, GTPatcher dbg)
+        public async Task PatchArgcArgv(string[] args, GTPatcher dbg)
         {
             // Update arg count
             int argCount = await dbg.ReadMemory<int>(Argc_Offset);
             await dbg.WriteMemory<int>(Argc_Offset, args.Length);
 
-            ulong newArgvOffset = dbg.ImageBase + 0x1EDFD00;
+            ulong newArgvOffset = dbg.ImageBase + 0x3CFE840;
             await dbg.WriteMemory<ulong>(Argv_Offset, newArgvOffset);
 
             ulong strPtr = newArgvOffset;
-            ulong lastAlignedStrOffset = dbg.ImageBase + 0x1EE0200;
+            ulong lastAlignedStrOffset = GT7_V125_SafeAddr + 0x200;
 
-            await dbg.WriteMemory(0x1EDFD00, new byte[0x1000]);
 
             for (var i = 0; i < args.Length; i++)
             {

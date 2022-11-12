@@ -27,9 +27,9 @@ namespace PDTools.GTPatcher
 
         public static async Task Options(Options options)
         {
-            var dbg = new GTPatcher(options.IPAddress);
+            var dbg = new GTPatcher(options.IPAddress, GameType.GT7_V125);
 
-            if (options.Arguments.Count() > 0)
+            if (options.Arguments.Any())
             {
                 string[] args = new string[1 + options.Arguments.Count()];
                 args[0] = "";
@@ -49,11 +49,31 @@ namespace PDTools.GTPatcher
                 dbg.AddPatch(new VersionBuildPatcher(options.Build));
             }
 
-            if (options.LogMissingFiles)
+            if (!string.IsNullOrEmpty(options.Branch))
             {
-                Console.WriteLine($"Will log accessed missing files");
-                dbg.AddBreakLogger(new FileDeviceKernelAccessLogger(logOnlyOnMiss: true));
+                Console.WriteLine($"Setting game branch to: {options.Branch}");
+                dbg.AddPatch(new VersionBranchPatcher(options.Branch));
             }
+
+            if (!string.IsNullOrEmpty(options.Environment))
+            {
+                Console.WriteLine($"Setting game environment to: {options.Environment}");
+                dbg.AddPatch(new VersionEnvironmentPatcher(options.Environment));
+            }
+
+            if (options.KernelLogFiles || options.KernelLogMissingFiles)
+            {
+                Console.WriteLine($"Will log accessed files from FileDeviceKernel/sceKernelStat");
+                dbg.AddBreakLogger(new FileDeviceKernelAccessLogger(options.KernelLogMissingFiles));
+            }
+
+            if (options.MPHLogFiles || options.MPHLogMissingFiles)
+            {
+                Console.WriteLine($"Will log accessed files from FileDeviceMPH");
+                dbg.AddBreakLogger(new FileDeviceMPHAccessLogger(options.MPHLogMissingFiles));
+            }
+
+            //dbg.AddBreakLogger(new AdhocExceptionLogger());
 
             Console.CancelKeyPress += delegate {
                 _cts.Cancel();
@@ -74,10 +94,25 @@ namespace PDTools.GTPatcher
         [Option('a', "args", Required = false, HelpText = "Command Line Arguments for the game")]
         public IEnumerable<string> Arguments { get; set; }
 
-        [Option('b', "build", Required = false, HelpText = "Sets the game's build")]
+        [Option("build", Required = false, HelpText = "Sets the game's build")]
         public string Build { get; set; }
 
-        [Option('l', "log-missing-files", Required = false, HelpText = "Whether to log missing files from the game (makes it run slower)")]
-        public bool LogMissingFiles { get; set; }
+        [Option("branch", Required = false, HelpText = "Sets the game's branch")]
+        public string Branch { get; set; }
+
+        [Option("environment", Required = false, HelpText = "Sets the game's version environment")]
+        public string Environment { get; set; }
+
+        [Option("mph-log-files", Required = false, HelpText = "Whether to log files from GT7 (makes it run slower)")]
+        public bool MPHLogFiles { get; set; }
+
+        [Option("mph-log-missing-files", Required = false, HelpText = "Whether to log missing files from GT7 (makes it run slower)")]
+        public bool MPHLogMissingFiles { get; set; }
+
+        [Option("kernel-log-files", Required = false, HelpText = "Whether to log files from the game (makes it run slower)")]
+        public bool KernelLogFiles { get; set; }
+
+        [Option("kernel-log-missing-files", Required = false, HelpText = "Whether to log missing files from the game (makes it run slower)")]
+        public bool KernelLogMissingFiles { get; set; }
     }
 }

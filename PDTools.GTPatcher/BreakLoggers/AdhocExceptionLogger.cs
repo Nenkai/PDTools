@@ -8,18 +8,20 @@ using libdebug;
 
 namespace PDTools.GTPatcher.BreakLoggers
 {
-    public class FileDeviceKernelAccessLogger : IBreakLogger
+    public class AdhocExceptionLogger : IBreakLogger
     {
-        public const ulong GTS_V168_SceKernelStatResult_Offset = 0x1C06416;
+        public const ulong GTS_V168_AdhocExceptionObject_Ctor_Offset = 0x1712AC0;
+        public const ulong GT7_V100_AdhocExceptionObject_Ctor_Offset = 0x30BDBA0;
 
         public ulong Offset { get; set; }
+
         public Breakpoint Breakpoint { get; set; }
 
         public bool LogOnlyOnMiss { get; set; }
 
-        public FileDeviceKernelAccessLogger(bool logOnlyOnMiss = false)
+        public AdhocExceptionLogger()
         {
-            LogOnlyOnMiss = logOnlyOnMiss;
+            
         }
 
         public void Init(GTPatcher dbg)
@@ -27,15 +29,14 @@ namespace PDTools.GTPatcher.BreakLoggers
             switch (dbg.GameType)
             {
                 case GameType.GTS_V168:
-                    Offset = GTS_V168_SceKernelStatResult_Offset;
+                    Offset = GTS_V168_AdhocExceptionObject_Ctor_Offset;
                     break;
 
                 case GameType.GT7_V100:
-                    Offset = 0x3A215E0;
+                    Offset = GT7_V100_AdhocExceptionObject_Ctor_Offset;
                     break;
             }
 
-            // Why does the game crash when commenting this out?
             Breakpoint = dbg.SetBreakpoint(dbg.ImageBase + Offset);
         }
 
@@ -49,19 +50,12 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         public async Task OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
-            if (!LogOnlyOnMiss)
+            if (registers.rax != 0)
             {
-                string fileName = await dbg.ReadMemoryAbsolute<string>(registers.rdi);
-                Console.WriteLine($"{fileName}");
+                string message = await dbg.ReadMemoryAbsolute<string>(registers.rax);
+                Console.WriteLine(message);
             }
-            else
-            {
-                if (registers.rax != 0)
-                {
-                    string fileName = await dbg.ReadMemoryAbsolute<string>(registers.rdi);
-                    Console.WriteLine($"Missing: {fileName} (err: 0x{registers.rax:X8})");
-                }
-            }
+            
         }
     }
 }

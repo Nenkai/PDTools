@@ -10,6 +10,8 @@ namespace PDTools.GTPatcher.MemoryPatches
 {
     public interface IMemoryPatch
     {
+        void Init(GTPatcher dbg);
+
         void OnAttach(GTPatcher dbg);
 
         Task Patch(GTPatcher dbg, GeneralRegisters regs);

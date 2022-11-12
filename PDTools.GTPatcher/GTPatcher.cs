@@ -16,6 +16,7 @@ namespace PDTools.GTPatcher
         public PS4DBG PS4 { get; private set; }
         public int GamePid { get; private set; }
 
+        public GameType GameType { get; }
         public bool _MemPatchesApplied = false;
         public List<IMemoryPatch> _memoryPatches = new List<IMemoryPatch>();
         public List<IBreakLogger> _breakLoggers = new List<IBreakLogger>();
@@ -29,14 +30,18 @@ namespace PDTools.GTPatcher
         public const int GTFS_OpenFile = 0x1FF8020;
         public const int LoggerAddress = 0x1C569DD; // rdx = path, r11 = log text
 
-        public GTPatcher(string ip)
+        public GTPatcher(string ip, GameType gameType)
         {
             _ip = ip;
+            GameType = gameType;
         }
 
         public async Task Start(CancellationToken token)
         {
             PS4 = new PS4DBG(_ip);
+
+            foreach (var i in _memoryPatches)
+                i.Init(this);
 
             await DebugLoop(token);
         }
@@ -79,7 +84,7 @@ namespace PDTools.GTPatcher
                         return;
                     }
 
-                    await PS4.Notify(222, "Attached to GTS!");
+                    await PS4.Notify(222, $"Attached to: {GameType}");
 
                     foreach (var breaklogger in _breakLoggers)
                         breaklogger.Init(this);
@@ -98,6 +103,7 @@ namespace PDTools.GTPatcher
                 await Task.Delay(1);
             }
         }
+
 
         private async Task<int> WaitForProcess(string name, CancellationToken token)
         {
@@ -127,6 +133,7 @@ namespace PDTools.GTPatcher
 
         private async void AttachCallback(uint lwpid, uint status, string tdname, GeneralRegisters regs, FloatingPointRegisters fpregs, DebugRegisters dbregs)
         {
+            
             foreach (var breakLogger in _breakLoggers)
             {
                 if (breakLogger.CheckHit(this, regs))
@@ -148,9 +155,9 @@ namespace PDTools.GTPatcher
             await PS4.ProcessResume();
         }
 
-        public async Task<T> ReadMemory<T>(ulong address)
+        public Task<T> ReadMemory<T>(ulong address)
         {
-            return await PS4.ReadMemory<T>(GamePid, ImageBase + address);
+            return PS4.ReadMemory<T>(GamePid, ImageBase + address);
         }
 
         public Task<T> ReadMemoryAbsolute<T>(ulong address)
@@ -158,14 +165,14 @@ namespace PDTools.GTPatcher
             return PS4.ReadMemory<T>(GamePid, address);
         }
 
-        public async Task WriteMemory<T>(ulong address, T value)
+        public Task WriteMemory<T>(ulong address, T value)
         {
-            await PS4.WriteMemory<T>(GamePid, ImageBase + address, value);
+            return PS4.WriteMemory<T>(GamePid, ImageBase + address, value);
         }
 
-        public async Task WriteMemoryAbsolute<T>(ulong address, T value)
+        public Task WriteMemoryAbsolute<T>(ulong address, T value)
         {
-            await PS4.WriteMemory<T>(GamePid, address, value);
+            return PS4.WriteMemory<T>(GamePid, address, value);
         }
 
         public Breakpoint SetBreakpoint(ulong address)
@@ -180,6 +187,11 @@ namespace PDTools.GTPatcher
             return brk;
         }
 
+        public async Task Notify(string message)
+        {
+            await PS4.Notify(222, message);
+        }
+
         public async ValueTask DisposeAsync()
         {
             Console.WriteLine("Disposing");
@@ -190,5 +202,12 @@ namespace PDTools.GTPatcher
         {
             PS4.Stop();
         }
+    }
+
+    public enum GameType
+    {
+        GTS_V168,
+        GT7_V100,
+        GT7_V125,
     }
 }
