@@ -11,13 +11,32 @@ public class RunwayRoadTri
     public byte flagsA { get; set; }
     public byte unk { get; set; }
     public uint unkBits { get; set; }
+    public byte unk2 { get; set; } // usually 0xFF
 
     public static RunwayRoadTri FromStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
     {
         long basePos = bs.Position;
         RunwayRoadTri roadTri = new();
 
-        if (rwyVersionMajor >= 4)
+        if (rwyVersionMajor >= 6)
+        {
+            uint val = bs.ReadUInt32();
+            roadTri.VertA = val >> 8;
+            roadTri.SurfaceType = (byte)(val & 0xFF);
+
+            val = bs.ReadUInt32();
+            roadTri.VertB = val >> 8;
+            roadTri.flagsA = (byte)(val & 0xFF);
+
+            val = bs.ReadUInt32();
+            roadTri.VertC = val >> 8;
+            roadTri.unk = (byte)(val & 0xFF);
+            roadTri.unkBits = bs.ReadUInt32();
+
+            roadTri.unk2 = bs.Read1Byte(); // 0xFF
+            bs.Position += 3; // Empty
+        }
+        else if (rwyVersionMajor >= 4)
         {
             bs.Position = basePos + 0x1;
             roadTri.VertA = bs.ReadUInt16();
@@ -51,7 +70,16 @@ public class RunwayRoadTri
 
     public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
     {
-        if (rwyVersionMajor >= 4)
+        if (rwyVersionMajor >= 6)
+        {
+            bs.WriteUInt32(VertA << 8 | (byte)SurfaceType);
+            bs.WriteUInt32(VertB << 8 | (byte)flagsA);
+            bs.WriteUInt32(VertC << 8 | (byte)unk);
+            bs.WriteUInt32(unkBits);
+            bs.WriteByte(unk2);
+            bs.Position += 3;
+        }
+        else if (rwyVersionMajor >= 4)
         {
             bs.WriteByte(0); bs.WriteUInt16((ushort)VertA); // int24 cheesing
             bs.WriteByte(SurfaceType);
@@ -73,7 +101,9 @@ public class RunwayRoadTri
 
     public static int GetSize(ushort rwyVersionMajor, ushort rwyVersionMinor)
     {
-        if (rwyVersionMajor >= 4)
+        if (rwyVersionMajor >= 6)
+            return 0x14;
+        else if (rwyVersionMajor >= 4)
             return 0x10;
         else
             return 0x14;

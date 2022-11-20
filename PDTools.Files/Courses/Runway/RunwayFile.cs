@@ -12,6 +12,9 @@ namespace PDTools.Files.Courses.Runway;
 
 using Syroot.BinaryData;
 
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics;
+
 public class RunwayFile
 {
     /// <summary>
@@ -98,8 +101,38 @@ public class RunwayFile
     /// </summary>
     public List<RunwayRoadTri> RoadTris = new();
 
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BBoxAndRoadVertScaleX { get; set; }
+
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BBoxAndRoadVertScaleY { get; set; }
+
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BBoxAndRoadVertScaleZ { get; set; }
+
     public uint RayCastTreeMaxDepth { get; set; }
     public RunwayRayCastNode RayCastRootNode { get; set; }
+
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BoundaryVertScaleX { get; set; }
+
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BoundaryVertScaleY { get; set; }
+
+    /// <summary>
+    /// For GT7
+    /// </summary>
+    public byte BoundaryVertScaleZ { get; set; }
 
     public List<RunwayBoundaryVert> BoundaryVerts { get; set; } = new();
 
@@ -124,71 +157,146 @@ public class RunwayFile
     public const int RNW4_LE = 0x34574E52;
     public const int RNW5_BE = 0x524E5735;
     public const int RNW5_LE = 0x35574E52;
+    public const int RW64_LE = 0x34365752;
 
+    public uint Magic { get; set; }
     public static RunwayFile FromStream(Stream stream)
     {
         BinaryStream bs = new BinaryStream(stream);
         long basePos = bs.Position;
 
-        uint magic = bs.ReadUInt32();
+        RunwayFile rwy = new RunwayFile();
+        rwy.Magic = bs.ReadUInt32();
 
-        if (magic == RNW5_BE)
+        if (rwy.Magic == RNW5_BE)
             bs.ByteConverter = ByteConverter.Big;
-        else if (magic == RNW5_LE)
+        else if (rwy.Magic == RNW5_LE)
             bs.ByteConverter = ByteConverter.Little;
-        else if (magic == RNW4_LE || magic == RNW4_BE)
+        else if (rwy.Magic == RW64_LE)
+            bs.ByteConverter = ByteConverter.Little;
+        else if (rwy.Magic == RNW4_LE || rwy.Magic == RNW4_BE)
             throw new InvalidDataException("RNW4 is not supported yet.");
         else
             throw new InvalidDataException("Unsupported runway format.");
 
-        RunwayFile rwy = new RunwayFile();
-
         bs.ReadInt32(); // Reloc Pointer
         bs.ReadUInt32(); // Reloc Size
-        rwy.VersionMajor = bs.ReadUInt16();
-        rwy.VersionMinor = bs.ReadUInt16();
+
+        if (bs.ByteConverter == ByteConverter.Big)
+        {
+            rwy.VersionMajor = bs.ReadUInt16();
+            rwy.VersionMinor = bs.ReadUInt16();
+        }
+        else
+        {
+            rwy.VersionMinor = bs.ReadUInt16();
+            rwy.VersionMajor = bs.ReadUInt16();
+        }
+
         rwy.Flags = bs.ReadUInt32();
         rwy.TrackV = bs.ReadSingle();
         bs.Position += 8;
+
         rwy.BoundsMin = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
         rwy.BoundsMax = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+
         rwy.UnkVal1 = bs.ReadUInt32();
         rwy.UnkVal2 = bs.ReadUInt32();
         rwy.UnkVal3 = bs.ReadUInt32();
-        uint sectorsMapCount = bs.ReadUInt32();
-        uint sectorsMapOffset = bs.ReadUInt32();
-        uint startingGridCount = bs.ReadUInt32();
-        int startingGridOffset = bs.ReadInt32();
-        uint checkpointCount = bs.ReadUInt32();
-        int checkpointOffset = bs.ReadInt32();
-        uint checkpointListCount = bs.ReadUInt32();
-        int checkpointListOffset = bs.ReadInt32();
-        uint lightDefCount = bs.ReadUInt32();
-        uint lightDefsOffset = bs.ReadUInt32();
-        uint lightSetsCount = bs.ReadUInt32();
-        uint lightSetsOffset = bs.ReadUInt32();
-        uint gadgetCount = bs.ReadUInt32();
-        uint gadgetOffset = bs.ReadUInt32();
-        uint roadVertCount = bs.ReadUInt32();
-        int roadVertOffset = bs.ReadInt32();
-        uint roadTriCount = bs.ReadUInt32();
-        int roadTriOffset = bs.ReadInt32();
 
-        bs.Position += 8;
-        rwy.RayCastTreeMaxDepth = bs.ReadUInt32();
-        uint rayCastTreeOffset = bs.ReadUInt32();
-        uint boundaryVertCount = bs.ReadUInt32();
-        int boundaryVertOffset = bs.ReadInt32();
-        uint boundaryListCount = bs.ReadUInt32();
-        int boundaryListOffset = bs.ReadInt32();
-        uint pitStopCount = bs.ReadUInt32();
-        int pitStopOffset = bs.ReadInt32();
-        int unkCount = bs.ReadInt32();
-        int unkOffset = bs.ReadInt32();
-        bs.ReadInt32();
-        int pitStopAdjacentOffset = bs.ReadInt32();
-        bs.ReadInt32();
-        int lightParticlesOffset = bs.ReadInt32();
+        if (rwy.VersionMajor >= 6)
+            bs.Position += 0x0C;
+
+        long sectorsMapCount = Read32Or64(bs, rwy.VersionMajor);
+        long sectorsMapOffset = Read32Or64(bs, rwy.VersionMajor);
+        long startingGridCount = Read32Or64(bs, rwy.VersionMajor);
+        long startingGridOffset = Read32Or64(bs, rwy.VersionMajor);
+        long checkpointCount = Read32Or64(bs, rwy.VersionMajor);
+        long checkpointOffset = Read32Or64(bs, rwy.VersionMajor);
+        long checkpointListCount = Read32Or64(bs, rwy.VersionMajor);
+        long checkpointListOffset = Read32Or64(bs, rwy.VersionMajor);
+        long lightDefCount = Read32Or64(bs, rwy.VersionMajor);
+        long lightDefsOffset = Read32Or64(bs, rwy.VersionMajor);
+        long lightSetsCount = Read32Or64(bs, rwy.VersionMajor);
+        long lightSetsOffset = Read32Or64(bs, rwy.VersionMajor);
+        long gadgetCount = Read32Or64(bs, rwy.VersionMajor);
+        long gadgetOffset = Read32Or64(bs, rwy.VersionMajor);
+        long roadVertCount = bs.ReadInt32();
+
+        if (rwy.VersionMajor >= 6)
+        {
+            rwy.BBoxAndRoadVertScaleX = bs.Read1Byte();
+            rwy.BBoxAndRoadVertScaleY = bs.Read1Byte();
+            rwy.BBoxAndRoadVertScaleZ = bs.Read1Byte();
+            bs.Read1Byte(); // Unk, 1
+
+            if (rwy.BBoxAndRoadVertScaleX > 0)
+            {
+                rwy.BoundsMin = rwy.BoundsMin with
+                {
+                    X = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMin.X), rwy.BBoxAndRoadVertScaleX)
+                };
+
+                rwy.BoundsMax = rwy.BoundsMax with
+                {
+                    X = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMax.X), rwy.BBoxAndRoadVertScaleX)
+                };
+            }
+
+            if (rwy.BBoxAndRoadVertScaleY > 0)
+            {
+                rwy.BoundsMin = rwy.BoundsMin with
+                {
+                    Y = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMin.Y), rwy.BBoxAndRoadVertScaleY)
+                };
+
+                rwy.BoundsMax = rwy.BoundsMax with
+                {
+                    Y = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMax.Y), rwy.BBoxAndRoadVertScaleY)
+                };
+            }
+
+            if (rwy.BBoxAndRoadVertScaleZ > 0)
+            {
+                rwy.BoundsMin = rwy.BoundsMin with
+                {
+                    Z = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMin.Z), rwy.BBoxAndRoadVertScaleZ)
+                };
+
+                rwy.BoundsMax = rwy.BoundsMax with
+                {
+                    Z = (float)DecodeAVXFloat(BitConverter.SingleToInt32Bits(rwy.BoundsMax.Z), rwy.BBoxAndRoadVertScaleZ)
+                };
+            }
+        }
+
+        long roadVertOffset = Read32Or64(bs, rwy.VersionMajor);
+        long roadTriCount = Read32Or64(bs, rwy.VersionMajor);
+        long roadTriOffset = Read32Or64(bs, rwy.VersionMajor);
+
+        bs.Position += 0x10;
+        rwy.RayCastTreeMaxDepth = (uint)Read32Or64(bs, rwy.VersionMajor);
+        long rayCastTreeOffset = Read32Or64(bs, rwy.VersionMajor);
+        long boundaryVertCount = bs.ReadUInt32();
+        if (rwy.VersionMajor >= 6)
+        {
+            rwy.BoundaryVertScaleX = bs.Read1Byte();
+            rwy.BoundaryVertScaleY = bs.Read1Byte();
+            rwy.BoundaryVertScaleZ = bs.Read1Byte();
+            bs.Read1Byte(); // Unk
+        }
+
+        long boundaryVertOffset = Read32Or64(bs, rwy.VersionMajor);
+        long boundaryListCount = Read32Or64(bs, rwy.VersionMajor);
+        long boundaryListOffset = Read32Or64(bs, rwy.VersionMajor);
+        long pitStopCount = Read32Or64(bs, rwy.VersionMajor);
+        long pitStopOffset = Read32Or64(bs, rwy.VersionMajor);
+        long unkCount = Read32Or64(bs, rwy.VersionMajor);
+        long unkOffset = Read32Or64(bs, rwy.VersionMajor);
+        Read32Or64(bs, rwy.VersionMajor);
+        long pitStopAdjacentOffset = Read32Or64(bs, rwy.VersionMajor);
+        Read32Or64(bs, rwy.VersionMajor);
+        long lightParticlesOffset = Read32Or64(bs, rwy.VersionMajor);
 
         bs.Position = basePos + sectorsMapOffset;
         for (int i = 0; i < sectorsMapCount; i++)
@@ -217,17 +325,20 @@ public class RunwayFile
         for (int i = 0; i < checkpointListCount; i++)
             rwy.CheckpointList.Add(bs.ReadUInt16());
 
-        for (int i = 0; i < lightDefCount; i++)
+        if (rwy.VersionMajor < 6)
         {
-            bs.Position = basePos + lightDefsOffset + (i * RunwayLightDefinition.GetSize(rwy.VersionMajor, rwy.VersionMinor));
-            RunwayLightDefinition lightDef = RunwayLightDefinition.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
-            rwy.LightDefs.Add(lightDef);
-        }
+            for (int i = 0; i < lightDefCount; i++)
+            {
+                bs.Position = basePos + lightDefsOffset + (i * RunwayLightDefinition.GetSize(rwy.VersionMajor, rwy.VersionMinor));
+                RunwayLightDefinition lightDef = RunwayLightDefinition.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
+                rwy.LightDefs.Add(lightDef);
+            }
 
-        for (int i = 0; i < lightSetsCount; i++)
-        {
-            bs.Position = basePos + lightSetsOffset;
-            rwy.LightSets = RunwayCarLightSetCollection.FromStream(bs, lightSetsCount, rwy.VersionMajor, rwy.VersionMinor);
+            for (int i = 0; i < lightSetsCount; i++)
+            {
+                bs.Position = basePos + lightSetsOffset;
+                rwy.LightSets = RunwayCarLightSetCollection.FromStream(bs, lightSetsCount, rwy.VersionMajor, rwy.VersionMinor);
+            }
         }
 
         for (int i = 0; i < gadgetCount; i++)
@@ -238,15 +349,16 @@ public class RunwayFile
         }
 
         bs.Position = basePos + roadVertOffset;
-        rwy.RoadVerts = RunwayRoadVertMap.FromStream(bs, roadVertCount, rwy.VersionMajor, rwy.VersionMinor);
+        rwy.RoadVerts = RunwayRoadVertMap.FromStream(bs, roadVertCount, rwy);
 
         for (int i = 0; i < roadTriCount; i++)
         {
             bs.Position = basePos + roadTriOffset + (i * RunwayRoadTri.GetSize(rwy.VersionMajor, rwy.VersionMinor));
             RunwayRoadTri tri = RunwayRoadTri.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
             rwy.RoadTris.Add(tri);
-        } 
-        
+        }
+
+
         if (rayCastTreeOffset != 0)
         {
             bs.Position = basePos + rayCastTreeOffset;
@@ -255,8 +367,8 @@ public class RunwayFile
 
         for (int i = 0; i < boundaryVertCount; i++)
         {
-            bs.Position = basePos + boundaryVertOffset + (i * RunwayBoundaryVert.GetSize(rwy.VersionMajor, rwy.VersionMinor));
-            RunwayBoundaryVert boundaryVert = RunwayBoundaryVert.FromStream(bs, rwy.VersionMajor, rwy.VersionMinor);
+            bs.Position = basePos + boundaryVertOffset + (i * RunwayBoundaryVert.GetSize(rwy));
+            RunwayBoundaryVert boundaryVert = RunwayBoundaryVert.FromStream(bs, rwy);
             rwy.BoundaryVerts.Add(boundaryVert);
         }
 
@@ -299,6 +411,14 @@ public class RunwayFile
         return rwy;
     }
 
+    public static long Read32Or64(BinaryStream bs, ushort versionMajor)
+    {
+        if (versionMajor >= 6)
+            return bs.ReadInt64();
+        else
+            return bs.ReadInt32();
+    }
+
     public void Merge(RunwayFile other)
     {
         BoundsMin = other.BoundsMin;
@@ -330,7 +450,7 @@ public class RunwayFile
         }
 
         if (VersionMajor < 4 || VersionMajor >= 5)
-            throw new NotImplementedException($"Export not implemented for RNW5 v{VersionMajor}.{VersionMinor}");
+            throw new NotImplementedException($"Export not implemented for Runway v{VersionMajor}.{VersionMinor}");
 
         bs.Position = 0x100;
 
@@ -559,7 +679,7 @@ public class RunwayFile
         for (int i = 0; i < BoundaryVerts.Count; i++)
         {
             RunwayBoundaryVert vert = BoundaryVerts[i];
-            vert.ToStream(bs, VersionMajor, VersionMinor);
+            vert.ToStream(bs, this);
         }
 
         bs.Align(0x10, grow: true);
@@ -649,6 +769,15 @@ public class RunwayFile
         bs.Align(0x10, grow: true);
 
         return offset;
+    }
+
+    public static double DecodeAVXFloat(int value, int axisPow)
+    {
+        var emptyVec = Vector128.Create(0d, 0d);
+        var valVec = Avx.ConvertScalarToVector128Double(emptyVec, value);
+        var powVec = Avx.ConvertScalarToVector128Double(emptyVec, 1 << axisPow);
+        var div = Avx.DivideScalar(valVec, powVec);
+        return div.GetElement(0);
     }
 }
 

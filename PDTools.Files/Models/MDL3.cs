@@ -134,8 +134,8 @@ namespace PDTools.Files.Models
                 && !fvfDef.FieldDefinitions.TryGetValue("position_2", out field))
                 throw new InvalidOperationException("FVF does not contain 'position' field.");
 
-            if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F)
-                throw new NotSupportedException("Expected vector 3 float");
+            if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1)
+                throw new NotSupportedException("Expected vector 3 with CELL_GCM_VERTEX_F or CELL_GCM_VERTEX_S1");
 
             var arr = new Vector3[mesh.VertexCount];
 
@@ -192,9 +192,6 @@ namespace PDTools.Files.Models
         public Vector2[] GetUVsOfMesh(ushort meshIndex)
         {
             var mesh = Meshes[meshIndex];
-            if (meshIndex == 1710)
-                ;
-
             MDL3FVFDefinition fvfDef = FVFs[mesh.FVFIndex];
             if (!fvfDef.FieldDefinitions.TryGetValue("map1", out var field) && 
                 !fvfDef.FieldDefinitions.TryGetValue("map12", out field) &&

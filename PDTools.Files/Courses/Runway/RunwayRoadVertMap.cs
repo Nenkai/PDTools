@@ -4,8 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
+using System.Buffers.Binary;
 
 using Syroot.BinaryData;
+using System.Runtime.Intrinsics;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
+using System.Diagnostics;
 
 namespace PDTools.Files.Courses.Runway
 {
@@ -13,7 +18,7 @@ namespace PDTools.Files.Courses.Runway
     {
         public List<RunwayRoadVert> Vertices { get; set; } = new();
 
-        public static RunwayRoadVertMap FromStream(BinaryStream bs, uint count, ushort rwyVersionMajor, ushort rwyVersionMinor)
+        public static RunwayRoadVertMap FromStream(BinaryStream bs, long count, RunwayFile rwy)
         {
             var map = new RunwayRoadVertMap();
 
@@ -22,7 +27,24 @@ namespace PDTools.Files.Courses.Runway
             {
                 var vert = new RunwayRoadVert();
 
-                if (rwyVersionMajor >= 4) 
+                if (rwy.VersionMajor >= 6)
+                {
+                    bs.Position = basePos + (i * 0x0C);
+
+                    if (rwy.BBoxAndRoadVertScaleX > 0 || rwy.BBoxAndRoadVertScaleY > 0 || rwy.BBoxAndRoadVertScaleZ > 0)
+                    {
+                        // Encoded
+                        float X = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleX);
+                        float Y = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleY);
+                        float Z = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleZ);
+                        vert.Vertex = new Vector3(X, Y, Z);
+                    }
+                    else
+                    {
+                        vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+                    }
+                }
+                else if (rwy.VersionMajor >= 4) 
                 {
                     bs.Position = basePos + (i * 0x0C);
                     vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
@@ -46,7 +68,11 @@ namespace PDTools.Files.Courses.Runway
 
         public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
         {
-            if (rwyVersionMajor >= 4)
+            if (rwyVersionMajor >= 6)
+            {
+                throw new NotImplementedException("Implement RunwayRoadVert serializing for version >= 6");
+            }
+            else if (rwyVersionMajor >= 4)
             {
                 for (int i = 0; i < Vertices.Count; i++)
                 {

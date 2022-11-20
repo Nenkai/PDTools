@@ -16,8 +16,8 @@ namespace PDTools.Files.Courses.Runway
             long basePos = bs.Position;
             RunwaySector sector = new();
 
-            int vCoordCount = bs.ReadInt32();
-            int offset = bs.ReadInt32();
+            long vCoordCount = RunwayFile.Read32Or64(bs, rwyVersionMajor);
+            long offset = RunwayFile.Read32Or64(bs, rwyVersionMajor);
 
             bs.Position = offset;
             for (int i = 0; i < vCoordCount; i++)

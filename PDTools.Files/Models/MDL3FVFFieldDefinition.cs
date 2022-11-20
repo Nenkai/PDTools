@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using System.Numerics;
+using System.Buffers.Binary;
+
 using Syroot.BinaryData;
 using Syroot.BinaryData.Memory;
+using Syroot.BinaryData.Core;
 
 namespace PDTools.Files.Models
 {
@@ -88,14 +90,14 @@ namespace PDTools.Files.Models
         {
             float v1 = 0, v2 = 0;
 
-            if (ElementCount != 2)
-                throw new InvalidOperationException("Expected 2 elements for Vector2");
-
             SpanReader sr = new SpanReader(buffer, Syroot.BinaryData.Core.Endian.Big); // Fix me..
             sr.Position = StartOffset;
 
             if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F)
             {
+                if (ElementCount != 2)
+                    throw new InvalidOperationException("Expected 2 elements for Vector2");
+
                 v1 = sr.ReadSingle();
                 v2 = sr.ReadSingle();
             }
@@ -106,8 +108,18 @@ namespace PDTools.Files.Models
             }
             else if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_UB)
             {
-                v1 = ((float)sr.ReadByte() * (1f / (float)sbyte.MaxValue));
-                v2 = ((float)sr.ReadByte() * (1f / (float)sbyte.MaxValue));
+                v1 = ((float)sr.ReadByte() * (1f / byte.MaxValue));
+                v2 = ((float)sr.ReadByte() * (1f / byte.MaxValue));
+            }
+            else if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_SF)
+            {
+                if (ElementCount == 4)
+                    ; // TODO: Check whats up with this, GT5 PS3 tracks uses 4 elements for map12 sometimes
+
+                var bytes = sr.ReadBytes(2);
+                var bytes2 = sr.ReadBytes(2);
+                v1 = (float)(sr.Endian == Endian.Big ? BinaryPrimitives.ReadHalfBigEndian(bytes) : BinaryPrimitives.ReadHalfLittleEndian(bytes));
+                v2 = (float)(sr.Endian == Endian.Big ? BinaryPrimitives.ReadHalfBigEndian(bytes2) : BinaryPrimitives.ReadHalfLittleEndian(bytes2));
             }
             else
             {

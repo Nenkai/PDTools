@@ -12,7 +12,7 @@ namespace PDTools.Files.Courses.Runway
     {
         public List<RunwayCarLightSet> Sets { get; set; } = new();
 
-        public static RunwayCarLightSetCollection FromStream(BinaryStream bs, uint count, ushort rwyVersionMajor, ushort rwyVersionMinor)
+        public static RunwayCarLightSetCollection FromStream(BinaryStream bs, long count, ushort rwyVersionMajor, ushort rwyVersionMinor)
         {
             RunwayCarLightSetCollection collection = new RunwayCarLightSetCollection();
 
