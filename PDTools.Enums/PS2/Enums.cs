@@ -198,40 +198,52 @@ namespace PDTools.Enums.PS2
 
     public enum Result
     {
-        [Description("1st")]
+        /// <summary>
+        /// Events and Missions
+        /// </summary>
+        [Description("1st (Events/Missions)")]
         _1,
 
-        [Description("2nd")]
+        [Description("2nd (Events/Missions)")]
         _2,
 
-        [Description("3rd")]
+        [Description("3rd (Events/Missions)")]
         _3,
 
-        [Description("4th")]
+        [Description("4th (Events/Missions)")]
         _4,
 
-        [Description("5th")]
+        [Description("5th (Events/Missions)")]
         _5,
 
-        [Description("6th")]
+        [Description("6th (Events/Missions)")]
         _6,
 
-        [Description("7th")]
+        [Description("7th (Events/Missions)")]
         _7,
 
-        [Description("8th")]
+        [Description("8th (Events/Missions)")]
         _8,
 
         [Description("Abandon")]
         abandon,
 
-        [Description("Gold")]
+        /// <summary>
+        /// Licenses
+        /// </summary>
+        [Description("Gold (License)")]
         gold,
 
-        [Description("Silver")]
+        /// <summary>
+        /// Licenses
+        /// </summary>
+        [Description("Silver (License)")]
         silver,
 
-        [Description("Bronze")]
+        /// <summary>
+        /// Licenses
+        /// </summary>
+        [Description("Bronze (License)")]
         bronze,
 
         [Description("Red")]
