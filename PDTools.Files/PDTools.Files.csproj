@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCnEncoder.Net" Version="2.1.0" />
     <PackageReference Include="Pfim" Version="0.10.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     <PackageReference Include="Syroot.BinaryData" Version="5.2.2" />
