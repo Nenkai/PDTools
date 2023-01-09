@@ -44,7 +44,7 @@ namespace PDTools.Files.Textures
 
         }
 
-        public void ConvertToTXS(string outputName)
+        public void BuildTextureSetFile(string outputName)
         {
             using var ms = new FileStream(outputName, FileMode.Create);
             using var bs = new BinaryStream(ms, ByteConverter.Big);
@@ -55,16 +55,16 @@ namespace PDTools.Files.Textures
             WriteToStream(bs);
         }
 
-        public void ConvertToPng(string filePath)
+        /// <summary>
+        /// Format depends on extension. png, jpg...
+        /// </summary>
+        /// <param name="outputName"></param>
+        public void ConvertToStandardFormat(string outputName)
         {
-            string dir = Path.GetDirectoryName(filePath);
-
-            Console.WriteLine($"Converting {filePath}");
-
             for (int i = 0; i < Textures.Count; i++)
             {
                 Texture? texture = Textures[i];
-                ConvertTextureToPng(filePath, dir, texture);
+                texture.ConvertTextureToStandardFormat(outputName);
             }
         }
 
@@ -286,13 +286,6 @@ namespace PDTools.Files.Textures
             FromStream(fs, consoleType);
         }
 
-        private void ConvertTextureToPng(string txsPath, string dir, Texture texture)
-        {
-            string name = Path.GetFileName(string.IsNullOrEmpty(texture.Name) ? txsPath : texture.Name);
-            string outputName = Path.ChangeExtension(Path.Combine(dir, name), "png");
-
-            texture.ConvertFileToPng(outputName);
-        }
 
         public enum TextureConsoleType
         {

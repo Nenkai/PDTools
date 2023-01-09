@@ -29,7 +29,7 @@ namespace PDTools.Files.Textures
 
         public Memory<byte> ImageData { get; set; }
         
-        public abstract void ConvertFileToPng(string outputFile);
+        public abstract void ConvertTextureToStandardFormat(string outputFile);
 
         public abstract void ReadTextureDetails(BinaryStream bs);
     }

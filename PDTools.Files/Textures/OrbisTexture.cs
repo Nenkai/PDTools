@@ -56,7 +56,7 @@ namespace PDTools.Files.Textures
             Mipmap = image.MipMaps.Length;
         }
 
-        public override void ConvertFileToPng(string outputFile)
+        public override void ConvertTextureToStandardFormat(string outputFile)
         {
             byte[] unswizzled = ArrayPool<byte>.Shared.Rent(ImageData.Length);
 
@@ -72,14 +72,13 @@ namespace PDTools.Files.Textures
 
             ReadOnlySpan<Rgba32> rgba32 = MemoryMarshal.Cast<ColorRgba32, Rgba32>(colors);
             Image<Rgba32> image = Image.LoadPixelData(rgba32, rawWidth, paddedHeight);
-
             
             if (rawWidth != Width)
             {
                 image.Mutate(e => e.Crop(Width, Height));
             }
 
-            image.SaveAsPng(outputFile);
+            image.Save(outputFile);
 
             ArrayPool<byte>.Shared.Return(unswizzled);
         }

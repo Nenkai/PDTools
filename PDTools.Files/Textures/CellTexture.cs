@@ -97,8 +97,7 @@ namespace PDTools.Files.Textures
 
             Memory<byte> ddsData = File.ReadAllBytes(ddsFileName).AsMemory(0x80);
 
-            // Do endian swap for 32bpp type - this can normally be fixed by swapping around the ARGB masks in DDS
-            // But for convenience, just swap the pixels
+            // Convert B8G8R8A8_UNORM (from conversion to dds) to A8R8G8B8 since TexConv does not support it
             if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
             {
                 var pixels = MemoryMarshal.Cast<byte, uint>(ddsData.Span);
@@ -113,30 +112,39 @@ namespace PDTools.Files.Textures
             return true;
         }
 
-        public override void ConvertFileToPng(string outputFileName)
+        public override void ConvertTextureToStandardFormat(string outputFileName)
         {
+            bool isOutputDds = Path.GetExtension(outputFileName) == ".dds";
+
             using var ms = new MemoryStream();
-            CreateDDSData(ImageData.ToArray(), ms);
+            CreateDDSData(ImageData.ToArray(), ms, noConvertFormat: isOutputDds); // Change format for DXT10 if we're doing a direct extract to dds
             ms.Position = 0;
 
-            var dds = Pfim.Pfim.FromStream(ms);
-            var encoder = new PngEncoder();
-
-            if (dds.Format == Pfim.ImageFormat.Rgb24)
+            if (isOutputDds)
             {
-                var i = Image.LoadPixelData<Bgr24>(dds.Data, dds.Width, dds.Height);
-                i.Save(outputFileName);
-            }
-            else if (dds.Format == Pfim.ImageFormat.Rgba32)
-            {
-                var i = Image.LoadPixelData<Bgra32>(dds.Data, dds.Width, dds.Height);
-                i.Save(outputFileName);
+                File.WriteAllBytes(outputFileName, ms.ToArray());
             }
             else
             {
-                Console.WriteLine($"Invalid format to save..? {dds.Format}");
-                return;
+                var dds = Pfim.Pfim.FromStream(ms);
+
+                if (dds.Format == Pfim.ImageFormat.Rgb24)
+                {
+                    var i = Image.LoadPixelData<Bgr24>(dds.Data, dds.Width, dds.Height);
+                    i.Save(outputFileName);
+                }
+                else if (dds.Format == Pfim.ImageFormat.Rgba32)
+                {
+                    var i = Image.LoadPixelData<Bgra32>(dds.Data, dds.Width, dds.Height);
+                    i.Save(outputFileName);
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid format to save..? {dds.Format}");
+                    return;
+                }
             }
+            
         }
 
         private static void ConvertFileToDDS(string fileName, CELL_GCM_TEXTURE_FORMAT imgFormat)
@@ -149,7 +157,7 @@ namespace PDTools.Files.Textures
             else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
                 arguments += " -f DXT5";
             else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
-                arguments += " -f R8G8B8A8_UNORM";
+                arguments += " -f B8G8R8A8_UNORM"; // We'll reverse it later, TexConv does not support A8R8G8B8
 
             arguments += " -y"      // Overwrite if it exists
                       + " -m 1"     // Don't care about extra mipmaps
@@ -161,124 +169,123 @@ namespace PDTools.Files.Textures
             converter.WaitForExit();
         }
 
-        private void CreateDDSData(byte[] imageData, Stream outStream)
+        private void CreateDDSData(byte[] imageData, Stream outStream, bool noConvertFormat = false)
         {
             var bs = new BinaryStream(outStream);
             PGLUCellTextureInfo textureInfo = TextureRenderInfo as PGLUCellTextureInfo;
 
-            try
+            // https://gist.github.com/Scobalula/d9474f3fcf3d5a2ca596fceb64e16c98#file-directxtexutil-cs-L355
+            bs.WriteString("DDS ", StringCoding.Raw);
+            bs.WriteInt32(124);    // dwSize (Struct Size)
+            bs.WriteUInt32((uint)(DDSHeaderFlags.TEXTURE)); // dwFlags
+            bs.WriteInt32(Height); // dwHeight
+
+            // Dirty fix, some TXS3's in GTHD have 1920 as width, but its actually 2048. Stride is correct, so use it instead.
+            bs.WriteInt32(Width);
+
+            CELL_GCM_TEXTURE_FORMAT format = (FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN);
+
+            switch (format)   // dwPitchOrLinearSize
             {
-                // https://gist.github.com/Scobalula/d9474f3fcf3d5a2ca596fceb64e16c98#file-directxtexutil-cs-L355
-                bs.WriteString("DDS ", StringCoding.Raw);
-                bs.WriteInt32(124);    // dwSize (Struct Size)
-                bs.WriteUInt32((uint)(DDSHeaderFlags.TEXTURE)); // dwFlags
-                bs.WriteInt32(Height); // dwHeight
-
-                // Dirty fix, some TXS3's in GTHD have 1920 as width, but its actually 2048. Stride is correct, so use it instead.
-                bs.WriteInt32(Width);
-
-                CELL_GCM_TEXTURE_FORMAT format = (FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN);
-
-                switch (format)   // dwPitchOrLinearSize
-                {
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
-                        bs.WriteInt32(Height * Width / 2);
-                        break;
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
-                        bs.WriteInt32(Height * Width);
-                        break;
-                    default:
-                        // 32bpp
-                        bs.WriteInt32((Width * 32 + 7) / 8);
-                        //bs.WriteInt32(0);
-                        break;
-                }
-
-                bs.WriteInt32(0);    // Depth
-
-                bs.WriteInt32(LastMipmapLevel);
-                bs.WriteBytes(new byte[44]); // reserved
-                bs.WriteInt32(32); // DDSPixelFormat Header starts here - Struct Size
-
-                
-                switch (format)
-                {
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
-                        bs.WriteUInt32((uint)DDSPixelFormatFlags.DDPF_FOURCC); // Format Flags
-
-                        // FourCC
-                        if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
-                            bs.WriteString("DXT1", StringCoding.Raw);
-                        else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
-                            bs.WriteString("DXT3", StringCoding.Raw);
-                        else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
-                            bs.WriteString("DXT5", StringCoding.Raw);
-
-                        bs.WriteInt32(0); // RGBBitCount
-                        bs.WriteInt32(0); // RBitMask
-                        bs.WriteInt32(0); // GBitMask
-                        bs.WriteInt32(0); // BBitMask
-                        bs.WriteInt32(0); // ABitMask
-                        break;
-                    case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8:
-                        bs.WriteUInt32((uint)(DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC));           // Format Flags
-                        bs.WriteString("DX10", StringCoding.Raw); // FourCC
-                        bs.WriteInt32(32);         // RGBBitCount
-
-                        bs.WriteUInt32(0xFF000000);  // RBitMask 
-                        bs.WriteUInt32(0x00FF0000);  // GBitMask
-                        bs.WriteUInt32(0x0000FF00);  // BBitMask
-                        bs.WriteUInt32(0x000000FF);  // ABitMask
-                        break;
-                }
-
-                bs.WriteInt32(0x1000); // dwCaps, 0x1000 = required
-                bs.WriteBytes(new byte[16]); // dwCaps1-4
-
-                if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
-                {
-                    // DDS_HEADER_DXT10
-                    bs.WriteInt32(87); // DXGI_FORMAT_B8G8R8A8_UNORM
-                    bs.WriteInt32(3);  // DDS_DIMENSION_TEXTURE2D
-                    bs.BaseStream.Seek(4, SeekOrigin.Current);  // miscFlag
-                    bs.WriteInt32(1); // arraySize
-                    bs.WriteInt32(0); // miscFlags2
-                }
-
-                // Unswizzle
-
-                if (!FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
-                {
-                    int bytesPerPix = 4;
-                    int byteCount = (Width * Height) * 4;
-                    byte[] newImageData = new byte[byteCount];
-
-                    Syroot.BinaryData.Memory.SpanReader sr = new Syroot.BinaryData.Memory.SpanReader(imageData);
-                    Syroot.BinaryData.Memory.SpanWriter sw = new Syroot.BinaryData.Memory.SpanWriter(newImageData);
-
-                    Span<byte> pixBuffer = new byte[4];
-                    for (int i = 0; i < Width * Height; i++)
-                    {
-                        int pixIndex = Swizzler.MortonReorder(i, Width, Height);
-                        pixBuffer = sr.ReadBytes(4);
-                        int destIndex = 4 * pixIndex;
-                        sw.Position = destIndex;
-                        sw.WriteBytes(pixBuffer);
-                    }
-
-                    imageData = newImageData;
-                }
-
-                bs.Write(imageData);
-            }
-            catch (Exception e)
-            {
-
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
+                    bs.WriteInt32(Height * Width / 2);
+                    break;
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
+                    bs.WriteInt32(Height * Width);
+                    break;
+                default:
+                    // 32bpp
+                    bs.WriteInt32((Width * 32 + 7) / 8);
+                    //bs.WriteInt32(0);
+                    break;
             }
 
+            bs.WriteInt32(0);    // Depth
+
+            bs.WriteInt32(LastMipmapLevel);
+            bs.WriteBytes(new byte[44]); // reserved
+            bs.WriteInt32(32); // DDSPixelFormat Header starts here - Struct Size
+
+
+            switch (format)
+            {
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
+                    bs.WriteUInt32((uint)DDSPixelFormatFlags.DDPF_FOURCC); // Format Flags
+
+                    // FourCC
+                    if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
+                        bs.WriteString("DXT1", StringCoding.Raw);
+                    else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
+                        bs.WriteString("DXT3", StringCoding.Raw);
+                    else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
+                        bs.WriteString("DXT5", StringCoding.Raw);
+
+                    bs.WriteInt32(0); // RGBBitCount
+                    bs.WriteInt32(0); // RBitMask
+                    bs.WriteInt32(0); // GBitMask
+                    bs.WriteInt32(0); // BBitMask
+                    bs.WriteInt32(0); // ABitMask
+                    break;
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8:
+                    bs.WriteUInt32((uint)(DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC));           // Format Flags
+                    bs.WriteString("DX10", StringCoding.Raw); // FourCC
+                    bs.WriteInt32(32);         // RGBBitCount
+
+                    bs.WriteUInt32(0x0000FF00);  // RBitMask 
+                    bs.WriteUInt32(0x00FF0000);  // GBitMask
+                    bs.WriteUInt32(0xFF000000);  // BBitMask
+                    bs.WriteUInt32(0x000000FF);  // ABitMask
+                    break;
+            }
+
+            bs.WriteInt32(0x1000); // dwCaps, 0x1000 = required
+            bs.WriteBytes(new byte[16]); // dwCaps1-4
+
+            if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
+            {
+                // DDS_HEADER_DXT10
+                bs.WriteInt32(87); // DXGI_FORMAT_B8G8R8A8_UNORM
+                bs.WriteInt32(3);  // DDS_DIMENSION_TEXTURE2D
+                bs.BaseStream.Seek(4, SeekOrigin.Current);  // miscFlag
+                bs.WriteInt32(1); // arraySize
+                bs.WriteInt32(0); // miscFlags2
+            }
+
+            // Unswizzle
+
+            if (!FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
+            {
+                int bytesPerPix = 4;
+                int byteCount = (Width * Height) * 4;
+                byte[] newImageData = new byte[byteCount];
+
+                Syroot.BinaryData.Memory.SpanReader sr = new Syroot.BinaryData.Memory.SpanReader(imageData);
+                Syroot.BinaryData.Memory.SpanWriter sw = new Syroot.BinaryData.Memory.SpanWriter(newImageData);
+
+                Span<byte> pixBuffer = new byte[4];
+                for (int i = 0; i < Width * Height; i++)
+                {
+                    int pixIndex = Swizzler.MortonReorder(i, Width, Height);
+                    pixBuffer = sr.ReadBytes(4);
+                    int destIndex = 4 * pixIndex;
+                    sw.Position = destIndex;
+                    sw.WriteBytes(pixBuffer);
+                }
+
+                imageData = newImageData;
+            }
+
+            if (!noConvertFormat && format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8) // B8G8R8A8 to A8R8G8B8
+            {
+                var pixels = MemoryMarshal.Cast<byte, uint>(imageData.AsSpan());
+                for (int j = 0; j < Width * Height; j++)
+                    pixels[j] = BinaryPrimitives.ReverseEndianness(pixels[j]);
+            }
+
+            bs.Write(imageData);
         }
     }
 }
