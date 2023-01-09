@@ -61,24 +61,41 @@ namespace PDTools.Files.Textures
             byte[] unswizzled = ArrayPool<byte>.Shared.Rent(ImageData.Length);
 
             PGLUOrbisTextureInfo textureInfo = TextureRenderInfo as PGLUOrbisTextureInfo;
-
             int rawWidth = textureInfo.Pitch;
-            BcDecoder decoder = new BcDecoder();
-
             int paddedHeight = textureInfo.IsPaddedToPow2 ? (int)BitOperations.RoundUpToPowerOf2((uint)Height) : Height;
+
             DoSwizzle(ImageData.Span, unswizzled, rawWidth, paddedHeight, 16);
 
-            ColorRgba32[] colors = decoder.DecodeRaw(unswizzled, rawWidth, paddedHeight, BCnEncoder.Shared.CompressionFormat.Bc7);
-
-            ReadOnlySpan<Rgba32> rgba32 = MemoryMarshal.Cast<ColorRgba32, Rgba32>(colors);
-            Image<Rgba32> image = Image.LoadPixelData(rgba32, rawWidth, paddedHeight);
-            
-            if (rawWidth != Width)
+            if (Path.GetExtension(outputFile) == ".dds")
             {
-                image.Mutate(e => e.Crop(Width, Height));
-            }
+                var header = new DdsHeader();
+                header.Height = Height;
+                header.Width = Width;
+                header.PitchOrLinearSize = Height * Width;
+                header.LastMipmapLevel = 1;
+                header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
+                header.FourCCName = "DX10";
+                header.DxgiFormat = DDS_DXGI_FORMAT.DXGI_FORMAT_BC7_UNORM;
+                header.ImageData = unswizzled;
 
-            image.Save(outputFile);
+                using var fs = new FileStream(outputFile, FileMode.Create);
+                header.Write(fs);
+            }
+            else
+            {
+                BcDecoder decoder = new BcDecoder();
+                ColorRgba32[] colors = decoder.DecodeRaw(unswizzled, rawWidth, paddedHeight, BCnEncoder.Shared.CompressionFormat.Bc7);
+
+                ReadOnlySpan<Rgba32> rgba32 = MemoryMarshal.Cast<ColorRgba32, Rgba32>(colors);
+                Image<Rgba32> image = Image.LoadPixelData(rgba32, rawWidth, paddedHeight);
+
+                if (rawWidth != Width)
+                {
+                    image.Mutate(e => e.Crop(Width, Height));
+                }
+
+                image.Save(outputFile);
+            }
 
             ArrayPool<byte>.Shared.Return(unswizzled);
         }
