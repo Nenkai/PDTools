@@ -156,6 +156,8 @@ namespace PDTools.Files.Textures
                 arguments += " -f DXT3";
             else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
                 arguments += " -f DXT5";
+            else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+                arguments += " -f B8G8R8X8_UNORM";
             else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
                 arguments += " -f B8G8R8A8_UNORM"; // We'll reverse it later, TexConv does not support A8R8G8B8
 
@@ -214,6 +216,7 @@ namespace PDTools.Files.Textures
                         header.FourCCName = "DXT5";
                     break;
                 case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8:
+                case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8:
                     header.FormatFlags = (DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC);
                     header.FourCCName = "DX10";
                     header.RGBBitCount = 32;
@@ -229,16 +232,16 @@ namespace PDTools.Files.Textures
 
             // Unswizzle
 
-            if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
+            if ((format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+                && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
             {
-                int bytesPerPix = 4;
                 int byteCount = (Width * Height) * 4;
                 byte[] newImageData = new byte[byteCount];
 
                 Syroot.BinaryData.Memory.SpanReader sr = new Syroot.BinaryData.Memory.SpanReader(imageData);
                 Syroot.BinaryData.Memory.SpanWriter sw = new Syroot.BinaryData.Memory.SpanWriter(newImageData);
 
-                Span<byte> pixBuffer = new byte[4];
+                Span<byte> pixBuffer;
                 for (int i = 0; i < Width * Height; i++)
                 {
                     int pixIndex = Swizzler.MortonReorder(i, Width, Height);
@@ -254,7 +257,7 @@ namespace PDTools.Files.Textures
             PGLUCellTextureInfo textureInfo = TextureRenderInfo as PGLUCellTextureInfo;
 
             // Swap channels for DDS
-            if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
+            if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
             {
                 for (var i = 0; i < Width * Height * 4; i += 4)
                 {

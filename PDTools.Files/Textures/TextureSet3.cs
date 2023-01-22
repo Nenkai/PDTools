@@ -227,8 +227,6 @@ namespace PDTools.Files.Textures
                 DataPointer = bs.ReadUInt32();
             }
 
-            bs.Position = DataPointer;
-
             if (imageInfoCount > 0)
             {
                 for (int i = 0; i < imageInfoCount; i++)
