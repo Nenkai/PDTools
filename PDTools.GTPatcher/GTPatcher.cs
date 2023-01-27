@@ -8,6 +8,7 @@ using libdebug;
 
 using PDTools.GTPatcher.MemoryPatches;
 using PDTools.GTPatcher.BreakLoggers;
+using System.Security.AccessControl;
 
 namespace PDTools.GTPatcher
 {
@@ -133,7 +134,6 @@ namespace PDTools.GTPatcher
 
         private async void AttachCallback(uint lwpid, uint status, string tdname, GeneralRegisters regs, FloatingPointRegisters fpregs, DebugRegisters dbregs)
         {
-            
             foreach (var breakLogger in _breakLoggers)
             {
                 if (breakLogger.CheckHit(this, regs))
@@ -153,6 +153,34 @@ namespace PDTools.GTPatcher
             }
 
             await PS4.ProcessResume();
+        }
+
+        // Don't mind, game on debug sends requests to dev url server
+        // Hijacked it, turns out it's just analytics "/analytics/report_error_code" which connection fails..
+        // While at it, nothing that important in the request headers
+        // Agent is: CppVC/4.73.1 (PS4) - C++ Vegas Client?
+        // Accept-Encoding: gzip, deflate
+        // body: { "code": "CE-210717" }
+
+        /*
+        await dbg.WriteMemory<string>(0x3C81D8A, "http://{service}.{stage}.{base_domain}/auth"); // Activity
+        await dbg.WriteMemory<string>(0x3C81E03, "http://{service}.{stage}.{base_domain}/analytics"); // Analytics
+        await dbg.WriteMemory<string>(0x3C81F7F, "http://{service}.{stage}.{base_domain}/auth"); // Auth
+        await dbg.WriteMemory<string>(0x3C839A6, "http://{service}.{stage}.{base_domain}/save"); // Save
+        await dbg.WriteMemory<string>(0x3C8405F, "http://{service}.{stage}.{base_domain}/user"); // User
+        */
+
+        /*
+        await dbg.WriteMemory<string>(0x3C81D8A, "http://<pub ip>/auth"); // Activity
+        await dbg.WriteMemory<string>(0x3C81E03, "http://<pub ip>/analytics"); // Analytics
+        await dbg.WriteMemory<string>(0x3C81F7F, "http://<pub ip>/auth"); // Auth
+        await dbg.WriteMemory<string>(0x3C839A6, "http://<pub ip>/save"); // Save
+        await dbg.WriteMemory<string>(0x3C8405F, "http://<pub ip>/user"); // User
+        */
+
+        public Task ReadMemory(ulong address, byte[] buffer, int length)
+        {
+            return PS4.ReadMemory(buffer, GamePid, ImageBase + address, length);
         }
 
         public Task<T> ReadMemory<T>(ulong address)

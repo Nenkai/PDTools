@@ -13,4 +13,8 @@
     <PackageReference Include="Syroot.BinaryData.Memory" Version="5.2.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -11,10 +11,32 @@ namespace PDTools.GT4ElfBuilderTool
     {
         public const int BssSize = 0x800000;
 
-        // GT4_EU ctors: 0x616F24 to 0x6174F4
-        // GT4_EU dtors: 0x6174F4 to 0x6179FC
-        // GT4_EU .rodata: 0x68BA80
-        // GT4_EU: vtables at 0x659A24 to 0x68A418
+        // Section addresses
+        // Compared with GT4 First Preview ELF (proper elf) to find sections
+
+        // GT4O_US:
+        // - ctors: 0x65F4F0 to 0x65FA28
+        // - dtors: 0x65FA28 to 0x65FBA0
+        // - REGINFO: 0x65FBA0 to 0x65FBBC
+        // - .erx_lib: 0x6DF648 to 0x6E0CA0
+        // - .erx_stub: 0x6E0CA0 to 0x6E0D80
+        // - .rodata: 0x6E0D80 to 0x731182
+        // - .rdata: 0x731182 to 0x732200
+        // - .eh_frame: 0x732200 to 0x734000
+        // - .gcc_except_table: 0x734000 to 734200
+        // - .sbss: 0x734200 to 0x734700
+        // VTables: 0x6A417C to 0x6DF1D0
+
+        // GT4_EU
+        // - ctors: 0x616F24 to 0x6174F4
+        // - dtors: 0x6174F4 to 0x6179FC
+        // - REGINFO: 0x6179F8 to 0x617A14
+        // - .erx_lib: 0x68A418 to 0x68B9A0
+        // - .erx_stub: 0x68B9A0 to 0x68BA80
+        // - .rodata: 0x68BA80 to 0x6D3280
+        // - .rdata: 0x6D3280 to 0x6D3280
+        // VTables at 0x659A24 to 0x68A418
+
         public void BuildFromInfo(string fileName, GTImageLoader file)
         {
             using var ms = new FileStream(fileName, FileMode.Create);
