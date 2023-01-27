@@ -12,7 +12,7 @@ namespace PDTools.Files.Models
     public class MDL3MaterialMap
     {
         public List<MDL3MaterialEntryUnk1> Entries1 { get; set; } = new();
-        public List<PGLUTextureInfo> TextureInfos { get; set; } = new();
+        public List<PGLUCellTextureInfo> TextureInfos { get; set; } = new();
 
         public static MDL3MaterialMap FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -37,7 +37,9 @@ namespace PDTools.Files.Models
             for (int i = 0; i < textureParameterCount; i++)
             {
                 bs.Position = mdlBasePos + textureInfoParamOffset + (i * 0x44);
-                PGLUTextureInfo info = PGLUTextureInfo.FromStream(bs);
+
+                var info = new PGLUCellTextureInfo();
+                info.Read(bs);
                 materialMap.TextureInfos.Add(info);
             }
 

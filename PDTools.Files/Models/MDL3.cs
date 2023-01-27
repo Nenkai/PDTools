@@ -277,7 +277,7 @@ namespace PDTools.Files.Models
         {
             bs.Position = baseMdlPos + offset;
             TextureSet = new TextureSet3();
-            TextureSet.FromStream(bs);
+            TextureSet.FromStream(bs, TextureSet3.TextureConsoleType.PS3);
         }
 
         private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)

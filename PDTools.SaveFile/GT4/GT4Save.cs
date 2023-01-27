@@ -34,25 +34,13 @@ namespace PDTools.SaveFile.GT4
 
         public static GT4Save Load(string directory)
         {
-            string gameDataName = "";
-            GT4GameType gameType = GT4GameType.Unknown;
+            string gameDataName = DetectGameTypeFromSaveDirectory(directory);
 
-            foreach (var saveFileName in GameDataRegionNames)
-            {
-                string saveFilePath = Path.Combine(directory, saveFileName.Key);
-                if (File.Exists(saveFilePath))
-                {
-                    gameDataName = saveFileName.Key;
-                    gameType = saveFileName.Value;
-                    break;
-                }
-            }
-            
             if (string.IsNullOrEmpty(gameDataName))
                 throw new FileNotFoundException("Main save file is missing from directory.");
 
             GT4Save save = new GT4Save();
-            save.GameType = gameType;
+            save.GameType = GameDataRegionNames[gameDataName];
             save.GameDataName = gameDataName;
             save.GameData.LoadFile(save, Path.Combine(directory, gameDataName));
 
@@ -63,6 +51,23 @@ namespace PDTools.SaveFile.GT4
             save.GarageFile.Load(save, garageFilePath, save.GameData.Profile.Garage.UniqueID, save.GameData.UseOldRandomUpdateCrypto);
 
             return save;
+        }
+
+        public static string DetectGameTypeFromSaveDirectory(string directory)
+        {
+            string gameDataName = "";
+
+            foreach (var saveFileName in GameDataRegionNames)
+            {
+                string saveFilePath = Path.Combine(directory, saveFileName.Key);
+                if (File.Exists(saveFilePath))
+                {
+                    gameDataName = saveFileName.Key;
+                    break;
+                }
+            }
+
+            return gameDataName;
         }
 
         public void SaveToDirectory(string directory)
