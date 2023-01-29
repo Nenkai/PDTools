@@ -9,7 +9,7 @@ using System.IO;
 using Syroot.BinaryData;
 
 using PDTools.Files;
-using PDTools.Files.Models;
+using PDTools.Files.Models.ModelSet3;
 
 namespace PDTools.Files.Courses.CourseData;
 
@@ -21,7 +21,7 @@ public class CourseDataFile
     public record CourseDataFileEntry(uint Type, uint Alignment, uint DataStart, uint DataLength);
     public List<CourseDataFileEntry> Entries { get; set; } = new();
 
-    public MDL3 MainModel { get; set; }
+    public ModelSet3 MainModel { get; set; }
 
     public static CourseDataFile FromStream(Stream stream)
     {
@@ -64,7 +64,7 @@ public class CourseDataFile
         uint mainModelOffset = bs.ReadUInt32();
 
         bs.Position = baseEntryPos + mainModelOffset;
-        courseData.MainModel = MDL3.FromStream(bs);
+        courseData.MainModel = ModelSet3.FromStream(bs);
         courseData.MainModel.ParentCourseData = courseData;
 
         return courseData;

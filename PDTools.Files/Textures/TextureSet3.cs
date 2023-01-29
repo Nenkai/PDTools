@@ -215,7 +215,7 @@ namespace PDTools.Files.Textures
             }
             else
             {
-                uint ptr = bs.ReadUInt32(); // Original Position, if bundled
+                uint relocPtr = bs.ReadUInt32(); // Original Position, if bundled
                 bs.Position += 4;
                 bs.Position += 4; // Sometimes 1
 
