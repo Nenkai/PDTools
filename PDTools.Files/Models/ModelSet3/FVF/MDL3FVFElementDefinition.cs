@@ -10,7 +10,7 @@ using Syroot.BinaryData;
 using Syroot.BinaryData.Memory;
 using Syroot.BinaryData.Core;
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.FVF
 {
     public class MDL3FVFElementDefinition
     {

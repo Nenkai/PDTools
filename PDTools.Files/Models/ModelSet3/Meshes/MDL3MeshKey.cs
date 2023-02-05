@@ -5,7 +5,7 @@ using System.Reflection.Metadata.Ecma335;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.Meshes
 {
     public class MDL3MeshKey
     {

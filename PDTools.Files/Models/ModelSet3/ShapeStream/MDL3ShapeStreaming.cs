@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.ShapeStream
 {
     public class MDL3ShapeStreamingMap
     {

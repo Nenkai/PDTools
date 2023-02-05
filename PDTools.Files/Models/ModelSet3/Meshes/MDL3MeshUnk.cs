@@ -7,7 +7,7 @@ using System.Windows.Markup;
 using Syroot.BinaryData;
 
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.Meshes
 {
     public class MDL3MeshUnk
     {

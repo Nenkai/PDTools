@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 
 using System.Numerics;
+using PDTools.Files.Models.ModelSet3.FVF;
+using PDTools.Files.Models.ModelSet3.Materials;
 using Syroot.BinaryData;
 
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.Meshes
 {
     public class MDL3Mesh
     {

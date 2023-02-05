@@ -6,22 +6,22 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.ModelSet3
+namespace PDTools.Files.Models.ModelSet3.Materials
 {
     public class MDL3Material
     {
         public string Name { get; set; }
-        public short UnkIndexForParent0x0CMap { get; set; }
-        public short UnkIndexForParent0x10Map { get; set; }
+        public short MaterialDataID { get; set; }
+        public short CellGcmParamsID { get; set; }
         public ushort Flags { get; set; }
 
-        public Dictionary<string, uint> Entries { get; set; } = new();
+        public Dictionary<string, uint> ImageEntries { get; set; } = new();
         public static MDL3Material FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             MDL3Material entry = new();
             uint nameOffset = bs.ReadUInt32();
-            entry.UnkIndexForParent0x0CMap = bs.ReadInt16();
-            entry.UnkIndexForParent0x10Map = bs.ReadInt16();
+            entry.MaterialDataID = bs.ReadInt16();
+            entry.CellGcmParamsID = bs.ReadInt16();
             entry.Flags = bs.ReadUInt16();
 
             ushort keyCount = bs.ReadUInt16();
@@ -37,7 +37,7 @@ namespace PDTools.Files.Models.ModelSet3
                 uint pgluTextureID = bs.ReadUInt32();
 
                 bs.Position = mdlBasePos + entryNameOffset;
-                entry.Entries.Add(bs.ReadString(StringCoding.ZeroTerminated), pgluTextureID);
+                entry.ImageEntries.Add(bs.ReadString(StringCoding.ZeroTerminated), pgluTextureID);
             }
 
             return entry;

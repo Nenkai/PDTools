@@ -12,6 +12,10 @@ using PDTools.Files.Textures;
 using PDTools.Files.Courses.CourseData;
 using PDTools.Files.Models.VM;
 using PDTools.Utils;
+using PDTools.Files.Models.ModelSet3.Materials;
+using PDTools.Files.Models.ModelSet3.Meshes;
+using PDTools.Files.Models.ModelSet3.FVF;
+using PDTools.Files.Models.ModelSet3.ShapeStream;
 
 namespace PDTools.Files.Models.ModelSet3
 {
@@ -33,6 +37,7 @@ namespace PDTools.Files.Models.ModelSet3
         
         public MDL3Materials Materials { get; set; } = new();
         public TextureSet3 TextureSet { get; set; }
+        public ShadersHeader Shaders { get; set; }
 
         public VMBytecode VirtualMachine { get; set; } = new VMBytecode();
         public Dictionary<short, VMHostMethodEntry> VMHostMethodEntries { get; set; } = new();
@@ -142,6 +147,8 @@ namespace PDTools.Files.Models.ModelSet3
             
             modelSet.ReadTextureSet(bs, basePos, textureSetOffset, 1);
 
+            modelSet.ReadShaders(bs, basePos, shadersOffset, 1);
+
             modelSet.ReadVMBytecode(bs, basePos, vmBytecodeOffset, vmBytecodeSize);
             modelSet.ReadVMRegisterValues(bs, basePos, registerValOffset, registerValCount);
             modelSet.VirtualMachine.Print(modelSet.VMHostMethodEntries);
@@ -161,15 +168,9 @@ namespace PDTools.Files.Models.ModelSet3
             // Seek to start of data
             bs.Position = 0xE4;
 
-            // Write materials header
-            bs.WriteInt16((short)Materials.Materials.Count);
-            bs.WriteInt16(0);
-            bs.WriteInt16(0);
-            bs.WriteInt16((short)Materials.TextureInfos.Count);
+            WriteMaterialsTOC(bs, basePos);
 
-            // WRITE TODO: WRITE SHADERS
-
-            bs.Position = 0x1A0;
+            WriteShaderHeader(bs, basePos);
 
             // WRITE TODO: WRITE PMSH HEADER
 
@@ -186,6 +187,42 @@ namespace PDTools.Files.Models.ModelSet3
 
             OptimizedStringTable fvfNameTable = new OptimizedStringTable();
             WriteFlexibleVertices(bs, basePos, fvfNameTable);
+
+            OptimizedStringTable materialsNameTable = new OptimizedStringTable();
+            WriteMaterials(bs, basePos, materialsNameTable);
+        }
+
+        private void WriteMaterialsTOC(BinaryStream bs, long baseModelSetOffset)
+        {
+            bs.WriteInt16((short)Materials.Materials.Count);
+            bs.WriteInt16(0); // TODO
+            bs.WriteByte(0); // TODO
+            bs.WriteByte(0); // TODO
+            bs.WriteInt16((short)Materials.TextureInfos.Count);
+
+            // Offsets which we will write later
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+            bs.WriteInt32(0);
+        }
+
+        private void WriteShaderHeader(BinaryStream bs, long baseModelSetOffset)
+        {
+            long baseShdsOffset = bs.Position;
+            bs.WriteString("SHDS", StringCoding.Raw);
+            bs.WriteInt32(0);
+            bs.WriteInt32((int)baseShdsOffset);
+            bs.WriteInt32(0); // Empty
+
+            // Skip everything, we'll be writing them way later on
+            bs.Position = baseShdsOffset + 0x40;
+
+            // Align main header
+            bs.Align(0x40, grow: true);
+
+            // Those are writen right after the main header, data is not here though
+            bs.Position += Shaders.Programs0x40.Count * 0x20;
         }
 
         private void WriteModels(BinaryStream bs, long baseModelSetOffset)
@@ -460,15 +497,178 @@ namespace PDTools.Files.Models.ModelSet3
                     long arrayDefOffset = bs.Position;
                     bs.WriteUInt32(def.ArrayDefinition.DataOffset);
                     bs.WriteUInt32(def.ArrayDefinition.ArrayLength);
+                    bs.WriteUInt32(def.ArrayDefinition.ArrayElementSize);
                     bs.WriteByte(def.ArrayDefinition.VertexSize);
                     bs.WriteByte(def.ArrayDefinition.VertexSizeDefault);
                     bs.Position += 2; // Pad
+
+                    lastOffset = bs.Position;
 
                     // Write offset
                     bs.Position = baseFVFPos + (i * 0x78) + 0x74;
                     bs.WriteInt32((int)arrayDefOffset);
                 }
             }
+
+            bs.Position = baseModelSetOffset + 0x18;
+            bs.WriteInt16((short)FlexibleVertexFormats.Count);
+
+            bs.Position = baseModelSetOffset + 0x40;
+            bs.WriteInt32(FlexibleVertexFormats.Count > 0 ? (int)baseFVFPos : 0);
+
+            bs.Position = lastOffset;
+        }
+
+        private void WriteMaterials(BinaryStream bs, long baseModelSetOffset, OptimizedStringTable strTable)
+        {
+            long baseMaterialDefPos = bs.Position;
+
+            // Write Material Infos
+            long lastOffset = bs.Position;
+            for (int i = 0; i < Materials.Materials.Count; i++)
+            {
+                MDL3Material? def = Materials.Materials[i];
+                strTable.AddString(def.Name);
+
+                bs.Position = baseMaterialDefPos + (i * 0x34);
+                bs.WriteInt32(0); // Name offset write later
+                bs.WriteInt16(def.MaterialDataID);
+                bs.WriteInt16(def.CellGcmParamsID);
+                bs.WriteUInt16(def.Flags);
+                bs.WriteInt16((short)def.ImageEntries.Count);
+                bs.WriteInt32(0); // Keys offset write later
+                bs.Position += 0x24; // Unused in file
+
+                lastOffset = bs.Position;
+            }
+
+           
+            bs.Position = 0xE4;
+            bs.WriteInt16((short)Materials.Materials.Count);
+
+            bs.Position = 0xE4 + 0x08;
+            bs.WriteInt32(Materials.Materials.Count > 0 ? (int)baseMaterialDefPos : 0);
+
+            // Data (0x0C) entries
+            bs.Position = lastOffset;
+            int dataOffset = (int)lastOffset;
+            for (int i = 0; i < Materials.MaterialDatas.Count; i++)
+            {
+                MDL3MaterialData? entry = Materials.MaterialDatas[i];
+                strTable.AddString(entry.Name);
+
+                bs.WriteInt32(0); // Name offset write later
+                bs.WriteInt32(entry.UnkIndex);
+                bs.WriteByte(entry.Unk0x01);
+                bs.WriteByte(entry.Version);
+                bs.WriteInt16((short)entry.Keys.Count);
+
+                // Skip offsets that we cannot write yet
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt32(0);
+                bs.WriteInt16(entry.Unk0x20);
+                bs.WriteInt16(0); // Count we don't know of yet
+                bs.WriteInt32(0); // Offset skip
+
+                lastOffset = bs.Position;
+            }
+
+           
+            bs.Position = 0xE4 + 0x02;
+            bs.WriteInt16((short)Materials.MaterialDatas.Count);
+
+            bs.Position = 0xE4 + 0x0C;
+            bs.WriteInt32(Materials.MaterialDatas.Count > 0 ? (int)dataOffset : 0);
+
+            bs.Position = lastOffset;
+
+            // Sub data entries
+            for (int i = 0; i < Materials.MaterialDatas.Count; i++)
+            {
+                MDL3MaterialData entry = Materials.MaterialDatas[i];
+
+                long tocPos = bs.Position;
+
+                // Write Data->0x18 entries
+                lastOffset = (int)(tocPos + (entry._0x18.Count * 0x08));
+                if (entry._0x18.Count > 0)
+                {
+                    for (int j = 0; j < entry._0x18.Count; j++)
+                    {
+                        MDL3MaterialData_0x18 entry_ = entry._0x18[j];
+
+                        int lastEntryOffset = (int)bs.Position;
+                        bs.Position = lastOffset;
+                        bs.WriteInt16s(entry_.Data);
+                        bs.Align(0x08, grow: true);
+                        lastOffset = bs.Position;
+
+                        bs.Position = tocPos + (j * 0x08);
+                        bs.WriteInt32(entry_.Data.Length);
+                        bs.WriteInt32(entry_.Data.Length > 0 ? lastEntryOffset : 0);
+                    }
+
+                    bs.Position = dataOffset + (i * 0x28) + 0x18;
+                    bs.WriteInt32((int)tocPos);
+                }
+
+                // Write Data->0x1C entry
+                if (entry._0x1C != null)
+                {
+                    bs.Position = lastOffset;
+                    int entry0x0COffset = (int)bs.Position;
+
+                    bs.WriteInt32(entry._0x1C.Unk);
+                    bs.WriteInt32(entry._0x1C.Unk2);
+                    lastOffset = bs.Position;
+
+                    bs.Position = dataOffset + (i * 0x28) + 0x1C;
+                    bs.WriteInt32(entry0x0COffset);
+                }
+
+                bs.Position = lastOffset;
+            }
+
+            
+            bs.Position = lastOffset;
+            int gcmParamsOffset = (int)bs.Position;
+
+            // Write Gcm Params (0x10) entries
+            for (int i = 0; i < Materials.GcmParams.Count; i++)
+            {
+                CellGcmParams param = Materials.GcmParams[i];
+                bs.WriteInt32s(param.Params);
+
+                lastOffset = bs.Position;
+            }
+
+            bs.Position = 0xE4 + 0x05;
+            bs.WriteByte((byte)Materials.GcmParams.Count);
+
+            bs.Position = 0xE4 + 0x10;
+            bs.WriteInt32(Materials.GcmParams.Count > 0 ? (int)gcmParamsOffset : 0);
+
+            bs.Position = lastOffset;
+
+            // Write pglu texture infos
+            int textureInfosOffset = (int)bs.Position;
+            for (int i = 0; i < Materials.TextureInfos.Count; i++)
+            {
+                PGLUTextureInfo textureInfo = Materials.TextureInfos[i];
+                textureInfo.Write(bs);
+                lastOffset = bs.Position;
+            }
+
+            bs.Position = 0xE4 + 0x06;
+            bs.WriteInt16((byte)Materials.TextureInfos.Count);
+
+            bs.Position = 0xE4 + 0x10;
+            bs.WriteInt32(Materials.TextureInfos.Count > 0 ? (int)textureInfosOffset : 0);
+
+            bs.Position = lastOffset;
         }
 
         private void LinkAll()
@@ -574,6 +774,12 @@ namespace PDTools.Files.Models.ModelSet3
             bs.Position = baseMdlPos + offset;
             TextureSet = new TextureSet3();
             TextureSet.FromStream(bs, TextureSet3.TextureConsoleType.PS3);
+        }
+
+        private void ReadShaders(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            bs.Position = baseMdlPos + offset;
+            Shaders = ShadersHeader.FromStream(bs, baseMdlPos);
         }
 
         private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
