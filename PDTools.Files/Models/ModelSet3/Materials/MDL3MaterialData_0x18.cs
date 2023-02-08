@@ -24,5 +24,10 @@ namespace PDTools.Files.Models.ModelSet3.Materials
 
             return entry;
         }
+
+        public static int GetSize()
+        {
+            return 0x08;
+        }
     }
 }

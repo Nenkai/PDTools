@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMBinaryXor : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.BinaryXorOperator;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

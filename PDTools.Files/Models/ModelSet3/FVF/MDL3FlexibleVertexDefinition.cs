@@ -47,6 +47,11 @@ namespace PDTools.Files.Models.ModelSet3.FVF
             return def;
         }
 
+        public static int GetSize()
+        {
+            return 0x78;
+        }
+
         public override string ToString()
         {
             return $"{Name} - Vertex Size: 0x{VertexSize:X2} ({Elements.Count} fields)";

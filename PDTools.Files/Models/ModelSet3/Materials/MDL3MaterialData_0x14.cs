@@ -11,13 +11,14 @@ namespace PDTools.Files.Models.ModelSet3.Materials
     public class MDL3MaterialData_0x14
     {
         public string Name { get; set; }
+        public int UnkIndex { get; set; }
         public byte Unk0x01 { get; set; }
         public byte Version { get; set; }
         public static MDL3MaterialData_0x14 FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             MDL3MaterialData_0x14 entry = new();
             int nameOffset = bs.ReadInt32();
-            int unkIndex = bs.ReadInt32();
+            entry.UnkIndex = bs.ReadInt32();
             bs.ReadInt32(); // Empty
             int unkOffset_0x0C = bs.ReadInt32();
             short unkCount = bs.ReadInt16();
@@ -33,6 +34,11 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             // TODO - this is something we go through in another master model structure
 
             return entry;
+        }
+
+        public static int GetSize()
+        {
+            return 0x28;
         }
 
         public override string ToString()

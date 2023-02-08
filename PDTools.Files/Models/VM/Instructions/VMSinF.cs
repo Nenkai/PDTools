@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMSinF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatSin;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

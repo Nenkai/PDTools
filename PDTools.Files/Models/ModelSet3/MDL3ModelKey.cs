@@ -24,6 +24,11 @@ namespace PDTools.Files.Models.ModelSet3
             return modelKey;
         }
 
+        public static int GetSize()
+        {
+            return 0x08;
+        }
+
         public override string ToString()
         {
             return $"{Name} (ModelID: {ModelID})";

@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMVariablePush : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackAssignPop0x13;
+
         public bool IsHostMethod;
         public short Index;
 

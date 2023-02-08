@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMLesserEqualTo : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.LesserOrEqualTo;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

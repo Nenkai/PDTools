@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMModulo : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.Modulo;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

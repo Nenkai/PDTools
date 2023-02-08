@@ -76,7 +76,7 @@ namespace PDTools.Files.Models.ModelSet3.FVF
             {
                 v1 = sr.ReadByte() * (1f / sbyte.MaxValue);
                 v2 = sr.ReadByte() * (1f / sbyte.MaxValue);
-                v2 = sr.ReadByte() * (1f / sbyte.MaxValue);
+                v3 = sr.ReadByte() * (1f / sbyte.MaxValue);
             }
             else
             {
@@ -127,6 +127,11 @@ namespace PDTools.Files.Models.ModelSet3.FVF
             }
 
             return new Vector2(v1, v2);
+        }
+
+        public static int GetSize()
+        {
+            return 0x08;
         }
 
         public override string ToString()

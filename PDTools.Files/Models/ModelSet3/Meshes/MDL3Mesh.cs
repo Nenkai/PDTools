@@ -106,6 +106,11 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
             return mesh;
         }
 
+        public static int GetSize()
+        {
+            return 0x30;
+        }
+
         public override string ToString()
         {
             return $"{Key.Name} (ID: {Key.MeshID})";

@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMPopAssignToLocal : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackAssignToStoragePop0x14;
+
         public bool IsHostMethod;
         public short Index;
 

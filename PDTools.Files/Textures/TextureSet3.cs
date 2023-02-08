@@ -30,6 +30,7 @@ namespace PDTools.Files.Textures
         public const string MAGIC_LE = "3SXT";
 
         public List<Texture> Textures { get; set; } = new();
+        public List<PGLUTextureInfo> TextureInfos { get; set; } = new();
 
         public bool WriteNames { get; set; }
 
@@ -79,14 +80,20 @@ namespace PDTools.Files.Textures
             }
         }
 
-        public void WriteToStream(BinaryStream bs, int txsBasePos = 0)
+        /// <summary>
+        /// Writes the texture set to a stream.
+        /// </summary>
+        /// <param name="bs">Stream to write to.</param>
+        /// <param name="txsBasePos">Base position for the texture set</param>
+        /// <param name="writeImageData">Whether to write the image data. If not, writing the image data and relinking offsets/finishing up the TXS3 header should be done at your own discretion.</param>
+        public void WriteToStream(BinaryStream bs, int txsBasePos = 0, bool writeImageData = true)
         {
             BaseTextureSetPosition = txsBasePos;
 
-            BuildPS3TextureSet(bs, txsBasePos);
+            BuildPS3TextureSet(bs, txsBasePos, writeImageData);
         }
 
-        private void BuildPS3TextureSet(BinaryStream bs, int txsBasePos)
+        private void BuildPS3TextureSet(BinaryStream bs, int txsBasePos, bool writeImageData = true)
         {
             if (!LittleEndian)
                 bs.WriteString(MAGIC, StringCoding.Raw);
@@ -95,10 +102,10 @@ namespace PDTools.Files.Textures
 
             bs.Position = txsBasePos + 0x14;
             bs.WriteInt16((short)Textures.Count); // Image Params Count;
-            bs.WriteInt16((short)Textures.Count); // Image Info Count;
+            bs.WriteInt16((short)TextureInfos.Count); // Image Info Count;
             bs.WriteInt32(txsBasePos + 0x40); // PGLTexture Offset (render params)
 
-            int imageInfoOffset = txsBasePos + 0x40 + (0x44 * Textures.Count);
+            int imageInfoOffset = txsBasePos + 0x40 + (0x44 * TextureInfos.Count);
             bs.WriteInt32(imageInfoOffset);
 
             // Unk offset, Set to header end
@@ -107,11 +114,11 @@ namespace PDTools.Files.Textures
 
             // Write textures's render params
             bs.Position = txsBasePos + 0x40;
-            foreach (var texture in Textures)
-                texture.TextureRenderInfo.Write(bs);
+            foreach (var textureInfo in TextureInfos)
+                textureInfo.Write(bs);
 
             // Skip the texture info for now
-            bs.Position = txsBasePos + imageInfoOffset + (Textures.Count * 0x20);
+            bs.Position = imageInfoOffset + (Textures.Count * 0x20);
 
             int mainHeaderSize = (int)bs.Position;
 
@@ -133,14 +140,23 @@ namespace PDTools.Files.Textures
                 bs.Position = lastNamePos;
             }
 
-            bs.Align(0x80, grow: true);
+            int endPos = (int)bs.Position;
+            if (writeImageData)
+            {
+                bs.Align(0x80, grow: true);
+                endPos = (int)bs.Position;
+            }
 
             // Actually write the textures now and their linked information
             for (int i = 0; i < Textures.Count; i++)
             {
-                int imageOffset = (int)bs.Position;
-                bs.Write(Textures[i].ImageData.Span);
-                int endImageOffset = (int)bs.Position;
+                int imageOffset = 0, endImageOffset = 0;
+                if (writeImageData)
+                {
+                    imageOffset = (int)bs.Position;
+                    bs.Write(Textures[i].ImageData.Span);
+                    endImageOffset = (int)bs.Position;
+                }
 
                 bs.Position = txsBasePos + imageInfoOffset + (i * 0x20);
 
@@ -159,7 +175,7 @@ namespace PDTools.Files.Textures
             }
 
             // Finish up main header
-            bs.Position = 4;
+            bs.Position = txsBasePos + 4;
             if (txsBasePos != 0)
             {
                 bs.WriteInt32(0);
@@ -172,6 +188,8 @@ namespace PDTools.Files.Textures
                 bs.WriteInt32(0);
                 bs.WriteInt32(mainHeaderSize);
             }
+
+            bs.Position = endPos;
         }
 
         public void FromStream(Stream stream, TextureConsoleType consoleType)
@@ -253,13 +271,15 @@ namespace PDTools.Files.Textures
 
                     Texture texture = Textures[i];
 
-                    texture.TextureRenderInfo = consoleType switch
+
+                    PGLUTextureInfo textureInfo = consoleType switch
                     {
                         TextureConsoleType.PS3 => new PGLUCellTextureInfo(),
                         TextureConsoleType.PS4 => new PGLUOrbisTextureInfo(),
                     };
 
-                    texture.TextureRenderInfo.Read(bs);
+                    textureInfo.Read(bs);
+                    TextureInfos.Add(textureInfo);
 
                     bs.Position = BaseTextureSetPosition + texture.ImageOffset;
                     texture.ImageData = new byte[texture.ImageSize];

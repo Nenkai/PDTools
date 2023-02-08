@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMMultiplyF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatMultiply;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

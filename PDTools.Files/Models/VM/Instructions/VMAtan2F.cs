@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMAtan2F : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatAtan2;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

@@ -43,6 +43,11 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             return entry;
         }
 
+        public static int GetSize()
+        {
+            return 0x34;
+        }
+
         public override string ToString()
         {
             return Name;

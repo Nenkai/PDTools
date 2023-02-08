@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMNotEqualsF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatNotEquals;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

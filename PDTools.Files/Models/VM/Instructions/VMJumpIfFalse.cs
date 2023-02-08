@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMJumpIfFalse : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpIfFalse0x26;
+
         public short JumpOffset { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

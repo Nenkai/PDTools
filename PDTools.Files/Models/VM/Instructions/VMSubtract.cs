@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMSubtract : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.Subtract;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

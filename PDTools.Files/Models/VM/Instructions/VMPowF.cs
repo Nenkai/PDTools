@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMPowF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatPow;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

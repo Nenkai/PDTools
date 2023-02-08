@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMBinaryOr : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.BinaryOrOperator;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

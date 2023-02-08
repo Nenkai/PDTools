@@ -32,5 +32,10 @@ namespace PDTools.Files.Models.ModelSet3.FVF
 
             return def;
         }
+
+        public static int GetSize()
+        {
+            return 0x10;
+        }
     }
 }

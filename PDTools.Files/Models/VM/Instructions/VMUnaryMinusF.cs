@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMUnaryMinusF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatUnaryMinusOperator;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMReturn : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.Return;
+
         public byte Offset { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

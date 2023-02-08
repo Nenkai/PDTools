@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VM0x10 : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackPushFromStackIndex0x10;
+
         public short Value { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

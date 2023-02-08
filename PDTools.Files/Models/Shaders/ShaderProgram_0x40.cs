@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace PDTools.Files.Models.Shaders
 {
-    public class ShadersProgram0x40
+    public class ShadersProgram_0x40
     {
         public byte[] Program { get; set; }
-        public static ShadersProgram0x40 FromStream(BinaryStream bs, long basePos)
+        public static ShadersProgram_0x40 FromStream(BinaryStream bs, long basePos)
         {
-            var prog = new ShadersProgram0x40();
+            var prog = new ShadersProgram_0x40();
             int unkOffset = bs.ReadInt32();
             int programOffset = bs.ReadInt32();
             int programSize = bs.ReadInt32();

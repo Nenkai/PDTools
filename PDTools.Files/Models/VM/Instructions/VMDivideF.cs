@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMDivideF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatDivide;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

@@ -85,6 +85,11 @@ namespace PDTools.Files.Models.ModelSet3
             return model;
         }
 
+        public static int GetSize()
+        {
+            return 0x30;
+        }
+
         public override string ToString()
         {
             return $"{Key.Name} (ID: {Key.ModelID})";

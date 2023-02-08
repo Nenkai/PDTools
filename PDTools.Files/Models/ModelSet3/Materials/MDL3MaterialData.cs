@@ -20,7 +20,8 @@ namespace PDTools.Files.Models.ModelSet3.Materials
         public List<MDL3MaterialDataKey> Keys { get; set; } = new();
         public MDL3MaterialData_0x14 _0x14 { get; set; } = new();
         public List<MDL3MaterialData_0x18> _0x18 { get; set; } = new();
-        public MDL3MaterialData_0x1C _0x1C { get; set; } 
+        public MDL3MaterialData_0x1C _0x1C { get; set; }
+        public MDL3MaterialShaderReferences ShaderReferences { get; set; }
 
         public static MDL3MaterialData FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -39,7 +40,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             int unkOffset0x1C = bs.ReadInt32();
             entry.Unk0x20 = bs.ReadInt16();
             int count0x18 = bs.ReadInt16();
-            int unkOffset0x24 = bs.ReadInt32();
+            int shaderReferencesOffset = bs.ReadInt32();
 
             bs.Position = nameOffset;
             entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
@@ -78,8 +79,18 @@ namespace PDTools.Files.Models.ModelSet3.Materials
                 entry._0x1C = MDL3MaterialData_0x1C.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             }
 
+            if (shaderReferencesOffset != 0)
+            {
+                bs.Position = mdlBasePos + shaderReferencesOffset;
+                entry.ShaderReferences = MDL3MaterialShaderReferences.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            }
 
             return entry;
+        }
+
+        public static int GetSize()
+        {
+            return 0x28;
         }
     }
 }

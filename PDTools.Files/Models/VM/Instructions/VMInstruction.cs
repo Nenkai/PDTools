@@ -12,6 +12,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public abstract class VMInstruction
     {
+        public abstract VMInstructionOpcode Opcode { get; }
+
         public int Offset { get; set; }
         public abstract void Read(BinaryStream bs, int commandsBaseOffset);
 
@@ -63,7 +65,7 @@ namespace PDTools.Files.Models.VM.Instructions
                 VMInstructionOpcode.FloatMultiply => new VMMultiplyF(),
                 VMInstructionOpcode.FloatDivide => new VMDivideF(),
                 VMInstructionOpcode.FloatMod => new VMModuloF(),
-                VMInstructionOpcode.FloatLesserThan => new VMLesserThan(),
+                VMInstructionOpcode.FloatLesserThan => new VMLesserThanF(),
                 VMInstructionOpcode.FloatLesserOrEqualTo => new VMLesserEqualToF(),
                 VMInstructionOpcode.FloatGreaterThen => new VMGreaterThanF(),
                 VMInstructionOpcode.FloatGreaterOrEqualTo => new VMGreaterEqualToF(),

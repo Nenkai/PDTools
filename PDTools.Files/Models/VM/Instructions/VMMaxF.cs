@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMMaxF : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatMax;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 

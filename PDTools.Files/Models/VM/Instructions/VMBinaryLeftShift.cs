@@ -10,6 +10,8 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMBinaryLeftShift : VMInstruction
     {
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.BinaryLeftShiftOperator;
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
 
