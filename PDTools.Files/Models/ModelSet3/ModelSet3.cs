@@ -42,12 +42,15 @@ namespace PDTools.Files.Models.ModelSet3
         public TextureSet3 TextureSet { get; set; }
         public ShadersHeader Shaders { get; set; }
         public List<MDL3Bone> Bones { get; set; } = new();
+        public ushort _0x68Size { get; set; }
+        public ushort VMStackSize { get; set; }
         public VMBytecode VirtualMachine { get; set; } = new VMBytecode();
         public Dictionary<short, VMHostMethodEntry> VMHostMethodEntries { get; set; } = new();
         public List<MDL3TextureKey> TextureKeys { get; set; } = new();
         public List<MDL3WingData> WingData { get; set; } = new();
         public List<MDL3WingKey> WingKeys { get; set; } = new();
         public List<MDL3ModelVMUnk> UnkVMData { get; set; } = new();
+        public MDL3ModelVMUnk2 UnkVMData2 { get; set; }
 
         public MDL3ShapeStreamingMap StreamingInfo { get; set; }
 
@@ -81,9 +84,9 @@ namespace PDTools.Files.Models.ModelSet3
             ushort meshKeysCount = bs.ReadUInt16();
             ushort flexibleVerticesCount = bs.ReadUInt16();
             ushort bonesCount = bs.ReadUInt16();
-            ushort unk = bs.ReadUInt16();
+            modelSet._0x68Size = bs.ReadUInt16();
             ushort registerValCount = bs.ReadUInt16();
-            ushort stackSize = bs.ReadUInt16(); // Unk
+            modelSet.VMStackSize = bs.ReadUInt16(); // Unk
             ushort count_0x5C = bs.ReadUInt16();
             bs.ReadUInt16(); // Unk
             ushort count_0x78 = bs.ReadUInt16();
@@ -127,7 +130,7 @@ namespace PDTools.Files.Models.ModelSet3
             uint shapeStreamMapOffset = bs.ReadUInt32();
             uint unkVMDataOffset = bs.ReadUInt32();
             bs.ReadUInt32(); // Unk
-            uint offset_0xB8 = bs.ReadUInt32();
+            uint unkVMDataOffset2 = bs.ReadUInt32();
             uint vm_related_offset_0x8C = bs.ReadUInt32();
             uint offset_0xC0 = bs.ReadUInt32();
             ushort count_0xC0 = bs.ReadUInt16();
@@ -164,6 +167,7 @@ namespace PDTools.Files.Models.ModelSet3
             modelSet.ReadWingData(bs, basePos, wingDataOffset, wingDataCount);
             modelSet.ReadWingKeys(bs, basePos, wingKeysOffset, wingKeysCount);
             modelSet.ReadUnkVMData(bs, basePos, unkVMDataOffset, modelCount);
+            modelSet.ReadUnkVMData2(bs, basePos, unkVMDataOffset2, 1);
             modelSet.ReadStreamInfo(bs, basePos, shapeStreamMapOffset, 1);
 
             // link everything together
@@ -340,6 +344,12 @@ namespace PDTools.Files.Models.ModelSet3
                 var unk = MDL3ModelVMUnk.FromStream(bs, baseMdlPos, Version);
                 UnkVMData.Add(unk);
             }
+        }
+
+        private void ReadUnkVMData2(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            bs.Position = baseMdlPos + offset;
+            UnkVMData2 = MDL3ModelVMUnk2.FromStream(bs, baseMdlPos, Version);
         }
 
         /// <summary>

@@ -82,6 +82,8 @@ namespace PDTools.Files.Models.ModelSet3
             WriteCustomWingData(bs, basePos);
 
             WriteUnkVMData(bs, basePos);
+
+            WriteUnkVMData2(bs, basePos);
         }
 
         private void WriteMaterialsTOC(BinaryStream bs, long baseModelSetOffset)
@@ -947,9 +949,23 @@ namespace PDTools.Files.Models.ModelSet3
         {
             bs.Align(0x10, grow: true);
 
-            // TODO
-
-            bs.Position += 0x50;
+            if (ModelSet.Version > 11)
+            {
+                bs.Position += 0x40; // Header
+                bs.Position += (ModelSet.VMStackSize + ModelSet.VMHostMethodEntries.Count) * sizeof(int);
+                bs.Position += MiscUtils.AlignValue((uint)ModelSet._0x68Size, 0x10);
+            }
+            else
+            {
+                bs.Position += 0x30; // Header (old)
+                bs.Position += (ModelSet.VMStackSize + ModelSet.VMHostMethodEntries.Count) * sizeof(int);
+            }
+            
+            if (ModelSet.UnkVMData2 != null)
+            {
+                bs.Position += (ModelSet.UnkVMData2.UnkCountUsedForVMStack2 * 0x4) + (ModelSet.UnkVMData2.UnkCountUsedForVMStack2 * 0x40);
+                bs.Position += ModelSet.UnkVMData2.UnkCountUsedForVMStack3 * 0x10;
+            }
         }
 
         private void WriteMaterialStructures2(BinaryStream bs, long baseModelSetOffset)
@@ -1199,6 +1215,32 @@ namespace PDTools.Files.Models.ModelSet3
         }
 
         private void WriteUnkVMData(BinaryStream bs, long baseModelSetOffset)
+        {
+            long dataPos = bs.Position + (ModelSet.UnkVMData.Count * MDL3ModelVMUnk.GetSize());
+            long entriesPos = bs.Position;
+
+            for (var i = 0; i < ModelSet.UnkVMData.Count; i++)
+            {
+                bs.Position = entriesPos + (i * MDL3ModelVMUnk.GetSize());
+                bs.WriteInt32((int)dataPos);
+                bs.Position += 0x2C;
+                bs.WriteInt16((short)ModelSet.UnkVMData[i].UnkIndices.Length);
+
+                bs.Position = dataPos;
+                bs.WriteInt16s(ModelSet.UnkVMData[i].UnkIndices);
+
+                dataPos = bs.Position;
+            }
+
+            // Write header pointer
+            bs.Position = 0xB0;
+            bs.WriteInt32((int)entriesPos);
+
+            bs.Position = dataPos;
+            bs.Align(0x10, grow: true);
+        }
+
+        private void WriteUnkVMData2(BinaryStream bs, long baseModelSetOffset)
         {
             long dataPos = bs.Position + (ModelSet.UnkVMData.Count * MDL3ModelVMUnk.GetSize());
             long entriesPos = bs.Position;
