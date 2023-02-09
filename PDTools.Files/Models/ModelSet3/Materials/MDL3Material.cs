@@ -15,7 +15,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
         public short CellGcmParamsID { get; set; }
         public ushort Flags { get; set; }
 
-        public Dictionary<string, uint> ImageEntries { get; set; } = new();
+        public List<MDL3TextureKey> ImageEntries { get; set; } = new();
         public static MDL3Material FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             MDL3Material entry = new();
@@ -33,11 +33,8 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             for (int i = 0; i < keyCount; i++)
             {
                 bs.Position = mdlBasePos + keyOffset + i * 0x08;
-                uint entryNameOffset = bs.ReadUInt32();
-                uint pgluTextureID = bs.ReadUInt32();
-
-                bs.Position = mdlBasePos + entryNameOffset;
-                entry.ImageEntries.Add(bs.ReadString(StringCoding.ZeroTerminated), pgluTextureID);
+                var key = MDL3TextureKey.FromStream(bs, mdlBasePos);
+                entry.ImageEntries.Add(key);
             }
 
             return entry;

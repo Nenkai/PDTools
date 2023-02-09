@@ -17,7 +17,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
         public short Unk0x20 { get; set; }
 
         public int[] Unk0x0CData { get; set; }
-        public List<MDL3MaterialDataKey> Keys { get; set; } = new();
+        public List<MDL3TextureKey> TextureKeys { get; set; } = new();
         public MDL3MaterialData_0x14 _0x14 { get; set; } = new();
         public List<MDL3MaterialData_0x18> _0x18 { get; set; } = new();
         public MDL3MaterialData_0x1C _0x1C { get; set; }
@@ -53,10 +53,10 @@ namespace PDTools.Files.Models.ModelSet3.Materials
 
             for (var i = 0; i < keyCount; i++)
             {
-                bs.Position = mdlBasePos + keysOffset + (i * 0x08);
+                bs.Position = mdlBasePos + keysOffset + (i * MDL3TextureKey.GetSize());
 
-                var key = MDL3MaterialDataKey.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-                entry.Keys.Add(key);
+                var key = MDL3TextureKey.FromStream(bs, mdlBasePos);
+                entry.TextureKeys.Add(key);
             }
 
             if (unkOffset0x14 != 0)

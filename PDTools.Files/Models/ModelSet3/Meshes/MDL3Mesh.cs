@@ -11,6 +11,8 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
 {
     public class MDL3Mesh
     {
+        public string Name { get; set; }
+
         public ushort Flags { get; set; }
 
         /// <summary>
@@ -52,10 +54,8 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
 
         public bool Tristrip = false;
 
-        public MDL3MeshKey Key { get; set; }
         public MDL3FlexibleVertexDefinition FVF { get; set; }
         public MDL3Material Material { get; set; }
-
         public MDL3MeshUnk Unk { get; set; }
 
         public static MDL3Mesh FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
@@ -113,7 +113,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
 
         public override string ToString()
         {
-            return $"{Key.Name} (ID: {Key.MeshID})";
+            return $"{Name}";
         }
     }
 }

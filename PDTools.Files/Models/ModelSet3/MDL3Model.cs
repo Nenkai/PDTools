@@ -12,11 +12,10 @@ using System.IO;
 
 namespace PDTools.Files.Models.ModelSet3
 {
-    /// <summary>
-    /// Possibly directly passed to SPUs
-    /// </summary>
     public class ModelSet3Model
     {
+        public string Name { get; set; }
+
         public float Unk { get; set; }
         public Vector3 Origin { get; set; }
         public List<Vector3> Bounds = new();
@@ -26,8 +25,6 @@ namespace PDTools.Files.Models.ModelSet3
         public int Unk_VMInstructionPtr { get; set; }
         public short Unk_0x2C { get; set; }
         public short Flags_0x2E { get; set; }
-
-        public MDL3ModelKey Key { get; set; }
 
         public static ModelSet3Model FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -92,7 +89,7 @@ namespace PDTools.Files.Models.ModelSet3
 
         public override string ToString()
         {
-            return $"{Key.Name} (ID: {Key.ModelID})";
+            return $"{Name}";
         }
     }
 }

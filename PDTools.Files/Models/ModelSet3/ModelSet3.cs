@@ -18,6 +18,7 @@ using PDTools.Files.Models.ModelSet3.FVF;
 using PDTools.Files.Models.ModelSet3.ShapeStream;
 using PDTools.Files.Models.Shaders;
 using PDTools.Files.Models.Bones;
+using PDTools.Files.Models.ModelSet3.Wing;
 
 namespace PDTools.Files.Models.ModelSet3
 {
@@ -26,29 +27,32 @@ namespace PDTools.Files.Models.ModelSet3
         const string MAGIC = "MDL3";
         const string MAGIC_LE = "3LDM";
 
-        public ushort VersionMajor { get; set; }
+        public const int HeaderSize = 0xE4;
+
+        public ushort Version { get; set; }
         public long BaseOffset { get; set; }
 
         public List<ModelSet3Model> Models { get; set; } = new();
-        public Dictionary<uint, MDL3ModelKey> ModelKeys { get; set; } = new();
+        public List<MDL3ModelKey> ModelKeys { get; set; } = new();
 
         public List<MDL3Mesh> Meshes { get; set; } = new();
-        public Dictionary<uint, MDL3MeshKey> MeshKeys { get; set; } = new();
-
+        public List<MDL3MeshKey> MeshKeys { get; set; } = new();
         public List<MDL3FlexibleVertexDefinition> FlexibleVertexFormats { get; set; } = new();
-        
         public MDL3Materials Materials { get; set; } = new();
         public TextureSet3 TextureSet { get; set; }
         public ShadersHeader Shaders { get; set; }
         public List<MDL3Bone> Bones { get; set; } = new();
-
         public VMBytecode VirtualMachine { get; set; } = new VMBytecode();
         public Dictionary<short, VMHostMethodEntry> VMHostMethodEntries { get; set; } = new();
+        public List<MDL3TextureKey> TextureKeys { get; set; } = new();
+        public List<MDL3WingData> WingData { get; set; } = new();
+        public List<MDL3WingKey> WingKeys { get; set; } = new();
+        public List<MDL3ModelVMUnk> UnkVMData { get; set; } = new();
 
         public MDL3ShapeStreamingMap StreamingInfo { get; set; }
 
-        public BinaryStream Stream { get; set; }
         public CourseDataFile ParentCourseData { get; set; }
+        public BinaryStream Stream { get; set; }
 
         public static ModelSet3 FromStream(BinaryStream bs, int txsPos = 0)
         {
@@ -69,7 +73,7 @@ namespace PDTools.Files.Models.ModelSet3
 
             bs.ReadInt32(); // File Size
             bs.ReadInt32(); // Reloc Ptr
-            modelSet.VersionMajor = bs.ReadUInt16();
+            modelSet.Version = bs.ReadUInt16();
             bs.ReadUInt16(); // Runtime Flags
             ushort modelCount = bs.ReadUInt16();
             ushort modelKeyCount = bs.ReadUInt16();
@@ -111,17 +115,17 @@ namespace PDTools.Files.Models.ModelSet3
             bs.Position += 0xC; // Unks
             uint offset_0x8c = bs.ReadUInt32();
             ushort count_0x8c = bs.ReadUInt16();
-            ushort count_0x90 = bs.ReadUInt16();
-            uint offset_0x90 = bs.ReadUInt32();
+            ushort textureKeyCount = bs.ReadUInt16();
+            uint textureKeysOffset = bs.ReadUInt32();
             bs.ReadUInt32(); // Unk
-            ushort count_0x9c = bs.ReadUInt16();
-            ushort count_0xA0 = bs.ReadUInt16();
-            uint offset_0x9c = bs.ReadUInt32();
-            uint offset_0xA0 = bs.ReadUInt32();
+            ushort wingDataCount = bs.ReadUInt16();
+            ushort wingKeysCount = bs.ReadUInt16();
+            uint wingDataOffset = bs.ReadUInt32();
+            uint wingKeysOffset = bs.ReadUInt32();
             uint offset_0xA4 = bs.ReadUInt32();
             bs.ReadUInt32(); // Unk
             uint shapeStreamMapOffset = bs.ReadUInt32();
-            uint offset_0xB0 = bs.ReadUInt32();
+            uint unkVMDataOffset = bs.ReadUInt32();
             bs.ReadUInt32(); // Unk
             uint offset_0xB8 = bs.ReadUInt32();
             uint vm_related_offset_0x8C = bs.ReadUInt32();
@@ -156,7 +160,10 @@ namespace PDTools.Files.Models.ModelSet3
             modelSet.ReadVMBytecode(bs, basePos, vmBytecodeOffset, vmBytecodeSize);
             modelSet.ReadVMRegisterValues(bs, basePos, registerValOffset, registerValCount);
             modelSet.VirtualMachine.Print(modelSet.VMHostMethodEntries);
-
+            modelSet.ReadTextureKeys(bs, basePos, textureKeysOffset, textureKeyCount);
+            modelSet.ReadWingData(bs, basePos, wingDataOffset, wingDataCount);
+            modelSet.ReadWingKeys(bs, basePos, wingKeysOffset, wingKeysCount);
+            modelSet.ReadUnkVMData(bs, basePos, unkVMDataOffset, modelCount);
             modelSet.ReadStreamInfo(bs, basePos, shapeStreamMapOffset, 1);
 
             // link everything together
@@ -168,10 +175,13 @@ namespace PDTools.Files.Models.ModelSet3
         private void LinkAll()
         {
             foreach (var modelKey in ModelKeys)
-                Models[(ushort)modelKey.Value.ModelID].Key = modelKey.Value;
+                Models[(ushort)modelKey.ModelID].Name = modelKey.Name;
 
             foreach (var meshKey in MeshKeys)
-                Meshes[(ushort)meshKey.Value.MeshID].Key = meshKey.Value;
+                Meshes[(ushort)meshKey.MeshID].Name = meshKey.Name;
+
+            foreach (var wingKey in WingKeys)
+                WingData[(ushort)wingKey.WingDataID].Name = wingKey.Name;
 
             foreach (var mesh in Meshes)
             {
@@ -179,7 +189,7 @@ namespace PDTools.Files.Models.ModelSet3
                     mesh.FVF = FlexibleVertexFormats[mesh.FVFIndex];
 
                 if (mesh.MaterialIndex != -1)
-                    mesh.Material = Materials.Materials[mesh.MaterialIndex];
+                    mesh.Material = Materials.Definitions[mesh.MaterialIndex];
             }
         }
 
@@ -188,7 +198,7 @@ namespace PDTools.Files.Models.ModelSet3
             for (ushort i = 0; i < count; i++)
             {
                 bs.Position = baseMdlPos + offset + (i * ModelSet3Model.GetSize());
-                Models.Add(ModelSet3Model.FromStream(bs, baseMdlPos, VersionMajor));
+                Models.Add(ModelSet3Model.FromStream(bs, baseMdlPos, Version));
             }
         }
 
@@ -198,8 +208,8 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 bs.Position = baseMdlPos + offset + (i * MDL3ModelKey.GetSize());
 
-                var key = MDL3ModelKey.FromStream(bs, baseMdlPos, VersionMajor);
-                ModelKeys.Add(key.ModelID, key);
+                var key = MDL3ModelKey.FromStream(bs, baseMdlPos, Version);
+                ModelKeys.Add(key);
             }
         }
 
@@ -208,7 +218,7 @@ namespace PDTools.Files.Models.ModelSet3
             for (ushort i = 0; i < count; i++)
             {
                 bs.Position = baseMdlPos + offset + (i * MDL3Mesh.GetSize());
-                Meshes.Add(MDL3Mesh.FromStream(bs, baseMdlPos, VersionMajor));
+                Meshes.Add(MDL3Mesh.FromStream(bs, baseMdlPos, Version));
             }
         }
 
@@ -218,10 +228,10 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 bs.Position = baseMdlPos + offset + (i * MDL3MeshKey.GetSize());
 
-                var key = MDL3MeshKey.FromStream(bs, baseMdlPos, VersionMajor);
-                MeshKeys.Add(key.MeshID, key);
+                var key = MDL3MeshKey.FromStream(bs, baseMdlPos, Version);
+                MeshKeys.Add(key);
 
-                Meshes[(ushort)key.MeshID].Key = key;
+                Meshes[(ushort)key.MeshID].Name = key.Name;
             }
         }
 
@@ -230,7 +240,7 @@ namespace PDTools.Files.Models.ModelSet3
             for (ushort i = 0; i < count; i++)
             {
                 bs.Position = baseMdlPos + offset + (i * MDL3FlexibleVertexDefinition.GetSize());
-                FlexibleVertexFormats.Add(MDL3FlexibleVertexDefinition.FromStream(bs, baseMdlPos, VersionMajor));
+                FlexibleVertexFormats.Add(MDL3FlexibleVertexDefinition.FromStream(bs, baseMdlPos, Version));
             }
         }
 
@@ -246,21 +256,21 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 bs.Position = baseMdlPos + offset + i * 0x08;
 
-                var hostMethodEntry = VMHostMethodEntry.FromStream(bs, baseMdlPos, VersionMajor);
+                var hostMethodEntry = VMHostMethodEntry.FromStream(bs, baseMdlPos, Version);
                 VMHostMethodEntries.Add(hostMethodEntry.StorageID, hostMethodEntry);
             }
         }
 
         private void ReadStreamInfo(BinaryStream bs, long baseMdlPos, uint offset, uint count)
         {
-            if (VersionMajor <= 1)
+            if (Version <= 1)
                 return;
 
             if (offset == 0)
                 return;
 
             bs.Position = baseMdlPos + offset;
-            StreamingInfo = MDL3ShapeStreamingMap.FromStream(bs, baseMdlPos, VersionMajor);
+            StreamingInfo = MDL3ShapeStreamingMap.FromStream(bs, baseMdlPos, Version);
         }
 
         private void ReadTextureSet(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -279,7 +289,7 @@ namespace PDTools.Files.Models.ModelSet3
         private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
         {
             bs.Position = baseMdlPos + offset;
-            Materials = MDL3Materials.FromStream(bs, baseMdlPos, VersionMajor);
+            Materials = MDL3Materials.FromStream(bs, baseMdlPos, Version);
         }
 
         private void ReadBones(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -289,6 +299,46 @@ namespace PDTools.Files.Models.ModelSet3
                 bs.Position = baseMdlPos + offset + (i * MDL3Bone.GetSize());
                 MDL3Bone bone = MDL3Bone.FromStream(bs, baseMdlPos);
                 Bones.Add(bone);
+            }
+        }
+
+        private void ReadTextureKeys(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * MDL3TextureKey.GetSize());
+                var key = MDL3TextureKey.FromStream(bs, baseMdlPos);
+                TextureKeys.Add(key);
+            }
+        }
+
+        private void ReadWingData(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * MDL3WingData.GetSize());
+                var data = MDL3WingData.FromStream(bs, baseMdlPos, Version);
+                WingData.Add(data);
+            }
+        }
+
+        private void ReadWingKeys(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * MDL3WingKey.GetSize());
+                var key = MDL3WingKey.FromStream(bs, baseMdlPos, Version);
+                WingKeys.Add(key);
+            }
+        }
+
+        private void ReadUnkVMData(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * MDL3ModelVMUnk.GetSize());
+                var unk = MDL3ModelVMUnk.FromStream(bs, baseMdlPos, Version);
+                UnkVMData.Add(unk);
             }
         }
 
@@ -416,6 +466,11 @@ namespace PDTools.Files.Models.ModelSet3
                 Stream.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
                 Stream.Read(buffer);
             }
+        }
+
+        public static int GetHeaderSize()
+        {
+            return 0xE4;
         }
     }
 }

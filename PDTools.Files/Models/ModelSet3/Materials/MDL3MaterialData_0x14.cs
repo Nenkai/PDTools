@@ -14,6 +14,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
         public int UnkIndex { get; set; }
         public byte Unk0x01 { get; set; }
         public byte Version { get; set; }
+        public MDL3TextureKey TextureKey { get; set; }
         public static MDL3MaterialData_0x14 FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             MDL3MaterialData_0x14 entry = new();
@@ -30,8 +31,10 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             bs.Position = mdlBasePos + nameOffset;
             entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
 
-            bs.Position = unkOffset_0x0C;
+            bs.Position = mdlBasePos + unkOffset_0x0C;
             // TODO - this is something we go through in another master model structure
+
+            bs.Position = mdlBasePos + keyOffset;
 
             return entry;
         }

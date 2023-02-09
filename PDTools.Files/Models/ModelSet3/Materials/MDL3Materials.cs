@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
 {
     public class MDL3Materials
     {
-        public List<MDL3Material> Materials { get; set; } = new();
+        public List<MDL3Material> Definitions { get; set; } = new();
         public List<MDL3MaterialData> MaterialDatas { get; set; } = new();
         public List<CellGcmParams> GcmParams { get; set; } = new();
         public List<PGLUCellTextureInfo> TextureInfos { get; set; } = new();
@@ -34,7 +34,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
             {
                 bs.Position = mdlBasePos + materialsOffset + (i * 0x34);
                 MDL3Material entry = MDL3Material.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-                materialMap.Materials.Add(entry);
+                materialMap.Definitions.Add(entry);
             }
 
             for (int i = 0; i < materialDataCount; i++)
