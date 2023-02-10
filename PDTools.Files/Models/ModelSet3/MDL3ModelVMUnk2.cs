@@ -21,6 +21,7 @@ namespace PDTools.Files.Models.ModelSet3
         public short UnkCountUsedForVMStack3 { get; set; }
 
         public List<MDL3ModelVMUnk_0x04> _0x04 { get; set; } = new();
+        public List<MDL3ModelVMUnk_0x08> _0x08 { get; set; } = new();
 
         public static MDL3ModelVMUnk2 FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -47,6 +48,13 @@ namespace PDTools.Files.Models.ModelSet3
                 bs.Position = mdlBasePos + offset0x04 + (i * MDL3ModelVMUnk_0x04.GetSize());
                 var entry = MDL3ModelVMUnk_0x04.FromStream(bs, mdlBasePos, mdl3VersionMajor);
                 unk._0x04.Add(entry);
+            }
+
+            for (var i = 0; i < count0x08; i++)
+            {
+                bs.Position = mdlBasePos + offset0x08 + (i * MDL3ModelVMUnk_0x08.GetSize());
+                var entry = MDL3ModelVMUnk_0x08.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+                unk._0x08.Add(entry);
             }
 
             return unk;

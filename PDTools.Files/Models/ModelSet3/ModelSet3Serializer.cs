@@ -84,6 +84,8 @@ namespace PDTools.Files.Models.ModelSet3
             WriteUnkVMData(bs, basePos);
 
             WriteUnkVMData2(bs, basePos);
+
+            WriteVMContext(bs, basePos);
         }
 
         private void WriteMaterialsTOC(BinaryStream bs, long baseModelSetOffset)
@@ -951,13 +953,21 @@ namespace PDTools.Files.Models.ModelSet3
 
             if (ModelSet.Version > 11)
             {
-                bs.Position += 0x40; // Header
+                // Header
+                bs.Position += 0x40;
+
+                // Stack 1
                 bs.Position += (ModelSet.VMStackSize + ModelSet.VMHostMethodEntries.Count) * sizeof(int);
+
+                // Stack 2
                 bs.Position += MiscUtils.AlignValue((uint)ModelSet._0x68Size, 0x10);
             }
             else
             {
+                // Header
                 bs.Position += 0x30; // Header (old)
+
+                // Stack 1
                 bs.Position += (ModelSet.VMStackSize + ModelSet.VMHostMethodEntries.Count) * sizeof(int);
             }
             
@@ -1242,28 +1252,94 @@ namespace PDTools.Files.Models.ModelSet3
 
         private void WriteUnkVMData2(BinaryStream bs, long baseModelSetOffset)
         {
-            long dataPos = bs.Position + (ModelSet.UnkVMData.Count * MDL3ModelVMUnk.GetSize());
-            long entriesPos = bs.Position;
+            int tocPos = (int)bs.Position;
+            long lastOffset = bs.Position;
 
-            for (var i = 0; i < ModelSet.UnkVMData.Count; i++)
+            if (ModelSet.UnkVMData2 != null)
             {
-                bs.Position = entriesPos + (i * MDL3ModelVMUnk.GetSize());
-                bs.WriteInt32((int)dataPos);
-                bs.Position += 0x2C;
-                bs.WriteInt16((short)ModelSet.UnkVMData[i].UnkIndices.Length);
+                int entries1Ptr = tocPos + 0x20;
+                bs.Position = entries1Ptr;
+                for (var i = 0; i < ModelSet.UnkVMData2._0x04.Count; i++)
+                {
+                    MDL3ModelVMUnk_0x04 entry = ModelSet.UnkVMData2._0x04[i];
+                    bs.WriteInt32(0); // Name offset write later
+                    bs.WriteInt16(entry.StackStorage2Index);
+                    bs.WriteInt16((short)entry.Data.Count);
+                    bs.WriteInt32(0); // Data offset write after
+                    bs.WriteInt32(0);
 
-                bs.Position = dataPos;
-                bs.WriteInt16s(ModelSet.UnkVMData[i].UnkIndices);
+                    lastOffset = bs.Position;
+                }
 
-                dataPos = bs.Position;
+                for (var i = 0; i < ModelSet.UnkVMData2._0x04.Count; i++)
+                {
+                    MDL3ModelVMUnk_0x04 entry = ModelSet.UnkVMData2._0x04[i];
+
+                    bs.Position = lastOffset;
+                    int dataOffset = (int)bs.Position;
+
+                    for (var j = 0; j < entry.Data.Count; j++)
+                    {
+                        MDL3ModelVMUnk_0x04_Data data = entry.Data[j];
+                        bs.WriteInt16(data.MaterialDataID);
+                        bs.WriteInt16(0);
+                        bs.WriteInt16(data.MaterialData0x0CID);
+                        bs.WriteInt16(0);
+                        bs.WriteInt16s(data._0x08Indices);
+                        bs.WriteInt16(-1);
+
+                        lastOffset = bs.Position;
+                    }
+
+                    bs.Position = entries1Ptr + (i * MDL3ModelVMUnk_0x04.GetSize()) + 0x06;
+                    bs.WriteInt16((short)entry.Data.Count);
+                    bs.WriteInt32(dataOffset);
+                }
+
+                bs.Position = lastOffset;
+
+                int entries2Ptr = (int)bs.Position;
+                long dataPtr = bs.Position + (ModelSet.UnkVMData2._0x08.Count * MDL3ModelVMUnk_0x08.GetSize());
+                for (var i = 0; i < ModelSet.UnkVMData2._0x08.Count; i++)
+                {
+                    bs.Position = entries2Ptr + (i * MDL3ModelVMUnk_0x08.GetSize());
+
+                    MDL3ModelVMUnk_0x08 entry = ModelSet.UnkVMData2._0x08[i];
+                    bs.WriteInt16(entry.Unk);
+                    bs.WriteInt16((short)(entry.Data.Length / 2));
+                    bs.WriteInt32((int)dataPtr);
+
+                    bs.Position = dataPtr;
+                    bs.WriteSingles(entry.Data);
+                    dataPtr = bs.Position;
+                }
+
+                bs.Position = tocPos;
+                bs.WriteInt16((short)ModelSet.UnkVMData2._0x04.Count);
+                bs.WriteInt16((short)ModelSet.UnkVMData2._0x08.Count);
+                bs.WriteInt32(ModelSet.UnkVMData2._0x04.Count > 0 ? entries1Ptr : 0);
+                bs.WriteInt32(ModelSet.UnkVMData2._0x08.Count > 0 ? entries2Ptr : 0);
+
+                bs.Position = dataPtr;
             }
+        }
 
-            // Write header pointer
-            bs.Position = 0xB0;
-            bs.WriteInt32((int)entriesPos);
+        private void WriteVMContext(BinaryStream bs, long baseModelSetOffset)
+        {
+            int ctxOffset = (int)bs.Position;
 
-            bs.Position = dataPos;
-            bs.Align(0x10, grow: true);
+            var ctx = ModelSet.VMContext;
+            bs.WriteInt32(ctx.UnkVMInsPtr);
+            bs.WriteInt32(ctx.UnkVMInsPtr2);
+            bs.WriteInt32(0);
+            bs.WriteInt32(ctx.Unk);
+            bs.Position += 0x10;
+
+            long lastOffset = bs.Position;
+            bs.Position = 0xBC;
+            bs.WriteInt32(ctxOffset);
+
+            bs.Position = lastOffset;
         }
     }
 }

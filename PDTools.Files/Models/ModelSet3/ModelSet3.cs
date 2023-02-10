@@ -51,7 +51,7 @@ namespace PDTools.Files.Models.ModelSet3
         public List<MDL3WingKey> WingKeys { get; set; } = new();
         public List<MDL3ModelVMUnk> UnkVMData { get; set; } = new();
         public MDL3ModelVMUnk2 UnkVMData2 { get; set; }
-
+        public MDL3ModelVMContext VMContext { get; set; }
         public MDL3ShapeStreamingMap StreamingInfo { get; set; }
 
         public CourseDataFile ParentCourseData { get; set; }
@@ -131,7 +131,7 @@ namespace PDTools.Files.Models.ModelSet3
             uint unkVMDataOffset = bs.ReadUInt32();
             bs.ReadUInt32(); // Unk
             uint unkVMDataOffset2 = bs.ReadUInt32();
-            uint vm_related_offset_0x8C = bs.ReadUInt32();
+            uint vm_related_offset_0xbc = bs.ReadUInt32();
             uint offset_0xC0 = bs.ReadUInt32();
             ushort count_0xC0 = bs.ReadUInt16();
             bs.ReadUInt16(); // Unk
@@ -168,6 +168,7 @@ namespace PDTools.Files.Models.ModelSet3
             modelSet.ReadWingKeys(bs, basePos, wingKeysOffset, wingKeysCount);
             modelSet.ReadUnkVMData(bs, basePos, unkVMDataOffset, modelCount);
             modelSet.ReadUnkVMData2(bs, basePos, unkVMDataOffset2, 1);
+            modelSet.ReadUnkVMContext(bs, basePos, vm_related_offset_0xbc, 1);
             modelSet.ReadStreamInfo(bs, basePos, shapeStreamMapOffset, 1);
 
             // link everything together
@@ -350,6 +351,12 @@ namespace PDTools.Files.Models.ModelSet3
         {
             bs.Position = baseMdlPos + offset;
             UnkVMData2 = MDL3ModelVMUnk2.FromStream(bs, baseMdlPos, Version);
+        }
+
+        private void ReadUnkVMContext(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            bs.Position = baseMdlPos + offset;
+            VMContext = MDL3ModelVMContext.FromStream(bs, baseMdlPos, Version);
         }
 
         /// <summary>
