@@ -12,7 +12,6 @@ using PDTools.Files.Models.Shaders;
 using PDTools.Files.Textures;
 
 using Syroot.BinaryData;
-using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics;
 using PDTools.Files.Models.ModelSet3.Wing;
 
@@ -287,12 +286,12 @@ namespace PDTools.Files.Models.ModelSet3
                 // Write unknown data
                 bs.Position = lastOffset;
 
-                if (mesh.Unk != null)
+                if (mesh.PMSHRef != null)
                 {
                     int unkOffset = (int)bs.Position;
-                    bs.WriteSingles(mesh.Unk.Values);
+                    bs.WriteSingles(mesh.PMSHRef.Values);
                     bs.WriteInt32(0); // TODO: offset to unknown
-                    bs.WriteInt32(mesh.Unk.PMSHEntryIndex);
+                    bs.WriteInt32(mesh.PMSHRef.PMSHEntryIndex);
                     bs.Align(0x10, grow: true);
 
                     lastOffset = bs.Position;

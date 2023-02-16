@@ -19,6 +19,7 @@ using PDTools.Files.Models.ModelSet3.ShapeStream;
 using PDTools.Files.Models.Shaders;
 using PDTools.Files.Models.Bones;
 using PDTools.Files.Models.ModelSet3.Wing;
+using PDTools.Files.Models.ModelSet3.PMSH;
 
 namespace PDTools.Files.Models.ModelSet3
 {
@@ -52,6 +53,8 @@ namespace PDTools.Files.Models.ModelSet3
         public List<MDL3ModelVMUnk> UnkVMData { get; set; } = new();
         public MDL3ModelVMUnk2 UnkVMData2 { get; set; }
         public MDL3ModelVMContext VMContext { get; set; }
+        public List<MDL3PMSHKey> PMSHKeys { get; set; } = new();
+        public MDL3PMSH PMSH { get; set; } = new();
         public MDL3ShapeStreamingMap StreamingInfo { get; set; }
 
         public CourseDataFile ParentCourseData { get; set; }
@@ -136,9 +139,9 @@ namespace PDTools.Files.Models.ModelSet3
             ushort count_0xC0 = bs.ReadUInt16();
             bs.ReadUInt16(); // Unk
             bs.ReadInt16(); // Unk
-            ushort count_0xCC = bs.ReadUInt16();
-            uint offset_0xCC = bs.ReadUInt32();
-            uint offset_0xD0 = bs.ReadUInt32();
+            ushort pmshKeyCount = bs.ReadUInt16();
+            uint pmshKeysOffset = bs.ReadUInt32();
+            uint pmshHeaderOffset = bs.ReadUInt32();
             uint offset_0xD4 = bs.ReadUInt32();
             bs.ReadUInt32();
             bs.ReadUInt32();
@@ -169,6 +172,8 @@ namespace PDTools.Files.Models.ModelSet3
             modelSet.ReadUnkVMData(bs, basePos, unkVMDataOffset, modelCount);
             modelSet.ReadUnkVMData2(bs, basePos, unkVMDataOffset2, 1);
             modelSet.ReadUnkVMContext(bs, basePos, vm_related_offset_0xbc, 1);
+            modelSet.ReadPMSHKeys(bs, basePos, pmshKeysOffset, pmshKeyCount);
+            modelSet.ReadPMSH(bs, basePos, pmshHeaderOffset, 1);
             modelSet.ReadStreamInfo(bs, basePos, shapeStreamMapOffset, 1);
 
             // link everything together
@@ -359,6 +364,22 @@ namespace PDTools.Files.Models.ModelSet3
             VMContext = MDL3ModelVMContext.FromStream(bs, baseMdlPos, Version);
         }
 
+        private void ReadPMSHKeys(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * MDL3PMSHKey.GetSize());
+                var key = MDL3PMSHKey.FromStream(bs, baseMdlPos, Version);
+                PMSHKeys.Add(key);
+            }
+        }
+
+        private void ReadPMSH(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            bs.Position = baseMdlPos + offset;
+            PMSH = MDL3PMSH.FromStream(bs, baseMdlPos, Version);
+        }
+
         /// <summary>
         /// Gets all the vertices for a specified mesh.
         /// </summary>
@@ -402,6 +423,10 @@ namespace PDTools.Files.Models.ModelSet3
                 }
 
                 return arr;
+            }
+            else if (mesh.PMSHRef != null)
+            {
+                var format = PMSH;
             }
 
             return null;

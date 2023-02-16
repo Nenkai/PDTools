@@ -56,7 +56,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
 
         public MDL3FlexibleVertexDefinition FVF { get; set; }
         public MDL3Material Material { get; set; }
-        public MDL3MeshUnk Unk { get; set; }
+        public MDL3MeshPMSHRef PMSHRef { get; set; }
 
         public static MDL3Mesh FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -87,7 +87,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
             bs.ReadInt16();
             mesh.TriCount = bs.ReadUInt16();
             int bboxOffset = bs.ReadInt32();
-            int unkOffset = bs.ReadInt32();
+            int pmshEntryRefOffset = bs.ReadInt32();
 
             if (bboxOffset != 0)
             {
@@ -97,10 +97,10 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
                     mesh.BBox[i] = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
             }
 
-            if (unkOffset != 0)
+            if (pmshEntryRefOffset != 0)
             {
-                bs.Position = mdlBasePos + unkOffset;
-                mesh.Unk = MDL3MeshUnk.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+                bs.Position = mdlBasePos + pmshEntryRefOffset;
+                mesh.PMSHRef = MDL3MeshPMSHRef.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             }
 
             return mesh;
