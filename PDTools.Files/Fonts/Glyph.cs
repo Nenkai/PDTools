@@ -48,20 +48,26 @@ namespace PDTools.Files.Fonts
             {
                 float currentX = 0, currentY = 0;
 
+                PathBuilder path = new PathBuilder();
+                bool originSet = false;
+
                 var pen = new Pen(new SolidBrush(Color.Black), 2);
-                foreach (var i in Points.Points)
+                for (int i1 = 0; i1 < Points.Points.Count; i1++)
                 {
+                    IGlyphShapeData? i = Points.Points[i1];
                     if (i is GlyphStartPoint startPoint)
                     {
                         currentX = startPoint.X + 1024;
                         currentY = startPoint.Y + 1024;
+
+                        ctx.Draw(Color.Red, 2, path.Build());
+                        path.Clear();
+                        path.CloseAllFigures();
+
                     }
                     else if (i is GlyphPoint point)
                     {
-                        ctx.DrawLines(pen, new PointF[] {
-                            new PointF(currentX, currentY), 
-                            new PointF(currentX + point.X, currentY + point.Y),
-                        });
+                        path.AddLine(new PointF(currentX, currentY), new PointF(currentX + point.X, currentY + point.Y));
 
                         currentX += point.X;
                         currentY += point.Y;
@@ -69,62 +75,38 @@ namespace PDTools.Files.Fonts
                     else if (i is GlyphLine line)
                     {
                         if (line.Distance == 0)
+                        {
                             continue;
+                        }
 
                         if (line.Axis == 0)
                         {
-                            ctx.DrawLines(pen, new PointF[] {
-                                new PointF(currentX, currentY),
-                                new PointF(currentX + line.Distance, currentY),
-                            });
+                            path.AddLine(new PointF(currentX, currentY), new PointF(currentX + line.Distance, currentY));
 
                             currentX += line.Distance;
                         }
                         else if (line.Axis == GlyphAxis.Y)
                         {
-                             ctx.DrawLines(pen, new PointF[] {
-                                new PointF(currentX, currentY),
-                                new PointF(currentX, currentY + line.Distance),
-                            });
+                            path.AddLine(new PointF(currentX, currentY), new PointF(currentX, currentY + line.Distance));
 
                             currentY += line.Distance;
                         }
                     }
-                    else if (i is GlyphCurve curve)
+                    else if (i is GlyphQuadraticBezierCurve curve)
                     {
                         float controlX = currentX + curve.P1;
                         float controlY = currentY + curve.P2;
 
-                        // Draw line to next
-                        ctx.DrawLines(new Pen(new SolidBrush(Color.Red), 2), new PointF[] {
-                            new PointF(currentX, currentY),
-                            new PointF(currentX + curve.P1 + curve.P3, currentY + curve.P2 + curve.P4),
-                        });
-
-                        // Draw control point/lines
-                        ctx.DrawLines(new Pen(new SolidBrush(Color.DarkRed), 2), new PointF[] {
-                            new PointF(currentX, currentY),
-                            new PointF(currentX + curve.P1, currentY + curve.P2),
-                        });
-
-                        ctx.DrawLines(new Pen(new SolidBrush(Color.DarkRed), 2), new PointF[] {
-                            new PointF(currentX + curve.P1, currentY + curve.P2),
-                            new PointF((currentX + curve.P1) + curve.P3, (currentY + curve.P2) + curve.P4),
-                        });
-
                         // Draw curve
-
-                        // TODO: Figure multiple curves
-                        ctx.DrawBeziers(pen,
-                            new PointF(currentX, currentY), // Start
+                        path.AddQuadraticBezier(new PointF(currentX, currentY),
                             new PointF(controlX, controlY),
-                            new PointF(controlX, controlY),
-                            new PointF(controlX + curve.P3, controlY + curve.P4) // End
-                        );
+                            new PointF(controlX + curve.P3, controlY + curve.P4));
 
                         currentX = currentX + curve.P1 + curve.P3;
                         currentY = currentY + curve.P2 + curve.P4;
                     }
+
+                    ctx.Draw(Color.Red, 5, path.Build());
                 }
             });
 

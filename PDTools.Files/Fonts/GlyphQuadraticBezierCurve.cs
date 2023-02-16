@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PDTools.Files.Fonts
 {
-    public struct GlyphCurve : IGlyphShapeData
+    public struct GlyphQuadraticBezierCurve : IGlyphShapeData
     {
         public float P1 { get; set; }
         public float P2 { get; set; }

@@ -66,7 +66,7 @@ namespace PDTools.Files.Fonts
                     }
                     else
                     {
-                        GlyphCurve curve = new GlyphCurve();
+                        GlyphQuadraticBezierCurve curve = new GlyphQuadraticBezierCurve();
                         int x1 = (int)bitStream.ReadBits(elemSize);
                         curve.P1 = BitValueToFloat(x1, elemSize);
 
