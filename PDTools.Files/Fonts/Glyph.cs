@@ -20,7 +20,7 @@ namespace PDTools.Files.Fonts
        public char Character { get; set; }
 
         public ushort Flags { get; set; }
-        public GlyphPoints Points { get; set; }
+        public GlyphShapes Points { get; set; }
 
         public static Glyph Read(BinaryStream bs, int dataOffset)
         {
@@ -36,7 +36,7 @@ namespace PDTools.Files.Fonts
 
             bs.Position = dataOffset + offsetWithinData;
 
-            glyph.Points = GlyphPoints.Read(bs, dataLength);
+            glyph.Points = GlyphShapes.Read(bs, dataLength);
 
             return glyph;
         }
@@ -52,9 +52,9 @@ namespace PDTools.Files.Fonts
                 bool originSet = false;
 
                 var pen = new Pen(new SolidBrush(Color.Black), 2);
-                for (int i1 = 0; i1 < Points.Points.Count; i1++)
+                for (int i1 = 0; i1 < Points.Data.Count; i1++)
                 {
-                    IGlyphShapeData? i = Points.Points[i1];
+                    IGlyphShapeData? i = Points.Data[i1];
                     if (i is GlyphStartPoint startPoint)
                     {
                         currentX = startPoint.X + 1024;
@@ -94,16 +94,16 @@ namespace PDTools.Files.Fonts
                     }
                     else if (i is GlyphQuadraticBezierCurve curve)
                     {
-                        float controlX = currentX + curve.P1;
-                        float controlY = currentY + curve.P2;
+                        float controlX = currentX + curve.P1_DistX;
+                        float controlY = currentY + curve.P1_DistY;
 
                         // Draw curve
                         path.AddQuadraticBezier(new PointF(currentX, currentY),
                             new PointF(controlX, controlY),
-                            new PointF(controlX + curve.P3, controlY + curve.P4));
+                            new PointF(controlX + curve.P2_DistX, controlY + curve.P2_DistY));
 
-                        currentX = currentX + curve.P1 + curve.P3;
-                        currentY = currentY + curve.P2 + curve.P4;
+                        currentX = currentX + curve.P1_DistX + curve.P2_DistX;
+                        currentY = currentY + curve.P1_DistY + curve.P2_DistY;
                     }
 
                     ctx.Draw(Color.Red, 5, path.Build());

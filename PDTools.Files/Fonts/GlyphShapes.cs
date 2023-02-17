@@ -9,16 +9,16 @@ using PDTools.Utils;
 
 namespace PDTools.Files.Fonts
 {
-    public class GlyphPoints
+    public class GlyphShapes
     {
         public float XMin { get; set; }
         public float YMin { get; set; }
 
-        public List<IGlyphShapeData> Points { get; set; } = new();
+        public List<IGlyphShapeData> Data { get; set; } = new();
 
-        public static GlyphPoints Read(BinaryStream bs, int size)
+        public static GlyphShapes Read(BinaryStream bs, int size)
         {
-            var data = new GlyphPoints();
+            var data = new GlyphShapes();
             byte[] bytes = bs.ReadBytes(size);
             BitStream bitStream = new BitStream(BitStreamMode.Read, bytes);
 
@@ -50,7 +50,7 @@ namespace PDTools.Files.Fonts
                             int y = (int)bitStream.ReadBits(elemSize);
                             point.Y = BitValueToFloat(y, elemSize);
 
-                            data.Points.Add(point);
+                            data.Data.Add(point);
                         }
                         else
                         {
@@ -60,7 +60,7 @@ namespace PDTools.Files.Fonts
                             int dist = (int)bitStream.ReadBits(elemSize);
                             line.Distance = BitValueToFloat(dist, elemSize);
 
-                            data.Points.Add(line);
+                            data.Data.Add(line);
 
                         }
                     }
@@ -68,18 +68,18 @@ namespace PDTools.Files.Fonts
                     {
                         GlyphQuadraticBezierCurve curve = new GlyphQuadraticBezierCurve();
                         int x1 = (int)bitStream.ReadBits(elemSize);
-                        curve.P1 = BitValueToFloat(x1, elemSize);
+                        curve.P1_DistX = BitValueToFloat(x1, elemSize);
 
                         int y1 = (int)bitStream.ReadBits(elemSize);
-                        curve.P2 = BitValueToFloat(y1, elemSize);
+                        curve.P1_DistY = BitValueToFloat(y1, elemSize);
 
                         int x2 = (int)bitStream.ReadBits(elemSize);
-                        curve.P3 = BitValueToFloat(x2, elemSize);
+                        curve.P2_DistX = BitValueToFloat(x2, elemSize);
 
                         int y2 = (int)bitStream.ReadBits(elemSize);
-                        curve.P4 = BitValueToFloat(y2, elemSize);
+                        curve.P2_DistY = BitValueToFloat(y2, elemSize);
 
-                        data.Points.Add(curve);
+                        data.Data.Add(curve);
                     }
                 }
                 else if ((flags & 0x01) != 0)
@@ -99,7 +99,7 @@ namespace PDTools.Files.Fonts
                     if ((flags & 0x04) != 0)
                         startPoint.Unk2 = bitStream.ReadBoolBit();
 
-                    data.Points.Add(startPoint);
+                    data.Data.Add(startPoint);
                 }
             }
 
