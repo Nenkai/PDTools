@@ -5,17 +5,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using PDTools.Utils;
 using System.Numerics;
+using PDTools.Crypto;
+using System.Diagnostics;
 
 namespace PDTools.Files.Fonts
 {
+    /// <summary>
+    /// Represents a bit-packed, vectored font format.
+    /// </summary>
     public class NVectorFont
     {
-        public byte Unk1 { get; set; }
-        public byte Unk2 { get; set; }
-        public byte Unk3 { get; set; }
-        public byte Unk4 { get; set; }
+        public byte UnkUnused1 { get; set; }
+        public byte UnkUnused2 { get; set; }
+        public byte UnkUnused3 { get; set; }
+        public byte UnkUnused4 { get; set; }
 
         public List<char> Characters { get; set; } = new();
         public List<Glyph> Glyphs { get; set; } = new();
@@ -34,10 +38,10 @@ namespace PDTools.Files.Fonts
                 throw new Exception("Not a vector font file");
 
             var vecFont = new NVectorFont();
-            vecFont.Unk1 = bs.Read1Byte();
-            vecFont.Unk2 = bs.Read1Byte();
-            vecFont.Unk3 = bs.Read1Byte();
-            vecFont.Unk4 = bs.Read1Byte();
+            vecFont.UnkUnused1 = bs.Read1Byte();
+            vecFont.UnkUnused2 = bs.Read1Byte();
+            vecFont.UnkUnused3 = bs.Read1Byte();
+            vecFont.UnkUnused4 = bs.Read1Byte();
 
             short charCount = bs.ReadInt16();
             short unk2 = bs.ReadInt16();
@@ -77,11 +81,14 @@ namespace PDTools.Files.Fonts
         {
             BinaryStream bs = new BinaryStream(stream, ByteConverter.Big);
             bs.WriteString("NVEC", StringCoding.Raw);
-            bs.WriteByte(Unk1);
-            bs.WriteByte(Unk2);
-            bs.WriteByte(Unk3);
-            bs.WriteByte(Unk4);
+            bs.WriteByte(UnkUnused1);
+            bs.WriteByte(UnkUnused2);
+            bs.WriteByte(UnkUnused3);
+            bs.WriteByte(UnkUnused4);
             bs.WriteUInt16((ushort)Glyphs.Count);
+            bs.WriteInt16(0x385);
+            bs.WriteInt16(0x7B);
+            bs.WriteInt16(0);
 
             // Skip header to write glyphs
             bs.Position = 0x20;
@@ -98,102 +105,76 @@ namespace PDTools.Files.Fonts
 
             // Write each glyph data, glyphs info will be written after
             bs.Position = lastOffset;
+            WriteGlyphs(bs);
 
+            // In older GTs that weird data is in its own file with extension cvs
+            int unkCvsDataOffset = (int)bs.Position;
+            bs.Write(new byte[0x2284]);
+
+            while (bs.Position % 0x10 != 0)
+                bs.WriteByte(0xFF);
+
+            bs.Position = 0x1C;
+            bs.WriteInt32(unkCvsDataOffset);
+        }
+
+        private void WriteGlyphs(BinaryStream bs)
+        {
             int glyphsOffset = (int)bs.Position;
-            int glyphDataOffset = glyphsOffset + (Glyphs.Count * 0x14);
-            int lastGlyphDataOffset = glyphDataOffset;
+            int mainGlyphDataOffset = glyphsOffset + (Glyphs.Count * 0x14);
+            int lastGlyphDataOffset = mainGlyphDataOffset;
+
+            // Some glyphs are equal, they're refered to again
+            // So keep a crc of each written glyph
+            Dictionary<uint, (int GlyphDataSize, int GlyphRelativeDataOffset)> checksumToGlyphOffsetAndSize = new();
 
             for (var i = 0; i < Glyphs.Count; i++)
             {
                 Glyph glyph = Glyphs[i];
                 bs.Position = lastGlyphDataOffset;
 
-                BitStream bitStream = new BitStream(BitStreamMode.Write);
-                bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(glyph.Points.XMin, 12), 12);
-                bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(glyph.Points.YMin, 12), 12);
+                byte[] buffer = glyph.Points.Write(bs);
+                uint glyphBufferCrc = CRC32.CRC32_0x04C11DB7(buffer);
 
-                foreach (var shape in glyph.Points.Data)
+                int glyphDataSize, glyphDataOffset;
+                if (!checksumToGlyphOffsetAndSize.TryGetValue(glyphBufferCrc, out (int GlyphDataSize, int GlyphRelativeDataOffset) value))
                 {
-                    if (shape is GlyphStartPoint startPoint)
-                    {
-                        int flags = 0x01;
-                        if (startPoint.Unk != null)
-                            flags |= 0x02;
+                    bs.Write(buffer);
 
-                        if (startPoint.Unk2 != null)
-                            flags |= 0x04;
-
-                        bitStream.WriteBits((ulong)flags, 6);
-
-                        int xBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(startPoint.X);
-                        int yBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(startPoint.Y);
-
-                        ulong elemSize = (ulong)Math.Max(xBitSize, yBitSize);
-
-                        bitStream.WriteBits(elemSize, 5);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(startPoint.X, (int)elemSize), elemSize);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(startPoint.Y, (int)elemSize), elemSize);
-
-                        if (startPoint.Unk != null)
-                            bitStream.WriteBoolBit((bool)startPoint.Unk);
-
-                        if (startPoint.Unk2 != null)
-                            bitStream.WriteBoolBit((bool)startPoint.Unk2);
-                    }
-                    else if (shape is GlyphPoint point)
-                    {
-                        ulong flags = 0x20 | 0x10;
-
-                        int xBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(point.X);
-                        int yBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(point.Y);
-
-                        ulong elemSize = (ulong)Math.Max(xBitSize, yBitSize);
-                        flags |= (ulong)Math.Max(elemSize - 2, 0);
-
-                        bitStream.WriteBits(flags, 6);
-                        bitStream.WriteBoolBit(true); // Is a point
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(point.X, (int)elemSize), elemSize);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(point.Y, (int)elemSize), elemSize);
-                    }
-                    else if (shape is GlyphLine line)
-                    {
-                        ulong flags = 0x20 | 0x10;
-
-                        MiscUtils.PackFloat(line.Distance, out int distValue, out int bitCount);
-
-                        flags |= (ulong)Math.Max(bitCount - 2, 0);
-
-                        bitStream.WriteBits(flags, 6);
-                        bitStream.WriteBoolBit(false); // Not a point
-                        bitStream.WriteBits((ulong)line.Axis, 1);
-                        bitStream.WriteBits((ulong)distValue, (ulong)Math.Max(bitCount, 2));
-                    }
-                    else if (shape is GlyphQuadraticBezierCurve curve)
-                    {
-                        ulong flags = 0x20;
-
-                        int p1XSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P1_DistX);
-                        int p1YSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P1_DistY);
-                        int p2XSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P2_DistX);
-                        int p2YSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P2_DistY);
-
-                        int elemSize = new[]{ p1XSize, p1YSize, p2XSize, p2YSize }.Max();
-
-                        flags |= (ulong)Math.Max(elemSize - 2, 0);
-                        bitStream.WriteBits(flags, 6);
-                        bitStream.WriteBoolBit(true); // Is a point
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P1_DistX, (int)elemSize), (ulong)elemSize);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P1_DistY, (int)elemSize), (ulong)elemSize);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P2_DistX, (int)elemSize), (ulong)elemSize);
-                        bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P2_DistY, (int)elemSize), (ulong)elemSize);
-                    }                                                                 
+                    glyphDataSize = buffer.Length;
+                    glyphDataOffset = lastGlyphDataOffset - mainGlyphDataOffset;
+                    checksumToGlyphOffsetAndSize.Add(glyphBufferCrc, (glyphDataSize, glyphDataOffset));
+                }
+                else
+                {
+                    glyphDataSize = value.GlyphDataSize;
+                    glyphDataOffset = value.GlyphRelativeDataOffset;
                 }
 
-                var buffer = bitStream.GetBuffer();
+                lastGlyphDataOffset = (int)bs.Position;
+
                 bs.Position = glyphsOffset + (i * 0x14);
+                bs.WriteUInt16(glyph.Character);
+                bs.WriteUInt16(glyph.Flags);
+                bs.WriteInt32(0);
+                bs.WriteInt32(glyphDataSize);
+
+                uint bits = 0;
+                bits |= (uint)((glyph.AdvanceWidth & 0b1111_11111111) << 20); // 12 bits
+                bits |= (uint)((glyph.HeightOffset & 0b1111_11111111) << 8); // 12 bits
+                bits |= (uint)((glyphDataSize + 0x1F) / 0x10 & 0b11111111); // 8 bit
+                bs.WriteUInt32(bits);
+
+                bs.WriteInt32((int)glyphDataOffset);
             }
+
+            bs.Position = 0x14;
+            bs.WriteInt32(glyphsOffset);
+
+            bs.Position = 0x18;
+            bs.WriteInt32(mainGlyphDataOffset);
+
+            bs.Position = lastGlyphDataOffset;
         }
-
-
     }
 }

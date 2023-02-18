@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PDTools.Utils;
+using SixLabors.Fonts;
 
 namespace PDTools.Files.Fonts
 {
@@ -105,6 +106,98 @@ namespace PDTools.Files.Fonts
 
             return data;
 
+        }
+
+        public byte[] Write(BinaryStream bs)
+        {
+            BitStream bitStream = new BitStream(BitStreamMode.Write);
+            bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(XMin, 12), 12);
+            bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(YMin, 12), 12);
+
+            foreach (var shape in Data)
+            {
+                if (shape is GlyphStartPoint startPoint)
+                {
+                    int flags = 0x01;
+                    if (startPoint.Unk != null)
+                        flags |= 0x02;
+
+                    if (startPoint.Unk2 != null)
+                        flags |= 0x04;
+
+                    bitStream.WriteBits((ulong)flags, 6);
+
+                    int xBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(startPoint.X);
+                    int yBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(startPoint.Y);
+
+                    ulong elemSize = (ulong)Math.Max(xBitSize, yBitSize);
+
+                    bitStream.WriteBits(elemSize, 5);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(startPoint.X, (int)elemSize), elemSize);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(startPoint.Y, (int)elemSize), elemSize);
+
+                    if (startPoint.Unk != null)
+                        bitStream.WriteBoolBit((bool)startPoint.Unk);
+
+                    if (startPoint.Unk2 != null)
+                        bitStream.WriteBoolBit((bool)startPoint.Unk2);
+                }
+                else if (shape is GlyphPoint point)
+                {
+                    uint flags = 0x20 | 0x10;
+
+                    int xBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(point.X);
+                    int yBitSize = MiscUtils.GetHighestBitIndexOfPackedFloat(point.Y);
+
+                    int elemSize = (int)Math.Max(xBitSize, yBitSize);
+                    flags |= (uint)Math.Max(elemSize - 2, 0);
+
+                    bitStream.WriteBits(flags, 6);
+                    bitStream.WriteBoolBit(true); // Is a point
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(point.X, (int)elemSize), (ulong)elemSize);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(point.Y, (int)elemSize), (ulong)elemSize);
+                }
+                else if (shape is GlyphLine line)
+                {
+                    uint flags = 0x20 | 0x10;
+
+                    MiscUtils.PackFloat(line.Distance, out int distValue, out int bitCount);
+
+                    flags |= (uint)Math.Max(bitCount - 2, 0);
+
+                    bitStream.WriteBits(flags, 6);
+                    bitStream.WriteBoolBit(false); // Not a point
+                    bitStream.WriteBits((ulong)line.Axis, 1);
+                    bitStream.WriteBits((ulong)distValue, (ulong)Math.Max(bitCount, 2));
+                }
+                else if (shape is GlyphQuadraticBezierCurve curve)
+                {
+                    ulong flags = 0x20;
+
+                    int p1XSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P1_DistX);
+                    int p1YSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P1_DistY);
+                    int p2XSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P2_DistX);
+                    int p2YSize = MiscUtils.GetHighestBitIndexOfPackedFloat(curve.P2_DistY);
+
+                    int elemSize = new[] { p1XSize, p1YSize, p2XSize, p2YSize }.Max();
+
+                    flags |= (uint)Math.Max(elemSize - 2, 0);
+                    bitStream.WriteBits(flags, 6);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P1_DistX, (int)elemSize), (ulong)elemSize);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P1_DistY, (int)elemSize), (ulong)elemSize);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P2_DistX, (int)elemSize), (ulong)elemSize);
+                    bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(curve.P2_DistY, (int)elemSize), (ulong)elemSize);
+                }
+            }
+
+            bitStream.WriteBits(0, 6);
+            bitStream.AlignToNextByte();
+
+            if (bitStream.GetBuffer()[^1] != 0)
+                bitStream.WriteByte(0);
+
+            var buffer = bitStream.GetBuffer();
+            return buffer.ToArray();
         }
 
         private static float BitValueToFloat(long value, int bitCount)

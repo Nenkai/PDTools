@@ -20,6 +20,8 @@ namespace PDTools.Files.Fonts
        public char Character { get; set; }
 
         public ushort Flags { get; set; }
+        public ushort HeightOffset { get; set; }
+        public ushort AdvanceWidth { get; set; }
         public GlyphShapes Points { get; set; }
 
         public static Glyph Read(BinaryStream bs, int dataOffset)
@@ -30,7 +32,10 @@ namespace PDTools.Files.Fonts
             bs.ReadInt32();
 
             int dataLength = bs.ReadInt32();
-            bs.ReadInt32();
+            uint bits = bs.ReadUInt32();
+            glyph.AdvanceWidth = (ushort)(bits >> 20);
+            glyph.HeightOffset = (ushort)((bits >> 8) & 0b1111_11111111);
+            byte calculatedRenderStrideCount = (byte)(bits & 0xFF); // Check NVectorFont.WriteGlyphs for how this is calculated
 
             int offsetWithinData = bs.ReadInt32();
 
