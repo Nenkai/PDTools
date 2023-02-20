@@ -19,10 +19,20 @@ namespace PDTools.Files.Fonts
     {
        public char Character { get; set; }
 
-        public ushort Flags { get; set; }
+        public ushort Flags { get; set; } = 0x8002;
         public ushort HeightOffset { get; set; }
         public ushort AdvanceWidth { get; set; }
-        public GlyphShapes Points { get; set; }
+        public GlyphShapes Points { get; set; } = new();
+
+        public Glyph(char character)
+        {
+            Character = character;
+        }
+
+        private Glyph()
+        {
+
+        }
 
         public static Glyph Read(BinaryStream bs, int dataOffset)
         {
@@ -48,7 +58,7 @@ namespace PDTools.Files.Fonts
 
         public Image<Rgba32> GetAsImage()
         {
-            using var image = new Image<Rgba32>(2048, 2048);
+            var image = new Image<Rgba32>(2048, 2048);
             image.Mutate(ctx =>
             {
                 float currentX = 0, currentY = 0;

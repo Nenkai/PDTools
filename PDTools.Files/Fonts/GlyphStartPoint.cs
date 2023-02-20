@@ -14,6 +14,15 @@ namespace PDTools.Files.Fonts
         public bool? Unk { get; set; }
         public bool? Unk2 { get; set; }
 
+        public GlyphStartPoint(float x, float y)
+        {
+            X = x;
+            Y = y;
+
+            Unk = null;
+            Unk2 = null;
+        }
+
         public override string ToString()
         {
             return $"Start Point - X: {X}, Y:{Y}, {Unk} {Unk2}";

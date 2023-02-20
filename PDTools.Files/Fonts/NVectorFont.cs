@@ -21,8 +21,8 @@ namespace PDTools.Files.Fonts
         public byte UnkUnused3 { get; set; }
         public byte UnkUnused4 { get; set; }
 
-        public List<char> Characters { get; set; } = new();
-        public List<Glyph> Glyphs { get; set; } = new();
+        public List<char> Characters { get; private set; } = new();
+        public List<Glyph> Glyphs { get; private set; } = new();
 
         public NVectorFont()
         {
@@ -175,6 +175,17 @@ namespace PDTools.Files.Fonts
             bs.WriteInt32(mainGlyphDataOffset);
 
             bs.Position = lastGlyphDataOffset;
+        }
+
+        public void AddGlyph(Glyph glyph)
+        {
+            if (Characters.Contains(glyph.Character))
+                throw new Exception($"Glyph '{glyph.Character}' already exists");
+
+            glyph.Points.RecalculateMins();
+
+            Characters.Add(glyph.Character);
+            Glyphs.Add(glyph);
         }
     }
 }

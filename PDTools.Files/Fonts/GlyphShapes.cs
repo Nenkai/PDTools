@@ -200,6 +200,47 @@ namespace PDTools.Files.Fonts
             return buffer.ToArray();
         }
 
+        public void RecalculateMins()
+        {
+            float minX = 0, minY = 0;
+            float currentX = 0, currentY = 0;
+            for (int i1 = 0; i1 < Data.Count; i1++)
+            {
+                IGlyphShapeData? i = Data[i1];
+                if (i is GlyphStartPoint startPoint)
+                {
+                    currentX = startPoint.X;
+                    currentY = startPoint.Y;
+                }
+                else if (i is GlyphPoint point)
+                {
+                    currentX += point.X;
+                    currentY += point.Y;
+                }
+                else if (i is GlyphLine line)
+                {
+                    if (line.Distance == 0)
+                        continue;
+
+                    if (line.Axis == 0)
+                        currentX += line.Distance;
+                    else if (line.Axis == GlyphAxis.Y)
+                        currentY += line.Distance;
+                }
+                else if (i is GlyphQuadraticBezierCurve curve)
+                {
+                    currentX = currentX + curve.P1_DistX + curve.P2_DistX;
+                    currentY = currentY + curve.P1_DistY + curve.P2_DistY;
+                }
+
+                if (currentX < minX) minX = currentX;
+                if (currentY < minY) minY = currentY;
+            }
+
+            XMin = minX;
+            YMin = minY;
+        }
+
         private static float BitValueToFloat(long value, int bitCount)
         {
             int maxVal = (int)Math.Pow(2, bitCount);

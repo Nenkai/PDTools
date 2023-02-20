@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,5 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
   </ItemGroup>
+
+  <Import Project="..\Typography\Typography.OpenFont\Typography.OpenFont.projitems" Label="Shared" />
 
 </Project>

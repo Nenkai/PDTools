@@ -11,6 +11,12 @@ namespace PDTools.Files.Fonts
         public float Distance { get; set; }
         public GlyphAxis Axis { get; set; }
 
+        public GlyphLine(float distance, GlyphAxis axis)
+        {
+            Distance = distance; 
+            Axis = axis;
+        }
+
         public override string ToString()
         {
             return $"Line - {Axis}: {Distance}";
