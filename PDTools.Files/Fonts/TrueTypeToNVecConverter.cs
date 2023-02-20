@@ -20,6 +20,7 @@ namespace PDTools.Files.Fonts
             var ttfFont = new OpenFontReader().Read(ttf);
 
             NVectorFont vecFont = new NVectorFont();
+
             foreach (var ttfGlyphName in ttfFont.GetGlyphNameIter())
             {
                 int codePoint = AdobeGlyphList.GetUnicodeValueByGlyphName(ttfGlyphName.glyphName);
@@ -31,8 +32,9 @@ namespace PDTools.Files.Fonts
                 NVecGlyph vecGlyph = new NVecGlyph((char)codePoint);
                 vecGlyph.AdvanceWidth = (ushort)(ttfFont.GetAdvanceWidthFromGlyphIndex((ushort)ttfGlyphName.glyphIndex) / 2);
 
-                if (codePoint == (char)'A')
-                    ;
+
+                int offset = ttfFont.Bounds.YMax - ttfGlyph.Bounds.YMax;
+                vecGlyph.HeightOffset = (ushort)(offset / 2);
 
                 Span<ushort> endPoints = ttfGlyph.EndPoints.AsSpan();
 
@@ -56,7 +58,7 @@ namespace PDTools.Files.Fonts
 
                             currentOutlineStartPoint = point;
 
-                            var startPoint = new GlyphStartPoint(point.X / 2, ((-point.Y) / 2));
+                            var startPoint = new GlyphStartPoint(point.X / 2, (((-point.Y)) / 2));
 
 
                             if (i == 0)
