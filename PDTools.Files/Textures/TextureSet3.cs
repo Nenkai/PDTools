@@ -38,6 +38,8 @@ namespace PDTools.Files.Textures
 
         public long DataPointer { get; set; }
 
+        public uint RelocPtr { get; set; }
+
         public long BaseTextureSetPosition { get; set; }
 
         public TextureSet3()
@@ -233,7 +235,7 @@ namespace PDTools.Files.Textures
             }
             else
             {
-                uint relocPtr = bs.ReadUInt32(); // Original Position, if bundled
+                RelocPtr = bs.ReadUInt32(); // Original Position, if bundled
                 bs.Position += 4;
                 bs.Position += 4; // Sometimes 1
 
@@ -249,7 +251,7 @@ namespace PDTools.Files.Textures
             {
                 for (int i = 0; i < imageInfoCount; i++)
                 {
-                    bs.Position = BaseTextureSetPosition + imageInfoOffset + (i * 0x20);
+                    bs.Position = BaseTextureSetPosition + (imageInfoOffset - RelocPtr) + (i * 0x20);
 
                     Texture texture = consoleType switch
                     {
@@ -257,7 +259,7 @@ namespace PDTools.Files.Textures
                         TextureConsoleType.PS4 => new OrbisTexture(),
                     };
 
-                    texture.ReadTextureDetails(bs);
+                    texture.ReadTextureDetails(bs, this);
 
                     Textures.Add(texture);
                 }
@@ -267,7 +269,7 @@ namespace PDTools.Files.Textures
             {
                 for (int i = 0; i < pgluTexturesCount; i++)
                 {
-                    bs.Position = BaseTextureSetPosition + pgluTexturesOffset + (i * 0x44);
+                    bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x44);
 
                     Texture texture = Textures[i];
 
@@ -296,6 +298,17 @@ namespace PDTools.Files.Textures
                     */
                 }
             }
+        }
+
+        public byte[] GetExternalImageDataOfTexture(Stream stream, Texture texture, long basePos = 0)
+        {
+            stream.Position = basePos + (texture.ImageOffset - DataPointer);
+
+            var bytes = stream.ReadBytes((int)texture.ImageSize);
+            var ms = new MemoryStream();
+            (texture as CellTexture).CreateDDSData(bytes, ms);
+
+            return ms.ToArray();
         }
 
         public void FromFile(string file, TextureConsoleType consoleType = TextureConsoleType.PS3)

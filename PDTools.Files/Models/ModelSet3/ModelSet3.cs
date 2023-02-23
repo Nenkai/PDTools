@@ -376,8 +376,11 @@ namespace PDTools.Files.Models.ModelSet3
 
         private void ReadPMSH(BinaryStream bs, long baseMdlPos, uint offset, uint count)
         {
-            bs.Position = baseMdlPos + offset;
-            PMSH = MDL3PMSH.FromStream(bs, baseMdlPos, Version);
+            if (offset != 0)
+            {
+                bs.Position = baseMdlPos + offset;
+                PMSH = MDL3PMSH.FromStream(bs, baseMdlPos, Version);
+            }
         }
 
         /// <summary>

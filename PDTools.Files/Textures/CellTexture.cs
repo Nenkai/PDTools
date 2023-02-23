@@ -60,7 +60,7 @@ namespace PDTools.Files.Textures
             textureInfo.FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
         }
 
-        public override void ReadTextureDetails(BinaryStream bs)
+        public override void ReadTextureDetails(BinaryStream bs, TextureSet3 txs3)
         {
             ImageOffset = bs.ReadUInt32();
             ImageSize = bs.ReadUInt32();
@@ -171,7 +171,7 @@ namespace PDTools.Files.Textures
             converter.WaitForExit();
         }
 
-        private void CreateDDSData(byte[] imageData, Stream outStream)
+        internal void CreateDDSData(byte[] imageData, Stream outStream)
         {
             var header = new DdsHeader();
             header.Height = Height;
@@ -198,7 +198,7 @@ namespace PDTools.Files.Textures
             }
 
 
-            header.LastMipmapLevel = LastMipmapLevel;
+            header.LastMipmapLevel = 1;
 
             switch (format)
             {
@@ -259,17 +259,17 @@ namespace PDTools.Files.Textures
             // Swap channels for DDS
             if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
             {
+                var sp = MemoryMarshal.Cast<byte, uint>(imageData);
                 for (var i = 0; i < Width * Height * 4; i += 4)
                 {
-                    byte r = imageData[i + (byte)textureInfo.InB];
-                    byte g = imageData[i + (byte)textureInfo.InG];
-                    byte b = imageData[i + (byte)textureInfo.InR];
-                    byte a = imageData[i + (byte)textureInfo.InA];
+                    // Swap endian first
+                    sp[i / 4] = BinaryPrimitives.ReverseEndianness(sp[i / 4]);
 
-                    // CELL [A8]R8G8B8 to DDS R8G8B8[A8] where B and R are swapped
-                    byte tmpB = b;
-                    b = r;
-                    r = tmpB;
+                    // Remap channels
+                    byte r = imageData[i + (byte)textureInfo.InR];
+                    byte g = imageData[i + (byte)textureInfo.InG];
+                    byte b = imageData[i + (byte)textureInfo.InB];
+                    byte a = imageData[i + (byte)textureInfo.InA];
 
                     imageData[i + 0] = r;
                     imageData[i + 1] = g;
