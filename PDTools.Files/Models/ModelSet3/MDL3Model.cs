@@ -61,14 +61,14 @@ namespace PDTools.Files.Models.ModelSet3
                 model.Bounds.Add(new(bx, by, bz));
             }
 
-            
-            bs.Position = commandsOffset;
-            while (bs.Position < commandsOffset + commandsSize)
+            long commandsOffsetActual = mdlBasePos + commandsOffset;
+            bs.Position = mdlBasePos + commandsOffsetActual;
+            while (bs.Position < commandsOffsetActual + commandsSize)
             {
                 byte opcode = bs.Read1Byte();
                 var cmd = ModelCommand.GetByOpcode(opcode);
-                cmd.Offset = (int)(bs.Position - commandsOffset) - 1;
-                cmd.Read(bs, (int)commandsOffset);
+                cmd.Offset = (int)(bs.Position - commandsOffsetActual) - 1;
+                cmd.Read(bs, (int)commandsOffsetActual);
                 model.Commands.Add(cmd);
             }
 
