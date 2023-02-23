@@ -60,7 +60,7 @@ namespace PDTools.Files.Textures
             textureInfo.FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
         }
 
-        public override void ReadTextureDetails(BinaryStream bs, TextureSet3 txs3)
+        public override void ReadTextureDetails(BinaryStream bs)
         {
             ImageOffset = bs.ReadUInt32();
             ImageSize = bs.ReadUInt32();
@@ -198,7 +198,7 @@ namespace PDTools.Files.Textures
             }
 
 
-            header.LastMipmapLevel = 1;
+            header.LastMipmapLevel = LastMipmapLevel;
 
             switch (format)
             {

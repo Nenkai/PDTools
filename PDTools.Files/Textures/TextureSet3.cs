@@ -38,6 +38,10 @@ namespace PDTools.Files.Textures
 
         public long DataPointer { get; set; }
 
+        /// <summary>
+        /// Original relocation pointer
+        /// May be slightly offset (0x200) if the texture set is in a CourseData/PAC due to header
+        /// </summary>
         public uint RelocPtr { get; set; }
 
         public long BaseTextureSetPosition { get; set; }
@@ -259,7 +263,7 @@ namespace PDTools.Files.Textures
                         TextureConsoleType.PS4 => new OrbisTexture(),
                     };
 
-                    texture.ReadTextureDetails(bs, this);
+                    texture.ReadTextureDetails(bs);
 
                     Textures.Add(texture);
                 }
