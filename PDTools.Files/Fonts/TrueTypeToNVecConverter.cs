@@ -14,29 +14,39 @@ namespace PDTools.Files.Fonts
 {
     public class TrueTypeToNVecConverter
     {
+        /* Some notes:
+         * May not be the prettiest conversion code, Y is also swapped around
+         * "/ 2" is hardcoded for 2048 units per em fonts */
+
+        public static int Scale { get; set; } = 2;
         public static void Convert(string inputTtf, string outputVec)
         {
             using var ttf = File.OpenRead(inputTtf);
-            var ttfFont = new OpenFontReader().Read(ttf);
+            Typeface ttfFont = new OpenFontReader().Read(ttf);
 
             NVectorFont vecFont = new NVectorFont();
 
-            foreach (var ttfGlyphName in ttfFont.GetGlyphNameIter())
+            List<uint> unicodes = new List<uint>();
+            ttfFont.CollectUnicode(unicodes);
+            unicodes = unicodes.Distinct().ToList();
+
+            foreach (var codePoint in unicodes)
             {
-                int codePoint = AdobeGlyphList.GetUnicodeValueByGlyphName(ttfGlyphName.glyphName);
                 if (codePoint == 0)
                     continue;
 
-                TTFGlyph ttfGlyph = ttfFont.GetGlyph(ttfGlyphName.glyphIndex);
+                ushort glyphIndex = ttfFont.GetGlyphIndex((int)codePoint);
+                TTFGlyph ttfGlyph = ttfFont.GetGlyph(glyphIndex);
 
                 NVecGlyph vecGlyph = new NVecGlyph((char)codePoint);
-                vecGlyph.AdvanceWidth = (ushort)(ttfFont.GetAdvanceWidthFromGlyphIndex((ushort)ttfGlyphName.glyphIndex) / 2);
-
+                vecGlyph.AdvanceWidth = (ushort)(ttfFont.GetAdvanceWidthFromGlyphIndex((ushort)glyphIndex) / Scale);
 
                 int offset = ttfFont.Bounds.YMax - ttfGlyph.Bounds.YMax;
-                vecGlyph.HeightOffset = (ushort)(offset / 2);
+                vecGlyph.HeightOffset = (ushort)(offset / Scale);
 
                 Span<ushort> endPoints = ttfGlyph.EndPoints.AsSpan();
+
+                GlyphPointF lastPoint = default;
 
                 if (ttfGlyph.GlyphPoints.Any())
                 {
@@ -52,30 +62,67 @@ namespace PDTools.Files.Fonts
                             if (i != 0)
                             {
                                 var prev = ttfGlyph.GlyphPoints[i - 1];
-                                IGlyphShapeData shape = CompareAdd(prev, currentOutlineStartPoint);
-                                vecGlyph.Points.Data.Add(shape);
+                                if (prev.onCurve)
+                                {
+                                    IGlyphShapeData shape = CompareAdd(prev, currentOutlineStartPoint);
+                                    vecGlyph.Points.Data.Add(shape);
+                                }
                             }
 
                             currentOutlineStartPoint = point;
 
-                            var startPoint = new GlyphStartPoint(point.X / 2, (((-point.Y)) / 2));
-
+                            var startPoint = new GlyphStartPoint(point.X / Scale, (-point.Y / Scale));
+                            lastPoint = point;
 
                             if (i == 0)
                                 startPoint.Unk = true;
 
                             vecGlyph.Points.Data.Add(startPoint);
-                            vecGlyph.Points.Data.Add(new GlyphLine(0, GlyphAxis.Y));
                         }
                         else
                         {
-                            IGlyphShapeData shape = CompareAdd(ttfGlyph.GlyphPoints[i - 1], point);
-                            vecGlyph.Points.Data.Add(shape);
+                            // Handle curves
+                            if (!ttfGlyph.GlyphPoints[i].onCurve)
+                            {
+                                GlyphPointF start = lastPoint;
+                                GlyphPointF control = ttfGlyph.GlyphPoints[i];
+
+                                if (endPoints.IndexOf((ushort)i) != -1)
+                                {
+                                    lastPoint = currentOutlineStartPoint;
+                                }
+                                else
+                                {
+                                    GlyphPointF next = ttfGlyph.GlyphPoints[i + 1];
+                                    if (next.onCurve)
+                                    {
+                                        lastPoint = next;
+                                    }
+                                    else
+                                    {
+                                        // Calculate Midpoint
+                                        lastPoint = new GlyphPointF(
+                                            ((control.X + next.X) / 2),
+                                            ((control.Y + next.Y) / 2),
+                                            false
+                                        );
+                                    }
+                                }
+                                
+                                var curve = GetCurve(start, control, lastPoint);
+                                vecGlyph.Points.Data.Add(curve);
+                            }
+                            else
+                            {
+                                // Handle non-curves
+                                IGlyphShapeData shape = CompareAdd(lastPoint, point);
+                                vecGlyph.Points.Data.Add(shape);
+                                lastPoint = point;
+                            }
                         }
                     }
 
                     vecGlyph.Points.Data.Add(CompareAdd(ttfGlyph.GlyphPoints[^1], currentOutlineStartPoint));
-                    vecGlyph.Points.Data.Add(new GlyphLine(0, GlyphAxis.Y));
                 }
                 vecFont.AddGlyph(vecGlyph);
             }
@@ -88,16 +135,27 @@ namespace PDTools.Files.Fonts
         {
             if (next.X == prev.X)
             {
-                return new GlyphLine((prev.Y - next.Y) / 2, GlyphAxis.Y);
+                return new GlyphLine(-(next.Y - prev.Y) / Scale, GlyphAxis.Y);
             }
             else if (next.Y == prev.Y)
             {
-                return new GlyphLine((next.X - prev.X) / 2, GlyphAxis.X);
+                return new GlyphLine((next.X - prev.X) / Scale, GlyphAxis.X);
             }
             else
             {
-                return new GlyphPoint((next.X - prev.X) / 2, (prev.Y - next.Y) / 2);
+                return new GlyphPoint((next.X - prev.X) / Scale, -(next.Y - prev.Y) / Scale);
             }
+        }
+
+        private static GlyphQuadraticBezierCurve GetCurve(GlyphPointF start, GlyphPointF control, GlyphPointF end)
+        {
+            float p1X = (control.X - start.X) / Scale;
+            float p1Y = -(control.Y - start.Y) / Scale;
+
+            float p2X = (end.X - control.X) / Scale;
+            float p2Y = -(end.Y - control.Y) / Scale;
+
+            return new GlyphQuadraticBezierCurve(p1X, p1Y, p2X, p2Y);
         }
     }
 }
