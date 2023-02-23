@@ -23,6 +23,10 @@ namespace PDTools.GTPatcher.MemoryPatches
         public const ulong GT7_V125_Argv_Offset = 0x62918C8;
         public const ulong GT7_V125_SafeAddr = 0x3CFE840;
 
+        public const ulong GT7_V129_Argc_Offset = 0x5E14CD0;
+        public const ulong GT7_V129_Argv_Offset = 0x5E14CD8;
+        public const ulong GT7_V129_SafeAddr = 0x370FF78;
+
         public const ulong PFSVolumePath_Offset = 0x2B72F80;
 
         public ulong Argc_Offset { get; set; }
@@ -58,6 +62,12 @@ namespace PDTools.GTPatcher.MemoryPatches
                     Argv_Offset = GT7_V125_Argv_Offset;
                     Safe_Addr = GT7_V125_SafeAddr;
                     break;
+
+                case GameType.GT7_V129:
+                    Argc_Offset = GT7_V129_Argc_Offset;
+                    Argv_Offset = GT7_V129_Argv_Offset;
+                    Safe_Addr = GT7_V129_SafeAddr;
+                    break;
             }
         }
 
@@ -91,11 +101,11 @@ namespace PDTools.GTPatcher.MemoryPatches
             int argCount = await dbg.ReadMemory<int>(Argc_Offset);
             await dbg.WriteMemory<int>(Argc_Offset, args.Length);
 
-            ulong newArgvOffset = dbg.ImageBase + 0x3CFE840;
+            ulong newArgvOffset = dbg.ImageBase + Safe_Addr;
             await dbg.WriteMemory<ulong>(Argv_Offset, newArgvOffset);
 
             ulong strPtr = newArgvOffset;
-            ulong lastAlignedStrOffset = GT7_V125_SafeAddr + 0x200;
+            ulong lastAlignedStrOffset = Safe_Addr + 0x200;
 
 
             for (var i = 0; i < args.Length; i++)

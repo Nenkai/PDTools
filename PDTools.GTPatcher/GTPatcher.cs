@@ -101,7 +101,7 @@ namespace PDTools.GTPatcher
                     didThing = true;
                 }
 
-                await Task.Delay(1);
+                await Task.Delay(1, token);
             }
         }
 
@@ -237,5 +237,6 @@ namespace PDTools.GTPatcher
         GTS_V168,
         GT7_V100,
         GT7_V125,
+        GT7_V129,
     }
 }
