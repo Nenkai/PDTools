@@ -14,7 +14,15 @@ namespace PDTools.Files.Fonts
     {
         public float XMin { get; set; }
         public float YMin { get; set; }
+
+        /// <summary>
+        /// For debugging; not used
+        /// </summary>
         public float XMax { get; set; }
+
+        /// <summary>
+        /// For debugging, not used
+        /// </summary>
         public float YMax { get; set; }
 
         public List<IGlyphShapeData> Data { get; set; } = new();

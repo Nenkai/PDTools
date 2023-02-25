@@ -41,6 +41,8 @@ namespace PDTools.Files.Fonts.NVecBuilder
 
             Console.WriteLine($"TTF -> NVEC -> {args[1]}");
 
+            Console.WriteLine("Make sure to add the font to all \"font/vec/fontset_*.txt\" if you are going to use it!");
+            Console.WriteLine("Fonts are loaded at boot and stay/consume memory, if your font is large try to remove some characters from it with a ttf editor first!");
         }
     }
 }
