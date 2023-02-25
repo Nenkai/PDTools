@@ -14,6 +14,8 @@ namespace PDTools.Files.Fonts
     {
         public float XMin { get; set; }
         public float YMin { get; set; }
+        public float XMax { get; set; }
+        public float YMax { get; set; }
 
         public List<IGlyphShapeData> Data { get; set; } = new();
 
@@ -200,15 +202,25 @@ namespace PDTools.Files.Fonts
             return buffer.ToArray();
         }
 
-        public void RecalculateMins()
+        public void RecalculateBounds()
         {
             float minX = 0, minY = 0;
+            float maxX = 0, maxY = 0;
+
             float currentX = 0, currentY = 0;
             for (int i1 = 0; i1 < Data.Count; i1++)
             {
                 IGlyphShapeData? i = Data[i1];
                 if (i is GlyphStartPoint startPoint)
                 {
+                    if (startPoint.Unk == true)
+                    {
+                        minX = startPoint.X;
+                        minY = startPoint.Y;
+                        maxX = startPoint.X;
+                        maxY = startPoint.Y;
+                    }
+                    
                     currentX = startPoint.X;
                     currentY = startPoint.Y;
                 }
@@ -235,10 +247,14 @@ namespace PDTools.Files.Fonts
 
                 if (currentX < minX) minX = currentX;
                 if (currentY < minY) minY = currentY;
+                if (currentX > maxX) maxX = currentX;
+                if (currentY > maxY) maxY = currentY;
             }
 
             XMin = minX;
             YMin = minY;
+            XMax = maxX;
+            YMax = maxY;
         }
 
         private static float BitValueToFloat(long value, int bitCount)
