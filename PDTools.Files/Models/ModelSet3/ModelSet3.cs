@@ -22,6 +22,7 @@ using PDTools.Files.Models.ModelSet3.Wing;
 using PDTools.Files.Models.ModelSet3.PMSH;
 using PDTools.Files.Models.ShapeStream;
 using ShapeStreamData = PDTools.Files.Models.ShapeStream.ShapeStream;
+using SixLabors.Fonts.Unicode;
 
 namespace PDTools.Files.Models.ModelSet3
 {
@@ -408,12 +409,12 @@ namespace PDTools.Files.Models.ModelSet3
                     && !fvfDef.Elements.TryGetValue("position_2", out field))
                     throw new InvalidOperationException("FVF does not contain 'position' field.");
 
-                if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1)
+                if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1 && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_SF)
                     throw new NotSupportedException("Expected vector 3 with CELL_GCM_VERTEX_F or CELL_GCM_VERTEX_S1");
 
                 var arr = new Vector3[mesh.VertexCount];
 
-                if (mesh.VerticesOffset != 0)
+                if (mesh.VerticesOffset != 0 && Stream.CanRead)
                 {
                     Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                     for (int i = 0; i < mesh.VertexCount; i++)
@@ -425,6 +426,8 @@ namespace PDTools.Files.Models.ModelSet3
                 else if (ShapeStream != null)
                 {
                     // Try shapestream
+                    if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                        return arr;
                     var ssMesh = ShapeStream.Meshes[meshIndex];
                     Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                     for (int i = 0; i < mesh.VertexCount; i++)
@@ -450,7 +453,7 @@ namespace PDTools.Files.Models.ModelSet3
             MDL3Mesh mesh = Meshes[meshIndex];
             var list = new List<Tri>();
 
-            if (mesh.TriOffset != 0)
+            if (mesh.TriOffset != 0 && Stream.CanRead)
             {
                 Stream.Position = BaseOffset + mesh.TriOffset;
                 for (int i = 0; i < mesh.TriCount; i++)
@@ -471,6 +474,8 @@ namespace PDTools.Files.Models.ModelSet3
             else if (ShapeStream != null)
             {
                 // Try shapestream
+                if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                    return null;
                 var ssMesh = ShapeStream.Meshes[meshIndex];
                 var chunkStream = ssMesh.ShapeStreamChunk.Stream;
 
@@ -505,7 +510,7 @@ namespace PDTools.Files.Models.ModelSet3
 
             var arr = new Vector2[mesh.VertexCount];
 
-            if (mesh.VerticesOffset != 0)
+            if (mesh.VerticesOffset != 0 && Stream.CanRead)
             {
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < mesh.VertexCount; i++)
@@ -517,6 +522,8 @@ namespace PDTools.Files.Models.ModelSet3
             else if (ShapeStream != null)
             {
                 // Try shapestream
+                if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                    return arr;
                 var ssMesh = ShapeStream.Meshes[meshIndex];
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < mesh.VertexCount; i++)

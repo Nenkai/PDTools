@@ -78,6 +78,15 @@ namespace PDTools.Files.Models.ModelSet3.FVF
                 v2 = sr.ReadByte() * (1f / sbyte.MaxValue);
                 v3 = sr.ReadByte() * (1f / sbyte.MaxValue);
             }
+            else if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_SF)
+            {
+                var bytes = sr.ReadBytes(2);
+                var bytes2 = sr.ReadBytes(2);
+                var bytes3 = sr.ReadBytes(2);
+                v1 = (float)(sr.Endian == Endian.Big ? BinaryPrimitives.ReadHalfBigEndian(bytes) : BinaryPrimitives.ReadHalfLittleEndian(bytes));
+                v2 = (float)(sr.Endian == Endian.Big ? BinaryPrimitives.ReadHalfBigEndian(bytes2) : BinaryPrimitives.ReadHalfLittleEndian(bytes2));
+                v3 = (float)(sr.Endian == Endian.Big ? BinaryPrimitives.ReadHalfBigEndian(bytes3) : BinaryPrimitives.ReadHalfLittleEndian(bytes3));
+            }
             else
             {
                 throw new NotImplementedException($"Unimplemented field type {FieldType}");
