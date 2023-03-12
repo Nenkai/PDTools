@@ -19,6 +19,9 @@ Library for dealing with crypto. Contains:
 ## PDTools.Files
 File format handling. Mostly PS3 formats.
 
+## PDTools.Files.Fonts.NVecBuilder
+TTF to NVEC Font file converter for GT5/GT6
+
 ## PDTools.GT4ElfBuilderTool
 Builds elf executables based on compressed/encrypted CORE.GT4 files for reverse-engineering (GT4)
 
