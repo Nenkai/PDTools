@@ -188,7 +188,7 @@ namespace PDTools.Files.Fonts
                 throw new Exception($"Glyph '{glyph.Character}' already exists");
 
             glyph.Points.RecalculateBounds();
-            glyph.Width = (ushort)(glyph.Points.XMax - glyph.Points.XMin);
+            glyph.Width = (ushort)MathF.Round(glyph.Points.XMax - glyph.Points.XMin);
 
             Characters.Add(glyph.Character);
             Glyphs.Add(glyph);

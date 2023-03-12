@@ -123,6 +123,11 @@ namespace PDTools.Files.Fonts
 
                     ctx.Draw(Color.Red, 5, path.Build());
                 }
+
+                ctx.DrawLines(Color.Red, 1f, new PointF[]
+                {
+                    new PointF(Points.XMin, Points.YMin),
+                });
             });
 
             return image;
