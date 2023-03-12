@@ -20,6 +20,8 @@ using PDTools.Files.Models.Shaders;
 using PDTools.Files.Models.Bones;
 using PDTools.Files.Models.ModelSet3.Wing;
 using PDTools.Files.Models.ModelSet3.PMSH;
+using PDTools.Files.Models.ShapeStream;
+using ShapeStreamData = PDTools.Files.Models.ShapeStream.ShapeStream;
 
 namespace PDTools.Files.Models.ModelSet3
 {
@@ -56,6 +58,7 @@ namespace PDTools.Files.Models.ModelSet3
         public List<MDL3PMSHKey> PMSHKeys { get; set; } = new();
         public MDL3PMSH PMSH { get; set; } = new();
         public MDL3ShapeStreamingMap StreamingInfo { get; set; }
+        public ShapeStreamData ShapeStream { get; set; }
 
         public CourseDataFile ParentCourseData { get; set; }
         public BinaryStream Stream { get; set; }
@@ -163,9 +166,9 @@ namespace PDTools.Files.Models.ModelSet3
             modelSet.ReadShaders(bs, basePos, shadersOffset, 1);
             modelSet.ReadBones(bs, basePos, bonesOffset, bonesCount);
 
-            modelSet.ReadVMBytecode(bs, basePos, vmBytecodeOffset, vmBytecodeSize);
-            modelSet.ReadVMRegisterValues(bs, basePos, registerValOffset, registerValCount);
-            modelSet.VirtualMachine.Print(modelSet.VMHostMethodEntries);
+            //modelSet.ReadVMBytecode(bs, basePos, vmBytecodeOffset, vmBytecodeSize);
+            //modelSet.ReadVMRegisterValues(bs, basePos, registerValOffset, registerValCount);
+            //modelSet.VirtualMachine.Print(modelSet.VMHostMethodEntries);
             modelSet.ReadTextureKeys(bs, basePos, textureKeysOffset, textureKeyCount);
             modelSet.ReadWingData(bs, basePos, wingDataOffset, wingDataCount);
             modelSet.ReadWingKeys(bs, basePos, wingKeysOffset, wingKeysCount);
@@ -390,7 +393,7 @@ namespace PDTools.Files.Models.ModelSet3
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="NotSupportedException"></exception>
-        public Vector3[] GetVerticesOfMesh(short meshIndex)
+        public Vector3[] GetVerticesOfMesh(ushort meshIndex)
         {
             if (meshIndex == -1)
                 throw new InvalidOperationException("Mesh Index was -1.");
@@ -419,10 +422,16 @@ namespace PDTools.Files.Models.ModelSet3
                         arr[i] = field.GetFVFFieldVector3(vertBuffer);
                     }
                 }
-                else
+                else if (ShapeStream != null)
                 {
-                    // TODO: Try shapestream
-                    // TODO: Find the mechanism that determines whether we are using a stream or not
+                    // Try shapestream
+                    var ssMesh = ShapeStream.Meshes[meshIndex];
+                    Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                    for (int i = 0; i < mesh.VertexCount; i++)
+                    {
+                        GetVerticesData(ssMesh, fvfDef, field, i, vertBuffer);
+                        arr[i] = field.GetFVFFieldVector3(vertBuffer);
+                    }
                 }
 
                 return arr;
@@ -459,10 +468,27 @@ namespace PDTools.Files.Models.ModelSet3
                     }
                 }
             }
-            else
+            else if (ShapeStream != null)
             {
-                // TODO: Try shapestream
-                // TODO: Find the mechanism that determines whether we are using a stream or not
+                // Try shapestream
+                var ssMesh = ShapeStream.Meshes[meshIndex];
+                var chunkStream = ssMesh.ShapeStreamChunk.Stream;
+
+                chunkStream.Position = ssMesh.InfoMeshEntry.OffsetWithinShapeStream + ssMesh.TriOffset;
+                for (int i = 0; i < mesh.TriCount; i++)
+                {
+                    ushort a = chunkStream.ReadUInt16();
+                    ushort b = chunkStream.ReadUInt16();
+                    ushort c = chunkStream.ReadUInt16();
+                    if (a < mesh.VertexCount && b < mesh.VertexCount && c < mesh.VertexCount)
+                    {
+                        list.Add(new(a, b, c));
+                    }
+                    else
+                    {
+                        return null; // Tristrip - FIX ME
+                    }
+                }
             }
 
             return list;
@@ -488,10 +514,16 @@ namespace PDTools.Files.Models.ModelSet3
                     arr[i] = field.GetFVFFieldVector2(buffer);
                 }
             }
-            else
+            else if (ShapeStream != null)
             {
-                // TODO: Try shapestream
-                // TODO: Find the mechanism that determines whether we are using a stream or not
+                // Try shapestream
+                var ssMesh = ShapeStream.Meshes[meshIndex];
+                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    GetVerticesData(ssMesh, fvfDef, field, i, buffer);
+                    arr[i] = field.GetFVFFieldVector2(buffer);
+                }
             }
 
             return arr;
@@ -512,6 +544,23 @@ namespace PDTools.Files.Models.ModelSet3
                 Stream.Read(buffer);
             }
         }
+        public void GetVerticesData(ShapeStreamMesh ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
+        {
+            var chunk = ssMeshInfo.ShapeStreamChunk;
+            var baseOffset = ssMeshInfo.InfoMeshEntry.OffsetWithinShapeStream;
+            if (field.ArrayIndex == 0)
+            {
+                chunk.Stream.Position = baseOffset + ssMeshInfo.VerticesOffset + vertIndex * fvfDef.VertexSize;
+                chunk.Stream.Read(buffer);
+            }
+            else
+            {
+                chunk.Stream.Position = baseOffset + ssMeshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + (fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex);
+                chunk.Stream.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
+                chunk.Stream.Read(buffer);
+            }
+        }
+
 
         public static int GetHeaderSize()
         {

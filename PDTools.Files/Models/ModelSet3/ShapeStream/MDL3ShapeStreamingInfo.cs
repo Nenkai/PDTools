@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.ModelSet3.ShapeStream
     {
         public uint DataOffset { get; set; }
         public uint DataSize { get; set; }
-        public Dictionary<short, MDL3ShapeStreamingInfoMeshEntry> Entries { get; set; } = new();
+        public Dictionary<ushort, MDL3ShapeStreamingInfoMeshEntry> Entries { get; set; } = new();
 
         public static MDL3ShapeStreamingInfo FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
         {
@@ -21,8 +21,8 @@ namespace PDTools.Files.Models.ModelSet3.ShapeStream
             info.DataOffset = bs.ReadUInt32();
             info.DataSize = bs.ReadUInt32();
 
-            ushort meshEntriesCount = bs.ReadUInt16();
             uint meshEntriesOffset = bs.ReadUInt32();
+            ushort meshEntriesCount = bs.ReadUInt16();
 
             for (int i = 0; i < meshEntriesCount; i++)
             {

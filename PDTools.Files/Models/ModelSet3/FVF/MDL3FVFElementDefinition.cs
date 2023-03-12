@@ -95,8 +95,8 @@ namespace PDTools.Files.Models.ModelSet3.FVF
 
             if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F)
             {
-                if (ElementCount != 2)
-                    throw new InvalidOperationException("Expected 2 elements for Vector2");
+                if (ElementCount == 4)
+                    ; // TODO: Check whats up with this, GT6 PS3 tracks uses 4 elements for map12 sometimes
 
                 v1 = sr.ReadSingle();
                 v2 = sr.ReadSingle();

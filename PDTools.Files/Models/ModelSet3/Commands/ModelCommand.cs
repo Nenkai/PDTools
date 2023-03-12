@@ -40,7 +40,8 @@ namespace PDTools.Files.Models.ModelSet3.Commands
                 59 => new CommandLoadMesh_59(),
                 60 => new CommandUnk_60(),
                 61 => new CommandUnk_61(),
-                _ => throw new Exception($"Unexpected opcode {opcode}")
+                _ => new CommandUnk_Hack()
+                //_ => throw new Exception($"Unexpected opcode {opcode}")
             };
 
             cmd.Opcode = opcode;
