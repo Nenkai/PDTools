@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Product>nvec_builder</Product>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AssemblyName>nvec_builder</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PDTools.Files\PDTools.Files.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\Typography\Typography.OpenFont\Typography.OpenFont.projitems" Label="Shared" />
+</Project>

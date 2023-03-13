@@ -4,9 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-using SpecDBOld;
-
-namespace GTOnlineDiscordBot.Services
+namespace PDTools.SpecDB
 {
     public interface ISpecDB
     {

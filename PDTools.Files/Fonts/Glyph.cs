@@ -21,7 +21,7 @@ namespace PDTools.Files.Fonts
 
         public ushort Flags { get; set; } = 0x8002;
         public ushort HeightOffset { get; set; }
-        public ushort AdvanceWidth { get; set; }
+        public ushort Width { get; set; }
         public GlyphShapes Points { get; set; } = new();
 
         public Glyph(char character)
@@ -43,7 +43,7 @@ namespace PDTools.Files.Fonts
 
             int dataLength = bs.ReadInt32();
             uint bits = bs.ReadUInt32();
-            glyph.AdvanceWidth = (ushort)(bits >> 20);
+            glyph.Width = (ushort)(bits >> 20);
             glyph.HeightOffset = (ushort)((bits >> 8) & 0b1111_11111111);
             byte calculatedRenderStrideCount = (byte)(bits & 0xFF); // Check NVectorFont.WriteGlyphs for how this is calculated
 
@@ -123,9 +123,19 @@ namespace PDTools.Files.Fonts
 
                     ctx.Draw(Color.Red, 5, path.Build());
                 }
+
+                ctx.DrawLines(Color.Red, 1f, new PointF[]
+                {
+                    new PointF(Points.XMin, Points.YMin),
+                });
             });
 
             return image;
+        }
+
+        public override string ToString()
+        {
+            return Character.ToString();
         }
     }
 }

@@ -97,3 +97,32 @@ demo_idx
 
 // >1.00 (seen in 1.25)
 emotional
+
+reward_ce_course
+autodemo_pause_time
+autodemo_return_time
+autodemo_entry_num
+autodemo_group
+autodemo_course
+autodemo_track_weather_id
+no_bandwidth
+lobby_auto_entry
+debug_entry_channel
+online_race_host
+online_race_join_as_spectator
+OnlineGameMode
+livery_share_file
+scapes_open
+scapes1
+scene_preview_mode
+scene_preview_seq
+event2
+trade_in
+virtual_paddock
+virtual_paddock_no_car_share
+rtext_develop
+birthdaygift
+livery_special_decken
+skip_online_title_movie
+enable_bridge_on_steward
+vr_showroom_open

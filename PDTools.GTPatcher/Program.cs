@@ -27,7 +27,7 @@ namespace PDTools.GTPatcher
 
         public static async Task Options(Options options)
         {
-            var dbg = new GTPatcher(options.IPAddress, GameType.GT7_V125);
+            var dbg = new GTPatcher(options.IPAddress, GameType.GT7_V129);
 
             if (options.Arguments.Any())
             {

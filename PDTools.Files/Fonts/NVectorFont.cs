@@ -160,7 +160,7 @@ namespace PDTools.Files.Fonts
                 bs.WriteInt32(glyphDataSize);
 
                 uint bits = 0;
-                bits |= (uint)((glyph.AdvanceWidth & 0b1111_11111111) << 20); // 12 bits
+                bits |= (uint)((glyph.Width & 0b1111_11111111) << 20); // 12 bits
                 bits |= (uint)((glyph.HeightOffset & 0b1111_11111111) << 8); // 12 bits
                 bits |= (uint)((glyphDataSize + 0x1F) / 0x10 & 0b11111111); // 8 bit
                 bs.WriteUInt32(bits);
@@ -177,12 +177,18 @@ namespace PDTools.Files.Fonts
             bs.Position = lastGlyphDataOffset;
         }
 
+        /// <summary>
+        /// Adds the glyph to the font (and recalculates the glyph's bounds/width)
+        /// </summary>
+        /// <param name="glyph"></param>
+        /// <exception cref="Exception"></exception>
         public void AddGlyph(Glyph glyph)
         {
             if (Characters.Contains(glyph.Character))
                 throw new Exception($"Glyph '{glyph.Character}' already exists");
 
-            glyph.Points.RecalculateMins();
+            glyph.Points.RecalculateBounds();
+            glyph.Width = (ushort)MathF.Round(glyph.Points.XMax - glyph.Points.XMin);
 
             Characters.Add(glyph.Character);
             Glyphs.Add(glyph);

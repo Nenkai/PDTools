@@ -4,14 +4,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-using SpecDBOld;
-using SpecDBOld.Core;
+using PDTools.SpecDB.Core;
 
-namespace GTOnlineDiscordBot.Services.SpecDB
+namespace PDTools.SpecDB
 {
     public class SpecDBOldWrapper : ISpecDB
     {
-        public SpecDBOld.SpecDB Database { get; set; }
+        public Core.SpecDB Database { get; set; }
         public SpecDBFolder FolderType { get; set; }
 
         public SpecDBOldWrapper(SpecDBFolder folderType)
@@ -21,13 +20,13 @@ namespace GTOnlineDiscordBot.Services.SpecDB
 
         public Task InitializeAsync(string fileName, CancellationTokenSource cancellationTokenSrc)
         {
-            Database = SpecDBOld.SpecDB.LoadFromSpecDBFolder(fileName, FolderType, true);
+            Database = Core.SpecDB.LoadFromSpecDBFolder(fileName, FolderType, true);
             return Task.CompletedTask;
         }
 
         public Task GetCarRowByCodeAsync(int code, CancellationTokenSource cancellationTokenSrc)
         {
-            Database.GetRowFromTable(SpecDBOld.SpecDB.SpecDBTables.GENERIC_CAR, code, out Span<byte> rowData);
+            Database.GetRowFromTable(Core.SpecDB.SpecDBTables.GENERIC_CAR, code, out Span<byte> rowData);
 
             return Task.CompletedTask;
         }
@@ -42,7 +41,7 @@ namespace GTOnlineDiscordBot.Services.SpecDB
 
         public Task GetRowAsync(string table, int code, CancellationTokenSource cancellationTokenSrc)
         {
-            if (!Database.Tables.TryGetValue(table, out SpecDBTable specTable))
+            if (!Database.Tables.TryGetValue(table, out Table specTable))
                 return Task.CompletedTask;
 
             specTable.GetRowN(code, out Span<byte> rowData);
