@@ -9,27 +9,32 @@ namespace PDTools.Files.Models.ShapeStream
 {
     public class ShapeStream
     {
-        public Dictionary<ushort, ShapeStreamMesh> Meshes;
+        public List<ShapeStreamChunk> Chunks = new List<ShapeStreamChunk>();
 
         static public ShapeStream FromStream(Stream stream, MDL3 mdl)
         {
-            ShapeStream ss = new()
-            {
-                Meshes = new()
-            };
+            ShapeStream ss = new();
 
             ushort i = 0;
-            foreach (MDL3ShapeStreamingInfo ssInfo in mdl.StreamingInfo.Infos)
+            foreach (MDL3ShapeStreamingChunkInfo ssInfo in mdl.StreamingInfo.ChunkInfos)
             {
-                var meshDictionary = ShapeStreamChunk.MeshesFromStream(stream, ssInfo);
-                foreach (var meshItem in meshDictionary)
-                {
-                    ss.Meshes.Add(meshItem.Key, meshItem.Value);
-                }
+                var chunk = ShapeStreamChunk.FromStream(stream, ssInfo);
+                ss.Chunks.Add(chunk);
                 i++;
             }
 
             return ss;
+        }
+
+        public ShapeStreamMesh GetMeshByIndex(ushort meshIndex)
+        {
+            foreach (var chunk in Chunks)
+            {
+                if (chunk.Meshes.TryGetValue(meshIndex, out ShapeStreamMesh mesh))
+                    return mesh;
+            }
+
+            return null;
         }
     }
 }

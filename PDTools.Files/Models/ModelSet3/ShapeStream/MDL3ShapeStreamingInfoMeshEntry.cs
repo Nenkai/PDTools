@@ -10,13 +10,14 @@ namespace PDTools.Files.Models.ModelSet3.ShapeStream
 {
     public class MDL3ShapeStreamingInfoMeshEntry
     {
-        public uint OffsetWithinShapeStream { get; set; }
+        public uint OffsetInChunk { get; set; }
         public ushort MeshIndex { get; set; }
         public ushort Unk { get; set; }
+
         public static MDL3ShapeStreamingInfoMeshEntry FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
         {
             MDL3ShapeStreamingInfoMeshEntry entry = new MDL3ShapeStreamingInfoMeshEntry();
-            entry.OffsetWithinShapeStream = bs.ReadUInt32();
+            entry.OffsetInChunk = bs.ReadUInt32();
             entry.MeshIndex = bs.ReadUInt16();
             entry.Unk = bs.ReadUInt16();
 

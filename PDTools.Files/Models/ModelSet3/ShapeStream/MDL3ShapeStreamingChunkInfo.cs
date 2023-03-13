@@ -8,18 +8,18 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.ShapeStream
 {
-    public class MDL3ShapeStreamingInfo
+    public class MDL3ShapeStreamingChunkInfo
     {
-        public uint DataOffset { get; set; }
-        public uint DataSize { get; set; }
+        public uint DeflatedChunkOffset { get; set; }
+        public uint DeflatedChunkSize { get; set; }
         public Dictionary<ushort, MDL3ShapeStreamingInfoMeshEntry> Entries { get; set; } = new();
 
-        public static MDL3ShapeStreamingInfo FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
+        public static MDL3ShapeStreamingChunkInfo FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
         {
-            MDL3ShapeStreamingInfo info = new MDL3ShapeStreamingInfo();
+            MDL3ShapeStreamingChunkInfo info = new MDL3ShapeStreamingChunkInfo();
             uint flag = bs.ReadUInt32();
-            info.DataOffset = bs.ReadUInt32();
-            info.DataSize = bs.ReadUInt32();
+            info.DeflatedChunkOffset = bs.ReadUInt32();
+            info.DeflatedChunkSize = bs.ReadUInt32();
 
             uint meshEntriesOffset = bs.ReadUInt32();
             ushort meshEntriesCount = bs.ReadUInt16();

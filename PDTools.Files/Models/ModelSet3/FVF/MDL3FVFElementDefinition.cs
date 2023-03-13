@@ -95,6 +95,25 @@ namespace PDTools.Files.Models.ModelSet3.FVF
             return new Vector3(v1, v2, v3);
         }
 
+        public (uint, uint, uint) GetFVFFieldXYZ(Span<byte> buffer)
+        {
+            if (ElementCount != 1)
+                throw new InvalidOperationException("Expected 1 element");
+
+            SpanReader sr = new SpanReader(buffer, Endian.Big); // Fix me..
+            sr.Position = StartOffset;
+
+            if (FieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_CMP)
+            {
+                uint data = sr.ReadUInt32();
+                return (data & 0b11_11111111, (data >> 10 & 0b111_11111111), (data >> 21 & 0b111_11111111));
+            }
+            else
+            {
+                throw new NotImplementedException($"Unimplemented field type {FieldType}");
+            }
+        }
+
         public Vector2 GetFVFFieldVector2(Span<byte> buffer)
         {
             float v1 = 0, v2 = 0;

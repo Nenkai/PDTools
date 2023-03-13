@@ -1,58 +1,72 @@
 ﻿using System;
 using System.IO;
-using PDTools.Files.Models.ModelSet3.ShapeStream;
-using Syroot.BinaryData;
-using ICSharpCode.SharpZipLib.Zip.Compression;
 using System.Collections.Generic;
+using System.Buffers;
+using System.Buffers.Binary;
+
+using ICSharpCode.SharpZipLib.Zip.Compression;
+
+using Syroot.BinaryData;
+using Syroot.BinaryData.Memory;
+using Syroot.BinaryData.Core;
+
+using PDTools.Files.Models.ModelSet3.ShapeStream;
 
 namespace PDTools.Files.Models.ShapeStream
 {
     public class ShapeStreamChunk
     {
-        public byte[] DeflatedData;
         public BinaryStream Stream;
 
-        public static Dictionary<ushort, ShapeStreamMesh> MeshesFromStream(Stream stream, MDL3ShapeStreamingInfo shapeStreamInfo)
+        /// <summary>
+        /// A chunk is never more than 0x10000 compressed (64kb)
+        /// </summary>
+        public const int MaxCompressedChunkSize = 0x10000;
+
+        public Dictionary<ushort, ShapeStreamMesh> Meshes { get; set; } = new();
+
+        public static ShapeStreamChunk FromStream(Stream stream, MDL3ShapeStreamingChunkInfo shapeStreamInfo)
         {
+            ShapeStreamChunk chunk = new();
+
             BinaryStream bs = new BinaryStream(stream);
+            bs.Seek(shapeStreamInfo.DeflatedChunkOffset, SeekOrigin.Begin);
 
-            ShapeStreamChunk ssChunk = new();
+            byte[] deflatedChunk = ArrayPool<byte>.Shared.Rent((int)shapeStreamInfo.DeflatedChunkSize);
+            bs.Read(deflatedChunk);
 
-            bs.Seek(shapeStreamInfo.DataOffset, SeekOrigin.Begin);
-            byte[] data = bs.ReadBytes((int)shapeStreamInfo.DataSize);
-
-            byte[] bigBuffer = new byte[0x100000];
             var inflater = new Inflater(noHeader: true);
-            inflater.SetInput(data, 0, data.Length);
-            var dataLength = inflater.Inflate(bigBuffer);
+            inflater.SetInput(deflatedChunk, 0, deflatedChunk.Length);
 
-            ssChunk.DeflatedData = new byte[dataLength];
-            Array.Copy(bigBuffer, ssChunk.DeflatedData, dataLength);
+            // Double the size should be safe to allocate
+            byte[] inflatedBuffer = ArrayPool<byte>.Shared.Rent(0x20000);
+            inflater.Inflate(inflatedBuffer);
 
-            MemoryStream ms = new MemoryStream(ssChunk.DeflatedData);
-            ssChunk.Stream = new BinaryStream(ms, ByteConverter.Big);
-            
-            Dictionary<ushort, ShapeStreamMesh> meshes = new();
+            var meshReader = new SpanReader(inflatedBuffer, Endian.Big);
             foreach (MDL3ShapeStreamingInfoMeshEntry entry in shapeStreamInfo.Entries.Values)
             {
-                uint mdlbasepos = entry.OffsetWithinShapeStream;
-                ssChunk.Stream.Position = mdlbasepos;
+                meshReader.Position = (int)entry.OffsetInChunk;
 
                 ShapeStreamMesh mesh = new();
-                mesh.ShapeStreamChunk = ssChunk;
+                mesh.ShapeStreamChunk = chunk;
                 mesh.InfoMeshEntry = entry;
 
-                mesh.MeshDataSize = ssChunk.Stream.ReadUInt32();
-                ssChunk.Stream.Position += 0x8;
-                mesh.VerticesOffset = ssChunk.Stream.ReadUInt32();
-                mesh.TriOffset = ssChunk.Stream.ReadUInt32();
-                ssChunk.Stream.Position += 0x8;
-                mesh.BBoxOffset = ssChunk.Stream.ReadUInt32();
+                uint meshSize = meshReader.ReadUInt32();
+                mesh.MeshData = inflatedBuffer.AsMemory((int)entry.OffsetInChunk, (int)meshSize); // Skip chunk size
+                bs.ReadInt32(); // Reloc Ptr
+                meshReader.Position += 0x4;
+                mesh.VerticesOffset = meshReader.ReadUInt32();
+                mesh.TriOffset = meshReader.ReadUInt32();
+                meshReader.Position += 0x4;
+                mesh.BBoxOffset = meshReader.ReadUInt32();
+                mesh.Unk0x1COffset = meshReader.ReadUInt32();
 
-                meshes.Add(entry.MeshIndex, mesh);
+                chunk.Meshes.Add(entry.MeshIndex, mesh);
             }
 
-            return meshes;
+            ArrayPool<byte>.Shared.Return(deflatedChunk);
+
+            return chunk;
         }
     }
 }

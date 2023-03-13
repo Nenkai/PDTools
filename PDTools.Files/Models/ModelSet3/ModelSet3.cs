@@ -58,7 +58,7 @@ namespace PDTools.Files.Models.ModelSet3
         public MDL3ModelVMContext VMContext { get; set; }
         public List<MDL3PMSHKey> PMSHKeys { get; set; } = new();
         public MDL3PMSH PMSH { get; set; } = new();
-        public MDL3ShapeStreamingMap StreamingInfo { get; set; }
+        public MDL3ShapeStreamingManager StreamingInfo { get; set; }
         public ShapeStreamData ShapeStream { get; set; }
 
         public CourseDataFile ParentCourseData { get; set; }
@@ -284,7 +284,7 @@ namespace PDTools.Files.Models.ModelSet3
                 return;
 
             bs.Position = baseMdlPos + offset;
-            StreamingInfo = MDL3ShapeStreamingMap.FromStream(bs, baseMdlPos, Version);
+            StreamingInfo = MDL3ShapeStreamingManager.FromStream(bs, baseMdlPos, Version);
         }
 
         private void ReadTextureSet(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -426,9 +426,10 @@ namespace PDTools.Files.Models.ModelSet3
                 else if (ShapeStream != null)
                 {
                     // Try shapestream
-                    if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                    var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                    if (ssMesh is null)
                         return arr;
-                    var ssMesh = ShapeStream.Meshes[meshIndex];
+
                     Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                     for (int i = 0; i < mesh.VertexCount; i++)
                     {
@@ -474,17 +475,18 @@ namespace PDTools.Files.Models.ModelSet3
             else if (ShapeStream != null)
             {
                 // Try shapestream
-                if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                if (ssMesh is null)
                     return null;
-                var ssMesh = ShapeStream.Meshes[meshIndex];
-                var chunkStream = ssMesh.ShapeStreamChunk.Stream;
 
-                chunkStream.Position = ssMesh.InfoMeshEntry.OffsetWithinShapeStream + ssMesh.TriOffset;
+                SpanReader meshReader = new SpanReader(ssMesh.MeshData.Span, Endian.Big);
+                meshReader.Position = (int)ssMesh.TriOffset;
+
                 for (int i = 0; i < mesh.TriCount; i++)
                 {
-                    ushort a = chunkStream.ReadUInt16();
-                    ushort b = chunkStream.ReadUInt16();
-                    ushort c = chunkStream.ReadUInt16();
+                    ushort a = meshReader.ReadUInt16();
+                    ushort b = meshReader.ReadUInt16();
+                    ushort c = meshReader.ReadUInt16();
                     if (a < mesh.VertexCount && b < mesh.VertexCount && c < mesh.VertexCount)
                     {
                         list.Add(new(a, b, c));
@@ -522,9 +524,10 @@ namespace PDTools.Files.Models.ModelSet3
             else if (ShapeStream != null)
             {
                 // Try shapestream
-                if (!ShapeStream.Meshes.ContainsKey(meshIndex))
+                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                if (ssMesh is null)
                     return arr;
-                var ssMesh = ShapeStream.Meshes[meshIndex];
+
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
@@ -536,6 +539,41 @@ namespace PDTools.Files.Models.ModelSet3
             return arr;
         }
 
+        public (uint, uint, uint)[] GetNormalsOfMesh(ushort meshIndex)
+        {
+            var mesh = Meshes[meshIndex];
+            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
+            if (!fvfDef.Elements.TryGetValue("normal", out var field))
+                return Array.Empty<(uint, uint, uint)>();
+
+            var arr = new (uint, uint, uint)[mesh.VertexCount];
+
+            if (mesh.VerticesOffset != 0 && Stream.CanRead)
+            {
+                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    GetVerticesData(mesh, fvfDef, field, i, buffer);
+                    arr[i] = field.GetFVFFieldXYZ(buffer);
+                }
+            }
+            else if (ShapeStream != null)
+            {
+                // Try shapestream
+                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                if (ssMesh is null)
+                    return arr;
+
+                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                for (int i = 0; i < mesh.VertexCount; i++)
+                {
+                    GetVerticesData(ssMesh, fvfDef, field, i, buffer);
+                    arr[i] = field.GetFVFFieldXYZ(buffer);
+                }
+            }
+
+            return arr;
+        }
 
         public void GetVerticesData(MDL3Mesh meshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
         {
@@ -551,23 +589,44 @@ namespace PDTools.Files.Models.ModelSet3
                 Stream.Read(buffer);
             }
         }
+
         public void GetVerticesData(ShapeStreamMesh ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
         {
-            var chunk = ssMeshInfo.ShapeStreamChunk;
-            var baseOffset = ssMeshInfo.InfoMeshEntry.OffsetWithinShapeStream;
+            SpanReader meshReader = new SpanReader(ssMeshInfo.MeshData.Span);
             if (field.ArrayIndex == 0)
             {
-                chunk.Stream.Position = baseOffset + ssMeshInfo.VerticesOffset + vertIndex * fvfDef.VertexSize;
-                chunk.Stream.Read(buffer);
+                meshReader.Position = (int)(ssMeshInfo.VerticesOffset + (vertIndex * fvfDef.VertexSize));
+                meshReader.Span.Slice(meshReader.Position, fvfDef.VertexSize).CopyTo(buffer);
             }
             else
             {
-                chunk.Stream.Position = baseOffset + ssMeshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + (fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex);
-                chunk.Stream.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
-                chunk.Stream.Read(buffer);
+                meshReader.Position = (int)(ssMeshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + (fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex));
+                meshReader.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
+                meshReader.Span.Slice(meshReader.Position, fvfDef.ArrayDefinition.VertexSize).CopyTo(buffer);
             }
         }
 
+        public Vector3[]? GetBBoxOfMesh(ushort meshIndex)
+        {
+            var mesh = Meshes[meshIndex];
+
+            if (mesh.BBox == null && ShapeStream != null)
+            {
+                // Try shapestream
+                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                if (ssMesh is null)
+                    return null;
+
+                SpanReader meshReader = new SpanReader(ssMesh.MeshData.Span, Endian.Big);
+
+                meshReader.Position = (int)ssMesh.BBoxOffset;
+                mesh.BBox = new Vector3[8];
+                for (var i = 0; i < 8; i++)
+                    mesh.BBox[i] = new Vector3(meshReader.ReadSingle(), meshReader.ReadSingle(), meshReader.ReadSingle());
+            }
+
+            return mesh.BBox;
+        }
 
         public static int GetHeaderSize()
         {
