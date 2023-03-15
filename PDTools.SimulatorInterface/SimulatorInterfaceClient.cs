@@ -36,6 +36,7 @@ namespace PDTools.SimulatorInterface
         public int ReceivePort { get; }
         public int BindPort { get; }
 
+        public SimulatorPacket Packet { get; set; }
         public delegate void SimulatorDelegate(SimulatorPacket packet);
 
         /// <summary>
@@ -85,7 +86,7 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         /// <param name="cts">Cancellation token to stop the interface.</param>
         /// <returns></returns>
-        public async Task Start(CancellationToken token = default)
+        public async Task Start(CancellationToken token = default,bool loop = true)
         {
             if (Started)
                 throw new InvalidOperationException("Simulator Interface already started.");
@@ -96,7 +97,8 @@ namespace PDTools.SimulatorInterface
             _udpClient = new UdpClient(BindPort);
 
             // Will send a packet per tick - 60fps
-            while (true)
+            
+            while (loop)
             {
                 if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
                     await SendHeartbeat(token);
@@ -112,14 +114,12 @@ namespace PDTools.SimulatorInterface
 
                 _cryptor.Decrypt(result.Buffer);
 
-                SimulatorPacket packet = new SimulatorPacket();
-                packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
-                packet.Read(result.Buffer);
+                Packet = new SimulatorPacket();
+                Packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
+                Packet.Read(result.Buffer);
 
                 if (token.IsCancellationRequested)
                     token.ThrowIfCancellationRequested();
-
-                this.OnReceive(packet);
 
                 if (token.IsCancellationRequested)
                     token.ThrowIfCancellationRequested();

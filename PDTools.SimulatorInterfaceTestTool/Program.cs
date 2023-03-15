@@ -52,7 +52,7 @@ namespace PDTools.SimulatorInterfaceTestTool
 
             // Cancel token from outside source to end simulator
             
-            var task = simInterface.Start(cts.Token);
+            var task = simInterface.Start(cts.Token,true);
             
             try
             {
@@ -77,7 +77,7 @@ namespace PDTools.SimulatorInterfaceTestTool
         {
             // Print the packet contents to the console
             Console.SetCursorPosition(0, 0);
-            packet.PrintPacket(_showUnknown);
+            packet.PrintPacket();
 
             // Get the game type the packet was issued from
             SimulatorInterfaceGameType gameType = packet.GameType;
@@ -88,5 +88,6 @@ namespace PDTools.SimulatorInterfaceTestTool
                 // Do stuff with packet
             }
         }
+        
     }
 }

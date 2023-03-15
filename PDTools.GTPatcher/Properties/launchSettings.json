@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "PS4Dbg": {
-      "commandName": "Project",
-      "commandLineArgs": "-i 192.168.137.11 -a fsroot=/@/data/gtsport_fsroot/ online_save=0 -b debug -l"
-    }
-  }
-}
