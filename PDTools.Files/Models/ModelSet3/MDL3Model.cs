@@ -62,10 +62,13 @@ namespace PDTools.Files.Models.ModelSet3
             }
 
             long commandsOffsetActual = mdlBasePos + commandsOffset;
-            bs.Position = mdlBasePos + commandsOffsetActual;
+            bs.Position = commandsOffsetActual;
             while (bs.Position < commandsOffsetActual + commandsSize)
             {
                 byte opcode = bs.Read1Byte();
+                if (opcode == 0)
+                    break;
+
                 var cmd = ModelCommand.GetByOpcode(opcode);
                 cmd.Offset = (int)(bs.Position - commandsOffsetActual) - 1;
                 cmd.Read(bs, (int)commandsOffsetActual);
@@ -79,6 +82,10 @@ namespace PDTools.Files.Models.ModelSet3
             sw.Close();
             */
 
+            if (model.Commands.Count != 0)
+            {
+                ;
+            }
             return model;
         }
 

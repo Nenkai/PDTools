@@ -286,12 +286,12 @@ namespace PDTools.Files.Models.ModelSet3
                 // Write unknown data
                 bs.Position = lastOffset;
 
-                if (mesh.PMSHRef != null)
+                if (mesh.PackedMeshRef != null)
                 {
                     int unkOffset = (int)bs.Position;
-                    bs.WriteSingles(mesh.PMSHRef.Values);
+                    bs.WriteSingles(mesh.PackedMeshRef.Values);
                     bs.WriteInt32(0); // TODO: offset to unknown
-                    bs.WriteInt32(mesh.PMSHRef.PMSHEntryIndex);
+                    bs.WriteInt32(mesh.PackedMeshRef.PackedMeshEntryIndex);
                     bs.Align(0x10, grow: true);
 
                     lastOffset = bs.Position;
