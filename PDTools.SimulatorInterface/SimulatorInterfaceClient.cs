@@ -98,8 +98,8 @@ namespace PDTools.SimulatorInterface
 
             // Will send a packet per tick - 60fps
             
-            while (loop)
-            {
+            // while (loop)
+            // {
                 if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
                     await SendHeartbeat(token);
 
@@ -123,7 +123,7 @@ namespace PDTools.SimulatorInterface
 
                 if (token.IsCancellationRequested)
                     token.ThrowIfCancellationRequested();
-            }
+            // }
         }
 
         private async Task SendHeartbeat(CancellationToken ct)

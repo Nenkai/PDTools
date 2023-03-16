@@ -34,7 +34,7 @@ public class ApiController : Controller
 
         // Cancel token from outside source to end simulator
 
-        var task = simInterface.Start(cts.Token, true);
+        var task = simInterface.Start(cts.Token, false);
 
         try
         {
@@ -54,7 +54,30 @@ public class ApiController : Controller
             simInterface.Dispose();
         }
 
-        return Json(simInterface.Packet);
+        GranTurismoData data = new GranTurismoData()
+        {
+            OilTemperature = simInterface.Packet.OilTemperature,
+            OilPressure = simInterface.Packet.OilPressure,
+            CurrentGear = simInterface.Packet.CurrentGear,
+            GasCapacity = simInterface.Packet.GasCapacity,
+            GearRatios = simInterface.Packet.GearRatios,
+            CarCode = simInterface.Packet.CarCode,
+            BodyHeight = simInterface.Packet.BodyHeight,
+            Brake = simInterface.Packet.Brake,
+            Throttle = simInterface.Packet.Throttle,
+            GasLevel = simInterface.Packet.GasLevel,
+            BestLapTime = simInterface.Packet.BestLapTime,
+        };
+
+        data.TireSurfaceTemperature = new TireSurfaceData()
+        {
+            FL_Surface_Temperature = simInterface.Packet.TireFL_SurfaceTemperature,
+            FR_Surface_Temperature = simInterface.Packet.TireFR_SurfaceTemperature,
+            RL_Surface_Temperature = simInterface.Packet.TireRL_SurfaceTemperature,
+            RR_Surface_Temperature = simInterface.Packet.TireRR_SurfaceTemperature,
+        };
+        
+        return Json(data);
     }
 
 }
