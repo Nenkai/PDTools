@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Not present in GT PSP
     /// </summary>
-    public class Command_77_Unk : ModelCommand
+    public class Command_77_Unk : ModelSetupCommand
     {
         public float Unk1 { get; set; }
         public float Unk2 { get; set; }

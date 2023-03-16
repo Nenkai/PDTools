@@ -173,7 +173,7 @@ namespace PDTools.Files.Models.ModelSet3
                 int commandsOffset = (int)bs.Position;
                 foreach (var cmd in model.Commands)
                 {
-                    bs.WriteByte(cmd.Opcode);
+                    bs.WriteByte((byte)cmd.Opcode);
                     cmd.Write(bs);
                 }
 

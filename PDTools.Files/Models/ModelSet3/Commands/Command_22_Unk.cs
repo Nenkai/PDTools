@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_22_Unk : ModelCommand
+    public class Command_22_Unk : ModelSetupCommand
     {
         public float Value { get; set; }
         public override void Read(BinaryStream bs, int commandsBaseOffset)

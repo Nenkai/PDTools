@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Some graphics command
     /// </summary>
-    public class Command_15_Unk : ModelCommand
+    public class Command_15_Unk : ModelSetupCommand
     {
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_60_LoadMesh2_UShort : ModelCommand
+    public class Command_60_LoadMesh2_UShort : ModelSetupCommand
     {
         public short Unk { get; set; }
         public short Unk2 { get; set; }

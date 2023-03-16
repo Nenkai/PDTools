@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_26_SetDepthFunc : ModelCommand
+    public class Command_26_SetDepthFunc : ModelSetupCommand
     {
         public byte Func { get; set; }
         public override void Read(BinaryStream bs, int commandsBaseOffset)

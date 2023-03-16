@@ -14,9 +14,9 @@ namespace PDTools.Files.Models.ModelSet3.PackedMesh
     public class PackedMeshEntryData
     {
         public int PackedFlexVertsOffset { get; set; }
-        public ushort FlexVertCount { get; set; }
+        public ushort PackedFlexVertCount { get; set; }
         public int NonPackedFlexVertsOffset { get; set; }
-
+        public ushort NonPackedFlexVertCount { get; set; }
         public static PackedMeshEntryData FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             PackedMeshEntryData data = new();
@@ -30,7 +30,9 @@ namespace PDTools.Files.Models.ModelSet3.PackedMesh
             int unkOffset_0x18 = bs.ReadInt32();
             bs.ReadInt32(); // Unk 0
             bs.ReadInt16(); // Unk
-            data.FlexVertCount = bs.ReadUInt16();
+            data.PackedFlexVertCount = bs.ReadUInt16();
+            bs.ReadInt16();
+            data.NonPackedFlexVertCount = bs.ReadUInt16();
 
             // TODO read rest
             /*
@@ -63,7 +65,7 @@ namespace PDTools.Files.Models.ModelSet3.PackedMesh
                 if (elem.Key == type)
                     break;
 
-                byteOffset += ((FlexVertCount * bitLayouts.Layouts[currentLayoutIndex].TotalBitCount) + 7) / 8;
+                byteOffset += ((PackedFlexVertCount * bitLayouts.Layouts[currentLayoutIndex].TotalBitCount) + 7) / 8;
                 currentLayoutIndex++;
             }
 
@@ -79,7 +81,7 @@ namespace PDTools.Files.Models.ModelSet3.PackedMesh
                     continue;
 
                 if (elem.Key == type)
-                    return 4 * FlexVertCount;
+                    return 4 * PackedFlexVertCount;
 
                 currentLayoutIndex++;
             }
@@ -91,7 +93,7 @@ namespace PDTools.Files.Models.ModelSet3.PackedMesh
                     continue;
 
                 if (elem.Key == type)
-                    return ((bitLayouts.Layouts[currentLayoutIndex].TotalBitCount * FlexVertCount) + 7) / 8;
+                    return ((bitLayouts.Layouts[currentLayoutIndex].TotalBitCount * PackedFlexVertCount) + 7) / 8;
 
                 currentLayoutIndex++;
             }

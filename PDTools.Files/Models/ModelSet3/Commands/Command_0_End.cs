@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_0_End : ModelCommand
+    public class Command_0_End : ModelSetupCommand
     {
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

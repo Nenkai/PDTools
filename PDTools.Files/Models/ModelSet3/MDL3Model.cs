@@ -19,7 +19,7 @@ namespace PDTools.Files.Models.ModelSet3
         public float Unk { get; set; }
         public Vector3 Origin { get; set; }
         public List<Vector3> Bounds = new();
-        public List<ModelCommand> Commands { get; set; } = new();
+        public List<ModelSetupCommand> Commands { get; set; } = new();
         public int InitInstance_VMInstructionPtr { get; set; }
         public int OnUpdate_VMInstructionPtr { get; set; }
         public int Unk_VMInstructionPtr { get; set; }
@@ -69,7 +69,12 @@ namespace PDTools.Files.Models.ModelSet3
                 if (opcode == 0)
                     break;
 
-                var cmd = ModelCommand.GetByOpcode(opcode);
+                var cmd = ModelSetupCommand.GetByOpcode(opcode);
+                if (cmd is Command_9_JumpToByte)
+                {
+                    ;
+                }
+
                 cmd.Offset = (int)(bs.Position - commandsOffsetActual) - 1;
                 cmd.Read(bs, (int)commandsOffsetActual);
                 model.Commands.Add(cmd);

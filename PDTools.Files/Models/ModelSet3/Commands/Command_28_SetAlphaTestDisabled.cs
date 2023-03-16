@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_28_SetAlphaTestDisabled : ModelCommand
+    public class Command_28_SetAlphaTestDisabled : ModelSetupCommand
     {
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

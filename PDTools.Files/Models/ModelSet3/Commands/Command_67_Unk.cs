@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Same as 66
     /// </summary>
-    public class Command_67_Unk : ModelCommand
+    public class Command_67_Unk : ModelSetupCommand
     {
         public uint Unk { get; set; }
 

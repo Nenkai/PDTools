@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_4_LoadMeshUShortIndex : ModelCommand
+    public class Command_4_LoadMeshUShortIndex : ModelSetupCommand
     {
         public short MeshIndex;
 

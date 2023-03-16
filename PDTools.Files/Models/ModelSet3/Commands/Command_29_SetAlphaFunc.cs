@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// CELL_GCM_NV4097_SET_ALPHA_FUNC_REF
     /// </summary>
-    public class Command_29_SetAlphaFunc : ModelCommand
+    public class Command_29_SetAlphaFunc : ModelSetupCommand
     {
         public byte Func { get; set; }
         public float Reference { get; set; }

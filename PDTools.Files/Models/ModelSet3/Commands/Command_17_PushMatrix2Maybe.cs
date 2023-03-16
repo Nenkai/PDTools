@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// BBox related?
     /// </summary>
-    public class Command_17_PushMatrix2Maybe : ModelCommand
+    public class Command_17_PushMatrix2Maybe : ModelSetupCommand
     {
         public float[] Unk { get; set; }
         public override void Read(BinaryStream bs, int commandsBaseOffset)

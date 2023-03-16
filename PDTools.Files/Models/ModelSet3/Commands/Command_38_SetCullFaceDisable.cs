@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_38_SetCullFaceDisable : ModelCommand
+    public class Command_38_SetCullFaceDisable : ModelSetupCommand
     {
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Not present in GT PSP
     /// </summary>
-    public class Command_71_Unk : ModelCommand
+    public class Command_71_Unk : ModelSetupCommand
     {
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

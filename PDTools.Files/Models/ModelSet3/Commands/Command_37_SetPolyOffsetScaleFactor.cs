@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Stubbed in GT PSP
     /// </summary>
-    public class Command_37_SetPolyOffsetScaleFactor : ModelCommand
+    public class Command_37_SetPolyOffsetScaleFactor : ModelSetupCommand
     {
         public float Factor { get; set; }
         public float Bias { get; set; }

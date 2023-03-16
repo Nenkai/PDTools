@@ -53,7 +53,7 @@ namespace PDTools.Files.Models.ShapeStream
 
                 uint meshSize = meshReader.ReadUInt32();
                 mesh.MeshData = inflatedBuffer.AsMemory((int)entry.OffsetInChunk, (int)meshSize); // Skip chunk size
-                bs.ReadInt32(); // Reloc Ptr
+                meshReader.ReadInt32(); // Reloc Ptr
                 meshReader.Position += 0x4;
                 mesh.VerticesOffset = meshReader.ReadUInt32();
                 mesh.TriOffset = meshReader.ReadUInt32();

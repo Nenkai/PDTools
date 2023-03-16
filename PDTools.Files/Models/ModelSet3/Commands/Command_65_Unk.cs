@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Doesn't seem to do anything?
     /// </summary>
-    public class Command_65_Unk : ModelCommand
+    public class Command_65_Unk : ModelSetupCommand
     {
         public ushort Unk { get; set; }
 

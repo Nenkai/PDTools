@@ -21,7 +21,7 @@ public class CourseDataFile
     public record CourseDataFileEntry(uint Type, uint Alignment, uint DataStart, uint DataLength);
     public List<CourseDataFileEntry> Entries { get; set; } = new();
 
-    public ModelSet3 MainModel { get; set; }
+    public ModelSet3 MainModelSet { get; set; }
 
     public static CourseDataFile FromStream(Stream stream)
     {
@@ -64,8 +64,8 @@ public class CourseDataFile
         uint mainModelOffset = bs.ReadUInt32();
 
         bs.Position = baseEntryPos + mainModelOffset;
-        courseData.MainModel = ModelSet3.FromStream(bs);
-        courseData.MainModel.ParentCourseData = courseData;
+        courseData.MainModelSet = ModelSet3.FromStream(bs);
+        courseData.MainModelSet.ParentCourseData = courseData;
 
         return courseData;
     }

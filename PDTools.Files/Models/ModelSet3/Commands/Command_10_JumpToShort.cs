@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_10_JumpToShort : ModelCommand
+    public class Command_10_JumpToShort : ModelSetupCommand
     {
         public ushort JumpOffset { get; set; }
 

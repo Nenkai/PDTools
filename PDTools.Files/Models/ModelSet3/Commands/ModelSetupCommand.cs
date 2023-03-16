@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public abstract class ModelCommand
+    public abstract class ModelSetupCommand
     {
-        public byte Opcode { get; private set; }
+        public ModelSetupOpcode Opcode { get; private set; }
 
         public int Offset { get; set; }
 
@@ -20,9 +20,9 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public abstract void Write(BinaryStream bs);
 
-        public static ModelCommand GetByOpcode(byte opcode)
+        public static ModelSetupCommand GetByOpcode(byte opcode)
         {
-            ModelCommand cmd = opcode switch
+            ModelSetupCommand cmd = opcode switch
             {
                 0 => new Command_0_End(),
                 2 => new Command_2_Unk(),
@@ -73,9 +73,9 @@ namespace PDTools.Files.Models.ModelSet3.Commands
                 53 => new Command_53_Unk(),
                 54 => new Command_54_Unk(),
                 55 => new Command_55_PSP_Unk(),
-                56 => new Command_55_PSP_Unk(),
-                57 => new Command_55_PSP_Unk(),
-                58 => new Command_55_PSP_Unk(),
+                56 => new Command_56_PSP_Unk(),
+                57 => new Command_57_PSP_Unk(),
+                58 => new Command_58_PSP_Unk(),
                 59 => new Command_59_LoadMesh2_Byte(),
                 60 => new Command_60_LoadMesh2_UShort(),
                 61 => new Command_61_Semaphore_InvalidateL2(),
@@ -94,8 +94,79 @@ namespace PDTools.Files.Models.ModelSet3.Commands
                 _ => throw new Exception($"Unexpected opcode {opcode}")
             };
 
-            cmd.Opcode = opcode;
+            cmd.Opcode = (ModelSetupOpcode)opcode;
             return cmd;
         }
+    }
+
+    public enum ModelSetupOpcode : byte
+    {
+        Command_0_End = 0,
+        Command_2_Unk = 2,
+        Command_3_LoadMeshByteIndex = 3,
+        Command_4_LoadMeshUShortIndex = 4,
+        Command_5_Switch = 5,
+        Command_6_Unk = 6,
+        Command_7_Unk = 7,
+        Command_8_Unk = 8,
+        Command_9_JumpToByte = 9,
+        Command_10_JumpToShort = 10,
+        Command_11_PSP_Unk = 11,
+        Command_13_PSP_Unk = 13,
+        Command_14_Unk = 14,
+        Command_15_Unk = 15,
+        Command_16_PushMatrixMaybe = 16,
+        Command_17_PushMatrix2Maybe = 17,
+        Command_18_Unk = 18,
+        Command_19_Unk = 19,
+        Command_20_Unk = 20,
+        Command_21_Unk = 21,
+        Command_22_Unk = 22,
+        Command_23_Unk = 23,
+        Command_24_SetDepthTestEnabled = 24,
+        Command_25_SetDepthTestDisabled = 25,
+        Command_26_SetDepthFunc = 26,
+        Command_27_SetAlphaTestEnabled = 27,
+        Command_28_SetAlphaTestDisabled = 28,
+        Command_29_SetAlphaFunc = 29,
+        Command_34_SetColorMask = 34,
+        Command_35_SetDepthMaskEnabled = 35,
+        Command_36_SetDepthMaskDisabled = 36,
+        Command_37_SetPolyOffsetScaleFactor = 37,
+        Command_38_SetCullFaceDisable = 38,
+        Command_39_SetCullFaceDisable = 39,
+        Command_40_SetCullFaceBack = 40,
+        Command_41_SetCullFaceFront = 41,
+        Command_42_SetCullFaceSwitch = 42,
+        Command_43_SetVMUnk = 43,
+        Command_44_CallVM_Ptr2 = 44,
+        Command_45_Unk = 45,
+        Command_46_Unk = 46,
+        Command_47_Unk = 47,
+        Command_49_Unk = 49,
+        Command_50_Unk = 50,
+        Command_51_Unk = 51,
+        Command_52_Unk = 52,
+        Command_53_Unk = 53,
+        Command_54_Unk = 54,
+        Command_55_PSP_Unk = 55,
+        Command_56_PSP_Unk = 56,
+        Command_57_PSP_Unk = 57,
+        Command_58_PSP_Unk = 58,
+        Command_59_LoadMesh2_Byte = 59,
+        Command_60_LoadMesh2_UShort = 60,
+        Command_61_Semaphore_InvalidateL2 = 61,
+        Command_62_Unk = 62,
+        Command_65_Unk = 65,
+        Command_66_Unk = 66,
+        Command_67_Unk = 67,
+        Command_68_Unk = 68,
+        Command_69_Unk = 69,
+        Command_70_Unk = 70,
+        Command_71_Unk = 71,
+        Command_72_Unk = 72,
+        Command_74_LoadMultipleMeshes = 74,
+        Command_75_LoadMultipleMeshes2 = 75,
+        Command_77_Unk = 77,
     }
 }

@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Doesn't do anything?
     /// </summary>
-    public class Command_69_Unk : ModelCommand
+    public class Command_69_Unk : ModelSetupCommand
     {
         public byte Unk { get; set; }
 

@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Invalidate texture cache maybe?
     /// </summary>
-    public class Command_61_Semaphore_InvalidateL2 : ModelCommand
+    public class Command_61_Semaphore_InvalidateL2 : ModelSetupCommand
     {
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

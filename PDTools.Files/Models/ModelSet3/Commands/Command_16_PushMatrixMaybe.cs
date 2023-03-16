@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Not sure
     /// </summary>
-    public class Command_16_PushMatrixMaybe : ModelCommand
+    public class Command_16_PushMatrixMaybe : ModelSetupCommand
     {
         public float[] Matrix { get; set; }
         public override void Read(BinaryStream bs, int commandsBaseOffset)

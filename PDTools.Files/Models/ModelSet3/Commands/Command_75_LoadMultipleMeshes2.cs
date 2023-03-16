@@ -11,10 +11,10 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Not present in GT PSP
     /// </summary>
-    public class Command_75_LoadMultipleMeshes2 : ModelCommand
+    public class Command_75_LoadMultipleMeshes2 : ModelSetupCommand
     {
         public List<ushort> MeshIndices { get; set; } = new();
-        public uint Unk { get; set; }
+        public uint MaterialRelatedID { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
@@ -22,7 +22,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
             for (var i = 0; i < meshCount; i++)
                 MeshIndices.Add(bs.ReadUInt16());
 
-            Unk = bs.ReadUInt32();
+            MaterialRelatedID = bs.ReadUInt32();
         }
 
         public override void Write(BinaryStream bs)
@@ -32,7 +32,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_75_LoadMultipleMeshes2)} - Mesh Indices:{string.Join(", ", MeshIndices)}, Unk: {Unk}";
+            return $"{nameof(Command_75_LoadMultipleMeshes2)} - Mesh Indices:{string.Join(", ", MeshIndices)}, MaterialRelatedID: {MaterialRelatedID}";
         }
     }
 }

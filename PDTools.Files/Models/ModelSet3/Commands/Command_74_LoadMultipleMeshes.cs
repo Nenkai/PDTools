@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Not present in GT PSP
     /// </summary>
-    public class Command_74_LoadMultipleMeshes : ModelCommand
+    public class Command_74_LoadMultipleMeshes : ModelSetupCommand
     {
         public List<ushort> MeshIndices { get; set; } = new();
 

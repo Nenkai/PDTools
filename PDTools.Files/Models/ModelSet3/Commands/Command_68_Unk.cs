@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_68_Unk : ModelCommand
+    public class Command_68_Unk : ModelSetupCommand
     {
         public Vector4 Unk { get; set; }
         public Vector4 Unk2 { get; set; }

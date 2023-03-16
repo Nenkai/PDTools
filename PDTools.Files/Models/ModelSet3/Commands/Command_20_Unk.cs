@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Matrix related?
     /// </summary>
-    public class Command_20_Unk : ModelCommand
+    public class Command_20_Unk : ModelSetupCommand
     {
         public float[] Values { get; set; }
         public override void Read(BinaryStream bs, int commandsBaseOffset)

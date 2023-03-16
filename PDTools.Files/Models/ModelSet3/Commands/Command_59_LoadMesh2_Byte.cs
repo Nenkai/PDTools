@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_59_LoadMesh2_Byte : ModelCommand
+    public class Command_59_LoadMesh2_Byte : ModelSetupCommand
     {
         public byte MeshID { get; set; }
         public byte Unk { get; set; }

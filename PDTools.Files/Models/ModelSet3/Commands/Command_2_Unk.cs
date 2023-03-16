@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_2_Unk : ModelCommand
+    public class Command_2_Unk : ModelSetupCommand
     {
         public short ModelIndex;
 

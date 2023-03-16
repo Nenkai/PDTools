@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
     // CELL_GCM_NV4097_SET_POLYGON_OFFSET_SCALE_FACTOR
-    public class Command_35_SetDepthMaskEnabled : ModelCommand
+    public class Command_35_SetDepthMaskEnabled : ModelSetupCommand
     {
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

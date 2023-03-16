@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_9_JumpToByte : ModelCommand
+    public class Command_9_JumpToByte : ModelSetupCommand
     {
         public byte JumpOffset { get; set; }
         private int _absoluteOffset;

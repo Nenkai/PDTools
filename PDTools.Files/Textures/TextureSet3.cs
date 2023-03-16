@@ -277,7 +277,6 @@ namespace PDTools.Files.Textures
 
                     Texture texture = Textures[i];
 
-
                     PGLUTextureInfo textureInfo = consoleType switch
                     {
                         TextureConsoleType.PS3 => new PGLUCellTextureInfo(),

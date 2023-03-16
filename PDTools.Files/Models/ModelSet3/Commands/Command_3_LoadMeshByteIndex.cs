@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.ModelSet3.Commands
 {
-    public class Command_3_LoadMeshByteIndex : ModelCommand
+    public class Command_3_LoadMeshByteIndex : ModelSetupCommand
     {
         public byte MeshIndex;
 

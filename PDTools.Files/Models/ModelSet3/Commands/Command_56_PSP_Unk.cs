@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     /// <summary>
     /// Seen in GT PSP, not present in GT6 - seemingly unused
     /// </summary>
-    public class Command_56_PSP_Unk : ModelCommand
+    public class Command_56_PSP_Unk : ModelSetupCommand
     {
         public byte[] Values { get; set; }
 

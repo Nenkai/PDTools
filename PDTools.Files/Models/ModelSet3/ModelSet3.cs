@@ -457,10 +457,10 @@ namespace PDTools.Files.Models.ModelSet3
                 if (element.IsPacked)
                 {
                     PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
-                    var arr = new Vector3[mesh.VertexCount];
+                    var arr = new Vector3[entry.Data.PackedFlexVertCount];
 
                     PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
-                    for (int i = 0; i < entry.Data.FlexVertCount; i++)
+                    for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
                     {
                         var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
                         arr[i] = new Vector3(v4.X, v4.Y, v4.Z);
@@ -471,9 +471,9 @@ namespace PDTools.Files.Models.ModelSet3
                 else
                 {
                     Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
-                    var arr = new Vector3[mesh.VertexCount];
+                    var arr = new Vector3[entry.Data.PackedFlexVertCount];
 
-                    for (int i = 0; i < entry.Data.FlexVertCount; i++)
+                    for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
                     {
                         GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
                         arr[i] = GetFVFFieldVector3(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
@@ -536,6 +536,8 @@ namespace PDTools.Files.Models.ModelSet3
                         return null; // Tristrip - FIX ME
                     }
                 }
+
+                return list;
             }
 
             return list;
@@ -579,15 +581,48 @@ namespace PDTools.Files.Models.ModelSet3
                     for (int i = 0; i < mesh.VertexCount; i++)
                     {
                         GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
-                        arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
+                            arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                     }
                 }
 
                 return arr;
             }
-            else
+            else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
             {
-                // TODO PackedMesh
+                PackedMeshEntry entry = PackedMesh.Entries[mesh.PackedMeshRef.PackedMeshEntryIndex];
+                PackedMeshFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.StructDeclarationID];
+                PackedMeshFlexVertexElementDefinition element = flexDef.GetElement("map12");
+
+                if (element is null)
+                    return null;
+
+                if (element.IsPacked)
+                {
+                    PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
+                    var arr = new Vector2[entry.Data.PackedFlexVertCount];
+
+                    PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
+                    for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                    {
+                        var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
+                        arr[i] = new Vector2(v4.X, v4.Y);
+                    }
+
+                    return arr;
+                }
+                else
+                {
+                    Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
+                    var arr = new Vector2[entry.Data.PackedFlexVertCount];
+
+                    for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                    {
+                        GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
+                        arr[i] = GetFVFFieldVector2(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
+                    }
+
+                    return arr;
+                }
             }
 
             return null;
@@ -601,37 +636,84 @@ namespace PDTools.Files.Models.ModelSet3
         public (uint, uint, uint)[] GetNormalsOfMesh(ushort meshIndex)
         {
             var mesh = Meshes[meshIndex];
-            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
-            if (!fvfDef.Elements.TryGetValue("normal", out var field))
-                return Array.Empty<(uint, uint, uint)>();
-
-            var arr = new (uint, uint, uint)[mesh.VertexCount];
-
-            if (mesh.VerticesOffset != 0 && Stream.CanRead)
+            if (mesh.FVFIndex != -1)
             {
-                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
+                if (!fvfDef.Elements.TryGetValue("normal", out var field))
+                    return Array.Empty<(uint, uint, uint)>();
+
+                if (mesh.VerticesOffset != 0 && Stream.CanRead)
                 {
-                    GetVerticesData(mesh, fvfDef, field, i, buffer);
-                    arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
-                }
-            }
-            else if (ShapeStream != null)
-            {
-                // Try shapestream
-                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
-                if (ssMesh is null)
+                    var arr = new (uint, uint, uint)[mesh.VertexCount];
+                    Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                    for (int i = 0; i < mesh.VertexCount; i++)
+                    {
+                        GetVerticesData(mesh, fvfDef, field, i, buffer);
+                        arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
+                    }
+
                     return arr;
-
-                Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                }
+                else if (ShapeStream != null)
                 {
-                    GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
-                    arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
+                    var arr = new (uint, uint, uint)[mesh.VertexCount];
+
+                    // Try shapestream
+                    var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                    if (ssMesh is null)
+                        return arr;
+
+                    Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
+                    for (int i = 0; i < mesh.VertexCount; i++)
+                    {
+                        GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
+                        arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
+                    }
+
+                    return arr;
+                }
+
+            }
+            else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
+            {
+                PackedMeshEntry entry = PackedMesh.Entries[mesh.PackedMeshRef.PackedMeshEntryIndex];
+                PackedMeshFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.StructDeclarationID];
+                PackedMeshFlexVertexElementDefinition element = flexDef.GetElement("normal");
+
+                if (element is null)
+                    return null;
+
+                if (element.IsPacked)
+                {
+                    var arr = new (uint, uint, uint)[entry.Data.PackedFlexVertCount];
+
+                    PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
+                    PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
+
+                    for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                    {
+                        var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
+                        arr[i] = ((uint)v4.X, (uint)v4.Y, (uint)v4.Z);
+                    }
+
+                    return arr;
+                }
+                else
+                {
+                    var arr = new (uint, uint, uint)[entry.Data.NonPackedFlexVertCount];
+                    Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
+
+                    for (int i = 0; i < entry.Data.NonPackedFlexVertCount; i++)
+                    {
+                        GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
+                        arr[i] = GetFVFFieldXYZ(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
+                    }
+
+                    return arr;
                 }
             }
 
-            return arr;
+            return null;
         }
 
         /// <summary>
@@ -673,11 +755,11 @@ namespace PDTools.Files.Models.ModelSet3
             Stream.Position += (bitDef.TotalBitCount * vertIndex) / 8;
             int rem = (bitDef.TotalBitCount * vertIndex) % 8;
 
-            Span<byte> vertBuffer = new byte[(bitDef.TotalBitCount + 7) / 8];
+            Span<byte> vertBuffer = new byte[((bitDef.TotalBitCount + 7) / 8) + 1];
             Stream.Read(vertBuffer);
 
             BitStream bs = new BitStream(BitStreamMode.Read, vertBuffer);
-            bs.SeekToBit(rem);
+            bs.ReadBits(rem);
 
             ulong packX = bs.ReadBits(bitDef.XBitCount);
             ulong packY = bs.ReadBits(bitDef.YBitCount);
@@ -878,8 +960,8 @@ namespace PDTools.Files.Models.ModelSet3
             }
             else if (fieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1)
             {
-                v1 = sr.ReadUInt16() * (1f / short.MaxValue);
-                v2 = sr.ReadUInt16() * (1f / short.MaxValue);
+                v1 = (float)sr.ReadInt16() / 16384f;
+                v2 = (float)sr.ReadInt16() / 16384f;
             }
             else if (fieldType == CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_UB)
             {

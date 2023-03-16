@@ -26,8 +26,12 @@ namespace PDTools.Files.Textures
     {
         public string Name 
         { 
-            get => (TextureRenderInfo as PGLUCellTextureInfo).Name; 
-            set => (TextureRenderInfo as PGLUCellTextureInfo).Name = value;
+            get => (TextureRenderInfo as PGLUCellTextureInfo)?.Name;
+            set
+            {
+                if (TextureRenderInfo != null)
+                    (TextureRenderInfo as PGLUCellTextureInfo).Name = value;
+            }
         }
 
         public int LastMipmapLevel { get; set; }
