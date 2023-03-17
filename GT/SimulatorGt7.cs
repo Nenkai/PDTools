@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using GT.Models;
 using PDTools.Crypto.SimulationInterface;
 using PDTools.SimulatorInterface;
 
@@ -23,13 +23,11 @@ public class SimulatorGt7 : IDisposable
         _cryptor = new SimulatorInterfaceCryptorGT7();
     }
 
-    public async Task<GranTurismoData> GetData()
+    public async Task<SimulatorPacket> GetData(CancellationToken token)
     {
-        var token = new CancellationTokenSource().Token;
-
         _udpClient = new UdpClient(BindPortGt7);
 
-        GranTurismoData data = new();
+        SimulatorPacket packet = new();
 
         try
         {
@@ -41,12 +39,13 @@ public class SimulatorGt7 : IDisposable
                 throw new InvalidDataException($"Expected packet size to be 0x128. Was {result.Buffer.Length:X4} bytes.");
 
             _cryptor.Decrypt(result.Buffer);
-
-            var packet = new SimulatorPacket();
+ 
             packet.SetPacketInfo(SimulatorInterfaceGameType.GT7, result.RemoteEndPoint, DateTimeOffset.Now);
             packet.Read(result.Buffer);
 
-            data = new GranTurismoData(packet);
+            packet.MetersPerSecond = (float)Math.Round(packet.MetersPerSecond * 3.6, 2);
+            packet.TurboBoost = (float)((packet.TurboBoost - 1.0) * 100.0);
+
         }
         catch (OperationCanceledException)
         {
@@ -67,7 +66,30 @@ public class SimulatorGt7 : IDisposable
             Dispose();
         }
 
-        return data;
+        return packet;
+    }
+
+    public static SimulatorPacket GetDataTest()
+    {
+        var gt = new SimulatorPacket();
+
+        gt.OilTemperature = new Random().Next(0,1000);
+        gt.OilPressure = new Random().Next(0,1000);
+        gt.CurrentGear = 0;
+        gt.GasCapacity = new Random().Next(0,1000);
+        gt.GearRatios = new[] { (float)new Random().Next(0,1000) };
+        gt.CarCode = 123;
+        gt.BodyHeight = new Random().Next(0,1000);
+        gt.Brake = 0;
+        gt.Throttle = 0;
+        gt.GasLevel = new Random().Next(0,1000);
+        gt.BestLapTime = new TimeSpan();
+        gt.TireFL_SurfaceTemperature = new Random().Next(0,1000);
+        gt.TireFR_SurfaceTemperature = new Random().Next(0,1000);
+        gt.TireRL_SurfaceTemperature = new Random().Next(0,1000);
+        gt.TireRR_SurfaceTemperature = new Random().Next(0,1000);
+
+        return gt;
     }
 
     public void Dispose()

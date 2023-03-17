@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.IO;
-
 using System.Numerics;
 using Syroot.BinaryData.Memory;
 
@@ -300,6 +299,7 @@ namespace PDTools.SimulatorInterface
         /// Gear ratios for the car. Up to 7.
         /// </summary>
         public float[] GearRatios { get; set; } = new float[7];
+        public string GearRatiosDescription => string.Join(", ", GearRatios);
 
         /// <summary>
         /// Internal code that identifies the car.
@@ -469,7 +469,6 @@ namespace PDTools.SimulatorInterface
                 Console.WriteLine("[Unknowns]");
                 Console.WriteLine($"0x48 (Float): {GasCapacity:F2}   ");
                 Console.WriteLine($"0x93 (byte): {Empty_0x93:F2}   ");
-
             }
         }
     }

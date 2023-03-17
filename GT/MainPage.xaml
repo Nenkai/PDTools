@@ -4,25 +4,188 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="GT.MainPage"
              Title="GT7 Data Tools"
-             BackgroundColor="White"
-             >
+             MinimumWidthRequest="260">
+    <ContentPage.Content>
+        <ScrollView>
 
-    <ScrollView>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center" WidthRequest="260">
+            <VerticalStackLayout Spacing="20" Padding="20">
+                <Label FontSize="18" FontAttributes="Bold">IP Address</Label>
+                <HorizontalStackLayout BindingContext="{Binding}">
+                    <Entry WidthRequest="200" IsEnabled="{Binding CanStart}" Text="{Binding Path=Ip, Mode=TwoWay}" />
+                    <Button
+                        Text="Start"
+                        Margin="10,0,0,0"
+                        IsVisible="{Binding Path=CanStart}"
+                        Clicked="OnGetDataStart" />
+                    <Button
+                        Text="Stop"
+                        Margin="10,0,0,0"
+                        IsVisible="{Binding Path=CanStop}"
+                        Clicked="OnGetDataStop" />
+                </HorizontalStackLayout>
 
-            <Label Text="IP Address" SemanticProperties.HeadingLevel="Level2"  />
-            <Entry x:Name="tbIp" />
+                <VerticalStackLayout BindingContext="{Binding DataPacket}">
+                    <Label Margin="0,10" FontSize="18" FontAttributes="Bold">Car Data</Label>
+                    <HorizontalStackLayout>
+                        <Label Text="Car Code:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=CarCode}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label Text="Throttle:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=Throttle}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label Text="Brake:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=Brake}" />
+                    </HorizontalStackLayout>
 
-            <Button
-                x:Name="CounterBtn"
-                Text="Get data"
-                Clicked="OnClicked"
-                HorizontalOptions="Center" />
+                    <HorizontalStackLayout>
+                        <Label Text="RPM:" />
+                        <Label Margin="10,0,20,0" Text="{Binding Path=EngineRPM}" />
 
-        </VerticalStackLayout>
-    </ScrollView>
+                        <Label Text="KPH:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=MetersPerSecond}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Turbo Boost:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=TurboBoost, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Fuel Level:</Label>
+                        <Label Margin="10,0,20,0" Text="{Binding Path=GasLevel, StringFormat='{0:F2}'}" />
 
+                        <Label>Max Fuel Capacity:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=GasCapacity, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Oil Pressure:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=OilPressure, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Body Height:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=BodyHeight, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>RPM From Clutch To Gearbox:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=RPMFromClutchToGearbox, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Clutch Pedal:</Label>
+                        <Label Margin="10,0,20,0" Text="{Binding Path=ClutchPedal, StringFormat='{0:F2}'}" />
+
+                        <Label>Clutch Engagement:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=ClutchEngagement, StringFormat='{0:F2}'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label>Gear:</Label>
+                        <Label Margin="10,0,20,0" Text="{Binding Path=CurrentGear}" />
+
+                        <Label>Suggested:</Label>
+                        <Label Margin="10,0,0,0" Text="{Binding Path=SuggestedGear}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label Text="Calculated Max Speed:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=CalculatedMaxSpeed, StringFormat='{0} kph'}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label Text="Min/Max RPM Alerts:" />
+                        <Label Margin="10,0,10,0" Text="{Binding Path=MinAlertRPM}" />
+                        <Label Text="/" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=MaxAlertRPM}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout>
+                        <Label Text="Gear Ratios:" />
+                        <Label Margin="10,0,0,0" Text="{Binding Path=GearRatiosDescription}" />
+                    </HorizontalStackLayout>
+
+                    <Label Margin="0,10" FontSize="18" FontAttributes="Bold">Tires</Label>
+                    <HorizontalStackLayout>
+                        <VerticalStackLayout WidthRequest="180">
+                            <HorizontalStackLayout>
+                                <Label Text="FL Height:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireFL_SusHeight, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout >
+                                <Label Text="FL RPS:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=WheelFL_RevPerSecond, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="FL Radius:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireFL_TireRadius, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="FL Temperature:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=TireFL_SurfaceTemperature, StringFormat='{0:F2}ºC'}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Margin="20,0,0,0" WidthRequest="180">
+                            <HorizontalStackLayout>
+                                <Label Text="FR Height:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireFR_SusHeight, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="FR RPS:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=WheelFR_RevPerSecond, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="FR Radius:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireFR_TireRadius, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="FR Temperature:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=TireFR_SurfaceTemperature, StringFormat='{0:F2}ºC'}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Margin="0,10,0,0" WidthRequest="150" HorizontalOptions="Start">
+                        <VerticalStackLayout WidthRequest="180">
+                            <HorizontalStackLayout>
+                                <Label Text="RL Height:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireRL_SusHeight, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RL RPS:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=WheelRL_RevPerSecond, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RL Radius:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireRL_TireRadius, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RL Temperature:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=TireRL_SurfaceTemperature, StringFormat='{0:F2}ºC'}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Margin="20,0,0,0" WidthRequest="180">
+                            <HorizontalStackLayout>
+                                <Label Text="RR Height:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireRR_SusHeight, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RR RPS:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=WheelRR_RevPerSecond, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RR Radius:" />
+                                <Label Margin="10,0,0,0" Text="{Binding Path=TireRR_TireRadius, StringFormat='{0:F2}'}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout>
+                                <Label Text="RR Temperature:" />
+                                <Label Margin="10,0,0,0"
+                                       Text="{Binding Path=TireRR_SurfaceTemperature, StringFormat='{0:F2}ºC'}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </ContentPage.Content>
 </ContentPage>
