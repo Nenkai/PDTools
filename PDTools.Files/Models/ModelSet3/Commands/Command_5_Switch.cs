@@ -13,6 +13,8 @@ namespace PDTools.Files.Models.ModelSet3.Commands
         public ushort Value { get; set; }
         public ushort[] BranchOffsets { get; set; }
 
+        public int[] BranchJumpIndices { get; set; }
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             Value = bs.ReadUInt16();

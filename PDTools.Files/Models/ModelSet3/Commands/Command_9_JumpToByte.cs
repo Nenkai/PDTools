@@ -10,26 +10,28 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 {
     public class Command_9_JumpToByte : ModelSetupCommand
     {
-        public byte JumpOffset { get; set; }
-        private int _absoluteOffset;
+        public byte RelativeJumpToOffset { get; set; }
+        public int AbsoluteJumpToOffset;
+
+        public int JumpToIndex { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            JumpOffset = bs.Read1Byte();
+            RelativeJumpToOffset = bs.Read1Byte();
 
             // Translate relative to absolute
             long currentOffset = bs.Position - commandsBaseOffset;
-            _absoluteOffset = JumpOffset + (int)currentOffset;
+            AbsoluteJumpToOffset = RelativeJumpToOffset + (int)currentOffset;
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(JumpOffset);
+            bs.WriteByte(RelativeJumpToOffset);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_9_JumpToByte)}: {_absoluteOffset.ToString("X2")}";
+            return $"{nameof(Command_9_JumpToByte)}: {AbsoluteJumpToOffset.ToString("X2")}";
         }
     }
 }

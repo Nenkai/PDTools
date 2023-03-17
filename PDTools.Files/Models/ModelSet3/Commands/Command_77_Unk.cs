@@ -36,7 +36,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_77_Unk)}";
+            return $"{nameof(Command_77_Unk)} - {Unk1} {Unk2} {Unk3} {Unk4}";
         }
     }
 }

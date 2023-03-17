@@ -20,7 +20,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override void Write(BinaryStream bs)
         {
-
+            bs.WriteByte(MaskBoolBits);
         }
 
         public override string ToString()

@@ -30,12 +30,13 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override void Write(BinaryStream bs)
         {
-
+            bs.WriteSingle(Factor);
+            bs.WriteSingle(Bias);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_37_SetPolyOffsetScaleFactor)} - Factor:{Factor} Bias: {Bias}";
+            return $"{nameof(Command_37_SetPolyOffsetScaleFactor)} - Factor:{Factor} Bias:{Bias}";
         }
     }
 }

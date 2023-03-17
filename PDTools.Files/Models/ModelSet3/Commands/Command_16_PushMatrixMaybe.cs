@@ -21,7 +21,8 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteSingles(Matrix);
+            for (var i = 0; i < 16; i++)
+                bs.WriteSingle(Matrix[i]);
         }
 
         public override string ToString()

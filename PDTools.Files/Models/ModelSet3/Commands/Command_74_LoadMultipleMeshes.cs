@@ -14,12 +14,14 @@ namespace PDTools.Files.Models.ModelSet3.Commands
     public class Command_74_LoadMultipleMeshes : ModelSetupCommand
     {
         public List<ushort> MeshIndices { get; set; } = new();
+        public ushort Unk { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             byte meshCount = bs.Read1Byte();
             for (var i = 0; i < meshCount; i++)
                 MeshIndices.Add(bs.ReadUInt16());
+            Unk = bs.ReadUInt16();
         }
 
         public override void Write(BinaryStream bs)
@@ -29,7 +31,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_74_LoadMultipleMeshes)} - Mesh Indices:{string.Join(", ", MeshIndices)}";
+            return $"{nameof(Command_74_LoadMultipleMeshes)} - Mesh Indices:{string.Join(", ", MeshIndices)} - Unk:{Unk}";
         }
     }
 }
