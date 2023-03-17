@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Threading;
 using System.IO;
-
-using Syroot.BinaryData.Memory;
-
 using PDTools.Crypto.SimulationInterface;
 
 namespace PDTools.SimulatorInterface
@@ -37,6 +30,7 @@ namespace PDTools.SimulatorInterface
         public int BindPort { get; }
 
         public SimulatorPacket Packet { get; set; }
+
         public delegate void SimulatorDelegate(SimulatorPacket packet);
 
         /// <summary>
@@ -86,7 +80,7 @@ namespace PDTools.SimulatorInterface
         /// </summary>
         /// <param name="cts">Cancellation token to stop the interface.</param>
         /// <returns></returns>
-        public async Task Start(CancellationToken token = default,bool loop = true)
+        public async Task Start(CancellationToken token = default, bool loop = true)
         {
             if (Started)
                 throw new InvalidOperationException("Simulator Interface already started.");
@@ -96,10 +90,8 @@ namespace PDTools.SimulatorInterface
             _lastSentHeartbeat = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
             _udpClient = new UdpClient(BindPort);
 
-            // Will send a packet per tick - 60fps
-            
-            // while (loop)
-            // {
+            while (loop)
+            {
                 if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
                     await SendHeartbeat(token);
 
@@ -123,7 +115,7 @@ namespace PDTools.SimulatorInterface
 
                 if (token.IsCancellationRequested)
                     token.ThrowIfCancellationRequested();
-            // }
+            }
         }
 
         private async Task SendHeartbeat(CancellationToken ct)

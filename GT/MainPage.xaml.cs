@@ -1,23 +1,30 @@
-﻿namespace GT;
+﻿using System.Net;
+using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Core;
+
+namespace GT;
 
 public partial class MainPage : ContentPage
 {
-    int count = 0;
-
     public MainPage()
     {
         InitializeComponent();
     }
 
-    private void OnCounterClicked(object sender, EventArgs e)
+    private async void OnClicked(object sender, EventArgs e)
     {
-        count++;
+        var ip = tbIp.Text;
+        if (!ValidateIPv4(ip))
+        {
+            var toast = Toast.Make("Invalid IP Address", ToastDuration.Long);
+            await toast.Show(new CancellationTokenSource().Token);
+        }
 
-        if (count == 1)
-            CounterBtn.Text = $"Clicked {count} time";
-        else
-            CounterBtn.Text = $"Clicked {count} times";
+        await Navigation.PushAsync(new DataPage(ip));
+    }
 
-        SemanticScreenReader.Announce(CounterBtn.Text);
+    private static bool ValidateIPv4(string ipString)
+    {
+        return ipString.Count(c => c == '.') == 3 && IPAddress.TryParse(ipString, out _);
     }
 }

@@ -14,31 +14,23 @@ public class ApiController : Controller
     [HttpGet(Name = "GetWeatherForecast")]
     public async Task<JsonResult> Get(string ip)
     {
-        /* Mostly a test sample for using the Simulator Interface library */
+        var gtsport = false;
+        var gt6 = false;
 
-        var _showUnknown = true;
-        bool gtsport = false;
-        bool gt6 = false;
-    
 
-        SimulatorInterfaceGameType type = SimulatorInterfaceGameType.GT7;
+        var type = SimulatorInterfaceGameType.GT7;
         if (gtsport)
             type = SimulatorInterfaceGameType.GTSport;
         else if (gt6)
             type = SimulatorInterfaceGameType.GT6;
-        
 
         SimulatorInterfaceClient simInterface = new SimulatorInterfaceClient(ip, type);
 
-        var cts = new CancellationTokenSource();
-
-        // Cancel token from outside source to end simulator
-
-        var task = simInterface.Start(cts.Token, false);
-
+        var cancellationToken = new CancellationTokenSource();
+       
         try
         {
-            await task;
+            await simInterface.Start(cancellationToken.Token, false);
         }
         catch (OperationCanceledException e)
         {
@@ -50,7 +42,6 @@ public class ApiController : Controller
         }
         finally
         {
-            // Important to clear up underlaying socket
             simInterface.Dispose();
         }
 
@@ -76,8 +67,7 @@ public class ApiController : Controller
             RL_Surface_Temperature = simInterface.Packet.TireRL_SurfaceTemperature,
             RR_Surface_Temperature = simInterface.Packet.TireRR_SurfaceTemperature,
         };
-        
+
         return Json(data);
     }
-
 }
