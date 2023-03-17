@@ -32,12 +32,8 @@ public partial class MainPage
         {
             while (!_token.IsCancellationRequested)
             {
-                SimulatorPacket data = SimulatorGt7.GetDataTest();
-                //_model.DataPacket = await _simulatorGt.GetData(_token.Token);
-
-                _model.DataPacket = data;
-
-                await Task.Delay(10);
+                _model.DataPacket = await _simulatorGt.GetData(_token.Token);
+                await Task.Delay(100);
             }
         }, _token.Token);
     }
