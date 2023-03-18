@@ -543,14 +543,39 @@ namespace PDTools.Files.Models.ModelSet3
             return list;
         }
 
+        /* NOTE for UVs:
+        * Sometimes the scale is off, it's been a rabbit hole figuring out why
+        * Turns out it's handled by shader programs (yes).
+        * Order of fetching is:
+        * 1. Mesh -> Material ID -> Material Entry
+        * 2. Material Entry -> Material Data ID -> Material Data Entry
+        * 3. Material Data Entry -> 0x14 Entry -> Shader Entry Index -> Shader Entry 0x3C or Shader Def Entry
+        * 4. Shader Def Entry -> Shader Program ID -> Shader Program Entry
+        * 5. Shader Program -> Actual Program data.
+        * 
+        * UV stuff is handling there, not sure how that's done yet. The floats don't seem to be directly it - didn't seem to work with GT6 midfield
+        * */
         /// <summary>
-        /// Gets all the UVs for a specified mesh.
+        /// Gets all the UVs for a specified mesh. Read comment above this function as there are some issues
         /// </summary>
         /// <param name="meshIndex"></param>
         /// <returns></returns>
         public Vector2[] GetUVsOfMesh(ushort meshIndex)
         {
             var mesh = Meshes[meshIndex];
+            Vector2[] arr;
+
+            var mat = this.Materials.Definitions[mesh.MaterialIndex];
+            MDL3MaterialData matData = this.Materials.MaterialDatas[mat.MaterialDataID];
+            ShaderDefinition shader = this.Shaders.Definitions[matData._0x14.ShaderID];
+            var prog = this.Shaders.Programs0x20[shader.ProgramID];
+
+            /*
+            float scaleX = BinaryPrimitives.ReadSingleBigEndian(prog.Program.AsSpan(0x20));
+            float scaleY = BinaryPrimitives.ReadSingleBigEndian(prog.Program.AsSpan(0x24));
+            float scaleZ = BinaryPrimitives.ReadSingleBigEndian(prog.Program.AsSpan(0x28));
+            */
+
             if (mesh.FVFIndex != -1)
             {
                 MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
@@ -559,8 +584,7 @@ namespace PDTools.Files.Models.ModelSet3
                     !fvfDef.Elements.TryGetValue("map12_2", out field))
                     return Array.Empty<Vector2>();
 
-                var arr = new Vector2[mesh.VertexCount];
-
+                arr = new Vector2[mesh.VertexCount];
                 if (mesh.VerticesOffset != 0 && Stream.CanRead)
                 {
                     Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
@@ -581,11 +605,9 @@ namespace PDTools.Files.Models.ModelSet3
                     for (int i = 0; i < mesh.VertexCount; i++)
                     {
                         GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
-                            arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
+                        arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                     }
                 }
-
-                return arr;
             }
             else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
             {
@@ -599,7 +621,7 @@ namespace PDTools.Files.Models.ModelSet3
                 if (element.IsPacked)
                 {
                     PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
-                    var arr = new Vector2[entry.Data.PackedFlexVertCount];
+                    arr = new Vector2[entry.Data.PackedFlexVertCount];
 
                     PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
                     for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
@@ -607,25 +629,25 @@ namespace PDTools.Files.Models.ModelSet3
                         var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
                         arr[i] = new Vector2(v4.X, v4.Y);
                     }
-
-                    return arr;
                 }
                 else
                 {
                     Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
-                    var arr = new Vector2[entry.Data.PackedFlexVertCount];
+                    arr = new Vector2[entry.Data.PackedFlexVertCount];
 
                     for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
                     {
                         GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
                         arr[i] = GetFVFFieldVector2(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
                     }
-
-                    return arr;
                 }
             }
+            else
+            {
+                return null;
+            }
 
-            return null;
+            return arr;
         }
 
         /// <summary>

@@ -996,7 +996,7 @@ namespace PDTools.Files.Models.ModelSet3
                 int entryOffset = (int)bs.Position;
 
                 bs.WriteInt32(0); // Name offset, write later
-                bs.WriteInt32(entry.UnkIndex);
+                bs.WriteInt32(entry.ShaderID);
                 bs.WriteInt32(0);
                 bs.WriteInt32(0); // Offset 0x0C, write later
                 bs.WriteInt16(1);

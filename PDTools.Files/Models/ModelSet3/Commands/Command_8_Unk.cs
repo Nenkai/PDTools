@@ -27,7 +27,7 @@ namespace PDTools.Files.Models.ModelSet3.Commands
             Unk3 = bs.ReadSingle();
             Unk4 = bs.ReadSingle();
             Flag = bs.Read1Byte();
-            
+
             if ((Flag & 0x80) == 0)
             {
 
@@ -51,7 +51,10 @@ namespace PDTools.Files.Models.ModelSet3.Commands
             }
 
             int count = Flag & 0b1111;
-            var test = bs.ReadInt16s(count);
+            var singles = bs.ReadSingles(count);
+
+            byte count2 = bs.Read1Byte();
+            bs.ReadInt16s(count2);
         }
 
         public override void Write(BinaryStream bs)
