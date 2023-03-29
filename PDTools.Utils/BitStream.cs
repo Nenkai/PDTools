@@ -11,7 +11,7 @@ namespace PDTools.Utils
     /// <summary>
     /// Bit stream reverse engineered & modified with extra features. Big Endian only.
     /// </summary>
-    [DebuggerDisplay("Position = {BytePosition}")]
+    [DebuggerDisplay("Position = {Position}")]
     public ref struct BitStream
     {
         public const int Byte_Bits = 8;
@@ -43,7 +43,7 @@ namespace PDTools.Utils
         public int BufferByteSize { get; set; }
         public bool IsEndOfStream { get; set; }
 
-        public bool _needsFlush;
+        private bool _needsFlush;
 
         /// <summary>
         /// Byte position within the stream.
@@ -124,7 +124,7 @@ namespace PDTools.Utils
             BufferByteSize = 0;
 
             IsEndOfStream = false;
-            _length = 0;
+            _length = 1;
             _needsFlush = false;
 
 #if DEBUG
@@ -213,9 +213,9 @@ namespace PDTools.Utils
 
             // Update stream length if needed
             if (bytePos > _length)
-                _length = bytePos;
+                _length = bytePos + 1;
 
-            if (bytePos + 1 > SourceBuffer.Length)
+            if (bytePos >= SourceBuffer.Length)
                 EnsureCapacity((SourceBuffer.Length - bytePos) * Byte_Bits + Byte_Bits);
 
             _currentBuffer = SourceBuffer.Slice(bytePos);
@@ -228,48 +228,54 @@ namespace PDTools.Utils
         /// Seeks to a specific byte within the whole stream.
         /// </summary>
         /// <param name="byteOffset"></param>
-        public void SeekToByte(int byteOffset)
+        public void SeekToByte(int byteOffset, SeekOrigin seekOrigin = SeekOrigin.Begin)
         {
-            if (Mode == BitStreamMode.Read && byteOffset > Length)
-                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+            if (seekOrigin == SeekOrigin.Begin)
+            {
+                if (Mode == BitStreamMode.Read && byteOffset > Length)
+                    throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
 
-            // Flush current byte
-            AlignToNextByte();
+                // Flush current byte
+                AlignToNextByte();
 
-            if (byteOffset >= _length)
-                _length = byteOffset;
+                if (byteOffset >= _length)
+                    _length = byteOffset + 1;
 
-            if (_length > SourceBuffer.Length)
-                EnsureCapacity(_length * Byte_Bits);
+                if (_length > SourceBuffer.Length)
+                    EnsureCapacity(_length * Byte_Bits);
 
-            _currentBuffer = SourceBuffer.Slice(byteOffset);
+                _currentBuffer = SourceBuffer.Slice(byteOffset);
 
-            if (_currentBuffer.IsEmpty)
-                CurrentByte = 0;
-            else
+                if (_currentBuffer.IsEmpty)
+                    CurrentByte = 0;
+                else
+                    CurrentByte = _currentBuffer[0];
+
+                BitCounter = 0;
+            }
+            else if (seekOrigin == SeekOrigin.Current)
+            {
+                int newPos = byteOffset + Position;
+                if (Mode == BitStreamMode.Read && newPos > Length)
+                    throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+
+                // Flush current byte
+                AlignToNextByte();
+
+                if (newPos >= _length)
+                    _length = newPos + 1;
+
+                if (_length >= SourceBuffer.Length)
+                    EnsureCapacity(_length * Byte_Bits);
+
+                _currentBuffer = _currentBuffer.Slice(byteOffset);
                 CurrentByte = _currentBuffer[0];
-
-            BitCounter = 0;
-        }
-
-        public void SeekToByteFromCurrentPosition(int byteOffset)
-        {
-            int newPos = byteOffset + Position;
-            if (Mode == BitStreamMode.Read && newPos > Length)
-                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
-
-            // Flush current byte
-            AlignToNextByte();
-
-            if (newPos >= _length)
-                _length = newPos;
-
-            if (_length >= SourceBuffer.Length)
-                EnsureCapacity(_length * Byte_Bits);
-
-            _currentBuffer = _currentBuffer.Slice(byteOffset);
-            CurrentByte = _currentBuffer[0];
-            BitCounter = 0;
+                BitCounter = 0;
+            }
+            else
+            {
+                throw new NotImplementedException("Unimplemented seek origin type");
+            }
         }
 
         /// <summary>
@@ -285,9 +291,9 @@ namespace PDTools.Utils
                     _needsFlush = false;
                 }
 
-                CurrentByte = _currentBuffer[0];
                 _currentBuffer = _currentBuffer.Slice(1);
-                BitCounter = 8;
+                CurrentByte = _currentBuffer[0];
+                BitCounter = 0;
             }
         }
 
@@ -344,7 +350,9 @@ namespace PDTools.Utils
         }
 
         public Span<byte> GetBuffer()
-            => SourceBuffer.Slice(0, _length);
+        {
+            return SourceBuffer.Slice(0, _length);
+        }
 
         /* ********************************************
          * *                                          *
@@ -672,6 +680,12 @@ namespace PDTools.Utils
          * ******************************************** */
 
         // Original Impl (except capacity ensuring, MSB/LSB & length)
+        /// <summary>
+        /// Writes bits to the stream.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="bitCount"></param>
+        /// <exception cref="IOException"></exception>
         public void WriteBits(ulong value, ulong bitCount)
         {
             if (Mode == BitStreamMode.Read)
@@ -730,8 +744,13 @@ namespace PDTools.Utils
             if (BitCounter != 0)
                 _currentBuffer[0] = CurrentByte;
 
-            if (Position > _length)
-                _length = Position;
+            if (Position >= _length)
+            {
+                if (BitCounter == 0)
+                    _length = Position;
+                else
+                    _length = Position + 1;
+            }
 
             _needsFlush = BitCounter > 0;
 #if DEBUG
@@ -743,7 +762,7 @@ namespace PDTools.Utils
         {
             // Require to seek to the next round byte incase we're currently in the middle of a byte's bits
             if (BitCounter != 0)
-                SeekToByteFromCurrentPosition(1);
+                SeekToByte(1, SeekOrigin.Current);
 
             if (string.IsNullOrEmpty(value))
             {
@@ -765,7 +784,7 @@ namespace PDTools.Utils
                 pad = 4;
 
             int totalSize = pad + (nullTerminatedSize & 0xffffffc);
-            SeekToByteFromCurrentPosition(totalSize);
+            SeekToByte(totalSize, SeekOrigin.Current);
         }
 
         public void WriteVarInt(int val)
@@ -860,7 +879,9 @@ namespace PDTools.Utils
                 WriteByteData(Encoding.UTF8.GetBytes(str));
         }
 
-
+        /// <summary>
+        /// Writes a buffer to the bit stream. This WILL align to the nearest byte.
+        /// </summary>
         public void WriteByteData(Span<byte> data, bool withPrefixLength = false)
         {
             EnsureCapacity(((withPrefixLength ? 4 : 0) + data.Length) * Byte_Bits);
@@ -870,21 +891,36 @@ namespace PDTools.Utils
                 WriteInt32(data.Length);
 
             data.CopyTo(_currentBuffer);
-            SeekToByteFromCurrentPosition(data.Length);
+            SeekToByte(data.Length, SeekOrigin.Current);
         }
 
+        /// <summary>
+        /// Writes a ulong to the stream. This will write 64 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteUInt64(ulong value)
             => WriteBits(value, Long_Bits);
 
+        /// <summary>
+        /// Writes a long to the stream. This will write 64 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteInt64(long value)
             => WriteBits((ulong)value, Long_Bits);
 
+        /// <summary>
+        /// Writes a uint to the stream. This will write 32 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteUInt32(uint value)
             => WriteBits(value, Int_Bits);
 
+        /// <summary>
+        /// Writes a int to the stream. This will write 64 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteInt32(int value)
             => WriteBits((ulong)value, Int_Bits);
 
+        /// <summary>
+        /// Writes a int or -1 to the stream if null. This will write 32 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteInt32OrNull(int? value)
         {
             if (value == null || value == -1)
@@ -893,9 +929,15 @@ namespace PDTools.Utils
                 WriteBits((ulong)value, Int_Bits);
         }
 
+        /// <summary>
+        /// Writes a single/float to the stream. This will write 32 bits and will not align to the nearest byte.
+        /// </summary>
         public unsafe void WriteSingle(float value)
             => WriteBits((ulong)*(int*)&value, Int_Bits);
 
+        /// <summary>
+        /// Writes a double to the stream. This will write 4 bits and will not align to the nearest byte.
+        /// </summary>
         public unsafe void WriteDouble(double value)
             => WriteBits((ulong)value, Long_Bits);
 
@@ -907,24 +949,46 @@ namespace PDTools.Utils
                 WriteBool4(value.Value);
         }
 
+        /// <summary>
+        /// Writes a short to the stream. This will write 16 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteInt16(short value)
             => WriteBits((ulong)value, Short_Bits);
 
+        /// <summary>
+        /// Writes a ushort to the stream. This will write 16 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteUInt16(uint value)
             => WriteBits(value, Short_Bits);
 
+        /// <summary>
+        /// Writes a byte to the stream. This will write 8 bits and will not align to the nearest byte.
+        /// </summary>
+        /// <param name="value"></param>
         public void WriteByte(byte value)
             => WriteBits(value, Byte_Bits);
 
+        /// <summary>
+        /// Writes a bool to the stream. This will write 8 bit and will not align to the nearest byte.
+        /// </summary>
         public void WriteBool(bool value)
             => WriteBits((ulong)(value ? 1 : 0), Byte_Bits);
 
+        /// <summary>
+        /// Writes a bool to the stream. This will write 16 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteBool2(bool value)
             => WriteBits((ulong)(value ? 1 : 0), Short_Bits);
 
+        /// <summary>
+        /// Writes a bool to the stream. This will write 32 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteBool4(bool value)
             => WriteBits((ulong)(value ? 1 : 0), Int_Bits);
 
+        /// <summary>
+        /// Writes a sbyte to the stream. This will write 8 bits and will not align to the nearest byte.
+        /// </summary>
         public void WriteSByte(sbyte value)
             => WriteBits((ulong)value, Byte_Bits);
 
@@ -945,7 +1009,7 @@ namespace PDTools.Utils
 #endif
         }
 
-        public void EndWriteLog(string path)
+        public void EndWriteLog()
         {
 #if DEBUG
             if (_sw != null)
@@ -961,12 +1025,12 @@ namespace PDTools.Utils
     public enum BitStreamSignificantBitOrder
     {
         /// <summary>
-        /// Least significant bit
+        /// Least significant bit (default, for big endian)
         /// </summary>
         LSB,
 
         /// <summary>
-        /// Most significant bit
+        /// Most significant bit (for little endian)
         /// </summary>
         MSB,
     }

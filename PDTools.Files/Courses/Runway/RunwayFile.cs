@@ -274,7 +274,11 @@ public class RunwayFile
         long roadTriCount = Read32Or64(bs, rwy.VersionMajor);
         long roadTriOffset = Read32Or64(bs, rwy.VersionMajor);
 
-        bs.Position += 0x10;
+        if (rwy.VersionMajor >= 6)
+            bs.Position += 0x10;
+        else
+            bs.Position += 0x08;
+
         rwy.RayCastTreeMaxDepth = (uint)Read32Or64(bs, rwy.VersionMajor);
         long rayCastTreeOffset = Read32Or64(bs, rwy.VersionMajor);
         long boundaryVertCount = bs.ReadUInt32();

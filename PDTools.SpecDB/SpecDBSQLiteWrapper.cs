@@ -6,7 +6,7 @@ using System.Threading;
 
 using Microsoft.Data.Sqlite;
 
-namespace GTOnlineDiscordBot.Services.SpecDB
+namespace PDTools.SpecDB
 {
     public class SpecDBSQLiteWrapper : ISpecDB
     {
