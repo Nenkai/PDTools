@@ -6,11 +6,16 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class Present : IGameSerializeBase
+    public class Present : IGameSerializeBase<Present>
     {
         public const int CourseIndexStart = 866;
 
         public byte[] Bits { get; set; } = new byte[0x74];
+
+        public void CopyTo(Present dest)
+        {
+            Array.Copy(Bits, dest.Bits, Bits.Length);
+        }
 
         public void SetUnlocked(int idx, bool unlocked)
         {

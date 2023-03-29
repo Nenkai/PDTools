@@ -10,7 +10,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class LicenseEntryUnit : IGameSerializeBase
+    public class LicenseEntryUnit : IGameSerializeBase<LicenseEntryUnit>
     {
         public int RaceTime { get; set; }
         public int Date { get; set; }
@@ -19,6 +19,16 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public const int MAX_PASSCODE_LEN = 32;
         public string PassCode { get; set; }
         public byte[] Data = new byte[3];
+
+        public void CopyTo(LicenseEntryUnit dest)
+        {
+            dest.RaceTime = RaceTime;
+            dest.Date = Date;
+            dest.Result = Result;
+            dest.PassCode = PassCode;
+
+            Array.Copy(Data, dest.Data, Data.Length);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

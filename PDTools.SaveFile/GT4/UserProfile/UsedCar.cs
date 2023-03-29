@@ -7,7 +7,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class UsedCar
+    public class UsedCar : IGameSerializeBase<UsedCar>
     {
         public const int _80sCars_StartID = 0;
         public const int Early90sCars_StartID = 80;
@@ -15,6 +15,12 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
         public byte[] Bits { get; set; } = new byte[0x20];
         public int Week { get; set; }
+
+        public void CopyTo(UsedCar dest)
+        {
+            Array.Copy(Bits, dest.Bits, Bits.Length);
+            dest.Week = Week;
+        }
 
         public void SetUsedCarStatus(int idx, bool soldout)
         {

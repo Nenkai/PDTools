@@ -8,7 +8,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class GarageScratchUnit : IGameSerializeBase
+    public class GarageScratchUnit : IGameSerializeBase<GarageScratchUnit>
     {
         public DbCode CarCode { get; set; }
         public ulong Flags { get; set; }
@@ -59,6 +59,15 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public uint RideHistory
         {
             get => (uint)(Flags2 & 0b11_11111111); // 10 bits
+        }
+
+        public void CopyTo(GarageScratchUnit dest)
+        {
+            dest.CarCode = new DbCode(CarCode.Code, CarCode.TableId);
+            dest.Flags = Flags;
+            dest.Unk = Unk;
+            dest.Odometer = Odometer;
+            dest.Flags2 = Flags2;
         }
 
         public void Pack(GT4Save save, ref SpanWriter sw)

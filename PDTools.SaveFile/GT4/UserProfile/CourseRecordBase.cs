@@ -6,13 +6,23 @@ using System.Text;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class CourseRecordBase : IGameSerializeBase
+    public class CourseRecordBase : IGameSerializeBase<CourseRecordBase>
     {
         public CourseRecordUnit[] Records { get; set; }
 
         public CourseRecordBase(int size)
         {
             Records = new CourseRecordUnit[size];
+        }
+
+        public void CopyTo(CourseRecordBase dest)
+        {
+            dest.Records = new CourseRecordUnit[Records.Length];
+            for (var i = 0; i < Records.Length; i++)
+            {
+                dest.Records[i] = new CourseRecordUnit();
+                Records[i].CopyTo(dest.Records[i]);
+            }
         }
 
         public void Pack(GT4Save save, ref SpanWriter sw)

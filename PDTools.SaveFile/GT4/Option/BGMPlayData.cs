@@ -6,7 +6,7 @@ using System.Text;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class BGMPlayData : IGameSerializeBase
+    public class BGMPlayData : IGameSerializeBase<BGMPlayData>
     {
         public ulong UniqueID { get; set; }
         public byte Unk { get; set; }
@@ -14,6 +14,16 @@ namespace PDTools.SaveFile.GT4.Option
         public byte UnkIndex1 { get; set; }
         public byte UnkIndex2 { get; set; }
         public uint Unused { get; set; }
+
+        public void CopyTo(BGMPlayData dest)
+        {
+            dest.UniqueID = UniqueID;
+            dest.Unk = Unk;
+            dest.UnkCount = UnkCount;
+            dest.UnkIndex1 = UnkIndex1;
+            dest.UnkIndex2 = UnkIndex2;
+            dest.Unused = Unused;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

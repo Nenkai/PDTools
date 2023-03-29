@@ -8,13 +8,18 @@ using PDTools.Enums.PS2;
 
 namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
 {
-    public class BuyWingEvent : DayEvent, IGameSerializeBase
+    public class BuyWingEvent : IDayEvent
     {
-        public override DayEventType EventType => DayEventType.BUY_WING;
+        public DayEventType EventType => DayEventType.BUY_WING;
 
         public DbCode WingCode { get; set; }
 
-        public override void Pack(GT4Save save, ref SpanWriter sw)
+        public void CopyTo(IDayEvent dest)
+        {
+            ((BuyWingEvent)dest).WingCode = new DbCode(WingCode.Code, WingCode.TableId);
+        }
+
+        public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteByte(0);
             sw.WriteByte(0);
@@ -24,7 +29,7 @@ namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
             sw.WriteInt32(WingCode.TableId);
         }
 
-        public override void Unpack(GT4Save save, ref SpanReader sr)
+        public void Unpack(GT4Save save, ref SpanReader sr)
         {
             sr.ReadByte();
             sr.ReadByte();

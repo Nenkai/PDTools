@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using PDTools.Structures;
@@ -8,12 +9,26 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class CourseRecordUnit : IGameSerializeBase
+    public class CourseRecordUnit : IGameSerializeBase<CourseRecordUnit>
     {
         public DbCode CourseCode { get; set; }
         public CourseEntryUnit[] Entries { get; set; } = new CourseEntryUnit[10];
         public int[] SectionTimes { get; set; } = new int[16];
         public byte[] DriverExp { get; set; } = new byte[8];
+
+        public void CopyTo(CourseRecordUnit dest)
+        {
+            dest.CourseCode = new DbCode(CourseCode.Code, CourseCode.TableId);
+
+            for (var i = 0; i < Entries.Length; i++)
+            {
+                dest.Entries[i] = new CourseEntryUnit();
+                Entries[i].CopyTo(dest.Entries[i]);
+            }
+
+            Array.Copy(SectionTimes, dest.SectionTimes, SectionTimes.Length);
+            Array.Copy(DriverExp, dest.DriverExp, DriverExp.Length);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

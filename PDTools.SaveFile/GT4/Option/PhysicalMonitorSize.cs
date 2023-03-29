@@ -6,7 +6,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class PhysicalMonitorSize : IGameSerializeBase
+    public class PhysicalMonitorSize : IGameSerializeBase<PhysicalMonitorSize>
     {
         public float MonitorSize1 { get; set; }
         public float MonitorSize2 { get; set; }
@@ -19,6 +19,21 @@ namespace PDTools.SaveFile.GT4.Option
         public float MonitorSize9 { get; set; }
         public float MonitorSize10 { get; set; }
         public float MonitorSize11 { get; set; }
+
+        public void CopyTo(PhysicalMonitorSize dest)
+        {
+            dest.MonitorSize1 = MonitorSize1;
+            dest.MonitorSize2 = MonitorSize2;
+            dest.MonitorSize3 = MonitorSize3;
+            dest.MonitorSize4 = MonitorSize4;
+            dest.MonitorSize5 = MonitorSize5;
+            dest.MonitorSize6 = MonitorSize6;
+            dest.MonitorSize7 = MonitorSize7;
+            dest.MonitorSize8 = MonitorSize8;
+            dest.MonitorSize9 = MonitorSize9;
+            dest.MonitorSize10 = MonitorSize10;
+            dest.MonitorSize11 = MonitorSize11;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

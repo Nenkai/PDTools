@@ -6,7 +6,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class BGMPlaylist : IGameSerializeBase
+    public class BGMPlaylist : IGameSerializeBase<BGMPlaylist>
     {
         public const int MAX_TRACKS = 128;
 
@@ -18,6 +18,22 @@ namespace PDTools.SaveFile.GT4.Option
         public uint Unk4_MaybeUnused { get; set; }
 
         public BGMPlayData[] Tracks { get; set; } = new BGMPlayData[MAX_TRACKS];
+
+        public void CopyTo(BGMPlaylist dest)
+        {
+            dest.NumActiveEntries = NumActiveEntries;
+            dest.Unk = Unk;
+            dest.Unk2 = Unk2;
+            dest.ShuffleRandom = ShuffleRandom;
+            dest.Unk3 = Unk3;
+            dest.Unk4_MaybeUnused = Unk4_MaybeUnused;
+
+            for (var i = 0; i < Tracks.Length; i++)
+            {
+                dest.Tracks[i] = new BGMPlayData();
+                Tracks[i].CopyTo(dest.Tracks[i]);
+            }
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

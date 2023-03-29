@@ -8,18 +8,24 @@ using PDTools.Enums.PS2;
 
 namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
 {
-    public class NoEvent : DayEvent, IGameSerializeBase
+    public class NoEvent : IDayEvent
     {
-        public override DayEventType EventType => DayEventType.NO_EVENT;
+        public DayEventType EventType => DayEventType.NO_EVENT;
 
         public byte[] Data { get; set; }
 
-        public override void Pack(GT4Save save, ref SpanWriter sw)
+        public void CopyTo(IDayEvent dest)
+        {
+            ((NoEvent)dest).Data = new byte[Data.Length];
+            Array.Copy(Data, ((NoEvent)dest).Data, Data.Length);
+        }
+
+        public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteBytes(Data); // TODO: Fix this
         }
 
-        public override void Unpack(GT4Save save, ref SpanReader sr)
+        public void Unpack(GT4Save save, ref SpanReader sr)
         {
             Data = sr.ReadBytes(0x0F);
         }
