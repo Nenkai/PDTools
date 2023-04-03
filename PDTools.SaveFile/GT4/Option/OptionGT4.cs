@@ -255,8 +255,11 @@ namespace PDTools.SaveFile.GT4.Option
             dest.udp_bind_port_setting = udp_bind_port_setting;
             dest.udp_bind_port = udp_bind_port;
 
-            dest.unk_udpdata = new byte[unk_udpdata.Length];
-            Array.Copy(unk_udpdata, dest.unk_udpdata, unk_udpdata.Length);
+            if (dest.unk_udpdata != null)
+            {
+                dest.unk_udpdata = new byte[unk_udpdata.Length];
+                Array.Copy(unk_udpdata, dest.unk_udpdata, unk_udpdata.Length);
+            }
 
             dest.unk_end_data = new byte[unk_end_data.Length];
             Array.Copy(unk_end_data, dest.unk_end_data, unk_end_data.Length);

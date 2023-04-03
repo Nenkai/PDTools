@@ -126,10 +126,29 @@ namespace PDTools.SaveFile.GT4
                 case GT4SaveType.GT4O_US:
                     GameData.Option.GameZone.GameZoneType = GameZoneType.US;
                     GameData.Option.language = Locale.US;
+
+                    GameData.Option.unk_udpdata = new byte[0x10];
+                    GameData.Option.entrance_addr = "gt4-pubeta.muis.pdonline.scea.com";
+                    GameData.Option.entrance_port = 10071;
+
+                    GameData.Option.display_license_bestline = 1;
+
+                    for (var i = 0; i < 3; i++)
+                        GameData.Profile.Garage.CurrentCar.Sheets[i].Unk_GT4OData = new byte[0x18];
+
                     break;
                 case GT4SaveType.GT4O_JP:
                     GameData.Option.GameZone.GameZoneType = GameZoneType.JP;
                     GameData.Option.language = Locale.JP;
+
+                    GameData.Option.unk_udpdata = new byte[0x10];
+                    GameData.Option.entrance_addr = "gt4online-muis.scej-online.jp";
+                    GameData.Option.entrance_port = 10071;
+
+                    GameData.Option.display_license_bestline = 1;
+
+                    for (var i = 0; i < 3; i++)
+                        GameData.Profile.Garage.CurrentCar.Sheets[i].Unk_GT4OData = new byte[0x18];
                     break;
                 default:
                     throw new NotImplementedException("Not implemented");
@@ -138,11 +157,8 @@ namespace PDTools.SaveFile.GT4
             for (var i = 0; i < GarageFile.Cars.Count; i++)
                 GarageFile.Cars[i] = new byte[GarageFile.GarageCarSizeAligned];
 
-            if (GT4Save.IsGT4Retail(type))
-            {
-                GameData.UseOldRandomUpdateCrypto = true;
-                GarageFile.UseOldRandomUpdateCrypto = true;
-            }
+            GameData.UseOldRandomUpdateCrypto = GT4Save.IsGT4Retail(type);
+            GarageFile.UseOldRandomUpdateCrypto = GameData.UseOldRandomUpdateCrypto;
         }
 
         public static bool IsGT4Retail(GT4SaveType saveType)

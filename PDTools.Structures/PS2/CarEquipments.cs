@@ -4,6 +4,7 @@ using System.Text;
 using System.ComponentModel;
 
 using Syroot.BinaryData.Memory;
+using System.Net.NetworkInformation;
 
 namespace PDTools.Structures.PS2
 {
@@ -238,8 +239,11 @@ namespace PDTools.Structures.PS2
             dest.Susp_RearSpringRateLevel = Susp_RearSpringRateLevel;
             dest.byte169 = byte169;
 
-            dest.Unk_GT4OData = new byte[Unk_GT4OData.Length];
-            Array.Copy(Unk_GT4OData, dest.Unk_GT4OData, Unk_GT4OData.Length);
+            if (Unk_GT4OData != null)
+            {
+                dest.Unk_GT4OData = new byte[0x18];
+                Array.Copy(Unk_GT4OData, dest.Unk_GT4OData, Unk_GT4OData.Length);
+            }
         }
 
         public void Unpack(ref SpanReader sr, bool gt4o = false)
