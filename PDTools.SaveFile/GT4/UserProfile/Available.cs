@@ -8,7 +8,7 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class Available : IGameSerializeBase
+    public class Available : IGameSerializeBase<Available>
     {
         public const int MAX_CAR_IDS = 1024;
         public const int MAX_COURSE_IDS = 128;
@@ -16,6 +16,21 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public DbCode[] CarIdsAvailable { get; set; } = new DbCode[MAX_CAR_IDS];
         public DbCode[] CourseIdsAvailable { get; set; } = new DbCode[MAX_COURSE_IDS];
         public byte Unk { get; set; }
+
+        public void CopyTo(Available dest)
+        {
+            for (var i = 0; i < MAX_CAR_IDS; i++)
+            {
+                dest.CarIdsAvailable[i] = new DbCode(CarIdsAvailable[i].Code, CarIdsAvailable[i].TableId);
+            }
+
+            for (var i = 0; i < MAX_COURSE_IDS; i++)
+            {
+                dest.CourseIdsAvailable[i] = new DbCode(CourseIdsAvailable[i].Code, CourseIdsAvailable[i].TableId);
+            }
+
+            dest.Unk = Unk;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

@@ -37,6 +37,27 @@ namespace PDTools.SaveFile.GT4
 
         public List<Memory<byte>> Cars { get; set; } = new List<Memory<byte>>(1000);
 
+        public void CopyTo(GarageFile dest)
+        {
+            dest.GarageCarSizeAligned = GarageCarSizeAligned;
+            dest.GarageCarSize = GarageCarSize;
+            dest.UseOldRandomUpdateCrypto = UseOldRandomUpdateCrypto;
+
+            dest.Money = Money;
+            dest.Key1 = Key1;
+            dest.Key2 = Key2;
+            dest.LastSystemTimeMicrosecond = LastSystemTimeMicrosecond;
+            dest.UniqueID = UniqueID;
+            dest.SystemTimeMicrosecond = SystemTimeMicrosecond;
+
+            for (var i = 0; i < 1000; i++)
+            {
+                byte[] data = new byte[Cars[i].Length];
+                Cars[i].CopyTo(data);
+                dest.Cars.Add(data);
+            }
+        }
+
         /// <summary>
         /// Loads the garage.
         /// </summary>
@@ -48,16 +69,7 @@ namespace PDTools.SaveFile.GT4
         {
             UseOldRandomUpdateCrypto = useOldRandomUpdateCrypto;
 
-            if (save.IsGT4Online())
-            {
-                GarageCarSizeAligned = GarageCarSizeAligned_GT4O;
-                GarageCarSize = GarageCarSize_Retail; // FIXME
-            }
-            else
-            {
-                GarageCarSizeAligned = GarageCarSizeAligned_Retail;
-                GarageCarSize = GarageCarSize_Retail;
-            }
+            IdentifyGarageCarSize(save.Type);
 
             byte[] garageFile = File.ReadAllBytes(garageFilePath);
             decryptHeader(garageFile, key);
@@ -73,6 +85,20 @@ namespace PDTools.SaveFile.GT4
 #if DEBUG
             File.WriteAllBytes("garage_with_decrypted_header.bin", garageFile);
 #endif
+        }
+
+        public void IdentifyGarageCarSize(GT4SaveType saveType)
+        {
+            if (GT4Save.IsGT4Online(saveType))
+            {
+                GarageCarSizeAligned = GarageCarSizeAligned_GT4O;
+                GarageCarSize = GarageCarSize_Retail; // FIXME
+            }
+            else
+            {
+                GarageCarSizeAligned = GarageCarSizeAligned_Retail;
+                GarageCarSize = GarageCarSize_Retail;
+            }
         }
 
         /// <summary>

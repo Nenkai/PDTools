@@ -8,7 +8,7 @@ using PDTools.Enums.PS2;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class RaceRecordUnit : IGameSerializeBase
+    public class RaceRecordUnit : IGameSerializeBase<RaceRecordUnit>
     {
         // 4 bits type
         // 4 bits permanent result
@@ -55,6 +55,12 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public void SetCurrentResult(Result res)
         {
             Bits = (ushort)((Bits & 0x0FFF) | (ushort)(((byte)res & 0b1111) << 12)); 
+        }
+
+        public void CopyTo(RaceRecordUnit dest)
+        {
+            dest.Bits = Bits;
+            dest.ASpecScore = ASpecScore;
         }
 
         public void Pack(GT4Save save, ref SpanWriter sw)

@@ -7,10 +7,11 @@ using Syroot.BinaryData.Memory;
 
 using PDTools.Enums.PS2;
 using PDTools.Utils;
+using System.Security.Cryptography;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionGT4 : IGameSerializeBase
+    public class OptionGT4 : IGameSerializeBase<OptionGT4>
     {
         public Locale language { get; set; }
         public bool wide_mode { get; set; }
@@ -148,9 +149,132 @@ namespace PDTools.SaveFile.GT4.Option
         [Browsable(false)]
         public OptionLogger Logger = new OptionLogger();
 
+        public void CopyTo(OptionGT4 dest)
+        {
+            dest.language = language;
+            dest.wide_mode = wide_mode;
+
+            dest.unit_velocity = unit_velocity;
+            dest.unit_power = unit_power;
+            dest.unit_torque = unit_torque;
+            dest.race_display_mode = race_display_mode;
+            dest.screen_adjust_h = screen_adjust_h;
+            dest.screen_adjust_v = screen_adjust_v;
+            dest.sharpness = sharpness;
+
+            monitor_size.CopyTo(dest.monitor_size);
+
+            dest.unk1 = unk1;
+            dest.unk2 = unk2;
+            dest.unk3 = unk3;
+            dest.menu_bgm = menu_bgm;
+            dest.menu_bgm_volume = menu_bgm_volume;
+            dest.menu_se = menu_se;
+            dest.menu_se_volume = menu_se_volume;
+            dest.race_bgm = race_bgm;
+            dest.race_bgm_volume = race_bgm_volume;
+            dest.race_se = race_se;
+            dest.race_se_volume = race_se_volume;
+            dest.replay_bgm = replay_bgm;
+            dest.replay_bgm_volume = replay_bgm_volume;
+            dest.replay_se = replay_se;
+            dest.replay_se_volume = replay_se_volume;
+            dest.slide_bgm_volume = slide_bgm_volume;
+
+            bgm_playlist.CopyTo(dest.bgm_playlist);
+            slide_playlist.CopyTo(dest.slide_playlist);
+
+            dest.sound_type = sound_type;
+
+            dest.narration = narration;
+            dest.enableAC3 = enableAC3;
+            dest.auto_save = auto_save;
+            dest.race_laps = race_laps;
+            dest.tire_damage = tire_damage;
+            dest.automatic_gear = automatic_gear;
+            dest.automatic_ghost = automatic_ghost;
+            dest.assist_asm = assist_asm;
+            dest.assist_tcs = assist_tcs;
+            dest.difficulty = difficulty;
+
+            dest.professional_control_1p = professional_control_1p;
+            dest.professional_control_2p = professional_control_2p;
+
+            dest.penalty_type = penalty_type;
+            dest.limit_favorite_car_only = limit_favorite_car_only;
+            dest.limit_favorite_course_only = limit_favorite_course_only;
+            dest.limit_enemies_to_favorite_car_only = limit_enemies_to_favorite_car_only;
+            dest.view_type = view_type;
+            dest.view_type_2p = view_type_2p;
+
+            dest.strict_judgment = strict_judgment;
+            dest.display_license_bestline = display_license_bestline;
+
+            dest.split_race_laps = split_race_laps;
+            dest.split_tire_damage = split_tire_damage;
+            dest.split_handicap = split_handicap;
+            dest.split_boost_level = split_boost_level;
+            dest.photo_quality = photo_quality;
+            dest.photo_manual_focus = photo_manual_focus;
+            dest.photo_aspect = photo_aspect;
+            dest.photo_shutter = photo_shutter;
+
+            dest.photo_professional = photo_professional;
+            dest.photo_saturation = photo_saturation;
+            dest.photo_save_slot = photo_save_slot;
+            dest.photo_save_method = photo_save_method;
+            dest.steering_assist_1p = steering_assist_1p;
+            dest.steering_assist_2p = steering_assist_2p;
+            dest.active_steering_1p = active_steering_1p;
+            dest.active_steering_2p = active_steering_2p;
+
+            dest.replay_mode = replay_mode;
+            dest.replay_display_enable_flags = replay_display_enable_flags;
+            dest.replay_2p_split = replay_2p_split;
+            dest.replay_memory_card_slot = replay_memory_card_slot;
+            dest.unk = unk;
+            dest.timeout_count_to_autodemo = timeout_count_to_autodemo;
+            dest.timeout_count_to_topmenu = timeout_count_to_topmenu;
+            dest.machine_role = machine_role;
+            dest.special_arcade_tuner = special_arcade_tuner;
+            dest.arcade_skip_to_favorite = arcade_skip_to_favorite;
+            dest.opening_after_autoload = opening_after_autoload;
+            dest.can_watch_ending = can_watch_ending;
+            dest.demo_movie_interval = demo_movie_interval;
+            dest.album_slide_effect = album_slide_effect;
+            dest.album_slide_play_time = album_slide_play_time;
+            dest.album_memory_card_slot = album_memory_card_slot;
+            dest.ustorage_photo_quality = ustorage_photo_quality;
+            dest.album_slide_transition_time = album_slide_transition_time;
+            race_color_correction.CopyTo(dest.race_color_correction);
+            replay_color_correction.CopyTo(dest.replay_color_correction);
+
+            dest.entrance_addr = entrance_addr;
+            dest.entrance_port = entrance_port;
+            dest.use_upnp = use_upnp;
+            dest.udp_bind_port_setting = udp_bind_port_setting;
+            dest.udp_bind_port = udp_bind_port;
+
+            if (dest.unk_udpdata != null)
+            {
+                dest.unk_udpdata = new byte[unk_udpdata.Length];
+                Array.Copy(unk_udpdata, dest.unk_udpdata, unk_udpdata.Length);
+            }
+
+            dest.unk_end_data = new byte[unk_end_data.Length];
+            Array.Copy(unk_end_data, dest.unk_end_data, unk_end_data.Length);
+
+            GameZone.CopyTo(dest.GameZone);
+            Controller.CopyTo(dest.Controller);
+            LANBattle.CopyTo(dest.LANBattle);
+            NetConf.CopyTo(dest.NetConf);
+            Event.CopyTo(dest.Event);
+            Logger.CopyTo(dest.Logger);
+        }
+
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
-            if (save.IsGT4Retail())
+            if (GT4Save.IsGT4Retail(save.Type))
                 sw.WriteInt32(0x11C0);
             else
                 sw.WriteInt32(0x1228);
@@ -206,7 +330,7 @@ namespace PDTools.SaveFile.GT4.Option
             sw.WriteInt32((int)view_type);
             sw.WriteInt32((int)view_type_2p);
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
             {
                 sw.WriteInt32(strict_judgment);
                 sw.WriteInt32(display_license_bestline);
@@ -251,7 +375,7 @@ namespace PDTools.SaveFile.GT4.Option
             race_color_correction.Pack(save, ref sw);
             replay_color_correction.Pack(save, ref sw);
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
             {
                 sw.WriteStringFix(entrance_addr, 64);
                 sw.WriteInt32(entrance_port);
@@ -327,7 +451,7 @@ namespace PDTools.SaveFile.GT4.Option
             view_type = (ViewType)sr.ReadInt32();
             view_type_2p = (ViewType)sr.ReadInt32();
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
             {
                 strict_judgment = sr.ReadInt32();
                 display_license_bestline = sr.ReadInt32();
@@ -372,7 +496,7 @@ namespace PDTools.SaveFile.GT4.Option
             race_color_correction.Unpack(save, ref sr);
             replay_color_correction.Unpack(save, ref sr);
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
             {
                 entrance_addr = sr.ReadFixedString(64);
                 entrance_port = sr.ReadInt32();

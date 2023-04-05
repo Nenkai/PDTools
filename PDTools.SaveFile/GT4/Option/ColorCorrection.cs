@@ -6,12 +6,20 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class ColorCorrection : IGameSerializeBase
+    public class ColorCorrection : IGameSerializeBase<ColorCorrection>
     {
         public int brightness { get; set; }
         public int contrast { get; set; }
         public int saturation { get; set; }
         public int color_balance { get; set; }
+
+        public void CopyTo(ColorCorrection dest)
+        {
+            dest.brightness = brightness;
+            dest.contrast = contrast;
+            dest.saturation = saturation;
+            dest.color_balance = color_balance;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

@@ -8,7 +8,7 @@ using PDTools.Utils;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class UserProfileGT4 : IGameSerializeBase
+    public class UserProfileGT4 : IGameSerializeBase<UserProfileGT4>
     {
         public const int MAX_USERNAME_LENGTH = 32;
         public string UserName { get; set; }
@@ -31,8 +31,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
         public byte[] BSpecData { get; set; }
 
-        public byte[] Unk { get; set; }
-        public byte[] UnkGT4OData { get; set; }
+        public byte[] UnkGT4OData { get; set; } = new byte[0x40];
         public Calendar Calendar { get; set; } = new Calendar();
         public GarageScratch Garage { get; set; } = new GarageScratch();
         public RaceRecord RaceRecords { get; set; } = new RaceRecord();
@@ -45,6 +44,40 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public Present Presents { get; set; } = new Present();
         public ChampionshipContext CurrentChampionship { get; set; } = new ChampionshipContext();
         public UsedCar UsedCar { get; set; } = new UsedCar();
+
+        public void CopyTo(UserProfileGT4 dest)
+        {
+            dest.UserName = UserName;
+            dest.Password = Password;
+            dest.LastEntryName = LastEntryName;
+
+            dest.Score = Score;
+            dest.TotalPrizeMoney = TotalPrizeMoney;
+            dest.TotalPrizeCars = TotalPrizeCars;
+            Array.Copy(RankCounts, dest.RankCounts, RankCounts.Length);
+            dest.TotalASpecDistanceMeters = TotalASpecDistanceMeters;
+            dest.TotalBSpecDistanceMeters = TotalBSpecDistanceMeters;
+            dest.WithdrawnGT3 = WithdrawnGT3;
+            dest.WithdrawnGT4P = WithdrawnGT4P;
+            dest.MetType = MetType;
+
+            dest.BSpecData = new byte[BSpecData.Length];
+            Array.Copy(BSpecData, dest.BSpecData, BSpecData.Length);
+            Array.Copy(UnkGT4OData, dest.UnkGT4OData, UnkGT4OData.Length);
+
+            Calendar.CopyTo(dest.Calendar);
+            Garage.CopyTo(dest.Garage);
+            RaceRecords.CopyTo(dest.RaceRecords);
+            CourseRecords1.CopyTo(dest.CourseRecords1);
+            CourseRecords2.CopyTo(dest.CourseRecords2);
+            LicenseRecords.CopyTo(dest.LicenseRecords);
+            AvailableCarsAndCourses.CopyTo(dest.AvailableCarsAndCourses);
+            FavoriteCourses.CopyTo(dest.FavoriteCourses);
+            FavoriteCars.CopyTo(dest.FavoriteCars);
+            Presents.CopyTo(dest.Presents);
+            CurrentChampionship.CopyTo(dest.CurrentChampionship);
+            UsedCar.CopyTo(dest.UsedCar);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
@@ -65,12 +98,10 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sw.WriteInt32(MetType);
             sw.Position += 0x10;
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
                 sw.WriteBytes(UnkGT4OData);
 
             sw.WriteBytes(BSpecData);
-
-
             sw.Align(GT4Save.ALIGNMENT);
 
             Calendar.Pack(save, ref sw);
@@ -106,7 +137,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             MetType = sr.ReadInt32();
             sr.Position += 0x10;
 
-            if (save.IsGT4Online())
+            if (GT4Save.IsGT4Online(save.Type))
                 UnkGT4OData = sr.ReadBytes(0x40);
 
             BSpecData = sr.ReadBytes((2 * (sizeof(long) * 8)) + (2 * (sizeof(long)) * 8) + (2 * (sizeof(long)) * 8));
@@ -125,8 +156,5 @@ namespace PDTools.SaveFile.GT4.UserProfile
             CurrentChampionship.Unpack(save, ref sr);
             UsedCar.Unpack(save, ref sr);
         }
-
-        
     }
-
 }

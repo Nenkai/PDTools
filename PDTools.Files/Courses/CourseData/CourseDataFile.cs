@@ -13,7 +13,10 @@ using PDTools.Files.Models.ModelSet3;
 
 namespace PDTools.Files.Courses.CourseData;
 
-public class CourseDataFile
+/// <summary>
+/// Represents a course data file. (Disposable object)
+/// </summary>
+public class CourseDataFile : IDisposable
 {
     public const uint Magic_BE = 0x50414342;
     public const uint Magic_LE = 0x5041434C;
@@ -21,16 +24,17 @@ public class CourseDataFile
     public record CourseDataFileEntry(uint Type, uint Alignment, uint DataStart, uint DataLength);
     public List<CourseDataFileEntry> Entries { get; set; } = new();
 
-    public ModelSet3 MainModel { get; set; }
+    public ModelSet3 MainModelSet { get; set; }
+    public Stream Stream { get; set; }
 
-    public static CourseDataFile FromStream(Stream stream)
+    public static CourseDataFile Open(string file)
     {
-        BinaryStream bs = new BinaryStream(stream);
+        CourseDataFile courseData = new CourseDataFile();
+        courseData.Stream = new FileStream(file, FileMode.Open);
+        BinaryStream bs = new BinaryStream(courseData.Stream);
         bs.ByteConverter = ByteConverter.Big;
 
-        CourseDataFile courseData = new CourseDataFile();
         long basePos = bs.Position;
-
         uint magic = bs.ReadUInt32();
 
         if (magic == Magic_BE)
@@ -62,12 +66,22 @@ public class CourseDataFile
 
         bs.ReadInt32();
         uint mainModelOffset = bs.ReadUInt32();
+        uint unkModelOffset = bs.ReadUInt32();
 
         bs.Position = baseEntryPos + mainModelOffset;
-        courseData.MainModel = ModelSet3.FromStream(bs);
-        courseData.MainModel.ParentCourseData = courseData;
+        courseData.MainModelSet = ModelSet3.FromStream(bs);
+
+        //bs.Position = baseEntryPos + unkModelOffset;
+        //courseData.MainModelSet = ModelSet3.FromStream(bs);
+
+        courseData.MainModelSet.ParentCourseData = courseData;
 
         return courseData;
+    }
+
+    public void Dispose()
+    {
+        Stream?.Dispose();
     }
 
     /*

@@ -12,6 +12,9 @@ using PDTools.Utils;
 
 using PDTools.SaveFile.GT4.UserProfile;
 using PDTools.SaveFile.GT4.Option;
+using System.Buffers;
+using System.Runtime.InteropServices;
+using Syroot.BinaryData;
 
 namespace PDTools.SaveFile.GT4
 {
@@ -55,7 +58,7 @@ namespace PDTools.SaveFile.GT4
 
             if (decrypted.Length == 0x3A070)
             {
-                if (gt4Save.IsGT4Retail())
+                if (GT4Save.IsGT4Retail(gt4Save.Type))
                 {
                     // Warn
                 }
@@ -63,7 +66,7 @@ namespace PDTools.SaveFile.GT4
             else if (decrypted.Length == 0x3A160)
             {
                 // GT4O (US, JP)
-                if (!gt4Save.IsGT4Online())
+                if (!GT4Save.IsGT4Online(gt4Save.Type))
                 {
                     // Warn
                 }
@@ -75,6 +78,7 @@ namespace PDTools.SaveFile.GT4
 
 
 #if DEBUG
+            /*
             byte[] resaved = WriteSave(gt4Save);
             File.WriteAllBytes("save.out_repacked", resaved);
 
@@ -82,7 +86,15 @@ namespace PDTools.SaveFile.GT4
             DecryptGameDataBuffer(encrypted, out Memory<byte> redecrypted, out _);
 
             File.WriteAllBytes("save.out_repak_encr_decrypt", redecrypted.ToArray());
+            */
 #endif
+        }
+
+        public void CopyTo(GT4GameData dest)
+        {
+            Profile.CopyTo(dest.Profile);
+            Option.CopyTo(dest.Option);
+            Context.CopyTo(dest.Context);
         }
 
         private void ReadSave(GT4Save gt4Save, Memory<byte> buffer)
@@ -95,20 +107,22 @@ namespace PDTools.SaveFile.GT4
 
         public void SaveTo(GT4Save save, string fileName)
         {
-            byte[] output = WriteSave(save);
-            byte[] encrypted = EncryptGameDataBuffer(output, UseOldRandomUpdateCrypto);
-            File.WriteAllBytes(fileName, encrypted);
+            byte[] buffer = new byte[0x50000];
+            int length = WriteSave(save, buffer);
+            byte[] encrypted = EncryptGameDataBuffer(buffer.AsSpan(0, length), UseOldRandomUpdateCrypto);
+
+            using (var fs = new FileStream(fileName, FileMode.Create))
+                fs.Write(encrypted, 0, encrypted.Length);
         }
 
-        private byte[] WriteSave(GT4Save gt4Save)
+        private int WriteSave(GT4Save gt4Save, byte[] buffer)
         {
-            byte[] output = new byte[SaveLength];
-            SpanWriter sw = new SpanWriter(output);
+            SpanWriter sw = new SpanWriter(buffer);
             Profile.Pack(gt4Save, ref sw);
             Option.Pack(gt4Save, ref sw);
             Context.Pack(gt4Save, ref sw);
 
-            return output;
+            return sw.Position;
         }
 
         public static bool DecryptGameDataBuffer(byte[] rawSaveFile, out Memory<byte> saveBuffer, out bool usingOldRandomUpdateCrypto)
@@ -189,17 +203,17 @@ namespace PDTools.SaveFile.GT4
         }
 
         // Returns expected file size
-        public static int GetExpectedGameDataSize(GT4GameType gameType)
+        public static int GetExpectedGameDataSize(GT4SaveType gameType)
         {
             switch (gameType)
             {
-                case GT4GameType.GT4_EU:
-                case GT4GameType.GT4_US:
-                case GT4GameType.GT4_JP:
-                case GT4GameType.GT4_KR:
+                case GT4SaveType.GT4_EU:
+                case GT4SaveType.GT4_US:
+                case GT4SaveType.GT4_JP:
+                case GT4SaveType.GT4_KR:
                     return 0x3A070;
-                case GT4GameType.GT4O_US:
-                case GT4GameType.GT4O_JP:
+                case GT4SaveType.GT4O_US:
+                case GT4SaveType.GT4O_JP:
                     return 0x3A160;
 
                 default:

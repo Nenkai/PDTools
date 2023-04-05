@@ -14,6 +14,16 @@ namespace PDTools.Structures.PS2
         public float BodyLife { get; set; }
         public byte Everlasting { get; set; }
 
+        public void CopyTo(AutomobileAccumulatedStatus dest)
+        {
+            dest.Odometer = Odometer;
+            dest.EngineLife = EngineLife;
+            dest.OilLife = OilLife;
+            dest.Dirtiness = Dirtiness;
+            dest.BodyLife = BodyLife;
+            dest.Everlasting = Everlasting;
+        }
+
         public void Unpack(ref SpanReader sr)
         {
             Odometer = sr.ReadUInt32();

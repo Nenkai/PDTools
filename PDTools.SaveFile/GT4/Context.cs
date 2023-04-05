@@ -7,13 +7,22 @@ using Syroot.BinaryData.Memory;
 using PDTools.Utils;
 namespace PDTools.SaveFile.GT4
 {
-    public class ContextGT4 : IGameSerializeBase
+    public class ContextGT4 : IGameSerializeBase<ContextGT4>
     {
         public string MajorProject { get; set; }
         public string MajorPage { get; set; }
         public int CurrentStackSize { get; set; }
         public byte[] Stack { get; set; }
 
+        public void CopyTo(ContextGT4 dest)
+        {
+            dest.MajorProject = MajorProject;
+            dest.MajorPage = MajorPage;
+            dest.CurrentStackSize = CurrentStackSize;
+
+            dest.Stack = new byte[Stack.Length];
+            Array.Copy(Stack, dest.Stack, Stack.Length);
+        }
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteStringFix(MajorProject, 0x20);

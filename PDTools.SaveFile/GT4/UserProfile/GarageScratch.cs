@@ -8,7 +8,7 @@ using PDTools.Structures.PS2;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class GarageScratch : IGameSerializeBase
+    public class GarageScratch : IGameSerializeBase<GarageScratch>
     {
         public const int MAX_CARS = 1000;
 
@@ -18,6 +18,20 @@ namespace PDTools.SaveFile.GT4.UserProfile
         public byte[] Unk { get; set; } = new byte[0x14];
         public CarGarage CurrentCar { get; set; } = new CarGarage();
 
+        public void CopyTo(GarageScratch dest)
+        {
+            for (var i = 0; i < Cars.Length; i++)
+            {
+                dest.Cars[i] = new GarageScratchUnit();
+                Cars[i].CopyTo(dest.Cars[i]);
+            }
+
+            dest.RidingCarIndex = RidingCarIndex;
+            dest.UniqueID = UniqueID;
+            Array.Copy(Unk, dest.Unk, Unk.Length);
+            CurrentCar.CopyTo(dest.CurrentCar);
+        }
+
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
             for (var i = 0; i < MAX_CARS; i++)
@@ -26,7 +40,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             sw.WriteInt32(RidingCarIndex);
             sw.WriteUInt32(UniqueID);
             sw.WriteBytes(Unk);
-            CurrentCar.Pack(ref sw, save.IsGT4Online());
+            CurrentCar.Pack(ref sw, GT4Save.IsGT4Online(save.Type));
 
             sw.Align(GT4Save.ALIGNMENT);
         }
@@ -42,9 +56,29 @@ namespace PDTools.SaveFile.GT4.UserProfile
             RidingCarIndex = sr.ReadInt32();
             UniqueID = sr.ReadUInt32();
             Unk = sr.ReadBytes(0x14);
-            CurrentCar.Unpack(ref sr, save.IsGT4Online());
+            CurrentCar.Unpack(ref sr, GT4Save.IsGT4Online(save.Type));
 
             sr.Align(GT4Save.ALIGNMENT);
+        }
+
+        /// <summary>
+        /// Clears all the cars.
+        /// </summary>
+        public void Clear()
+        {
+            for (var i = 0; i < Cars.Length; i++)
+                Cars[i].IsSlotTaken = false;
+        }
+
+        /// <summary>
+        /// Clears all the cars's data.
+        /// </summary>
+        public void ClearAllCarData()
+        {
+            for (var i = 0; i < Cars.Length; i++)
+            {
+                Cars[i].GarageDataExists = false;
+            }
         }
 
         public bool IsFull()

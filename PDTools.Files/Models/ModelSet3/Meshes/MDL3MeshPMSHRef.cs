@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
     public class MDL3MeshPMSHRef
     {
         public float[] Values { get; set; } = new float[12];
-        public int PMSHEntryIndex { get; set; }
+        public int PackedMeshEntryIndex { get; set; }
         public static MDL3MeshPMSHRef FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
             long unkBasePos = bs.Position;
@@ -20,7 +20,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
             var unk = new MDL3MeshPMSHRef();
             unk.Values = bs.ReadSingles(12);
             int unkOffset = bs.ReadInt32();
-            unk.PMSHEntryIndex = bs.ReadInt32();
+            unk.PackedMeshEntryIndex = bs.ReadInt32();
 
             return unk;
         }

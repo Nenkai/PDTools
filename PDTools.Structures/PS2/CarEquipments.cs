@@ -4,6 +4,7 @@ using System.Text;
 using System.ComponentModel;
 
 using Syroot.BinaryData.Memory;
+using System.Net.NetworkInformation;
 
 namespace PDTools.Structures.PS2
 {
@@ -90,12 +91,12 @@ namespace PDTools.Structures.PS2
         public byte Susp_RearDamperF2R { get; set; }
         public byte Susp_FrontStabilizer { get; set; }
         public byte Susp_RearStabilizer { get; set; }
-        public byte FrontLSDparam { get; set; }
-        public byte FrontLSDparam2 { get; set; }
-        public byte FrontLSDparam3 { get; set; }
-        public byte RearLSDparam { get; set; }
-        public byte RearLSDparam2 { get; set; }
-        public byte RearLSDparam3 { get; set; }
+        public byte LSDParam_FrontTorque { get; set; }
+        public byte LSDParam_RearTorque { get; set; }
+        public byte LSDParam_FrontAccel { get; set; }
+        public byte LSDParam_RearAccel { get; set; }
+        public byte LSDParam_FrontDecel { get; set; }
+        public byte LSDParam_RearDecel { get; set; }
         public byte TCSC_Value { get; set; }
         public byte ASCC_VSC1 { get; set; }
         public byte ASCC_VSC2 { get; set; }
@@ -121,8 +122,129 @@ namespace PDTools.Structures.PS2
         public byte Susp_FrontSpringRateLevel { get; set; }
         public byte Susp_RearSpringRateLevel { get; set; }
         public byte byte169 { get; set; }
-
         public byte[] Unk_GT4OData { get; set; }
+
+        public void CopyTo(CarEquipments dest)
+        {
+            dest.CarCode = new DbCode(CarCode.Code, CarCode.TableId);
+            dest.TunedCarCode = new DbCode(TunedCarCode.Code, TunedCarCode.TableId);
+            dest.Variation = new DbCode(Variation.Code, Variation.TableId);
+            dest.VariationOrder = VariationOrder;
+            dest.Brake = new DbCode(Brake.Code, Brake.TableId);
+            dest.BrakeController = new DbCode(BrakeController.Code, BrakeController.TableId);
+            dest.Chassis = new DbCode(Chassis.Code, Chassis.TableId);
+            dest.Engine = new DbCode(Engine.Code, Engine.TableId);
+            dest.Drivetrain = new DbCode(Drivetrain.Code, Drivetrain.TableId);
+            dest.Gear = new DbCode(Gear.Code, Gear.TableId);
+            dest.Suspension = new DbCode(Suspension.Code, Suspension.TableId);
+            dest.LSD = new DbCode(LSD.Code, LSD.TableId);
+            dest.FrontTire = new DbCode(FrontTire.Code, FrontTire.TableId);
+            dest.RearTire = new DbCode(RearTire.Code, RearTire.TableId);
+            dest.Steer = new DbCode(Steer.Code, Steer.TableId);
+            dest.Lightweight = new DbCode(Lightweight.Code, Lightweight.TableId);
+            dest.RacingModify = new DbCode(RacingModify.Code, RacingModify.TableId);
+            dest.Portpolish = new DbCode(Portpolish.Code, Portpolish.TableId);
+            dest.EngineBalance = new DbCode(EngineBalance.Code, EngineBalance.TableId);
+            dest.Displacement = new DbCode(Displacement.Code, Displacement.TableId);
+            dest.Computer = new DbCode(Computer.Code, Computer.TableId);
+            dest.Natune = new DbCode(Natune.Code, Natune.TableId);
+            dest.TurbineKit = new DbCode(TurbineKit.Code, TurbineKit.TableId);
+            dest.Flywheel = new DbCode(Flywheel.Code, Flywheel.TableId);
+            dest.Clutch = new DbCode(Clutch.Code, Clutch.TableId);
+            dest.PropellerShaft = new DbCode(PropellerShaft.Code, PropellerShaft.TableId);
+            dest.Muffler = new DbCode(Muffler.Code, Muffler.TableId);
+            dest.Intercooler = new DbCode(Intercooler.Code, Intercooler.TableId);
+            dest.ASCC = new DbCode(ASCC.Code, ASCC.TableId);
+            dest.TCSC = new DbCode(TCSC.Code, TCSC.TableId);
+            dest.Wheel = new DbCode(Wheel.Code, Wheel.TableId);
+            dest.NOS = new DbCode(NOS.Code, NOS.TableId);
+            dest.Wing = new DbCode(Wing.Code, Wing.TableId);
+            dest.SuperCharger = new DbCode(SuperCharger.Code, SuperCharger.TableId);
+            dest.GearReverse = GearReverse;
+            dest.GearRatio1 = GearRatio1;
+            dest.GearRatio2 = GearRatio2;
+            dest.GearRatio3 = GearRatio3;
+            dest.GearRatio4 = GearRatio4;
+            dest.GearRatio5 = GearRatio5;
+            dest.GearRatio6 = GearRatio6;
+            dest.GearRatio7 = GearRatio7;
+            dest.GearRatio8 = GearRatio8;
+            dest.GearRatio9 = GearRatio9;
+            dest.GearRatio10 = GearRatio10;
+            dest.GearRatio11 = GearRatio11;
+            dest.FinalGearRatio = FinalGearRatio;
+            dest.MaxSpeed = MaxSpeed;
+            dest.LastFinalGearRatio = LastFinalGearRatio;
+            dest.Param4WD = Param4WD;
+            dest.ABSLevelF = ABSLevelF;
+            dest.ABSLevelR = ABSLevelR;
+            dest.SettingClF = SettingClF;
+            dest.SettingClR = SettingClR;
+            dest.Turbo_Boost1 = Turbo_Boost1;
+            dest.Turbo_PeakRPM1 = Turbo_PeakRPM1;
+            dest.Turbo_Response1 = Turbo_Response1;
+            dest.Turbo_Boost2 = Turbo_Boost2;
+            dest.Turbo_PeakRPM2 = Turbo_PeakRPM2;
+            dest.Turbo_Response2 = Turbo_Response2;
+            dest.Susp_FrontCamber = Susp_FrontCamber;
+            dest.Susp_RearCamber = Susp_RearCamber;
+            dest.field_138 = field_138;
+            dest.Susp_RideHeightF = Susp_RideHeightF;
+            dest.Susp_RideHeightR = Susp_RideHeightR;
+            dest.Susp_FrontToe = Susp_FrontToe;
+            dest.Susp_RearToe = Susp_RearToe;
+            dest.Susp_FrontSpringRate = Susp_FrontSpringRate;
+            dest.Susp_RearSpringRate = Susp_RearSpringRate;
+            dest.leverRatioF = leverRatioF;
+            dest.leverRatioR = leverRatioR;
+            dest.Susp_FrontDamperF1B = Susp_FrontDamperF1B;
+            dest.Susp_FrontDamperF2B = Susp_FrontDamperF2B;
+            dest.Susp_FrontDamperF1R = Susp_FrontDamperF1R;
+            dest.Susp_FrontDamperF2R = Susp_FrontDamperF2R;
+            dest.Susp_RearDamperF1B = Susp_RearDamperF1B;
+            dest.Susp_RearDamperF2B = Susp_RearDamperF2B;
+            dest.Susp_RearDamperF1R = Susp_RearDamperF1R;
+            dest.Susp_RearDamperF2R = Susp_RearDamperF2R;
+            dest.Susp_FrontStabilizer = Susp_FrontStabilizer;
+            dest.Susp_RearStabilizer = Susp_RearStabilizer;
+            dest.LSDParam_FrontTorque = LSDParam_FrontTorque;
+            dest.LSDParam_RearTorque = LSDParam_RearTorque;
+            dest.LSDParam_FrontAccel = LSDParam_FrontAccel;
+            dest.LSDParam_RearAccel = LSDParam_RearAccel;
+            dest.LSDParam_FrontDecel = LSDParam_FrontDecel;
+            dest.LSDParam_RearDecel = LSDParam_RearDecel;
+            dest.TCSC_Value = TCSC_Value;
+            dest.ASCC_VSC1 = ASCC_VSC1;
+            dest.ASCC_VSC2 = ASCC_VSC2;
+            dest.ASCC_VUC1 = ASCC_VUC1;
+            dest.ASCC_VUC2 = ASCC_VUC2;
+            dest.BallastWeight = BallastWeight;
+            dest.BallastPosition = BallastPosition;
+            dest.unk1 = unk1;
+            dest.unk2 = unk2;
+            dest.unk3 = unk3;
+            dest.unk4 = unk4;
+            dest.unk5 = unk5;
+            dest.WeightMultiplier = WeightMultiplier;
+            dest.PowerMultiplier = PowerMultiplier;
+            dest.UnkTunedCarValue = UnkTunedCarValue;
+            dest.IsStrange = IsStrange;
+            dest.NOSTorqueVolume = NOSTorqueVolume;
+            dest.TireSize_StiffnessCategory = TireSize_StiffnessCategory;
+            dest.byte163 = byte163;
+            dest.Gear_WeightRoller = Gear_WeightRoller;
+            dest.Susp_FrontPreLoadLevel = Susp_FrontPreLoadLevel;
+            dest.Susp_RearPreLoadLevel = Susp_RearPreLoadLevel;
+            dest.Susp_FrontSpringRateLevel = Susp_FrontSpringRateLevel;
+            dest.Susp_RearSpringRateLevel = Susp_RearSpringRateLevel;
+            dest.byte169 = byte169;
+
+            if (Unk_GT4OData != null)
+            {
+                dest.Unk_GT4OData = new byte[0x18];
+                Array.Copy(Unk_GT4OData, dest.Unk_GT4OData, Unk_GT4OData.Length);
+            }
+        }
 
         public void Unpack(ref SpanReader sr, bool gt4o = false)
         {
@@ -208,12 +330,12 @@ namespace PDTools.Structures.PS2
             Susp_RearDamperF2R = sr.ReadByte();
             Susp_FrontStabilizer = sr.ReadByte();
             Susp_RearStabilizer = sr.ReadByte();
-            FrontLSDparam = sr.ReadByte();
-            FrontLSDparam2 = sr.ReadByte();
-            FrontLSDparam3 = sr.ReadByte();
-            RearLSDparam = sr.ReadByte();
-            RearLSDparam2 = sr.ReadByte();
-            RearLSDparam3 = sr.ReadByte();
+            LSDParam_FrontTorque = sr.ReadByte();
+            LSDParam_RearTorque = sr.ReadByte();
+            LSDParam_FrontAccel = sr.ReadByte();
+            LSDParam_RearAccel = sr.ReadByte();
+            LSDParam_FrontDecel = sr.ReadByte();
+            LSDParam_RearDecel = sr.ReadByte();
             TCSC_Value = sr.ReadByte();
             ASCC_VSC1 = sr.ReadByte();
             ASCC_VSC2 = sr.ReadByte();
@@ -330,12 +452,12 @@ namespace PDTools.Structures.PS2
             sw.WriteByte(Susp_RearDamperF2R);
             sw.WriteByte(Susp_FrontStabilizer);
             sw.WriteByte(Susp_RearStabilizer);
-            sw.WriteByte(FrontLSDparam);
-            sw.WriteByte(FrontLSDparam2);
-            sw.WriteByte(FrontLSDparam3);
-            sw.WriteByte(RearLSDparam);
-            sw.WriteByte(RearLSDparam2);
-            sw.WriteByte(RearLSDparam3);
+            sw.WriteByte(LSDParam_FrontTorque);
+            sw.WriteByte(LSDParam_RearTorque);
+            sw.WriteByte(LSDParam_FrontAccel);
+            sw.WriteByte(LSDParam_RearAccel);
+            sw.WriteByte(LSDParam_FrontDecel);
+            sw.WriteByte(LSDParam_RearDecel);
             sw.WriteByte(TCSC_Value);
             sw.WriteByte(ASCC_VSC1);
             sw.WriteByte(ASCC_VSC2);

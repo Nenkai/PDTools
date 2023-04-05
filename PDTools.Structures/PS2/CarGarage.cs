@@ -17,6 +17,24 @@ namespace PDTools.Structures.PS2
         public byte[] Unk2 { get; set; }
         public AutomobileAccumulatedStatus Status { get; set; } = new AutomobileAccumulatedStatus();
 
+        public void CopyTo(CarGarage dest)
+        {
+            for (var i = 0; i < MAX_SHEETS; i++)
+            {
+                dest.Sheets[i] = new CarEquipments();
+                Sheets[i].CopyTo(dest.Sheets[i]);
+            }
+
+            dest.UnkData = new byte[UnkData.Length];
+            Array.Copy(UnkData, dest.UnkData, UnkData.Length);
+            dest.Unk = Unk;
+
+            dest.Unk2 = new byte[Unk2.Length];
+            Array.Copy(Unk2, dest.Unk2, Unk2.Length);
+
+            Status.CopyTo(dest.Status);
+        }
+
         public void Unpack(ref SpanReader sr, bool gt4o = false)
         {
             for (var i = 0; i < MAX_SHEETS; i++)

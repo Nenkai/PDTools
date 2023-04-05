@@ -9,16 +9,25 @@ using PDTools.Structures;
 
 namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
 {
-    public class BuyWheelEvent : DayEvent
+    public class BuyWheelEvent : IDayEvent
     {
-        public override DayEventType EventType => DayEventType.BUY_WHEEL;
+        public DayEventType EventType => DayEventType.BUY_WHEEL;
 
         public WheelCategoryType WheelCategory { get; set; }
         public byte Unk { get; set; }
         public byte Unk2 { get; set; }
         public DbCode WheelCode { get; set; }
 
-        public override void Pack(GT4Save save, ref SpanWriter sw)
+        public void CopyTo(IDayEvent dest)
+        {
+            var d = (BuyWheelEvent)dest;
+            d.WheelCategory = WheelCategory;
+            d.Unk = Unk;
+            d.Unk2 = Unk2;
+            d.WheelCode = new DbCode(WheelCode.Code, WheelCode.TableId);
+        }
+
+        public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteByte((byte)WheelCategory);
             sw.WriteByte(Unk);
@@ -28,7 +37,7 @@ namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
             sw.WriteInt32(WheelCode.TableId);
         }
 
-        public override void Unpack(GT4Save save, ref SpanReader sr)
+        public void Unpack(GT4Save save, ref SpanReader sr)
         {
             WheelCategory = (WheelCategoryType)sr.ReadByte();
             Unk = sr.ReadByte();

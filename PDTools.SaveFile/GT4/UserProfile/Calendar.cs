@@ -9,13 +9,26 @@ using PDTools.Structures;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class Calendar : IGameSerializeBase
+    public class Calendar : IGameSerializeBase<Calendar>
     {
         public const int MAX_EVENTS = 2922;
 
         public int Days { get; set; }
-        public DayEvent[] Events { get; set; } = new DayEvent[MAX_EVENTS];
+        public IDayEvent[] Events { get; set; } = new IDayEvent[MAX_EVENTS];
         public DateTime Date { get; set; }
+
+        public void CopyTo(Calendar dest)
+        {
+            dest.Days = Days;
+
+            for (var i = 0; i < dest.Events.Length; i++)
+            {
+                dest.Events[i] = (IDayEvent)Activator.CreateInstance(Events[i].GetType());
+                Events[i].CopyTo(dest.Events[i]);
+            }
+
+            dest.Date = Date;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
@@ -23,7 +36,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
 
             for (var i = 0; i < MAX_EVENTS; i++)
             {
-                DayEvent @event = Events[i];
+                IDayEvent @event = Events[i];
                 sw.WriteByte((byte)@event.EventType);
                 @event.Pack(save, ref sw);
 
@@ -46,7 +59,7 @@ namespace PDTools.SaveFile.GT4.UserProfile
             for (var i = 0; i < MAX_EVENTS; i++)
             {
                 DayEventType type = (DayEventType)sr.ReadByte();
-                DayEvent @event;
+                IDayEvent @event;
                 switch (type)
                 {
                     case DayEventType.NO_EVENT:
