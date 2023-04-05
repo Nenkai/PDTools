@@ -19,36 +19,6 @@ namespace PDTools.GTPatcher
 
         public static async Task Main(string[] args)
         {
-            using var fs = new FileStream(@"D:\Modding_Research\Gran_Turismo\Gran_Turismo_7\Package\GT7-1.29\Image0\eboot.elf", FileMode.Open);
-            using var bs = new BinaryReader(fs);
-
-            fs.Position = 0x3B7DDD0;
-            byte[] arr = new byte[350];
-            for (var i = 0; i < 350; i++)
-                arr[i] = bs.ReadByte();
-
-            byte test = arr[274];
-
-            fs.Position = 0x3B7DF30;
-            short[] arr2 = new short[2080];
-            for (var i = 0; i < 2080; i++)
-                arr2[i] = bs.ReadInt16();
-
-
-            fs.Position = 0x3B7F050;
-
-            short[] arr3 = new short[2190];
-            for (var i = 0; i < 2190; i++)
-                arr3[i] = bs.ReadInt16();
-
-            short test2 = arr3[test];
-
-            fs.Position = 0x3B80170;
-            short[] arr4 = new short[542];
-            for (var i = 0; i < 542; i++)
-                arr4[i] = bs.ReadInt16();
-
-            int aa = Array.IndexOf(arr4, (short)18);
             Console.WriteLine("GTDebugger by Nenkai#9075 for GT Sport");
 
             await Parser.Default.ParseArguments<Options>(args)
