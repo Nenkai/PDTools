@@ -28,6 +28,7 @@ namespace PDTools.GTPatcher.MemoryPatches
         public const ulong GT7_V129_SafeAddr = 0x370FF78;
 
         public const ulong PFSVolumePath_Offset = 0x2B72F80;
+        public const ulong GT7_V129_PFSVolumePath_Offset = 0x4FA2E60;
 
         public ulong Argc_Offset { get; set; }
         public ulong Argv_Offset { get; set; }
@@ -76,33 +77,38 @@ namespace PDTools.GTPatcher.MemoryPatches
             dbg.PS4.ChangeWatchpoint(0, true, WATCHPT_LENGTH.DBREG_DR7_LEN_4, WATCHPT_BREAKTYPE.DBREG_DR7_RDWR, dbg.ImageBase + Argv_Offset);
         }
 
-        public async Task Patch(GTPatcher dbg, GeneralRegisters regs)
+        public void Patch(GTPatcher dbg, GeneralRegisters regs)
         {
-            await dbg.Notify("Caught main, injecting argc/argv...");
+            dbg.Notify("Caught main, injecting argc/argv...");
 
             
-            await PatchArgcArgv(_args, dbg);
+            PatchArgcArgv(_args, dbg);
 
             foreach (var arg in _args)
             {
                 if (arg.StartsWith("fsroot"))
-                    await PatchFSRoot(dbg);
+                {
+                    if (dbg.GameType == GameType.GTS_V168)
+                        PatchFSRoot(dbg);
+                    else
+                        PatchFSRootGT7(dbg);
+                }
             }
             
 
-            await dbg.PS4.ChangeWatchpoint(0, false, WATCHPT_LENGTH.DBREG_DR7_LEN_4, WATCHPT_BREAKTYPE.DBREG_DR7_RDWR, 0);
+            dbg.PS4.ChangeWatchpoint(0, false, WATCHPT_LENGTH.DBREG_DR7_LEN_4, WATCHPT_BREAKTYPE.DBREG_DR7_RDWR, 0);
 
-            await dbg.Notify("Arguments injected!");
+            dbg.Notify("Arguments injected!");
         }
 
-        public async Task PatchArgcArgv(string[] args, GTPatcher dbg)
+        public void PatchArgcArgv(string[] args, GTPatcher dbg)
         {
             // Update arg count
-            int argCount = await dbg.ReadMemory<int>(Argc_Offset);
-            await dbg.WriteMemory<int>(Argc_Offset, args.Length);
+            int argCount = dbg.ReadMemory<int>(Argc_Offset);
+            dbg.WriteMemory<int>(Argc_Offset, args.Length);
 
             ulong newArgvOffset = dbg.ImageBase + Safe_Addr;
-            await dbg.WriteMemory<ulong>(Argv_Offset, newArgvOffset);
+            dbg.WriteMemory<ulong>(Argv_Offset, newArgvOffset);
 
             ulong strPtr = newArgvOffset;
             ulong lastAlignedStrOffset = Safe_Addr + 0x200;
@@ -110,8 +116,8 @@ namespace PDTools.GTPatcher.MemoryPatches
 
             for (var i = 0; i < args.Length; i++)
             {
-                await dbg.WriteMemoryAbsolute<ulong>(strPtr, lastAlignedStrOffset);
-                await dbg.WriteMemoryAbsolute<string>(lastAlignedStrOffset, args[i]);
+                dbg.WriteMemoryAbsolute<ulong>(strPtr, lastAlignedStrOffset);
+                dbg.WriteMemoryAbsolute<string>(lastAlignedStrOffset, args[i]);
 
                 strPtr += sizeof(ulong);
 
@@ -122,7 +128,7 @@ namespace PDTools.GTPatcher.MemoryPatches
             }
         }
 
-        private async Task PatchFSRoot(GTPatcher dbg)
+        private void PatchFSRoot(GTPatcher dbg)
         {
             // Requires command line argument to be set first i.e 'fsroot=/@/data/test'
 
@@ -143,7 +149,7 @@ namespace PDTools.GTPatcher.MemoryPatches
              * 
              * CheckForAdditionalDevicesFromCommandLineArgs(device, keys, g_argc, g_argv); 
              */
-            await dbg.WriteMemory<string>(PFSVolumePath_Offset, "/app0/doesnotexist.idx");
+            dbg.WriteMemory<string>(PFSVolumePath_Offset, "/app0/doesnotexist.idx");
 
             /* There are a few devices available to be set:
              * - vol
@@ -163,20 +169,30 @@ namespace PDTools.GTPatcher.MemoryPatches
              * direct -> direcc
              */
             // Do not write string. We do not want it null terminated
-            await dbg.WriteMemory(0x1BF18B1, (byte)'c');
-            await dbg.WriteMemory(0x1BF58BF, (byte)'c');
+            dbg.WriteMemory(0x1BF18B1, (byte)'c');
+            dbg.WriteMemory(0x1BF58BF, (byte)'c');
 
             // Patch instruction string lengths of strlen("direct1") to strlen("direcc")
-            await dbg.WriteMemory(0x1BF3617, (byte)"direcc".Length);
-            await dbg.WriteMemory(0x1BF3619, (byte)"direcc".Length);
-            await dbg.WriteMemory(0x1BF364F, (byte)"direcc".Length);
-            await dbg.WriteMemory(0x1BF365B, (byte)"direcc".Length);
+            dbg.WriteMemory(0x1BF3617, (byte)"direcc".Length);
+            dbg.WriteMemory(0x1BF3619, (byte)"direcc".Length);
+            dbg.WriteMemory(0x1BF364F, (byte)"direcc".Length);
+            dbg.WriteMemory(0x1BF365B, (byte)"direcc".Length);
 
             /* Patch actual check (direct1 -> direcc) */
-            await dbg.WriteMemory<string>(0x1E905EF, "direcc");
+            dbg.WriteMemory<string>(0x1E905EF, "direcc");
 
             // Set mode of FileDeviceKernel from 1 to -1 (no idea what that does)
-            await dbg.WriteMemory<int>(0x1BF381A, 1);
+            dbg.WriteMemory<int>(0x1BF381A, 1);
+        }
+
+        private void PatchFSRootGT7(GTPatcher dbg)
+        {
+            // 1.29 direct
+            // SceKernelOpen at 35D57E0 for checking reads
+            dbg.WriteMemory(0x9D24D1, new byte[] { 0x0F, 0x85 }); // jz -> jnz skip sceKernelStat (see next edit)
+            dbg.WriteMemory<string>(0x4FA2E60, "/@/data/gt7_fsroot"); // change pfsVolumePath for idx to argument for FileSystemDirect
+            dbg.WriteMemory<string>(0x3A18F90, "direct-nocache"); // Set type from mphfs to direct-nocache (available is also direct (cached), mffs, mphfs)
+
         }
 
         public static ulong AlignValue(ulong x, ulong alignment)

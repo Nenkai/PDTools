@@ -51,17 +51,17 @@ namespace PDTools.GTPatcher.MemoryPatches
 
         }
 
-        public async Task Patch(GTPatcher dbg, GeneralRegisters regs)
+        public void Patch(GTPatcher dbg, GeneralRegisters regs)
         {
-            await SetVersionEnvironment(dbg, _environment);
+            SetVersionEnvironment(dbg, _environment);
         }
 
-        public async Task SetVersionEnvironment(GTPatcher dbg, string env)
+        public void SetVersionEnvironment(GTPatcher dbg, string env)
         {
-            string oldEnv = await dbg.ReadMemory<string>(Offset);
-            await dbg.WriteMemory<string>(Offset, env);
+            string oldEnv = dbg.ReadMemory<string>(Offset);
+            dbg.WriteMemory<string>(Offset, env);
 
-            await dbg.Notify($"Environment: {oldEnv} -> {env}");
+            dbg.Notify($"Environment: {oldEnv} -> {env}");
         }
 
 

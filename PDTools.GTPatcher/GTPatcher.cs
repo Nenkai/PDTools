@@ -12,7 +12,7 @@ using System.Security.AccessControl;
 
 namespace PDTools.GTPatcher
 {
-    public class GTPatcher : IAsyncDisposable
+    public class GTPatcher : IDisposable
     {
         public PS4DBG PS4 { get; private set; }
         public int GamePid { get; private set; }
@@ -37,14 +37,19 @@ namespace PDTools.GTPatcher
             GameType = gameType;
         }
 
-        public async Task Start(CancellationToken token)
+        public void Start(CancellationToken token)
         {
             PS4 = new PS4DBG(_ip);
 
             foreach (var i in _memoryPatches)
                 i.Init(this);
 
-            await DebugLoop(token);
+            DebugLoop(token);
+        }
+
+        ~GTPatcher()
+        {
+            Dispose();
         }
 
         public void AddPatch(IMemoryPatch patch)
@@ -57,10 +62,10 @@ namespace PDTools.GTPatcher
             _breakLoggers.Add(breakLogger);
         }
 
-        private async Task DebugLoop(CancellationToken token)
+        private void DebugLoop(CancellationToken token)
         {
             bool didThing = false;
-            while (true)
+            while (!token.IsCancellationRequested)
             {
                 if (!PS4.IsConnected)
                 {
@@ -71,21 +76,19 @@ namespace PDTools.GTPatcher
 
                 if (!didThing)
                 {
-                    GamePid = await WaitForProcess("eboot.bin", token);
+                    GamePid = WaitForProcess("eboot.bin");
                     if (token.IsCancellationRequested)
                     {
-                        HandleStop();
                         return;
                     }
 
-                    await PS4.AttachDebugger(GamePid, AttachCallback, token);
+                    PS4.AttachDebugger(GamePid, AttachCallback);
                     if (token.IsCancellationRequested)
                     {
-                        HandleStop();
                         return;
                     }
 
-                    await PS4.Notify(222, $"Attached to: {GameType}");
+                    PS4.Notify(222, $"Attached to: {GameType}");
 
                     foreach (var breaklogger in _breakLoggers)
                         breaklogger.Init(this);
@@ -93,28 +96,25 @@ namespace PDTools.GTPatcher
                     foreach (var patch in _memoryPatches)
                         patch.OnAttach(this);
 
-                    await Task.Delay(1000);
-                    await PS4.ProcessResume();
+                    Thread.Sleep(1000);
+                    PS4.ProcessResume();
 
-                    await Task.Delay(1000);
+                    Thread.Sleep(1000);
 
                     didThing = true;
                 }
 
-                await Task.Delay(1, token);
+                Thread.Sleep(100);
             }
         }
 
 
-        private async Task<int> WaitForProcess(string name, CancellationToken token)
+        private int WaitForProcess(string name)
         {
             int pid = 0;
             while (pid == 0)
             {
-                if (token.IsCancellationRequested)
-                    return -1;
-
-                var list = await PS4.GetProcessList();
+                var list = PS4.GetProcessList();
                 for (var i = 0; i < list.Processes.Length; i++)
                 {
                     var process = list.Processes[i];
@@ -125,34 +125,34 @@ namespace PDTools.GTPatcher
                     }
                 }
 
-                await Task.Delay(50);
+                Thread.Sleep(50);
             }
 
             Console.WriteLine($"Found game process: PID {pid}");
             return pid;
         }
 
-        private async void AttachCallback(uint lwpid, uint status, string tdname, GeneralRegisters regs, FloatingPointRegisters fpregs, DebugRegisters dbregs)
+        private void AttachCallback(uint lwpid, uint status, string tdname, GeneralRegisters regs, FloatingPointRegisters fpregs, DebugRegisters dbregs)
         {
             foreach (var breakLogger in _breakLoggers)
             {
                 if (breakLogger.CheckHit(this, regs))
-                    await breakLogger.OnBreak(this, regs);
+                    breakLogger.OnBreak(this, regs);
             }
 
             if (!_MemPatchesApplied)
             {
                 foreach (var patch in _memoryPatches)
-                    await patch.Patch(this, regs);
+                    patch.Patch(this, regs);
                 
-                await PS4.ProcessResume();
+                PS4.ProcessResume();
                 Thread.Sleep(50);
                 _MemPatchesApplied = true;
 
                 return;
             }
 
-            await PS4.ProcessResume();
+            PS4.ProcessResume();
         }
 
         // Don't mind, game on debug sends requests to dev url server
@@ -178,29 +178,29 @@ namespace PDTools.GTPatcher
         await dbg.WriteMemory<string>(0x3C8405F, "http://<pub ip>/user"); // User
         */
 
-        public Task ReadMemory(ulong address, byte[] buffer, int length)
+        public void ReadMemory(ulong address, byte[] buffer, int length)
         {
-            return PS4.ReadMemory(buffer, GamePid, ImageBase + address, length);
+            PS4.ReadMemory(buffer, GamePid, ImageBase + address, length);
         }
 
-        public Task<T> ReadMemory<T>(ulong address)
+        public T ReadMemory<T>(ulong address)
         {
             return PS4.ReadMemory<T>(GamePid, ImageBase + address);
         }
 
-        public Task<T> ReadMemoryAbsolute<T>(ulong address)
+        public T ReadMemoryAbsolute<T>(ulong address)
         {
             return PS4.ReadMemory<T>(GamePid, address);
         }
 
-        public Task WriteMemory<T>(ulong address, T value)
+        public void WriteMemory<T>(ulong address, T value)
         {
-            return PS4.WriteMemory<T>(GamePid, ImageBase + address, value);
+            PS4.WriteMemory<T>(GamePid, ImageBase + address, value);
         }
 
-        public Task WriteMemoryAbsolute<T>(ulong address, T value)
+        public void WriteMemoryAbsolute<T>(ulong address, T value)
         {
-            return PS4.WriteMemory<T>(GamePid, address, value);
+            PS4.WriteMemory<T>(GamePid, address, value);
         }
 
         public Breakpoint SetBreakpoint(ulong address)
@@ -215,20 +215,15 @@ namespace PDTools.GTPatcher
             return brk;
         }
 
-        public async Task Notify(string message)
+        public void Notify(string message)
         {
-            await PS4.Notify(222, message);
+            PS4.Notify(222, message);
         }
 
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
             Console.WriteLine("Disposing");
-            await PS4.DisposeAsync();
-        }
-
-        private void HandleStop()
-        {
-            PS4.Stop();
+            PS4.Dispose();
         }
     }
 
