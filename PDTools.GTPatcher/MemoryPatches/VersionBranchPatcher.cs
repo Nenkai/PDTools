@@ -51,17 +51,17 @@ namespace PDTools.GTPatcher.MemoryPatches
 
         }
 
-        public async Task Patch(GTPatcher dbg, GeneralRegisters regs)
+        public void Patch(GTPatcher dbg, GeneralRegisters regs)
         {
-            await SetVersionBranch(dbg, _branch);
+            SetVersionBranch(dbg, _branch);
         }
 
-        public async Task SetVersionBranch(GTPatcher dbg, string branch)
+        public void SetVersionBranch(GTPatcher dbg, string branch)
         {
-            string oldBranch = await dbg.ReadMemory<string>(Offset);
-            await dbg.WriteMemory<string>(Offset, branch);
+            string oldBranch = dbg.ReadMemory<string>(Offset);
+            dbg.WriteMemory<string>(Offset, branch);
 
-            await dbg.Notify($"Branch: {oldBranch} -> {branch}");
+            dbg.Notify($"Branch: {oldBranch} -> {branch}");
         }
 
 

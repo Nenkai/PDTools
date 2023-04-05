@@ -73,7 +73,20 @@ namespace PDTools.GTPatcher
                 dbg.AddBreakLogger(new FileDeviceMPHAccessLogger(options.MPHLogMissingFiles));
             }
 
-            //dbg.AddBreakLogger(new AdhocExceptionLogger());
+            if (options.FixAdhocExceptionCrash)
+            {
+                Console.WriteLine($"Will fix GT7 adhoc exceptions");
+                dbg.AddBreakLogger(new AdhocExceptionFixer());
+            }
+
+            if (options.DisableTinyWebCaching)
+            {
+                Console.WriteLine($"Will disable tinyweb adhoc module caching");
+                dbg.AddBreakLogger(new TinyWebAdhocModuleCacheDisabler());
+            }
+
+
+            dbg.AddBreakLogger(new TestLogger());
 
             Console.CancelKeyPress += delegate {
                 _cts.Cancel();
@@ -81,8 +94,8 @@ namespace PDTools.GTPatcher
 
             Console.WriteLine();
 
-            await dbg.Start(_cts.Token);
-            await dbg.DisposeAsync();
+            dbg.Start(new CancellationTokenSource().Token);
+            dbg.Dispose();
         }
     }
 
@@ -114,5 +127,11 @@ namespace PDTools.GTPatcher
 
         [Option("kernel-log-missing-files", Required = false, HelpText = "Whether to log missing files from the game (makes it run slower)")]
         public bool KernelLogMissingFiles { get; set; }
+
+        [Option("fix-gt7-adhoc-exceptions", Required = false, HelpText = "Fixes adhoc exceptions crashing GT7 (removes vegas reporting)")]
+        public bool FixAdhocExceptionCrash { get; set; }
+
+        [Option("disable-tinyweb-caching", Required = false, HelpText = "Disables TinyWeb ADC/Adhoc caching")]
+        public bool DisableTinyWebCaching { get; set; }
     }
 }

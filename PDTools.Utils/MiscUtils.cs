@@ -112,14 +112,16 @@ namespace PDTools.Utils
         /// <param name="bits">Bits taken by value</param>
         public static void PackFloat(float value, out int packedValue, out int bits)
         {
-            int absDistance = Math.Abs((int)value);
+            float rounded = (float)Math.Round(value);
+
+            int absDistance = (int)Math.Abs(rounded);
             bits = MiscUtils.GetHighestBitIndex(absDistance);
 
             if (absDistance != 0 && absDistance > MiscUtils.GetMaxSignedForBitCount(bits)) ;
                 bits++;
 
             if (value < 0)
-                packedValue = (int)(MiscUtils.GetMaxForBitCount(bits) + value);
+                packedValue = (int)(MiscUtils.GetMaxForBitCount(bits) + rounded);
             else
                 packedValue = absDistance;
         }
@@ -133,14 +135,16 @@ namespace PDTools.Utils
         /// <exception cref="Exception"></exception>
         public static int PackFloatToBitRange(float value, int bits)
         {
+            float rounded = (float)Math.Round(value);
+
             int max = (int)MiscUtils.GetMaxForBitCount(bits);
-            if (value > max)
+            if (rounded > max)
                 throw new Exception($"Value too large to pack to {bits} bits");
 
             if (value < 0)
-                return max + (int)value;
+                return max + (int)rounded;
             else
-                return (int)value;
+                return (int)rounded;
         }
 
         /// <summary>
@@ -150,7 +154,9 @@ namespace PDTools.Utils
         /// <returns></returns>
         public static int GetHighestBitIndexOfPackedFloat(float value)
         {
-            int absDistance = Math.Abs((int)value);
+            float rounded = (float)Math.Round(value);
+
+            int absDistance = Math.Abs((int)rounded);
             int bits = MiscUtils.GetHighestBitIndex(absDistance);
 
             if (absDistance != 0 && absDistance > MiscUtils.GetMaxSignedForBitCount(bits))

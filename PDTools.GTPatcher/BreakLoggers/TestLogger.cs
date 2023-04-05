@@ -8,33 +8,27 @@ using libdebug;
 
 namespace PDTools.GTPatcher.BreakLoggers
 {
-    public class AdhocExceptionLogger : IBreakLogger
+    public class TestLogger : IBreakLogger
     {
-        public const ulong GTS_V168_AdhocExceptionObject_Ctor_Offset = 0x1712AC0;
-        public const ulong GT7_V100_AdhocExceptionObject_Ctor_Offset = 0x30BDBA0;
-        
+        // Address for debugging adhoc compilation exceptions from EvalExpressionString
+        public const ulong GT7_V129_Offset = 0x26B5A4B;
 
         public ulong Offset { get; set; }
-
         public Breakpoint Breakpoint { get; set; }
 
         public bool LogOnlyOnMiss { get; set; }
 
-        public AdhocExceptionLogger()
+        public TestLogger()
         {
-            
+
         }
 
         public void Init(GTPatcher dbg)
         {
             switch (dbg.GameType)
-            {
-                case GameType.GTS_V168:
-                    Offset = GTS_V168_AdhocExceptionObject_Ctor_Offset;
-                    break;
-
-                case GameType.GT7_V100:
-                    Offset = GT7_V100_AdhocExceptionObject_Ctor_Offset;
+            { 
+                case GameType.GT7_V129:
+                    Offset = GT7_V129_Offset;
                     break;
             }
 
@@ -51,12 +45,8 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
-            if (registers.rax != 0)
-            {
-                string message = dbg.ReadMemoryAbsolute<string>(registers.rax);
-                Console.WriteLine(message);
-            }
-            
+            string err = dbg.ReadMemoryAbsolute<string>(dbg.ReadMemoryAbsolute<ulong>(registers.rsi + 8));
+            Console.WriteLine(err);
         }
     }
 }

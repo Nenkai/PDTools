@@ -8,19 +8,17 @@ using libdebug;
 
 namespace PDTools.GTPatcher.BreakLoggers
 {
-    public class AdhocExceptionLogger : IBreakLogger
+    /// <summary>
+    /// For GT7/Vegas
+    /// </summary>
+    public class TinyWebAdhocModuleCacheDisabler : IBreakLogger
     {
-        public const ulong GTS_V168_AdhocExceptionObject_Ctor_Offset = 0x1712AC0;
-        public const ulong GT7_V100_AdhocExceptionObject_Ctor_Offset = 0x30BDBA0;
-        
+        public const ulong GT7_V129_AdhocExceptionHandler_Offset = 0x1A7C6C0; // AdhocModule::executeRequest
 
         public ulong Offset { get; set; }
-
         public Breakpoint Breakpoint { get; set; }
 
-        public bool LogOnlyOnMiss { get; set; }
-
-        public AdhocExceptionLogger()
+        public TinyWebAdhocModuleCacheDisabler()
         {
             
         }
@@ -29,12 +27,8 @@ namespace PDTools.GTPatcher.BreakLoggers
         {
             switch (dbg.GameType)
             {
-                case GameType.GTS_V168:
-                    Offset = GTS_V168_AdhocExceptionObject_Ctor_Offset;
-                    break;
-
-                case GameType.GT7_V100:
-                    Offset = GT7_V100_AdhocExceptionObject_Ctor_Offset;
+                case GameType.GT7_V129:
+                    Offset = GT7_V129_AdhocExceptionHandler_Offset;
                     break;
             }
 
@@ -51,12 +45,11 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
-            if (registers.rax != 0)
-            {
-                string message = dbg.ReadMemoryAbsolute<string>(registers.rax);
-                Console.WriteLine(message);
-            }
-            
+           // Fix adhoc cache 1.29
+           // Skip caching conditions
+           dbg.WriteMemory(0x1A7C70C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+           dbg.WriteMemory(0x1A7C74B, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+           return;
         }
     }
 }

@@ -52,17 +52,17 @@ namespace PDTools.GTPatcher.MemoryPatches
             
         }
 
-        public async Task Patch(GTPatcher dbg, GeneralRegisters regs)
+        public void Patch(GTPatcher dbg, GeneralRegisters regs)
         {
-            await SetVersionBuild(dbg, _build);
+            SetVersionBuild(dbg, _build);
         }
 
-        public async Task SetVersionBuild(GTPatcher dbg, string build)
+        public void SetVersionBuild(GTPatcher dbg, string build)
         {
-            string oldBuild = await dbg.ReadMemory<string>(Offset);
-            await dbg.WriteMemory<string>(Offset, build);
+            string oldBuild = dbg.ReadMemory<string>(Offset);
+            dbg.WriteMemory<string>(Offset, build);
 
-            await dbg.Notify($"Build: {oldBuild} -> {build}");
+            dbg.Notify($"Build: {oldBuild} -> {build}");
         }
 
 

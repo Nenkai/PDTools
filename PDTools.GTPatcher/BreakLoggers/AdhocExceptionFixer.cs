@@ -8,19 +8,17 @@ using libdebug;
 
 namespace PDTools.GTPatcher.BreakLoggers
 {
-    public class AdhocExceptionLogger : IBreakLogger
+    /// <summary>
+    /// For GT7/Vegas
+    /// </summary>
+    public class AdhocExceptionFixer : IBreakLogger
     {
-        public const ulong GTS_V168_AdhocExceptionObject_Ctor_Offset = 0x1712AC0;
-        public const ulong GT7_V100_AdhocExceptionObject_Ctor_Offset = 0x30BDBA0;
-        
+        public const ulong GT7_V129_AdhocExceptionHandler_Offset = 0x26B6090;
 
         public ulong Offset { get; set; }
-
         public Breakpoint Breakpoint { get; set; }
 
-        public bool LogOnlyOnMiss { get; set; }
-
-        public AdhocExceptionLogger()
+        public AdhocExceptionFixer()
         {
             
         }
@@ -29,12 +27,8 @@ namespace PDTools.GTPatcher.BreakLoggers
         {
             switch (dbg.GameType)
             {
-                case GameType.GTS_V168:
-                    Offset = GTS_V168_AdhocExceptionObject_Ctor_Offset;
-                    break;
-
-                case GameType.GT7_V100:
-                    Offset = GT7_V100_AdhocExceptionObject_Ctor_Offset;
+                case GameType.GT7_V129:
+                    Offset = GT7_V129_AdhocExceptionHandler_Offset;
                     break;
             }
 
@@ -51,12 +45,13 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
-            if (registers.rax != 0)
+            if (Offset == GT7_V129_AdhocExceptionHandler_Offset)
             {
-                string message = dbg.ReadMemoryAbsolute<string>(registers.rax);
-                Console.WriteLine(message);
+                // Set report callback to vegas to null, otherwise it crashes 
+                dbg.WriteMemory<ulong>(0x5CE4028, 0);
+                return;
             }
-            
+
         }
     }
 }

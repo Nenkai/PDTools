@@ -14,6 +14,6 @@ namespace PDTools.GTPatcher.MemoryPatches
 
         void OnAttach(GTPatcher dbg);
 
-        Task Patch(GTPatcher dbg, GeneralRegisters regs);
+        void Patch(GTPatcher dbg, GeneralRegisters regs);
     }
 }
