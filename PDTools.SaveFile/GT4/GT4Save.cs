@@ -88,20 +88,24 @@ namespace PDTools.SaveFile.GT4
             GarageFile.CopyTo(dest.GarageFile);
         }
 
-        public void ConvertToType(GT4SaveType type)
+        public void ConvertToType(GT4SaveType newType)
         {
-            bool clearAllCarData = GT4Save.IsGT4Online(Type) != GT4Save.IsGT4Online(type);
-            Type = type;
-            GameDataName = GT4Save.GameDataRegionNames.FirstOrDefault(x => x.Value == type).Key;
+            bool clearAllCarData = GT4Save.IsGT4Online(Type) != GT4Save.IsGT4Online(newType);
+            Type = newType;
+            GameDataName = GT4Save.GameDataRegionNames.FirstOrDefault(x => x.Value == newType).Key;
 
-            // Clear garage data since we can't decrypt it reliably
+            GarageFile.IdentifyGarageCarSize(newType);
+
             if (clearAllCarData)
+            {
+                // Clear garage data since we can't decrypt it reliably
                 GameData.Profile.Garage.ClearAllCarData();
-
-            GarageFile.IdentifyGarageCarSize(type);
+                for (var i = 0; i < GarageFile.Cars.Count; i++)
+                    GarageFile.Cars[i] = new byte[GarageFile.GarageCarSizeAligned];
+            }
 
             // Adjust GameZone & language
-            switch (type)
+            switch (newType)
             {
                 case GT4SaveType.Unknown:
                     GameData.Option.GameZone.GameZoneType = GameZoneType.JP;
@@ -154,10 +158,7 @@ namespace PDTools.SaveFile.GT4
                     throw new NotImplementedException("Not implemented");
             }
 
-            for (var i = 0; i < GarageFile.Cars.Count; i++)
-                GarageFile.Cars[i] = new byte[GarageFile.GarageCarSizeAligned];
-
-            GameData.UseOldRandomUpdateCrypto = GT4Save.IsGT4Retail(type);
+            GameData.UseOldRandomUpdateCrypto = GT4Save.IsGT4Retail(newType);
             GarageFile.UseOldRandomUpdateCrypto = GameData.UseOldRandomUpdateCrypto;
         }
 
