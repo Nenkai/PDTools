@@ -292,6 +292,10 @@ namespace PDTools.Utils
                 }
 
                 _currentBuffer = _currentBuffer.Slice(1);
+
+                if (Position >= SourceBuffer.Length)
+                    EnsureCapacity(Position + Byte_Bits);
+
                 CurrentByte = _currentBuffer[0];
                 BitCounter = 0;
             }

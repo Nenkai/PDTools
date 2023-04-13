@@ -128,7 +128,7 @@ namespace PDTools.Utils
                 else
                     bs.WriteString(strEntry.Key, StringCoding.Raw);
 
-                bs.Align(_alignment);
+                bs.Align(_alignment, grow: true);
             }
 
             if (!IsRelativeOffsets)
