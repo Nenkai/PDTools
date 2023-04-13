@@ -6,10 +6,20 @@ using System.Text;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionRaceControllerPS2 : IGameSerializeBase
+    public class OptionRaceControllerPS2 : IGameSerializeBase<OptionRaceControllerPS2>
     {
         public int Unk { get; set; }
         public OptionRaceInputPortPS2[] InputPort { get; set; } = new OptionRaceInputPortPS2[1];
+
+        public void CopyTo(OptionRaceControllerPS2 dest)
+        {
+            dest.Unk = Unk;
+            for (var i = 0; i < 1; i++)
+            {
+                dest.InputPort[i] = new OptionRaceInputPortPS2();
+                InputPort[i].CopyTo(dest.InputPort[i]);
+            }
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

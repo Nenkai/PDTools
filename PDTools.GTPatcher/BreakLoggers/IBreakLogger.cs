@@ -14,6 +14,6 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         bool CheckHit(GTPatcher dbg, GeneralRegisters registers);
 
-        Task OnBreak(GTPatcher dbg, GeneralRegisters registers);
+        void OnBreak(GTPatcher dbg, GeneralRegisters registers);
     }
 }

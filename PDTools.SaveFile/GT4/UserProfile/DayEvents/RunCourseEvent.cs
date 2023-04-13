@@ -8,9 +8,9 @@ using PDTools.Enums.PS2;
 
 namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
 {
-    public class RunCourseEvent : DayEvent, IGameSerializeBase
+    public class RunCourseEvent : IDayEvent
     {
-        public override DayEventType EventType => DayEventType.RUN_COURSE;
+        public DayEventType EventType => DayEventType.RUN_COURSE;
 
         public byte Unk { get; set; }
         public Result Result { get; set; }
@@ -18,7 +18,16 @@ namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
         public int BestTime { get; set; }
         public DbCode CourseCode { get; set; }
 
-        public override void Pack(GT4Save save, ref SpanWriter sw)
+        public void CopyTo(IDayEvent dest)
+        {
+            ((RunCourseEvent)dest).Unk = Unk;
+            ((RunCourseEvent)dest).Result = Result;
+            ((RunCourseEvent)dest).CourseMode = CourseMode;
+            ((RunCourseEvent)dest).BestTime = BestTime;
+            ((RunCourseEvent)dest).CourseCode = new DbCode(CourseCode.Code, CourseCode.TableId);
+        }
+
+        public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteByte(Unk);
             sw.WriteByte((byte)Result);
@@ -28,7 +37,7 @@ namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
             sw.WriteInt32(CourseCode.TableId);
         }
 
-        public override void Unpack(GT4Save save, ref SpanReader sr)
+        public void Unpack(GT4Save save, ref SpanReader sr)
         {
             Unk = sr.ReadByte();
             Result = (Result)sr.ReadByte();

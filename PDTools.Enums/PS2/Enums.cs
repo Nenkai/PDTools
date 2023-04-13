@@ -288,4 +288,15 @@ namespace PDTools.Enums.PS2
         DIRT,
         SNOW
     }
+
+    public enum GameZoneType
+    {
+        UNDEF,
+        JP,
+        US,
+        UK,
+        EU,
+        KR,
+        CN
+    }
 }

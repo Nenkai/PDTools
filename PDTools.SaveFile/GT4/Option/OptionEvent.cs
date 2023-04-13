@@ -8,9 +8,14 @@ using PDTools.Utils;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionEvent : IGameSerializeBase
+    public class OptionEvent : IGameSerializeBase<OptionEvent>
     {
         public string EventName { get; set; }
+
+        public void CopyTo(OptionEvent dest)
+        {
+            dest.EventName = EventName;
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

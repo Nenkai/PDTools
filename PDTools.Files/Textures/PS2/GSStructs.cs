@@ -13,15 +13,60 @@ namespace PDTools.Files.Textures.PS2
     {
         public ulong TBP0_TextureBaseAddress;
         public ulong TBW_TextureBufferWidth;
+
+        /// <summary>
+        /// Texture pixel storage format
+        /// </summary>
         public SCE_GS_PSM PSM;
+
+        /// <summary>
+        /// Texture width - Actual size will be 2^w and 2^h
+        /// </summary>
         public byte TW_TextureWidth;
+
+        /// <summary>
+        /// Texture height - Actual size will be 2^w and 2^h
+        /// </summary>
         public byte TH_TextureHeight;
-        public ulong TCC_ColorComponent;
+
+        /// <summary>
+        /// Texture color component, 0 = RGB, 1 = RGBA
+        /// </summary>
+        public byte TCC_ColorComponent;
+
+        /// <summary>
+        /// Texture function
+        /// </summary>
         public ulong TFX_TextureFunction;
-        public ulong CBP_BaseClutData;
+
+        /// <summary>
+        /// Base address of CLUT data (actual address will be cbp x 64)
+        /// </summary>
+        public ulong CBP_ClutBlockPointer;
+
+        /// <summary>
+        /// Format in which CLUT entries are saved
+        /// </summary>
         public ulong CPSM_ClutPartPixelFormatSetup;
+
+        /// <summary>
+        /// CLUT storage mode
+        /// </summary>
         public ulong CSM_ClutStorageMode;
+
+        /// <summary>
+        /// CLUT entry offset - CSA = Offset / 16, In CSM2, CSA must be 0
+        /// </summary>
         public ulong CSA_ClutEntryOffset;
+
+        /// <summary>
+        // 0 = Temporary buffer contents not changed
+        // 1 = Load performed to CSA position of buffer
+        // 2 = Load is performed to CSA position of buffer and CBP is copied to CBP0. (*2)
+        // 3 = Load is performed to CSA position of buffer and CBP is copied to CBP1. (*2)
+        // 4 = If CBP0 != CBP, load is performed and CBP is copied to CBP0. (*2)
+        // 5 = If CBP1 != CBP, load is performed and CBP is copied to CBP1. (*2)
+        /// </summary>
         public ulong CLD_ClutBufferLoadControl;
 
         public void Read(ref BitStream stream)
@@ -31,32 +76,71 @@ namespace PDTools.Files.Textures.PS2
             PSM = (SCE_GS_PSM)stream.ReadBits(6);
             TW_TextureWidth = (byte)stream.ReadBits(4);
             TH_TextureHeight = (byte)stream.ReadBits(4);
-            TCC_ColorComponent = stream.ReadBits(1);
+            TCC_ColorComponent = (byte)stream.ReadBits(1);
             TFX_TextureFunction = stream.ReadBits(2);
-            CBP_BaseClutData = stream.ReadBits(14);
+            CBP_ClutBlockPointer = stream.ReadBits(14);
             CPSM_ClutPartPixelFormatSetup = stream.ReadBits(4);
             CSM_ClutStorageMode = stream.ReadBits(1);
             CSA_ClutEntryOffset = stream.ReadBits(5);
             CLD_ClutBufferLoadControl = stream.ReadBits(3);
         }
+
+        public void Write(ref BitStream stream)
+        {
+            stream.WriteBits(TBP0_TextureBaseAddress, 14);
+            stream.WriteBits(TBW_TextureBufferWidth, 6);
+            stream.WriteBits((ulong)PSM, 6);
+            stream.WriteBits(TW_TextureWidth, 4);
+            stream.WriteBits(TH_TextureHeight, 4);
+            stream.WriteBits(TCC_ColorComponent, 1);
+            stream.WriteBits(TFX_TextureFunction, 2);
+            stream.WriteBits(CBP_ClutBlockPointer, 14);
+            stream.WriteBits(CPSM_ClutPartPixelFormatSetup, 4);
+            stream.WriteBits(CSM_ClutStorageMode, 1);
+            stream.WriteBits(CSA_ClutEntryOffset, 5);
+            stream.WriteBits(CLD_ClutBufferLoadControl, 3);
+        }
     };
 
     public class sceGsTex1
     {
+        /// <summary>
+        /// 0 = (LOD = (log2(1/|Q|)<<L+K), 1 = Fixed value (LOD = K)
+        /// </summary>
         public ulong LCM_LightColorMatrix;
         public ulong pad01;
-        public ulong MXL_unknown;
-        public SCE_GS_MAG MMAG;
-        public SCE_GS_MAG MMIN;
+
+        /// <summary>
+        /// 0-6
+        /// </summary>
+        public ulong MXL_MaximumMIPLevel;
+
+        /// <summary>
+        /// Filter when Texture is Expanded (LOD < 0) - Max LINEAR
+        /// </summary>
+        public SCE_GS_MAG MMAG = SCE_GS_MAG.SCE_GS_LINEAR;
+
+        /// <summary>
+        /// Filter when Texture is Reduced (LOD >= 0)
+        /// </summary>
+        public SCE_GS_MAG MMIN = SCE_GS_MAG.SCE_GS_LINEAR;
         public ulong MTBA_unknown;
+
+        /// <summary>
+        /// LOD Parameter Value L
+        /// </summary>
         public ulong L;
+
+        /// <summary>
+        /// LOD Parameter Value K
+        /// </summary>
         public ulong K;
 
         public void Read(ref BitStream stream)
         {
             LCM_LightColorMatrix = stream.ReadBits(1);
             pad01 = stream.ReadBits(1);
-            MXL_unknown = stream.ReadBits(3);
+            MXL_MaximumMIPLevel = stream.ReadBits(3);
             MMAG = (SCE_GS_MAG)stream.ReadBits(1);
             MMIN = (SCE_GS_MAG)stream.ReadBits(3);
             MTBA_unknown = stream.ReadBits(1);
@@ -65,6 +149,21 @@ namespace PDTools.Files.Textures.PS2
             stream.ReadBits(11);
             K = stream.ReadBits(12);
             stream.ReadBits(20);
+        }
+
+        public void Write(ref BitStream stream)
+        {
+            stream.WriteBits(LCM_LightColorMatrix, 1);
+            stream.WriteBits(pad01, 1);
+            stream.WriteBits(MXL_MaximumMIPLevel, 3);
+            stream.WriteBits((ulong)MMAG, 1);
+            stream.WriteBits((ulong)MMIN, 3);
+            stream.WriteBits(MTBA_unknown, 1);
+            stream.WriteBits(0, 9);
+            stream.WriteBits(L, 2);
+            stream.WriteBits(0, 11);
+            stream.WriteBits(K, 12);
+            stream.WriteBits(0, 20);
         }
     };
 
@@ -87,6 +186,17 @@ namespace PDTools.Files.Textures.PS2
             TBW3 = stream.ReadBits(6);
             stream.ReadBits(4);
         }
+
+        public void Write(ref BitStream stream)
+        {
+            stream.WriteBits(TBP1, 14);
+            stream.WriteBits(TBW1, 6);
+            stream.WriteBits(TBP2, 14);
+            stream.WriteBits(TBW2, 6);
+            stream.WriteBits(TBP3, 14);
+            stream.WriteBits(TBW3, 6);
+            stream.WriteBits(0, 4);
+        }
     };
 
     public class sceGsMiptbp2
@@ -108,15 +218,49 @@ namespace PDTools.Files.Textures.PS2
             TBW6 = stream.ReadBits(6);
             stream.ReadBits(4);
         }
+
+        public void Write(ref BitStream stream)
+        {
+            stream.WriteBits(TBP4, 14);
+            stream.WriteBits(TBW4, 6);
+            stream.WriteBits(TBP5, 14);
+            stream.WriteBits(TBW5, 6);
+            stream.WriteBits(TBP6, 14);
+            stream.WriteBits(TBW6, 6);
+            stream.WriteBits(0, 4);
+        }
     }
 
     public class sceGsClamp
     {
-        public SCE_GS_CLAMP_PARAMS WMS;
-        public SCE_GS_CLAMP_PARAMS WMT;
+        /// <summary>
+        /// Wrap Mode in Horizontal (S) Direction
+        /// </summary>
+        public SCE_GS_CLAMP_PARAMS WMS = SCE_GS_CLAMP_PARAMS.SCE_GS_CLAMP;
+
+        /// <summary>
+        /// Wrap Mode in Horizontal (T) Direction
+        /// </summary>
+        public SCE_GS_CLAMP_PARAMS WMT = SCE_GS_CLAMP_PARAMS.SCE_GS_CLAMP;
+
+        /// <summary>
+        /// Clamp U Direction - Lower Limit
+        /// </summary>
         public ulong MINU;
+
+        /// <summary>
+        /// Clamp U Direction - Upper Limit
+        /// </summary>
         public ulong MAXU;
+
+        /// <summary>
+        /// Clamp Y Direction - Lower Limit
+        /// </summary>
         public ulong MINV;
+
+        /// <summary>
+        /// Clamp Y Direction - Upper Limit
+        /// </summary>
         public ulong MAXV;
 
         public void Read(ref BitStream stream)
@@ -128,6 +272,17 @@ namespace PDTools.Files.Textures.PS2
             MINV = stream.ReadBits(10);
             MAXV = stream.ReadBits(10);
             stream.ReadBits(20);
+        }
+
+        public void Write(ref BitStream stream)
+        {
+            stream.WriteBits((ulong)WMS, 2);
+            stream.WriteBits((ulong)WMT, 2);
+            stream.WriteBits(MINU, 10);
+            stream.WriteBits(MAXU, 10);
+            stream.WriteBits(MINV, 10);
+            stream.WriteBits(MAXV, 10);
+            stream.WriteBits(0, 20);
         }
     }
 

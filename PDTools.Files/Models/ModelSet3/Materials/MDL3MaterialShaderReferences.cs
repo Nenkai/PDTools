@@ -45,7 +45,7 @@ namespace PDTools.Files.Models.ModelSet3.Materials
                 entry.ShaderProgram2 = ShadersProgram_0x2C.FromStream(bs, mdlBasePos);
             }
 
-            if (unkCount_0x08 > 0)
+            if (unkCount_0x08 > 0 && unkCount_0x08 != 65536)
             {
                 bs.Position = mdlBasePos + offset_0x08;
                 int count = bs.ReadInt32();

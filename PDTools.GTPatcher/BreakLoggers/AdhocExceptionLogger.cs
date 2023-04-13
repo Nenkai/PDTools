@@ -12,6 +12,7 @@ namespace PDTools.GTPatcher.BreakLoggers
     {
         public const ulong GTS_V168_AdhocExceptionObject_Ctor_Offset = 0x1712AC0;
         public const ulong GT7_V100_AdhocExceptionObject_Ctor_Offset = 0x30BDBA0;
+        
 
         public ulong Offset { get; set; }
 
@@ -48,11 +49,11 @@ namespace PDTools.GTPatcher.BreakLoggers
             return false;
         }
 
-        public async Task OnBreak(GTPatcher dbg, GeneralRegisters registers)
+        public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
             if (registers.rax != 0)
             {
-                string message = await dbg.ReadMemoryAbsolute<string>(registers.rax);
+                string message = dbg.ReadMemoryAbsolute<string>(registers.rax);
                 Console.WriteLine(message);
             }
             

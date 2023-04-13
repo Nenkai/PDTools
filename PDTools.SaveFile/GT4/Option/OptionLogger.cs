@@ -8,9 +8,15 @@ using PDTools.Utils;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionLogger : IGameSerializeBase
+    public class OptionLogger : IGameSerializeBase<OptionLogger>
     {
         public byte[] Loggers { get; set; }
+
+        public void CopyTo(OptionLogger dest)
+        {
+            dest.Loggers = new byte[Loggers.Length];
+            Array.Copy(Loggers, dest.Loggers, Loggers.Length);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

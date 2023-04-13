@@ -6,10 +6,14 @@ using Syroot.BinaryData.Memory;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class ChampionshipContext : IGameSerializeBase
+    public class ChampionshipContext : IGameSerializeBase<ChampionshipContext>
     {
         public byte[] Data { get; set; } = new byte[0x88];
 
+        public void CopyTo(ChampionshipContext dest)
+        {
+            Array.Copy(Data, dest.Data, Data.Length);
+        }
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
             sw.WriteBytes(Data);

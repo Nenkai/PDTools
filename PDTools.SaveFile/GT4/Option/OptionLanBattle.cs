@@ -8,7 +8,7 @@ using PDTools.Utils;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionLANBattle : IGameSerializeBase
+    public class OptionLANBattle : IGameSerializeBase<OptionLANBattle>
     {
         public int Unk { get; set; }
         public string Name1 { get; set; }
@@ -17,6 +17,18 @@ namespace PDTools.SaveFile.GT4.Option
         public int Style2 { get; set; }
 
         public byte[] Data { get; set; }
+
+        public void CopyTo(OptionLANBattle dest)
+        {
+            dest.Unk = Unk;
+            dest.Name1 = Name1;
+            dest.Style = Style;
+            dest.Name2 = Name2;
+            dest.Style2 = Style2;
+
+            dest.Data = new byte[Data.Length];
+            Array.Copy(Data, dest.Data, Data.Length);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

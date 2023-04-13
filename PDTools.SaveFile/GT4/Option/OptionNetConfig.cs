@@ -8,9 +8,15 @@ using PDTools.Utils;
 
 namespace PDTools.SaveFile.GT4.Option
 {
-    public class OptionNetConfig : IGameSerializeBase
+    public class OptionNetConfig : IGameSerializeBase<OptionNetConfig>
     {
         public byte[] Data { get; set; }
+
+        public void CopyTo(OptionNetConfig dest)
+        {
+            dest.Data = new byte[Data.Length];
+            Array.Copy(Data, dest.Data, Data.Length);
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {

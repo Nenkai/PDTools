@@ -19,7 +19,7 @@ namespace PDTools.Files.Models.ModelSet3
         public float Unk { get; set; }
         public Vector3 Origin { get; set; }
         public List<Vector3> Bounds = new();
-        public List<ModelCommand> Commands { get; set; } = new();
+        public List<ModelSetupCommand> Commands { get; set; } = new();
         public int InitInstance_VMInstructionPtr { get; set; }
         public int OnUpdate_VMInstructionPtr { get; set; }
         public int Unk_VMInstructionPtr { get; set; }
@@ -62,15 +62,19 @@ namespace PDTools.Files.Models.ModelSet3
             }
 
             long commandsOffsetActual = mdlBasePos + commandsOffset;
-            bs.Position = mdlBasePos + commandsOffsetActual;
+            bs.Position = commandsOffsetActual;
             while (bs.Position < commandsOffsetActual + commandsSize)
             {
                 byte opcode = bs.Read1Byte();
-                var cmd = ModelCommand.GetByOpcode(opcode);
+                var cmd = ModelSetupCommand.GetByOpcode(opcode);
+
                 cmd.Offset = (int)(bs.Position - commandsOffsetActual) - 1;
                 cmd.Read(bs, (int)commandsOffsetActual);
                 model.Commands.Add(cmd);
             }
+
+            // For each command that can jump, translate offsets to command index
+            model.TranslateJumpCommandOffsetsToIndices();
 
             /*
             StreamWriter sw = new StreamWriter("test.txt");
@@ -80,6 +84,58 @@ namespace PDTools.Files.Models.ModelSet3
             */
 
             return model;
+        }
+
+        private void TranslateJumpCommandOffsetsToIndices()
+        {
+            for (var i = 0; i < Commands.Count; i++)
+            {
+                ModelSetupCommand setupCommand = Commands[i];
+                switch (setupCommand.Opcode)
+                {
+                    case ModelSetupOpcode.Command_5_Switch:
+                        var switchCmd = setupCommand as Command_5_Switch;
+                        switchCmd.BranchJumpIndices = new int[switchCmd.BranchOffsets.Length];
+
+                        for (int i1 = 0; i1 < switchCmd.BranchOffsets.Length; i1++)
+                        {
+                            ushort offset = switchCmd.BranchOffsets[i1];
+                            for (var j = i; j < Commands.Count; j++)
+                            {
+                                if (Commands[j].Offset == offset)
+                                {
+                                    switchCmd.BranchJumpIndices[i1] = j;
+                                }
+                            }
+                        }
+
+                        break;
+
+                    case ModelSetupOpcode.Command_9_JumpToByte:
+                        var jumpCmd = setupCommand as Command_9_JumpToByte;
+                        int byteOffset = jumpCmd.AbsoluteJumpToOffset;
+                        for (var j = i; j < Commands.Count; j++)
+                        {
+                            if (Commands[j].Offset == byteOffset)
+                            {
+                                jumpCmd.JumpToIndex = j;
+                            }
+                        }
+                        break;
+
+                    case ModelSetupOpcode.Command_10_JumpToShort:
+                        var shortJumpCmd = setupCommand as Command_10_JumpToShort;
+                        int shortOffset = shortJumpCmd.AbsoluteJumpOffset;
+                        for (var j = i; j < Commands.Count; j++)
+                        {
+                            if (Commands[j].Offset == shortOffset)
+                            {
+                                shortJumpCmd.JumpToIndex = j;
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
         public static int GetSize()

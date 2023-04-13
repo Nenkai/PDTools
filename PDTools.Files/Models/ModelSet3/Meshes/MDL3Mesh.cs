@@ -56,7 +56,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
 
         public MDL3FlexibleVertexDefinition FVF { get; set; }
         public MDL3Material Material { get; set; }
-        public MDL3MeshPMSHRef PMSHRef { get; set; }
+        public MDL3MeshPMSHRef PackedMeshRef { get; set; }
 
         public static MDL3Mesh FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
         {
@@ -100,7 +100,7 @@ namespace PDTools.Files.Models.ModelSet3.Meshes
             if (pmshEntryRefOffset != 0)
             {
                 bs.Position = mdlBasePos + pmshEntryRefOffset;
-                mesh.PMSHRef = MDL3MeshPMSHRef.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+                mesh.PackedMeshRef = MDL3MeshPMSHRef.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             }
 
             return mesh;

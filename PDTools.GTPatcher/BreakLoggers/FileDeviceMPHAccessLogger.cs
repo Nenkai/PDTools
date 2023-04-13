@@ -12,6 +12,7 @@ namespace PDTools.GTPatcher.BreakLoggers
     {
         public const ulong GT7_V100_FileOpen_Offset = 0x3A21740;
         public const ulong GT7_V125_FileOpen_Offset = 0x312F240;
+        public const ulong GT7_V129_FileOpen_Offset = 0x2D62577;
 
         public ulong Offset { get; set; }
         public Breakpoint Breakpoint { get; set; }
@@ -34,6 +35,10 @@ namespace PDTools.GTPatcher.BreakLoggers
                 case GameType.GT7_V125:
                     Offset = GT7_V125_FileOpen_Offset;
                     break;
+
+                case GameType.GT7_V129:
+                    Offset = GT7_V129_FileOpen_Offset;
+                    break;
             }
 
             Breakpoint = dbg.SetBreakpoint(dbg.ImageBase + Offset);
@@ -47,18 +52,18 @@ namespace PDTools.GTPatcher.BreakLoggers
             return false;
         }
 
-        public async Task OnBreak(GTPatcher dbg, GeneralRegisters registers)
+        public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
         {
             if (!LogOnlyOnMiss)
             {
-                string fileName = await dbg.ReadMemoryAbsolute<string>(registers.rsi);
+                string fileName = dbg.ReadMemoryAbsolute<string>(registers.rsi);
                 Console.WriteLine($"{fileName}");
             }
             else
             {
                 if (registers.rax != 0)
                 {
-                    string fileName = await dbg.ReadMemoryAbsolute<string>(registers.rsi);
+                    string fileName = dbg.ReadMemoryAbsolute<string>(registers.rsi);
                     Console.WriteLine($"Missing: {fileName} (err: 0x{registers.rax:X8})");
                 }
             }

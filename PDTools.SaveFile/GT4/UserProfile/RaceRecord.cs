@@ -6,10 +6,19 @@ using System.Text;
 
 namespace PDTools.SaveFile.GT4.UserProfile
 {
-    public class RaceRecord : IGameSerializeBase
+    public class RaceRecord : IGameSerializeBase<RaceRecord>
     {
         public const int MAX_RECORDS = 768;
         public RaceRecordUnit[] Records { get; set; } = new RaceRecordUnit[MAX_RECORDS];
+
+        public void CopyTo(RaceRecord dest)
+        {
+            for (var i = 0; i < MAX_RECORDS; i++)
+            {
+                dest.Records[i] = new RaceRecordUnit();
+                Records[i].CopyTo(dest.Records[i]);
+            }
+        }
 
         public void Pack(GT4Save save, ref SpanWriter sw)
         {
