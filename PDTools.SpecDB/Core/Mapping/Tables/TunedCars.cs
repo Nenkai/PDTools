@@ -13,7 +13,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
     {
         public TunedCars(SpecDBFolder folderType)
         {
-            Columns.Add(new ColumnMetadata("Unk", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("CarCode", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("DefParts_Tbl_Index", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));

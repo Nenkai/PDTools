@@ -14,7 +14,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
         public TireSize(SpecDBFolder folderType)
         {
             Columns.Add(new ColumnMetadata("flatness", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("unk", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
             Columns.Add(new ColumnMetadata("diameter", DBColumnType.Byte));
             Columns.Add(new ColumnMetadata("width", DBColumnType.Byte));
         }

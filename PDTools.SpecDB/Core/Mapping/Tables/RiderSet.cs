@@ -13,7 +13,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
     {
         public RiderSet(SpecDBFolder folderType)
         {
-            Columns.Add(new ColumnMetadata("Unk", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("Helmet", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("Suit", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("Jacket", DBColumnType.Int));

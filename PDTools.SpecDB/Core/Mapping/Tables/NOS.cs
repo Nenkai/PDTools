@@ -15,7 +15,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
 
         public NOS(SpecDBFolder folderType)
         {
-            Columns.Add(new ColumnMetadata("Unk", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
             Columns.Add(new ColumnMetadata("Capacity", DBColumnType.Byte));
             Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
             Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));

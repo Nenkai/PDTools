@@ -67,7 +67,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
             Columns.Add(new ColumnMetadata("revlimit", DBColumnType.Byte));
 
             if (folderType < SpecDBFolder.GT5_PROLOGUE2813)
-                Columns.Add(new ColumnMetadata("Unk", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
 
             Columns.Add(new ColumnMetadata("clutchmeetrpm", DBColumnType.Byte));
             Columns.Add(new ColumnMetadata("torquepoint", DBColumnType.Byte));

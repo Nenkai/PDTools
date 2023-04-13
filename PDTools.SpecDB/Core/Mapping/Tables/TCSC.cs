@@ -19,7 +19,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
             {
                 Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("unk", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("TCSUnk1", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("TCSUnk2", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("TCSUnk3", DBColumnType.Byte));

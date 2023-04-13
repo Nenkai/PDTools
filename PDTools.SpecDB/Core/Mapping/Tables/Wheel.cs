@@ -15,9 +15,9 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
         {
             if (folderType <= SpecDBFolder.GT5_TRIAL_JP2704)
             {
-                Columns.Add(new ColumnMetadata("Unk", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Unk2", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Unk3", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 return;
             }
 
@@ -29,7 +29,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
             }
             else
             {
-                Columns.Add(new ColumnMetadata("Unk", DBColumnType.Short));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
             }
 
             Columns.Add(new ColumnMetadata("FrontTireOffset", DBColumnType.Short));

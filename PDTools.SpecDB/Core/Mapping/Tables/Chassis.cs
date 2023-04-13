@@ -37,7 +37,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                     Columns.Add(new ColumnMetadata("original_rideHeight_R", DBColumnType.Short));
 
                     Columns.Add(new ColumnMetadata("electricMotor", DBColumnType.Byte));
-                    Columns.Add(new ColumnMetadata("unk", DBColumnType.Byte));
+                    Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 }
             }
 

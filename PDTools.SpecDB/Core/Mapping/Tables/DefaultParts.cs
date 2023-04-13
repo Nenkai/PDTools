@@ -113,7 +113,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("Supercharger", DBColumnType.Int));
                 Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
 
-                Columns.Add(new ColumnMetadata("Unk", DBColumnType.Short));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
 
             }
         }

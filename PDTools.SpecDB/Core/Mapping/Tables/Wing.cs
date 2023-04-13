@@ -13,9 +13,9 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
     {
         public Wing(SpecDBFolder folderType)
         {
-            Columns.Add(new ColumnMetadata("Unk", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("Unk2", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("Unk3", DBColumnType.Short));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
         }
     }
 }

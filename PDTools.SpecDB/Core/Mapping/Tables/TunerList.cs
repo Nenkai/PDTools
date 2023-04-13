@@ -14,16 +14,16 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
     {
         public TunerList(SpecDBFolder folderType)
         {
-            Columns.Add(new ColumnMetadata("Unk", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk2", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk3", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk4", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk5", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk6", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk7", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk8", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk9", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Unk10", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
         }
     }
 }

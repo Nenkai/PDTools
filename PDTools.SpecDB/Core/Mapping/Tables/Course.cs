@@ -21,15 +21,15 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("PitCrew", DBColumnType.Int));
             else
             {
-                Columns.Add(new ColumnMetadata("UnkStr1", DBColumnType.String, "UnistrDB.sdb"));
+                Columns.Add(new ColumnMetadata("?", DBColumnType.String, "UnistrDB.sdb"));
                 if (folderType >= SpecDBFolder.GT5_TRIAL_EU2704 && folderType <= SpecDBFolder.GT5_TRIAL_JP2704)
                 {
-                    Columns.Add(new ColumnMetadata("UnkStr2", DBColumnType.String, "UnistrDB.sdb"));
-                    Columns.Add(new ColumnMetadata("UnkStr3", DBColumnType.String, "UnistrDB.sdb"));
+                    Columns.Add(new ColumnMetadata("?", DBColumnType.String, "UnistrDB.sdb"));
+                    Columns.Add(new ColumnMetadata("?", DBColumnType.String, "UnistrDB.sdb"));
                 }
                 else if (folderType >= SpecDBFolder.GT5_PROLOGUE2813)
                 {
-                    Columns.Add(new ColumnMetadata("UnkStr2", DBColumnType.String, "UnistrDB.sdb"));
+                    Columns.Add(new ColumnMetadata("?", DBColumnType.String, "UnistrDB.sdb"));
                 }
             }
 

@@ -316,7 +316,7 @@ namespace PDTools.SpecDB.Core
                 {
                     RowKey key = keys[i];
                     GetRowByIndex(i, out Span<byte> rowData);
-                    sw.WriteLine($"{key.Label} ({key.Id}) | {BitConverter.ToString(rowData.ToArray())}");
+                    sw.WriteLine($"{key.Label} ({key.Id}) | {BitConverter.ToString(rowData.ToArray()).Replace("-", " ")}");
                 }
             }
 
@@ -616,7 +616,6 @@ namespace PDTools.SpecDB.Core
             }
 
             _debugWriter.Flush();
-            _debugWriter.Dispose();
         }
 
         private void PopulateRowStringsIfNeeded(SpecDB db)
@@ -685,7 +684,7 @@ namespace PDTools.SpecDB.Core
 
                 var orderedRows = Rows
                     .GroupBy(p => p.Label).Select(g => g.First()) // Distinct() - Some rows have the same ID and Label so we only want those.
-                    .OrderBy(o => o.Label, AlphaNumStringComparer.Default) // Mandatory sort for game bsearch
+                    .OrderBy(o => o.Label, RowLabelComparer.Default) // Mandatory sort for game bsearch
                     .ToList();
 
                 bs.WriteInt32(orderedRows.Count);
