@@ -463,7 +463,7 @@ namespace PDTools.SpecDB.Core
                         TableMetadata = new AllowEntry(db.SpecDBFolderType); break;
                     case "ARCADEINFO_NORMAL":
                     case "ARCADEINFO_TUNED":
-                        TableMetadata = new ArcadeInfoNormal(db.SpecDBFolderType); break;
+                        TableMetadata = new ArcadeInfo(db.SpecDBFolderType); break;
                     case "ASCC":
                         TableMetadata = new ASCC(db.SpecDBFolderType); break;
                     case "BRAKE":
