@@ -19,8 +19,10 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("Crs_Tbl_Index", DBColumnType.Int));
                 Columns.Add(new ColumnMetadata("AllowEntry", DBColumnType.Int));
                 Columns.Add(new ColumnMetadata("AlEnt_Tbl_Index", DBColumnType.Int));
+
+                // 0x10
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Int));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Int));
+                Columns.Add(new ColumnMetadata("PlayerVCoord", DBColumnType.Int));
                 Columns.Add(new ColumnMetadata("Minutes", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("Gold_MS", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("Silv_MS", DBColumnType.Short));
@@ -43,11 +45,14 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("S4th", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("S5th", DBColumnType.Short));
 
+                // 0x38
                 Columns.Add(new ColumnMetadata("YearMin", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("YearMax", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
                 Columns.Add(new ColumnMetadata("MaxEntries", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+
+                // 0x40
                 Columns.Add(new ColumnMetadata("StartType", DBColumnType.Byte));
 
                 Columns.Add(new ColumnMetadata("unkdrag", DBColumnType.Byte));
@@ -62,13 +67,13 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
 
                 Columns.Add(new ColumnMetadata("CarType", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("Tyres", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Boost1st", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("B2", DBColumnType.Byte));
 
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("B3", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("B4", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("B5", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("B6", DBColumnType.Byte)); // 0x50
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
 
@@ -85,11 +90,11 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("Sk6", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("Sk7", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("Sk8", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Sk9", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Sk10", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Sk11", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Sk12", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("Sk13", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Boost1", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Boost2", DBColumnType.Byte)); // 0x60
+                Columns.Add(new ColumnMetadata("Boost3", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Boost4", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Boost5", DBColumnType.Byte));
 
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("BoostMaybe", DBColumnType.Byte));
@@ -102,15 +107,15 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
 
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("TiresCold", DBColumnType.Bool));
+                Columns.Add(new ColumnMetadata("TireUnk1", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("TireUnk2", DBColumnType.Byte)); // 0x70
+                Columns.Add(new ColumnMetadata("TireUnk3", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("TireUnk4", DBColumnType.Byte));
 
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("PylonNum", DBColumnType.Byte));
 
                 Columns.Add(new ColumnMetadata("GoldMin", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("GoldSec", DBColumnType.Byte));
@@ -122,19 +127,19 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("LaunchKph1", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Kph2", DBColumnType.Byte)); // 0x80
+                Columns.Add(new ColumnMetadata("Kph3", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Kph4", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Kph5", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("Kph6", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("PenaltySec", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("PenaltyFlags", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("PenaltyFlags2", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("Delay1st", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("D2nd", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("D3rd", DBColumnType.Byte));
