@@ -266,7 +266,7 @@ namespace PDTools.SpecDB.Core
             bs.WriteByteData(huffmanCodesWritter.GetBuffer());
 
             bs.Align(0x10);
-            bs.WriteByteData("Nenkai Watermark".Select(e => (byte)(e ^ 0x55)).ToArray());
+            bs.WriteByteData("Built w/ Nenkai's PDTools.SpecDB".Select(e => (byte)e).ToArray());
 
             /* Step 10: Done! */
             File.WriteAllBytes(outputPath, bs.GetBuffer().ToArray());
