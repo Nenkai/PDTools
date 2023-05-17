@@ -40,7 +40,9 @@ namespace PDTools.SpecDB.Core
         public bool BigEndian { get; set; }
         public bool IsTableProperlyMapped { get; private set; } = true;
 
+#if DEBUG
         private StreamWriter _debugWriter;
+#endif
 
         public Table(string tableName)
         {
@@ -110,7 +112,9 @@ namespace PDTools.SpecDB.Core
                 DebugPrint($"Entry Offset: 0x{entryOffset:X8} (abs: 0x{DBT.HuffmanCodesOrRowDataOffset + entryOffset:X8})");
 
                 sr.Position = DBT.HuffmanCodesOrRowDataOffset + entryOffset;
+#if DEBUG
                 DBT._debugWriter = _debugWriter;
+#endif
 
                 if ((DBT.VersionHigh & 1) == 0)
                     rowData = sr.ReadBytes(dataLength); // memcpy(retSdbIndex,offs,dataLength);
@@ -615,7 +619,9 @@ namespace PDTools.SpecDB.Core
                 IsTableProperlyMapped = result.ReadAll;
             }
 
+#if DEBUG
             _debugWriter.Flush();
+#endif
         }
 
         private void PopulateRowStringsIfNeeded(SpecDB db)
