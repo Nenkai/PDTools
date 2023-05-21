@@ -147,7 +147,7 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
                 Columns.Add(new ColumnMetadata("D5th", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("D6th", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("PowerMax", DBColumnType.Byte));
-                Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+                Columns.Add(new ColumnMetadata("PriceMin", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("WeightMax", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("LengthMax", DBColumnType.Byte));
                 Columns.Add(new ColumnMetadata("CountryReq", DBColumnType.Byte));
