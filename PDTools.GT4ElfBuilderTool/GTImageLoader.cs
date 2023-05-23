@@ -2,9 +2,15 @@
 
 using Syroot.BinaryData.Memory;
 
+using System.IO;
 using System.Security.Cryptography;
 
+using System.Numerics;
+using System.Runtime.InteropServices;
+
 using ICSharpCodeInflater = ICSharpCode.SharpZipLib.Zip.Compression.Inflater;
+using System.Collections.Generic;
+using System;
 
 namespace PDTools.GT4ElfBuilderTool
 {
@@ -78,34 +84,6 @@ namespace PDTools.GT4ElfBuilderTool
             short sha512Hash2Len = sr2.ReadInt16();
             byte[] sha512Hash2 = sr2.ReadBytes(sha512Hash2Len);
 
-
-            byte[] elfData = inflatedData.Skip(0x104).ToArray();
-            using (var hash = SHA512.Create())
-            {
-                // Used to check against the two 0x80 blobs, but those i don't know how they generate the hash
-                var hashedInputBytes = hash.ComputeHash(elfData);
-
-                var test = new BufferReverser();
-                test.PositionInt = 1;
-                test.InitInternalBuffer(1, false);
-                test.OperatingBuffer[0] = test.field_10 != 0 ? 0xFFFEC397 : 0x13C69;
-
-                var hash2r = new BufferReverser();
-                hash2r.InitReverse(sha512Hash2);
-
-                var hash1r = new BufferReverser();
-                hash1r.InitReverse(sha512Hash1);
-
-                var unkk = new BufferReverser();
-                unkk.InitReverse(hashedInputBytes);
-
-                // The 0x80 blobs are obfuscated with some really odd memory operations, negating, bit moving, among other things
-                // Spent hours, but no dice
-
-                var holder = new UnkHolder();
-                DeobfuscateHashes(holder, new BufReverserHolder(hash1r));
-            }
-
             int nSection = sr2.ReadInt32();
             EntryPoint = sr2.ReadInt32();
             Segments = new List<ElfSegment>(nSection);
@@ -119,6 +97,89 @@ namespace PDTools.GT4ElfBuilderTool
 
                 Segments.Add(segment);
             }
+
+            byte[] elfData = inflatedData.Skip(0x104).ToArray();
+            using (var hash = SHA512.Create())
+            {
+                // Used to check against the two 0x80 blobs, but those i don't know how they generate the hash
+                var hashedInputBytes = hash.ComputeHash(elfData);
+                RSAStuff(sha512Hash1, sha512Hash2, 81001);
+            }
+
+        }
+
+        static void RSAStuff(byte[] number1, byte[] number2, int primeNumber)
+        {
+            var hash2r = new PDIBigNumber();
+            hash2r.InitFromBuffer(number2);
+
+            var hash1r = new PDIBigNumber();
+            hash1r.InitFromBuffer(number1);
+
+            // Part 1 - 0x1030428 (Init RSA?)
+            byte[] reversedHash1 = MemoryMarshal.Cast<uint, byte>(hash1r.OperatingBufferPtr_0x14).ToArray();
+            BigInteger hashBigNumber1 = new BigInteger(reversedHash1, isUnsigned: true);
+
+            BigInteger baseVal = new BigInteger(1);
+            baseVal <<= (0x400);
+
+            var subtracted = baseVal - hashBigNumber1;
+            var gcd1 = ExtractGreatestCommonDividor(subtracted, hashBigNumber1); // 1032760
+            var gcd2 = ExtractGreatestCommonDividor(hashBigNumber1, baseVal); // 1032760
+
+            // Part 2 - 0x10316A8 (Perform RSA?)
+            byte[] reversedHash2 = MemoryMarshal.Cast<uint, byte>(hash2r.OperatingBufferPtr_0x14).ToArray();
+            BigInteger hashBigNumber2 = new BigInteger(reversedHash2, isUnsigned: true);
+
+            var multiplied = baseVal * hashBigNumber2;
+            var modHash1And2 = multiplied % hashBigNumber1;
+
+            // 1030B98
+            var prime = new BigInteger(0x13C69);
+            long numBits = prime.GetBitLength();
+            for (var i = 0; i < numBits; i++)
+            {
+                if (((prime >> i) & 1) != 0)
+                {
+                    ;
+                }
+            }
+
+            var v1 = subtracted * modHash1And2;
+            var v2 = v1 * gcd2; /* ?? */
+            var v3 = v2 * hashBigNumber1;
+        }
+
+        static void sub_1030B98()
+        {
+
+        }
+
+        // 1032760
+        static BigInteger ExtractGreatestCommonDividor(BigInteger quotient, BigInteger dividor)
+        {
+            var x = BigInteger.Zero;
+            var lastx = BigInteger.One;
+            var y = BigInteger.One;
+            var lasty = BigInteger.Zero;
+
+            while (!dividor.IsZero)
+            {
+                BigInteger remainder;
+                BigInteger q = BigInteger.DivRem(quotient, dividor, out remainder);
+
+                quotient = dividor;
+                dividor = remainder;
+
+                var t = x;
+                x = lastx - q * x;
+                lastx = t;
+                t = y;
+                y = lasty - q * y;
+                lasty = t;
+            }
+
+            return lastx;
         }
 
         public void Build(string outputFileName)
@@ -143,97 +204,146 @@ namespace PDTools.GT4ElfBuilderTool
             return key;
         }
 
-        // Ignore this and below
-        public static void DeobfuscateHashes(UnkHolder holder, BufReverserHolder hash1In)
+        static void Part1(PDIBigNumber hash1)
         {
-            // 0x04 (1) is left empty
-            // 0x0c is set
-            // 0x14 (2) is hash1In
-            // 0x24 (3) is left empty
-            // 0x2c (4) is left empty
+            PDIBigNumber buf = new PDIBigNumber();
+            buf.ResizeBuffer_10300C8(0x40, true);
+            buf.CurrentLength_0x08 = 0x21;
+            //buf.Size
 
-            BufferReverser rev = new BufferReverser();
-            rev.InitInternalBuffer(20, false);
+            // CreateShit
+            CreateShit(hash1);
 
-            // 1032120
-            for (var i = 0; i < 0x20; i++)
-            {
-                uint val = hash1In.buf.OperatingBuffer[i] + (i > 0 ? 1u : 0u);
-                rev.OperatingBuffer[i] = 0 - val;
-            }
+            CopyObfuscate_1032120(buf, hash1);
 
-            // 1032760
-            // 1033330
-            // 1032FC8
-
-            // su_1031E18_RotateWeird
-            BufferReverser rev2 = new BufferReverser();
-            rev2.InitInternalBuffer(20, false);
-            rev.OperatingBuffer.CopyTo(rev2.OperatingBuffer.AsSpan());
-            uint v4 = 0;
-            for (var i = 0; i < 0x20; i++)
-            {
-                uint src = rev2.OperatingBuffer[i];
-                rev2.OperatingBuffer[i] = (rev2.OperatingBuffer[i] << 1) | v4;
-                v4 = src >> 31;
-            }
-
-            BufferReverser rev3 = new BufferReverser();
-            rev3.InitInternalBuffer(20, false);
-            for (var i = 0; i < 0x20; i++)
-            {
-                uint val = rev2.OperatingBuffer[i] + (i > 0 ? 1u : 0u);
-                rev3.OperatingBuffer[i] = 0 - val;
-            }
-
-
-            // sub_1033330
-            BufferReverser rev4 = new BufferReverser();
-            rev4.InitInternalBuffer(20, false);
-            rev3.OperatingBuffer.CopyTo(rev4.OperatingBuffer.AsSpan());
-            v4 = 0;
-            for (var i = 0; i < 0x20; i++)
-            {
-                uint src = rev4.OperatingBuffer[i];
-                rev4.OperatingBuffer[i] = (rev4.OperatingBuffer[i] << 1) | v4;
-                v4 = src >> 31;
-            }
-
-            // Converts back?
-            BufferReverser rev5 = new BufferReverser();
-            rev5.InitInternalBuffer(20, false);
-            for (var i = 0; i < 0x20; i++)
-            {
-                uint val = rev3.OperatingBuffer[i] + (i > 0 ? 1u : 0u);
-                rev5.OperatingBuffer[i] = rev.OperatingBuffer[i] - val;
-            }
-    ;
-
-            // Gave up beyond this point
-            // all of this is in a loop, severe obfuscation and memory magic going on
 
         }
 
-        private static void MemcpyInt(Span<uint> dst, Span<uint> src, int length)
+        static void CreateShit(PDIBigNumber hashBuffer)
         {
-            src.Slice(0, length).CopyTo(dst);
+            var initialBuf = new PDIBigNumber();
+            initialBuf.CurrentLength_0x08 = 1;
+            initialBuf.ResizeBuffer_10300C8(1, false);
+            initialBuf.OperatingBufferPtr_0x14[0] = 1; // Start with a single toggled bit
+
+            int bitCounter = 0;
+            while (true)
+            {
+                int compareResult = 0;
+
+                bool initialBufIsEmpty = false;
+                if (initialBuf is null || initialBuf.CurrentLength_0x08 == 0)
+                    initialBufIsEmpty = true;
+
+                if (initialBufIsEmpty)
+                {
+
+                }
+                else
+                {
+                    bool hashBufIsEmpty = false;
+                    if (hashBuffer is null || hashBuffer.CurrentLength_0x08 == 0)
+                        hashBufIsEmpty = true;
+
+                    if (hashBufIsEmpty)
+                    {
+                        // TODO
+                    }
+                    else
+                    {
+                        compareResult = PDIBigNumber.Equals_102FF50(initialBuf, hashBuffer);
+                    }
+                }
+
+                if (compareResult >= 0)
+                    break;
+
+                initialBuf.RotateLeft_1031E18();
+                bitCounter++;
+            }
+
+            // Copy
+            if (hashBuffer != null)
+                CopyObfuscate_1032120(initialBuf, hashBuffer);
+
+            sub_1032760(null, initialBuf, hashBuffer);
+            ;
+
+        }
+
+        static void sub_1032760(PDIBigNumber a1, PDIBigNumber a2, PDIBigNumber a3)
+        {
+            var initialBuf = new PDIBigNumber();
+            initialBuf.CurrentLength_0x08 = 1;
+            initialBuf.ResizeBuffer_10300C8(1, false);
+            initialBuf.OperatingBufferPtr_0x14[0] = 1; // Start with a single toggled bit
+
+            while (true)
+            {
+                sub_1033330(null, a3, a2, null);
+            }
+
+            
+        }
+
+        static void sub_1033330(PDIBigNumber ret1, PDIBigNumber a2, PDIBigNumber a3, PDIBigNumber ret2)
+        {
+            if (a2 != null)
+            {
+
+            }
+        }
+
+        static void CopyObfuscate_1032120(PDIBigNumber one, PDIBigNumber two)
+        {
+            if (one.field_10 == two.field_10)
+            {
+                if (PDIBigNumber.CompareBuffers_102FED0(two, one) > 0)
+                {
+
+                }
+                else
+                {
+                    SubtractBuffers_1032050(one, two);
+                }
+            }
+        }
+
+        static void SubtractBuffers_1032050(PDIBigNumber left, PDIBigNumber right)
+        {
+            byte flag = 0;
+            if (left.CurrentLength_0x08 > 0)
+            {
+                for (var i = 0; i < left.CurrentLength_0x08; i++)
+                {
+                    uint rightVal = (i < right.CurrentLength_0x08 ? right.OperatingBufferPtr_0x14[i] : 0);
+                    uint rightValPlusFlag = rightVal + flag;
+
+                    if (rightValPlusFlag >= flag)
+                    {
+                        uint leftVal = (i < left.CurrentLength_0x08 ? left.OperatingBufferPtr_0x14[i] : 0);
+                        uint newValue = leftVal - rightValPlusFlag;
+                        left.InsertValue_1030198(i, newValue);
+                    }
+                }
+            }
         }
 
         public class UnkHolder
         {
-            public BufferReverser buf1;
-            public BufferReverser buf2;
-            public BufferReverser buf3;
-            public BufferReverser buf4;
+            public PDIBigNumber buf1;
+            public PDIBigNumber buf2;
+            public PDIBigNumber buf3;
+            public PDIBigNumber buf4;
             public int field_30;
         }
 
         public class BufReverserHolder
         {
             int empty;
-            public BufferReverser buf;
+            public PDIBigNumber buf;
 
-            public BufReverserHolder(BufferReverser rev)
+            public BufReverserHolder(PDIBigNumber rev)
             {
                 buf = rev;
             }
