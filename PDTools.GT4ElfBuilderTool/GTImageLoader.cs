@@ -124,8 +124,10 @@ namespace PDTools.GT4ElfBuilderTool
             baseVal <<= (0x400);
 
             var subtracted = baseVal - hashBigNumber1;
-            var gcd1 = ExtractGreatestCommonDividor(subtracted, hashBigNumber1); // 1032760
-            var gcd2 = ExtractGreatestCommonDividor(hashBigNumber1, baseVal); // 1032760
+            var gcd1 = Egcd(subtracted, hashBigNumber1).LeftFactor; // 1032760
+            var gcd1_alt = Egcd(subtracted, hashBigNumber1).LeftFactor + baseVal; // 1032760
+            var gcd2 = -Egcd(hashBigNumber1, baseVal).LeftFactor; // 1032760
+            var gcd2_alt = Egcd(hashBigNumber1, baseVal).LeftFactor + baseVal;
 
             // Part 2 - 0x10316A8 (Perform RSA?)
             byte[] reversedHash2 = MemoryMarshal.Cast<uint, byte>(hash2r.OperatingBufferPtr_0x14).ToArray();
@@ -141,45 +143,61 @@ namespace PDTools.GT4ElfBuilderTool
             {
                 if (((prime >> i) & 1) != 0)
                 {
+                    sub_1030B98(/* context, output, */ modHash1And2)
                     ;
                 }
             }
 
-            var v1 = subtracted * modHash1And2;
-            var v2 = v1 * gcd2; /* ?? */
-            var v3 = v2 * hashBigNumber1;
-        }
-
-        static void sub_1030B98()
-        {
-
-        }
-
-        // 1032760
-        static BigInteger ExtractGreatestCommonDividor(BigInteger quotient, BigInteger dividor)
-        {
-            var x = BigInteger.Zero;
-            var lastx = BigInteger.One;
-            var y = BigInteger.One;
-            var lasty = BigInteger.Zero;
-
-            while (!dividor.IsZero)
+            void sub_1030B98(BigInteger unk)
             {
-                BigInteger remainder;
-                BigInteger q = BigInteger.DivRem(quotient, dividor, out remainder);
+                var v1 = truncate((subtracted * modHash1And2), 0x100);
+                var v2 = truncate(v1 * gcd2, 0x80); /* ?? */
+                var v3 = truncate(v2 * hashBigNumber1, 0x100);
 
-                quotient = dividor;
-                dividor = remainder;
-
-                var t = x;
-                x = lastx - q * x;
-                lastx = t;
-                t = y;
-                y = lasty - q * y;
-                lasty = t;
+                var v4 = v3 + v1;   
             }
 
-            return lastx;
+
+        }
+
+        public static BigInteger truncate(BigInteger big, int size)
+        {
+            var arr = big.ToByteArray(isUnsigned: big.Sign >= 0).AsSpan(0, size);
+            return new BigInteger(arr, big.Sign >= 0);
+        }
+
+        public static (BigInteger LeftFactor,
+               BigInteger RightFactor,
+               BigInteger Gcd) Egcd(BigInteger left, BigInteger right)
+        {
+            BigInteger leftFactor = 0;
+            BigInteger rightFactor = 1;
+
+            BigInteger u = 1;
+            BigInteger v = 0;
+            BigInteger gcd = 0;
+
+            while (left != 0)
+            {
+                BigInteger q = right / left;
+                BigInteger r = right % left;
+
+                BigInteger m = leftFactor - u * q;
+                BigInteger n = rightFactor - v * q;
+
+                right = left;
+                left = r;
+                leftFactor = u;
+                rightFactor = v;
+                u = m;
+                v = n;
+
+                gcd = right;
+            }
+
+            return (LeftFactor: leftFactor,
+                    RightFactor: rightFactor,
+                    Gcd: gcd);
         }
 
         public void Build(string outputFileName)
@@ -211,15 +229,14 @@ namespace PDTools.GT4ElfBuilderTool
             buf.CurrentLength_0x08 = 0x21;
             //buf.Size
 
-            // CreateShit
-            CreateShit(hash1);
+            CreateContext(hash1);
 
             CopyObfuscate_1032120(buf, hash1);
 
 
         }
 
-        static void CreateShit(PDIBigNumber hashBuffer)
+        static void CreateContext(PDIBigNumber hashBuffer)
         {
             var initialBuf = new PDIBigNumber();
             initialBuf.CurrentLength_0x08 = 1;
