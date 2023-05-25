@@ -23,8 +23,13 @@ namespace PDTools.GT4ElfBuilderTool
             }
 
             var image = new GTImageLoader();
-            image.Load(File.ReadAllBytes(args[0]));
-            image.Build(args[1]);
+            if (!image.Load(File.ReadAllBytes(args[0])))
+            {
+                Console.WriteLine("Failed to load CORE file");
+                return;
+            }
+
+            image.BuildELF(args[1]);
         }
     }
 }

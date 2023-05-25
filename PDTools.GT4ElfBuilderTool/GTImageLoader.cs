@@ -11,32 +11,115 @@ using System.Runtime.InteropServices;
 using ICSharpCodeInflater = ICSharpCode.SharpZipLib.Zip.Compression.Inflater;
 using System.Collections.Generic;
 using System;
+using System.Linq;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace PDTools.GT4ElfBuilderTool
 {
     public class GTImageLoader
     {
-        /* 0x00 - 8 bytes IV
-         * 0x08 - Unk byte
-         * 0x09 - Unk byte
-         * 0x10 - Raw Size 
-         */
+        /// <summary>
+        /// Used in GT4O, encrypted body
+        /// </summary>
+        private static readonly byte[] k = new byte[16]
+        {
+            // "PolyphonyDigital" when decrypted
+            0x05, 0x3A, 0x39, 0x2C, 0x25, 0x3D, 0x3A, 0x3B,
+            0x2C, 0x11, 0x3C, 0x32, 0x3C, 0x21, 0x34, 0x39,
+        };
+
 
         public int EntryPoint { get; set; }
         public List<ElfSegment> Segments { get; set; }
 
         // Mainly intended/implemented for GT4 Online's CORE.GT4 as it has some extra encryption
-        public void Load(byte[] file)
+        public bool Load(byte[] file)
+        {
+            byte[] inflated = ProcessFileHeaderAndDecompress(file);
+            if (inflated is null)
+                return false;
+
+            Console.WriteLine("# Step 2: Read actual elf relocation header");
+            // Read Header
+            SpanReader sr2 = new SpanReader(inflated);
+            short rsaValue1Length = sr2.ReadInt16();
+            byte[] rsaValueToGenerateSha512Hash_1 = sr2.ReadBytes(rsaValue1Length);
+
+            short rsaValue2Length = sr2.ReadInt16();
+            byte[] rsaValueToGenerateSha512Hash_2 = sr2.ReadBytes(rsaValue2Length);
+
+            int hashStartPos = sr2.Position;
+            int nSection = sr2.ReadInt32();
+            EntryPoint = sr2.ReadInt32();
+            Segments = new List<ElfSegment>(nSection);
+
+            Console.WriteLine("----");
+            Console.WriteLine($"- RSA Value 1 (0x{rsaValue1Length:X4}): {Convert.ToHexString(rsaValueToGenerateSha512Hash_1)}");
+            Console.WriteLine($"- RSA Value 2 (0x{rsaValue2Length:X4}): {Convert.ToHexString(rsaValueToGenerateSha512Hash_2)}");
+            Console.WriteLine($"- Number of Sections: {nSection}");
+            Console.WriteLine($"- Entrypoint: 0x{EntryPoint:X8}");
+            Console.WriteLine("----");
+
+            for (int i = 0; i < nSection; i++)
+            {
+                if (i == 1)
+                    Console.WriteLine($"# Segment {i + 1} (likely .text)");
+                else if (i == 2)
+                    Console.WriteLine($"# Segment {i + 1} (likely .data)");
+                else
+                    Console.WriteLine($"# Segment {i + 1}");
+
+                var segment = new ElfSegment();
+                segment.TargetOffset = sr2.ReadInt32();
+                segment.Size = sr2.ReadInt32();
+                segment.Data = sr2.ReadBytes(segment.Size);
+
+                Console.WriteLine($"- Target Memory Offset: 0x{segment.TargetOffset:X8}");
+                Console.WriteLine($"- Size: 0x{segment.Size:X8}");
+                Console.WriteLine("----");
+
+                Segments.Add(segment);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("# Step 3: Attempt optional authentication by computing RSA numbers to a SHA-512 hash");
+
+            // Values are reversed
+            int authValue = AuthenticateELFBody(rsaValueToGenerateSha512Hash_1.Reverse().ToArray(), 
+                                                rsaValueToGenerateSha512Hash_2.Reverse().ToArray(), 
+                                                inflated.AsSpan(hashStartPos));
+            if (authValue != -1)
+                Console.WriteLine($"ELF SHA-512 Matches using provided RSA numbers! Build specific value used: {authValue} ({KnownExponents[authValue]})");
+            else
+                Console.WriteLine("Could not authenticate/verify executable with RSA computed/encrypted SHA-512 hash");
+
+            Console.WriteLine("Done loading CORE file.");
+            Console.WriteLine();
+            return true;
+        }
+
+        public void BuildELF(string outputFileName)
+        {
+            Console.WriteLine("Building ELF file...");
+            ElfBuilder elfBuilder = new ElfBuilder();
+            elfBuilder.BuildFromInfo(outputFileName, this);
+        }
+
+        private static byte[] ProcessFileHeaderAndDecompress(byte[] file)
         {
             SpanReader sr;
-            if (file[0] != 1 && file[1] != 1)
+
+            Console.WriteLine("# Step 1: Processing CORE file header");
+
+            bool enc = file[0] != 1 && file[1] != 1;
+            if (enc)
             {
                 // GT4O - Encryption on-top of it
                 Console.WriteLine("Executable appears to be encrypted - Assuming GT4 Online");
 
                 // Crc of the file is at the end
                 uint crcFile = CRC32C.crc32(file.AsSpan(0), file.Length - 4);
-                Console.WriteLine($"CRC: {crcFile:X8}");
+                Console.WriteLine($"CRC of encrypted body: 0x{crcFile:X8}");
 
                 sr = new SpanReader(file);
                 sr.Position = file.Length - 4;
@@ -45,16 +128,19 @@ namespace PDTools.GT4ElfBuilderTool
                 if (crcFile != crcTarget)
                 {
                     Console.WriteLine("CRC did not match");
-                    return;
+                    return null;
                 }
 
                 // Begin decrypt
                 sr.Position = 0;
                 byte[] iv = sr.ReadBytes(8);
                 byte[] key = GetKey();
+
+                Console.WriteLine($"Decrypting with Salsa IV: {Convert.ToHexString(iv)}..");
                 var s = new Salsa20(key, key.Length);
                 s.SetIV(iv);
                 s.Decrypt(file.AsSpan(8), file.Length - 12);
+                Console.WriteLine("Decrypted.");
             }
             else
             {
@@ -68,302 +154,89 @@ namespace PDTools.GT4ElfBuilderTool
             ushort loadSourceFlags = (ushort)(sr.ReadByte() | (ushort)(sr.ReadByte() << 8));
             int rawSize = sr.ReadInt32();
 
-            int deflatedSize = file.Length - (8 + 12); // IV + Header + CRC at the bottom
+            Console.WriteLine($"Load Source Flags: 0x{loadSourceFlags:X4}");
+            Console.WriteLine($"Decompressed Size: 0x{rawSize:X8}");
+
+            const int HeaderSize = 0x06;
+            int deflatedSize = file.Length - (HeaderSize + (enc ? 8 + 4 : 0)); // Header (6) + IV (8) + CRC at the bottom (4)
+
+            Console.WriteLine("Decompressing..");
             byte[] deflateData = sr.ReadBytes(deflatedSize);
             byte[] inflatedData = new byte[rawSize];
 
             ICSharpCodeInflater d = new ICSharpCodeInflater(true);
             d.SetInput(deflateData);
             d.Inflate(inflatedData);
+            Console.WriteLine("Decompressed.");
+            Console.WriteLine();
 
-            // Read Header
-            SpanReader sr2 = new SpanReader(inflatedData);
-            short sha512Hash1Len = sr2.ReadInt16();
-            byte[] sha512Hash1 = sr2.ReadBytes(sha512Hash1Len);
-
-            short sha512Hash2Len = sr2.ReadInt16();
-            byte[] sha512Hash2 = sr2.ReadBytes(sha512Hash2Len);
-
-            int nSection = sr2.ReadInt32();
-            EntryPoint = sr2.ReadInt32();
-            Segments = new List<ElfSegment>(nSection);
-
-            for (int i = 0; i < nSection; i++)
-            {
-                var segment = new ElfSegment();
-                segment.TargetOffset = sr2.ReadInt32();
-                segment.Size = sr2.ReadInt32();
-                segment.Data = sr2.ReadBytes(segment.Size);
-
-                Segments.Add(segment);
-            }
-
-            byte[] elfData = inflatedData.Skip(0x104).ToArray();
-            using (var hash = SHA512.Create())
-            {
-                // Used to check against the two 0x80 blobs, but those i don't know how they generate the hash
-                var hashedInputBytes = hash.ComputeHash(elfData);
-                RSAStuff(sha512Hash1, sha512Hash2, 81001);
-            }
-
+            return inflatedData;
         }
 
-        static void RSAStuff(byte[] number1, byte[] number2, int primeNumber)
+        public static Dictionary<int, string> KnownExponents = new Dictionary<int, string>
         {
-            var hash2r = new PDIBigNumber();
-            hash2r.InitFromBuffer(number2);
+            { 65537, "GT3 (JP)" },
+            { 66001, "GT3 (US)" },
+            { 67001, "GT3 (EU)" },
 
-            var hash1r = new PDIBigNumber();
-            hash1r.InitFromBuffer(number1);
+            { 69001, "GT Concept 2001 (JP)" },
+            { 71003, "GT Concept 2002 Tokyo-Geneva (EU)" },
+            { 72001, "GT Concept 2002 Tokyo-Geneva (EU)" },
 
-            // Part 1 - 0x1030428 (Init RSA?)
-            byte[] reversedHash1 = MemoryMarshal.Cast<uint, byte>(hash1r.OperatingBufferPtr_0x14).ToArray();
-            BigInteger hashBigNumber1 = new BigInteger(reversedHash1, isUnsigned: true);
+            { 77001, "GT4P (JP)" },
+            { 78001, "GT4P (AS)" },
+            { 79001, "GT4P (KR)" },
+            { 80001, "GT4P (EU)" },
 
-            BigInteger baseVal = new BigInteger(1);
-            baseVal <<= (0x400);
+            { 81001, "GT4O (US)" },
 
-            var subtracted = baseVal - hashBigNumber1;
-            var gcd1 = Egcd(subtracted, hashBigNumber1).LeftFactor; // 1032760
-            var gcd1_alt = Egcd(subtracted, hashBigNumber1).LeftFactor + baseVal; // 1032760
-            var gcd2 = -Egcd(hashBigNumber1, baseVal).LeftFactor; // 1032760
-            var gcd2_alt = Egcd(hashBigNumber1, baseVal).LeftFactor + baseVal;
+            { 82001, "GT4 (JP)" },
+            { 82101, "GT4 (US)" },
+            { 82201, "GT4 (EU)" },
+            { 82501, "GT4 Press Copy (CN)" },
+ 
+            { 83201, "GT4O (JP)" }, // GT4O (JP)
 
-            // Part 2 - 0x10316A8 (Perform RSA?)
-            byte[] reversedHash2 = MemoryMarshal.Cast<uint, byte>(hash2r.OperatingBufferPtr_0x14).ToArray();
-            BigInteger hashBigNumber2 = new BigInteger(reversedHash2, isUnsigned: true);
+            { 90001, "Tourist Trophy (JP)" },
+            { 90301, "Tourist Trophy (US)" },
+            { 90401, "Tourist Trophy (EU)" },
+        };
 
-            var multiplied = baseVal * hashBigNumber2;
-            var modHash1And2 = multiplied % hashBigNumber1;
-
-            // 1030B98
-            var prime = new BigInteger(0x13C69);
-            long numBits = prime.GetBitLength();
-            for (var i = 0; i < numBits; i++)
+        private static int AuthenticateELFBody(byte[] value1, byte[] value2, Span<byte> elfBody)
+        {
+            using (var computedHash = SHA512.Create())
             {
-                if (((prime >> i) & 1) != 0)
+                var hashedInputBytes = computedHash.ComputeHash(elfBody.ToArray());
+                Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(hashedInputBytes)}");
+
+                foreach (var exponent in KnownExponents)
                 {
-                    sub_1030B98(/* context, output, */ modHash1And2)
-                    ;
+                    var rsaCtx = new RSAContext();
+                    rsaCtx.InitMaybe_0x1030428(value1, value2);
+                    var expectedNumber = rsaCtx.ComputeOrDecrypt_1030FE8(exponent.Key);
+
+                    // Reverse it
+                    var expectedHash = expectedNumber.ToByteArray().AsSpan(0, 0x40);
+                    expectedHash.Reverse();
+
+                    if (hashedInputBytes.AsSpan().SequenceEqual(expectedHash))
+                        return exponent.Key;
                 }
             }
 
-            void sub_1030B98(BigInteger unk)
-            {
-                var v1 = truncate((subtracted * modHash1And2), 0x100);
-                var v2 = truncate(v1 * gcd2, 0x80); /* ?? */
-                var v3 = truncate(v2 * hashBigNumber1, 0x100);
-
-                var v4 = v3 + v1;   
-            }
-
-
+            return -1;
         }
 
-        public static BigInteger truncate(BigInteger big, int size)
-        {
-            var arr = big.ToByteArray(isUnsigned: big.Sign >= 0).AsSpan(0, size);
-            return new BigInteger(arr, big.Sign >= 0);
-        }
-
-        public static (BigInteger LeftFactor,
-               BigInteger RightFactor,
-               BigInteger Gcd) Egcd(BigInteger left, BigInteger right)
-        {
-            BigInteger leftFactor = 0;
-            BigInteger rightFactor = 1;
-
-            BigInteger u = 1;
-            BigInteger v = 0;
-            BigInteger gcd = 0;
-
-            while (left != 0)
-            {
-                BigInteger q = right / left;
-                BigInteger r = right % left;
-
-                BigInteger m = leftFactor - u * q;
-                BigInteger n = rightFactor - v * q;
-
-                right = left;
-                left = r;
-                leftFactor = u;
-                rightFactor = v;
-                u = m;
-                v = n;
-
-                gcd = right;
-            }
-
-            return (LeftFactor: leftFactor,
-                    RightFactor: rightFactor,
-                    Gcd: gcd);
-        }
-
-        public void Build(string outputFileName)
-        {
-            Console.WriteLine("Building ELF file...");
-            ElfBuilder elfBuilder = new ElfBuilder();
-            elfBuilder.BuildFromInfo(outputFileName, this);
-        }
-
-        private static readonly byte[] k = new byte[16]
-        {
-            // "PolyphonyDigital"
-            0x05, 0x3A, 0x39, 0x2C, 0x25, 0x3D, 0x3A, 0x3B,
-            0x2C, 0x11, 0x3C, 0x32, 0x3C, 0x21, 0x34, 0x39,
-        };
-
+        /// <summary>
+        /// Decrypts the key with a cheap xor/bit flip (0x55)
+        /// </summary>
+        /// <returns></returns>
         private static byte[] GetKey()
         {
             byte[] key = new byte[16];
             for (int i = 0; i < 16; i++)
                 key[i] = (byte)(k[i] ^ 0x55);
             return key;
-        }
-
-        static void Part1(PDIBigNumber hash1)
-        {
-            PDIBigNumber buf = new PDIBigNumber();
-            buf.ResizeBuffer_10300C8(0x40, true);
-            buf.CurrentLength_0x08 = 0x21;
-            //buf.Size
-
-            CreateContext(hash1);
-
-            CopyObfuscate_1032120(buf, hash1);
-
-
-        }
-
-        static void CreateContext(PDIBigNumber hashBuffer)
-        {
-            var initialBuf = new PDIBigNumber();
-            initialBuf.CurrentLength_0x08 = 1;
-            initialBuf.ResizeBuffer_10300C8(1, false);
-            initialBuf.OperatingBufferPtr_0x14[0] = 1; // Start with a single toggled bit
-
-            int bitCounter = 0;
-            while (true)
-            {
-                int compareResult = 0;
-
-                bool initialBufIsEmpty = false;
-                if (initialBuf is null || initialBuf.CurrentLength_0x08 == 0)
-                    initialBufIsEmpty = true;
-
-                if (initialBufIsEmpty)
-                {
-
-                }
-                else
-                {
-                    bool hashBufIsEmpty = false;
-                    if (hashBuffer is null || hashBuffer.CurrentLength_0x08 == 0)
-                        hashBufIsEmpty = true;
-
-                    if (hashBufIsEmpty)
-                    {
-                        // TODO
-                    }
-                    else
-                    {
-                        compareResult = PDIBigNumber.Equals_102FF50(initialBuf, hashBuffer);
-                    }
-                }
-
-                if (compareResult >= 0)
-                    break;
-
-                initialBuf.RotateLeft_1031E18();
-                bitCounter++;
-            }
-
-            // Copy
-            if (hashBuffer != null)
-                CopyObfuscate_1032120(initialBuf, hashBuffer);
-
-            sub_1032760(null, initialBuf, hashBuffer);
-            ;
-
-        }
-
-        static void sub_1032760(PDIBigNumber a1, PDIBigNumber a2, PDIBigNumber a3)
-        {
-            var initialBuf = new PDIBigNumber();
-            initialBuf.CurrentLength_0x08 = 1;
-            initialBuf.ResizeBuffer_10300C8(1, false);
-            initialBuf.OperatingBufferPtr_0x14[0] = 1; // Start with a single toggled bit
-
-            while (true)
-            {
-                sub_1033330(null, a3, a2, null);
-            }
-
-            
-        }
-
-        static void sub_1033330(PDIBigNumber ret1, PDIBigNumber a2, PDIBigNumber a3, PDIBigNumber ret2)
-        {
-            if (a2 != null)
-            {
-
-            }
-        }
-
-        static void CopyObfuscate_1032120(PDIBigNumber one, PDIBigNumber two)
-        {
-            if (one.field_10 == two.field_10)
-            {
-                if (PDIBigNumber.CompareBuffers_102FED0(two, one) > 0)
-                {
-
-                }
-                else
-                {
-                    SubtractBuffers_1032050(one, two);
-                }
-            }
-        }
-
-        static void SubtractBuffers_1032050(PDIBigNumber left, PDIBigNumber right)
-        {
-            byte flag = 0;
-            if (left.CurrentLength_0x08 > 0)
-            {
-                for (var i = 0; i < left.CurrentLength_0x08; i++)
-                {
-                    uint rightVal = (i < right.CurrentLength_0x08 ? right.OperatingBufferPtr_0x14[i] : 0);
-                    uint rightValPlusFlag = rightVal + flag;
-
-                    if (rightValPlusFlag >= flag)
-                    {
-                        uint leftVal = (i < left.CurrentLength_0x08 ? left.OperatingBufferPtr_0x14[i] : 0);
-                        uint newValue = leftVal - rightValPlusFlag;
-                        left.InsertValue_1030198(i, newValue);
-                    }
-                }
-            }
-        }
-
-        public class UnkHolder
-        {
-            public PDIBigNumber buf1;
-            public PDIBigNumber buf2;
-            public PDIBigNumber buf3;
-            public PDIBigNumber buf4;
-            public int field_30;
-        }
-
-        public class BufReverserHolder
-        {
-            int empty;
-            public PDIBigNumber buf;
-
-            public BufReverserHolder(PDIBigNumber rev)
-            {
-                buf = rev;
-            }
         }
     }
 }
