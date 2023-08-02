@@ -6,10 +6,7 @@ using System.IO;
 using Syroot.BinaryData.Memory;
 
 using PDTools.Utils;
-using PDTools.Structures;
-
-using System.Linq;
-using PDTools.Structures.PS3.MGameParameter;
+using PDTools.Structures.MGameParameter;
 
 namespace PDTools.Structures.PS3
 {

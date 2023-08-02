@@ -4,6 +4,7 @@ using System.Text;
 
 using Syroot.BinaryData.Memory;
 using PDTools.Utils;
+using PDTools.Enums;
 
 namespace PDTools.Structures
 {
@@ -16,7 +17,7 @@ namespace PDTools.Structures
         public string OnlineID { get; set; }
         public string Region { get; set; }
         public byte Port { get; set; }
-        public byte DriverType { get; set; }
+        public DriverType DriverType { get; set; }
         public byte ResidenceID { get; set; }
         public bool IsGhost { get; set; }
         public bool DisplayDrivingLine { get; set; }
@@ -32,24 +33,22 @@ namespace PDTools.Structures
 
         public GrowthParameter GrowthParameter { get; set; } = new GrowthParameter();
 
-        public static MCarDriverParameter Read(ref BitStream reader)
+        public void Deserialize(ref BitStream reader)
         {
             int basePos = reader.Position;
-            var driver = new MCarDriverParameter();
-
-            driver.Version = reader.ReadInt32();
+            Version = reader.ReadInt32();
             int cdp_size = reader.ReadInt32();
 
-            driver.Port = (byte)reader.ReadBits(4);
-            driver.DriverType = (byte)reader.ReadBits(4);
-            driver.ResidenceID = (byte)reader.ReadBits(6);
-            driver.IsGhost = reader.ReadBoolBit();
-            driver.DisplayDrivingLine = reader.ReadBoolBit(); 
+            Port = (byte)reader.ReadBits(4);
+            DriverType = (DriverType)reader.ReadBits(4);
+            ResidenceID = (byte)reader.ReadBits(6);
+            IsGhost = reader.ReadBoolBit();
+            DisplayDrivingLine = reader.ReadBoolBit(); 
 
-            byte[] name = new byte[driver.Version >= 110 ? 32 : 64];
+            byte[] name = new byte[Version >= 110 ? 32 : 64];
             reader.ReadIntoByteArray(name.Length, name, BitStream.Byte_Bits);
-            driver.PlayerName = Encoding.ASCII.GetString(name).TrimEnd((char)0);
-            if (driver.Version >= 109)
+            PlayerName = Encoding.ASCII.GetString(name).TrimEnd((char)0);
+            if (Version >= 109)
             {
                 byte[] onlineIdBuffer = new byte[18];
                 reader.ReadIntoByteArray(18, onlineIdBuffer, BitStream.Byte_Bits);
@@ -57,26 +56,28 @@ namespace PDTools.Structures
 
             byte[] region = new byte[4];
             reader.ReadIntoByteArray(4, region, BitStream.Byte_Bits);
-            driver.Region = Encoding.ASCII.GetString(region).TrimEnd((char)0);
+            Region = Encoding.ASCII.GetString(region).TrimEnd((char)0);
 
-            driver.Settings.Read(ref reader);
-            driver.CorneringSkill = reader.ReadByte();
-            driver.AcceleratingSkill = reader.ReadByte();
+            Settings.Deserialize(ref reader);
+
+            CorneringSkill = reader.ReadByte();
+            AcceleratingSkill = reader.ReadByte();
             reader.ReadBits(4); // ai_pit_decision_10_vitality_before_race
             reader.ReadBits(4); // ai_pit_decision_10_tire_before_race
-            driver.BrakingSkill = reader.ReadByte();
-            driver.SpecialDriverType = reader.ReadByte();
-            driver.StartingSkill = reader.ReadByte();
+            BrakingSkill = reader.ReadByte();
+            SpecialDriverType = reader.ReadByte();
+            StartingSkill = reader.ReadByte();
             reader.ReadBits(3); // ai_reaction_level
             reader.ReadBits(4); // unk6
             reader.ReadBits(1); // disable_bspec_skill
-            driver.AILevel = reader.ReadByte();
+            AILevel = reader.ReadByte();
 
-            driver.GrowthParameter.Read(ref reader);
+            GrowthParameter.Deserialize(ref reader);
 
-            if (driver.Version < 113)
+            // TODO: What is this? Adhoc doesn't expose it
+            if (Version < 113)
             {
-                if (driver.Version >= 110)
+                if (Version >= 110)
                 {
                     // All use ReadBitsSafe, but for the purposes of making it more clean we arent
                     reader.ReadInt16(); // Head Code
@@ -112,21 +113,24 @@ namespace PDTools.Structures
                     reader.ReadInt32();
                     reader.ReadInt32();
                 }
-                else if (driver.Version <= 106)
+                else if (Version <= 106)
                 {
                     reader.ReadByte();
                     reader.ReadByte();
-                    if (reader.ReadBits(2) != 0)
+
+                    V106_Flag = (byte)reader.ReadBits(2);
+                    if (V106_Flag != 0)
                         reader.ReadBits(2);
                     reader.ReadBits(2);
                     reader.ReadBits(1);
 
-                    if (reader.ReadBits(2) != 0) 
+                    V106_Flag2 = (byte)reader.ReadBits(2);
+                    if (V106_Flag2 != 0) 
                         reader.ReadByte();
 
                     reader.ReadByte();
 
-                    if (driver.Version == 106)
+                    if (Version == 106)
                     {
                         reader.ReadBits(6);
                         reader.ReadBits(6);
@@ -143,8 +147,127 @@ namespace PDTools.Structures
             }
 
             reader.Position = basePos + cdp_size;
+        }
 
-            return driver;
+        public byte V106_Flag { get; set; }
+        public byte V106_Flag2 { get; set; }
+
+        public void Serialize(ref BitStream bs)
+        {
+            int baseOffset = bs.Position;
+
+            bs.WriteInt32(Version);
+            bs.WriteInt32(0xC0); // Size, game hardcodes it
+
+            bs.WriteBits(Port, 4);
+            bs.WriteBits((byte)DriverType, 4);
+            bs.WriteBits(ResidenceID, 6);
+            bs.WriteBoolBit(IsGhost);
+            bs.WriteBoolBit(DisplayDrivingLine);
+
+            byte[] name = new byte[Version >= 110 ? 32 : 64];
+            Encoding.UTF8.GetBytes(PlayerName).AsSpan().CopyTo(name);
+            bs.WriteByteData(name);
+
+            if (Version >= 109)
+            {
+                byte[] onlineIdBuffer = new byte[18];
+                Encoding.UTF8.GetBytes(OnlineID).AsSpan().CopyTo(onlineIdBuffer);
+                bs.WriteByteData(onlineIdBuffer);
+            }
+
+            byte[] region = new byte[4];
+            Encoding.UTF8.GetBytes(Region).AsSpan().CopyTo(region);
+            bs.WriteByteData(region);
+
+            Settings.Serialize(ref bs);
+
+            bs.WriteByte(CorneringSkill);
+            bs.WriteByte(AcceleratingSkill);
+            bs.WriteBits(0, 4);
+            bs.WriteBits(0, 4);
+            bs.WriteByte(BrakingSkill);
+            bs.WriteByte(SpecialDriverType);
+            bs.WriteByte(StartingSkill);
+            bs.WriteBits(0, 3);
+            bs.WriteBits(0, 4);
+            bs.WriteBits(0, 1);
+            bs.WriteByte(AILevel);
+
+            GrowthParameter.Serialize(ref bs);
+
+            // TODO: What is this?
+            if (Version < 113)
+            {
+                if (Version >= 110)
+                {
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteBits(0, 2);
+                    bs.WriteBits(0, 1);
+                    bs.WriteBits(0, 5);
+                    bs.WriteByte(0);
+                    bs.WriteInt16(0);
+
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+
+                    // x2
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteInt16(0);
+                    bs.WriteBits(0, 2);
+                    bs.WriteBits(0, 1);
+                    bs.WriteBits(0, 5);
+                    bs.WriteByte(0);
+                    bs.WriteInt16(0);
+
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                    bs.WriteInt32(0);
+                }
+                else if (Version <= 106)
+                {
+                    bs.WriteByte(0);
+                    bs.WriteByte(0);
+                    bs.WriteBits(V106_Flag, 2);
+                    if (V106_Flag != 0)
+                        bs.WriteBits(0, 2);
+                    bs.WriteBits(0, 2);
+                    bs.WriteBits(0, 1);
+
+                    bs.WriteBits(V106_Flag2, 2);
+                    if (V106_Flag2 != 0)
+                        bs.WriteByte(0);
+
+                    bs.WriteByte(0);
+
+                    if (Version == 106)
+                    {
+                        bs.WriteBits(0, 6);
+                        bs.WriteBits(0, 6);
+
+                        bs.WriteBits(0, 6);
+                        bs.WriteBits(0, 6);
+
+                        bs.WriteBits(0, 1);
+                        bs.WriteBits(0, 1);
+
+                        bs.WriteBits(0, 6);
+                    }
+                }
+            }
+
+            bs.Position = baseOffset + 0xC0;
+
         }
     }
 
@@ -159,13 +282,13 @@ namespace PDTools.Structures
         public bool Active_Steering { get; set; }
         public byte Active_Brake_Level;
         public bool Physics_Pro { get; set; }
-        public byte Competition_Flags { get; set; }
+        public byte Competition_Flags { get; set; } // 'academy_flag' in GT5, 'competition_flags' in GT6
         public byte Pad_Yaw_Gain { get; set; }
         public byte Assist_4was { get; set; }
         private byte unk2;
         public byte RTAUnadjustable { get; set; }
 
-        public void Read(ref BitStream reader)
+        public void Deserialize(ref BitStream reader)
         {
             GTBehavior_version = reader.ReadByte();
             Manual = reader.ReadByte() == 1;
@@ -181,6 +304,24 @@ namespace PDTools.Structures
             Assist_4was = reader.ReadByte();
             reader.ReadByte();
             RTAUnadjustable = reader.ReadByte();
+        }
+
+        public void Serialize(ref BitStream bs)
+        {
+            bs.WriteByte(GTBehavior_version);
+            bs.WriteByte(Manual ? (byte)1 : (byte)0);
+            bs.WriteByte(Assist_TCS ? (byte)1 : (byte)0);
+            bs.WriteByte(Assist_ASM ? (byte)1 : (byte)0);
+            bs.WriteByte(Steering_Assist_Type);
+            bs.WriteByte(0);
+            bs.WriteByte(Active_Steering ? (byte)1 : (byte)0);
+            bs.WriteByte(Active_Brake_Level);
+            bs.WriteByte(Physics_Pro ? (byte)1 : (byte)0);
+            bs.WriteByte(Competition_Flags);
+            bs.WriteByte(Pad_Yaw_Gain);
+            bs.WriteByte(Assist_4was);
+            bs.WriteByte(0);
+            bs.WriteByte(RTAUnadjustable);
         }
     }
 
@@ -214,7 +355,7 @@ namespace PDTools.Structures
         public byte BonusSkillS { get; set; }
         public byte BonusSkillO { get; set; }
 
-        public void Read(ref BitStream reader)
+        public void Deserialize(ref BitStream reader)
         {
             Growable = reader.ReadByte();
             SpecID = reader.ReadByte();
@@ -243,6 +384,37 @@ namespace PDTools.Structures
             BonusSkillC = reader.ReadByte();
             BonusSkillS = reader.ReadByte();
             BonusSkillO = reader.ReadByte();
+        }
+
+        public void Serialize(ref BitStream bs)
+        {
+            bs.WriteByte(Growable);
+            bs.WriteByte(SpecID);
+            bs.WriteByte(Fatigue);
+            bs.WriteByte(Level);
+            bs.WriteInt32(Experience);
+            bs.WriteInt16(WinCount);
+            bs.WriteInt16(RaceCount);
+            bs.WriteInt16(Days);
+            bs.WriteByte(DecMasterRate);
+            bs.WriteInt16(Stamina);
+            bs.WriteByte(Mentality);
+            bs.WriteByte(Condition);
+            bs.WriteByte(Temper);
+            bs.WriteByte(Flexibility);
+            bs.WriteByte(SkillBaseBraking);
+            bs.WriteByte(SkillBaseCornering);
+            bs.WriteByte(SkillBaseShiftUp);
+            bs.WriteByte(SkillBaseCornerout);
+            bs.WriteByte(SkillBaseLineTrace);
+            bs.WriteByte(SkillBaseSteerReaction);
+            bs.WriteByte(SkillHeatOffset);
+            bs.WriteByte(Unk);
+            bs.WriteInt16(Unk2);
+            bs.WriteByte(BonusSkillB);
+            bs.WriteByte(BonusSkillC);
+            bs.WriteByte(BonusSkillS);
+            bs.WriteByte(BonusSkillO);
         }
     }
 }

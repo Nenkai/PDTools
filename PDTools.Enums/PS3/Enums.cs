@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -81,16 +82,6 @@ namespace PDTools.Enums.PS3
         ONE,
     }
 
-    public enum PARTS_SUSPENSION
-    {
-        NORMAL,
-        SPORTS1,
-        SPORTS2,
-        SPORTS3,
-        RACING,
-        FULL_ACTIVE,
-    }
-
     public enum PARTS_ASCC
     {
         NO,
@@ -123,48 +114,12 @@ namespace PDTools.Enums.PS3
         ACTIVE_CENTER_DIFF,
     }
 
-    public enum PARTS_GEAR
-    {
-        NORMAL,
-        CLOSE,
-        SUPER_CLOSE,
-        VARIABLE,
-    }
-
-    public enum PARTS_NATUNE
-    {
-        NONE = -1,
-        LEVEL1 = 1,
-        LEVEL2,
-        LEVEL3,
-        LEVEL4,
-        LEVEL5,
-    }
-
-    public enum PARTS_TURBINEKIT
-    {
-        NONE = -1,
-        NO,
-        LEVEL1,
-        LEVEL2,
-        LEVEL3,
-        LEVEL4,
-        LEVEL5,
-    }
-
     public enum PARTS_DISPLACEMENT
     {
         NONE = -1,
         LEVEL1 = 1,
         LEVEL2,
         LEVEL3,
-    }
-
-    public enum PARTS_COMPUTER
-    {
-        NONE = -1,
-        LEVEL1 = 1,
-        LEVEL2,
     }
 
     public enum PARTS_INTERCOOLER
@@ -174,14 +129,6 @@ namespace PDTools.Enums.PS3
         M,
         L,
         LL,
-    }
-
-    public enum PARTS_MUFFLER
-    {
-        NONE,
-        SPORTS,
-        SEMI_RACING,
-        RACING,
     }
 
     public enum PARTS_CLUTCH
@@ -329,5 +276,124 @@ namespace PDTools.Enums.PS3
     public enum PARTS_STIFFNESS
     {
         ONE = 1,
+    }
+
+
+    public enum PARTS_SUSPENSION 
+    {
+        [Description("Unspecified")]
+        UNSPECIFIED = -1,
+
+        [Description("Default")]
+        NORMAL,
+
+        [Description("Racing Suspension: Soft")]
+        SPORTS1,
+
+        [Description("Racing Suspension: Hard")]
+        SPORTS2,
+
+        [Description("Suspension: Rally")]
+        SPORTS3,
+
+        [Description("Height-Adjustable, Fully Customisable Suspension")]
+        RACING,
+
+        [Description("Full Active (?)")]
+        FULL_ACTIVE,
+    }
+
+    public enum PARTS_GEAR
+    {
+        [Description("Unspecified")]
+        UNSPECIFIED = -1,
+
+        [Description("Default")]
+        NORMAL,
+
+        [Description("Five-Speed Transmission")]
+        CLOSE,
+
+        [Description("Six-Speed Transmission")]
+        SUPER_CLOSE,
+
+        [Description("Fully Customisable Transmission")]
+        VARIABLE,
+    }
+
+    public enum PARTS_NATUNE
+    {
+        [Description("Default")]
+        NONE = -1,
+
+        [Description("(Placeholder Level 0)")]
+        LEVEL0 = 0,
+
+        [Description("Stage 1")]
+        LEVEL1 = 1,
+
+        [Description("Stage 2")]
+        LEVEL2,
+
+        [Description("Stage 3")]
+        LEVEL3,
+
+        [Description("Stage 4 (Normally Unavailable)")]
+        LEVEL4,
+
+        [Description("Stage 5 (Normally Unavailable)")]
+        LEVEL5,
+    }
+
+    public enum PARTS_TURBINEKIT
+    {
+        [Description("Default")]
+        NONE = -1,
+
+        [Description("NO (?)")]
+        NO,
+
+        [Description("Low RPM Range Turbo Kit")]
+        LEVEL1,
+
+        [Description("Mid RPM Range Turbo Kit")]
+        LEVEL2,
+
+        [Description("High RPM Range Turbo Kit")]
+        LEVEL3,
+
+        [Description("Super RPM Range Turbo Kit (Normally Unavailable)")]
+        LEVEL4,
+
+        [Description("Ultra RPM Range Turbo Kit (Normally Unavailable)")]
+        LEVEL5,
+    }
+
+    public enum PARTS_COMPUTER
+    {
+        [Description("Default")]
+        NONE = -1,
+
+        [Description("Sports Computer")]
+        LEVEL1 = 1,
+        LEVEL2,
+    }
+
+    public enum PARTS_MUFFLER
+    {
+        [Description("Unspecified")]
+        UNSPECIFIED = -1,
+
+        [Description("Default")]
+        NONE,
+
+        [Description("Sports Exhaust")]
+        SPORTS,
+
+        [Description("Semi-Racing Exhaust")]
+        SEMIRACING,
+
+        [Description("Racing Exhaust")]
+        RACING,
     }
 }

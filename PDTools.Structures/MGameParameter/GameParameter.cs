@@ -7,56 +7,32 @@ using System;
 using System.IO;
 
 using Syroot.BinaryData;
+
 using PDTools.Utils;
+using System.Text;
 
 namespace PDTools.Structures.MGameParameter
 {
     public class GameParameter
     {
-        public const ulong BaseFolderID = 1000;
-        public const ulong BaseEventID = 100_000;
+        public ulong FolderId { get; set; }
+        public List<Event> Events { get; set; } = new List<Event>();
+        public OnlineRoomParameter OnlineRoom { get; set; } = new OnlineRoomParameter();
+        public Reward SeriesRewards { get; set; } = new Reward();
+        public Information SeriesInformation { get; set; } = new Information();
+        public EditorInfo EditorInfo { get; set; } = new EditorInfo();
+        public bool Championship { get; set; }
+        public bool Arcade { get; set; }
 
-        public ulong FolderId { get; set; } = BaseFolderID;
-        public ulong FirstEventID { get; set; } = BaseEventID;
-        public string FolderFileName { get; set; }
+        public const int XMLVersionLatest = 106;
 
-        public List<Event> Events { get; set; }
-
-        public GameParameterEventList EventList { get; set; }
-
-        public OnlineRoomParameter OnlineRoom { get; set; }
-        public EventRewards SeriesRewards { get; set; }
-        public EditorInfo EditorInfo { get; set; }
-
-        public GameParameter()
-        {
-            SeriesRewards = new EventRewards();
-            SeriesRewards.MoneyPrizes[0] = 25_000;
-            SeriesRewards.MoneyPrizes[1] = 12_750;
-            SeriesRewards.MoneyPrizes[2] = 7_500;
-            SeriesRewards.MoneyPrizes[3] = 5_000;
-            SeriesRewards.MoneyPrizes[4] = 2_500;
-            SeriesRewards.MoneyPrizes[5] = 1_000;
-            for (int i = 6; i < 16; i++)
-                SeriesRewards.MoneyPrizes[i] = -1;
-
-            Events = new List<Event>();
-            EventList = new GameParameterEventList();
-            OnlineRoom = new OnlineRoomParameter();
-            EditorInfo = new EditorInfo();
-            FolderFileName = Regex.Replace(EventList.Title.Replace(" ", "").Replace(".", ""), "[^a-zA-Z0-9_.]+", "", RegexOptions.Compiled).ToLower();
-        }
-
-        public void OrderEventIDs()
-        {
-            for (int i = 0; i < Events.Count; i++)
-                Events[i].EventID = FirstEventID + (ulong)i;
-        }
-
+        /// <summary>
+        /// Writes the structure to XML. Note: Unsorted XML nodes.
+        /// </summary>
+        /// <param name="xml"></param>
         public void WriteToXml(XmlWriter xml)
         {
-            xml.WriteStartElement("GameParameter"); xml.WriteAttributeString("version", "106");
-            xml.WriteElementBool("championship", EventList.IsChampionship);
+            xml.WriteStartElement("GameParameter"); xml.WriteAttributeString("version", XMLVersionLatest.ToString());
             xml.WriteElementULong("folder_id", FolderId);
 
             xml.WriteStartElement("events");
@@ -64,65 +40,114 @@ namespace PDTools.Structures.MGameParameter
                 evnt.WriteToXml(xml);
             xml.WriteEndElement();
 
-            xml.WriteStartElement("series_reward");
-            {
-                xml.WriteStartElement("prize_table");
-                {
-                    if (EventList.IsChampionship)
-                    {
-                        foreach (var cr in SeriesRewards.MoneyPrizes)
-                        {
-                            if (cr != -1)
-                                xml.WriteElementInt("prize", cr);
-                            else
-                                xml.WriteElementInt("prize", 0);
-                        }
-                    }
-                }
-                xml.WriteEndElement();
+            // online_room
 
-                xml.WriteEmptyElement("point_table");
+            if (!SeriesRewards.IsDefault())
+            {
+                xml.WriteStartElement("series_reward");
+                SeriesRewards.WriteToXml(xml);
+                xml.WriteEndElement();
             }
-            xml.WriteEndElement();
+
+            if (!SeriesInformation.IsDefault())
+            {
+                xml.WriteStartElement("series_information");
+                SeriesInformation.WriteToXml(xml);
+                xml.WriteEndElement();
+            }
+
+            xml.WriteElementBool("championship", Championship);
+            xml.WriteElementBool("arcade", Arcade);
 
             xml.WriteEndElement();
         }
 
-        public void ParseEventsFromFile(XmlDocument doc)
+        /// <summary>
+        /// Writes to Xml. Nodes will be sorted alphabetically.
+        /// </summary>
+        /// <param name="writer"></param>
+        public void WriteToXmlSorted(XmlWriter writer)
+        {
+            using (var ms = new MemoryStream())
+            {
+                using (var tempWriter = XmlWriter.Create(ms))
+                {
+                    WriteToXml(tempWriter);
+                }
+
+                ms.Position = 0;
+                XmlDocument sortedDoc = new XmlDocument();
+                sortedDoc.Load(ms);
+
+                SortXml(sortedDoc["GameParameter"]);
+                sortedDoc["GameParameter"].WriteTo(writer);
+            }
+        }
+
+        private static void SortXml(XmlNode node)
+        {
+            // Load the child elements into a collection.
+            List<XmlNode> childElements = new List<XmlNode>();
+
+            foreach (XmlNode childNode in node.ChildNodes)
+            {
+                childElements.Add(childNode);
+
+                // Call recursively if the child is not a leaf.
+                if (childNode.HasChildNodes)
+                {
+                    SortXml(childNode);
+                }
+            }
+
+            node.RemoveAll();
+
+            // Re-add the child elements (sorted).
+            foreach (var childNode in childElements.OrderBy(element => element.Name))
+            {
+                // Make sure folder_id isn't at the very bottom
+                if (childNode.Name == "folder_id")
+                {
+                    node.InsertBefore(childNode, childElements[1]);
+                    continue;
+                }
+
+                node.AppendChild(childNode);
+            }
+        }
+
+        public void ParseFromXmlDocument(XmlDocument doc)
         {
             var nodes = doc["xml"]["GameParameter"];
-            foreach (XmlNode parentNode in nodes)
+            foreach (XmlNode childNode in nodes)
             {
-                if (parentNode.Name == "events")
+                switch (childNode.Name)
                 {
-                    foreach (XmlNode eventNode in parentNode.SelectNodes("event"))
-                    {
-                        var newEvent = new Event();
-                        newEvent.ParseFromXml(eventNode);
-                        newEvent.FixInvalidNodesIfNeeded();
-                        Events.Add(newEvent);
-                    }
+                    case "folder_id":
+                        FolderId = childNode.ReadValueULong(); break;
 
-                    FirstEventID = Events.FirstOrDefault()?.EventID ?? BaseEventID;
-                }
-                else if (parentNode.Name == "championship")
-                    EventList.IsChampionship = parentNode.ReadValueBool();
-                else if (parentNode.Name == "series_reward")
-                {
-                    foreach (XmlNode rewardNode in parentNode.ChildNodes)
-                    {
-                        if (rewardNode.Name == "prize_table")
+                    case "events":
+                        foreach (XmlNode eventNode in childNode.SelectNodes("event"))
                         {
-                            int i = 0;
-                            foreach (XmlNode prizeNode in parentNode.SelectNodes("prize"))
-                            {
-                                if (i > 16)
-                                    break;
-                                SeriesRewards.MoneyPrizes[i++] = prizeNode.ReadValueInt();
-                            }
+                            var newEvent = new Event();
+                            newEvent.ParseFromXml(eventNode);
+                            newEvent.FixInvalidNodesIfNeeded();
+                            Events.Add(newEvent);
                         }
-                    }
-                    
+                        break;
+
+                    case "online_room":
+                        throw new NotImplementedException("Implement online_room parsing!");
+                    case "series_reward":
+                        SeriesRewards.ParseFromXml(childNode); break;
+                    case "series_information":
+                        SeriesInformation.ParseFromXml(childNode); break;
+                    case "editor_info":
+                        EditorInfo.ParseFromXml(childNode); break;
+                    case "championship":
+                        Championship = childNode.ReadValueBool(); break;
+                    case "arcade":
+                        Arcade = childNode.ReadValueBool(); break;
                 }
             }
         }
@@ -153,7 +178,7 @@ namespace PDTools.Structures.MGameParameter
             ReadFromBuffer(ref reader);
         }
 
-        public byte[] WriteToCache()
+        public byte[] Serialize()
         {
             BitStream bs = new BitStream(BitStreamMode.Write, 1024);
             bs.WriteUInt32(0xE6_E6_4F_17);
@@ -166,11 +191,11 @@ namespace PDTools.Structures.MGameParameter
                 evnt.WriteToCache(ref bs);
 
             OnlineRoom.WriteToCache(ref bs);
-            SeriesRewards.WriteToCache(ref bs);
-            new EventInformation().WriteToCache(ref bs);
-            EditorInfo.WriteToCache(ref bs);
-            bs.WriteBool(EventList.IsChampionship);
-            bs.WriteBool(false); // arcade
+            SeriesRewards.Serialize(ref bs);
+            SeriesInformation.Serialize(ref bs);
+            EditorInfo.Serialize(ref bs);
+            bs.WriteBool(Championship);
+            bs.WriteBool(Arcade); // arcade
             bs.WriteBool(false); // keep_sequence
             bs.WriteByte((byte)LaunchContext.NONE); // launch_context
 
@@ -179,7 +204,7 @@ namespace PDTools.Structures.MGameParameter
             return bs.GetSpan().ToArray();
         }
 
-        public byte[] Serialize()
+        public byte[] SerializeToSTStruct()
         {
             // We could use a PD struct utility for all this, but eh, effort, its just two fields
             using (var ms = new MemoryStream())
@@ -195,7 +220,7 @@ namespace PDTools.Structures.MGameParameter
 
                 bs.Position += 4; // Write GP Size later
 
-                var gp = WriteToCache();
+                var gp = Serialize();
 
                 bs.WriteBytes(gp);
                 bs.WriteByte(7);

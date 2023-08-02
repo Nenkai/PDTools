@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PDTools.Structures.MGameParameter
 {
@@ -38,7 +37,7 @@ namespace PDTools.Structures.MGameParameter
 
         public bool IsDefault()
         {
-            if (FrontLimit == 0 && FrontMaximumRate == 0 && FrontStart == 0  && FrontInitialRate == 0
+            if (FrontLimit == 0 && FrontMaximumRate == 0 && FrontStart == 0 && FrontInitialRate == 0
               && RearLimit == 0 && RearMaximumRate == 0 && RearStart == 0 && RearInitialRate == 0
               && ReferenceRank == 0 && Unk == 0)
                 return true;

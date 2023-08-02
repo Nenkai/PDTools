@@ -90,6 +90,11 @@ namespace PDTools.Structures
             return ImportFromBlob(ref reader);
         }
 
+        public void Serialize(ref BitStream bs)
+        {
+            throw new NotImplementedException("Not implemented");
+        }
+
         public static MCarParameter ImportFromBlob(ref BitStream reader)
         {
             int baseOffset = reader.Position;

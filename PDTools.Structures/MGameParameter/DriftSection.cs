@@ -6,18 +6,17 @@ using System.Threading.Tasks;
 using System.Xml;
 
 using PDTools.Utils;
+using PDTools.Enums;
 
 namespace PDTools.Structures.MGameParameter
 {
-    public class EditorInfo
+    /// <summary>
+    /// GT6 Only
+    /// </summary>
+    public class DriftSection
     {
-        public int PspMode { get; set; }
-
-        public bool IsDefault()
-        {
-            var defaultEditorInfo = new EditorInfo();
-            return PspMode != defaultEditorInfo.PspMode;
-        }
+        public float StartV { get; set; }
+        public float FinishV { get; set; }
 
         public void ParseFromXml(XmlNode node)
         {
@@ -25,23 +24,25 @@ namespace PDTools.Structures.MGameParameter
             {
                 switch (secNode.Name)
                 {
-                    case "psp_mode":
-                        PspMode = secNode.ReadValueInt(); break;
+                    case "start":
+                        StartV = secNode.ReadValueSingle(); break;
+
+                    case "finish":
+                        FinishV = secNode.ReadValueSingle(); break;
                 }
             }
         }
 
         public void WriteToXml(XmlWriter xml)
         {
-            xml.WriteElementInt("psp_mode", PspMode);
+            xml.WriteElementFloat("start", StartV);
+            xml.WriteElementFloat("finish", FinishV);
         }
 
         public void Serialize(ref BitStream bs)
         {
-            bs.WriteUInt32(0xE6_E6_A0_7D);
-            bs.WriteUInt32(1_00); // Version
-
-            bs.WriteInt32(PspMode);
+            bs.WriteSingle(StartV);
+            bs.WriteSingle(FinishV);
         }
     }
 }

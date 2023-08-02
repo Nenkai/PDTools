@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Algorithms", "PDTools.Algorithms\PDTools.Algorithms.csproj", "{107CAFD8-B59E-4AC4-8803-93A4EF786206}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Crypto", "PDTools.Crypto\PDTools.Crypto.csproj", "{D6F06D31-D4CE-48E8-B2DD-30D94A1705AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.SpecDB", "PDTools.SpecDB\PDTools.SpecDB.csproj", "{F4CB83C1-A96C-4D05-9E64-72B25790959E}"
@@ -51,10 +49,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{107CAFD8-B59E-4AC4-8803-93A4EF786206}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{107CAFD8-B59E-4AC4-8803-93A4EF786206}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{107CAFD8-B59E-4AC4-8803-93A4EF786206}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{107CAFD8-B59E-4AC4-8803-93A4EF786206}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D6F06D31-D4CE-48E8-B2DD-30D94A1705AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D6F06D31-D4CE-48E8-B2DD-30D94A1705AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6F06D31-D4CE-48E8-B2DD-30D94A1705AA}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -20,79 +20,75 @@ namespace PDTools.Structures.MGameParameter
         public List<string> eventIds = new List<string>();
         public EventCategory Category { get; set; }
 
-        // TODO: Move these globals somewhere else
-        public static List<string> LocaliseLanguages { get; set; } = new List<string>();
-        public static List<EventCategory> EventCategories = new List<EventCategory>();
-
         public GameParameterEventList()
         {
             Category = new EventCategory("", 1000);
         }
 
-        public void WriteToXML(GameParameter parent, string dir, int eventRaceIDStart, string eventType, bool minify)
+        public void WriteToXML(XmlWriter xml)
         {
-            using (var xml = XmlWriter.Create(Path.Combine(dir, $"{parent.FolderFileName}.xml"), new XmlWriterSettings() { Indent = !minify }))
+            // TODO: Redo this
+            /*
+            xml.WriteStartDocument();
+            xml.WriteStartElement("event_list");
+            xml.WriteStartElement("event");
+
+            xml.WriteStartElement("title");
+            foreach (string lang in LocaliseLanguages)
             {
-                xml.WriteStartDocument();
-                xml.WriteStartElement("event_list");
-                xml.WriteStartElement("event");
-
-                xml.WriteStartElement("title");
-                foreach (string lang in LocaliseLanguages)
-                {
-                    xml.WriteStartElement(lang);
-                    xml.WriteString(Title);
-                    xml.WriteEndElement();
-                }
-                    
-                xml.WriteEndElement();
-
-                xml.WriteStartElement("description");
-                foreach (string lang in LocaliseLanguages)
-                {
-                    xml.WriteStartElement(lang);
-                    xml.WriteString(Description);
-                    xml.WriteEndElement();
-                }
-                xml.WriteEndElement();
-
-                xml.WriteStartElement("copy");
-                foreach (string lang in LocaliseLanguages)
-                    xml.WriteEmptyElement(lang);
-
-                xml.WriteEndElement();
-
-                xml.WriteEmptyElement("ranking_list");
-                xml.WriteStartElement("id"); xml.WriteString(parent.FolderId.ToString()); xml.WriteEndElement();
-                xml.WriteEmptyElement("voucher");
-                xml.WriteStartElement("registration"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteEmptyElement("bg_image");
-                xml.WriteEmptyElement("icon_image");
-                xml.WriteEmptyElement("folder_image");
-                xml.WriteStartElement("event_type"); xml.WriteString( EventCategories.Find(x => x.name == eventType ).typeID.ToString() ); xml.WriteEndElement();
-                xml.WriteStartElement("gameitem_type"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteStartElement("gameitem_category"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteStartElement("gameitem_id"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteEmptyElement("gameitem_value");
-                xml.WriteStartElement("dlc_flag"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteStartElement("star"); xml.WriteString(parent.Events.Sum(e => e.Rewards.Stars).ToString()); xml.WriteEndElement();
-                xml.WriteStartElement("need_star"); xml.WriteString(StarsNeeded.ToString()); xml.WriteEndElement();
-                xml.WriteStartElement("championship_value"); xml.WriteString(IsChampionship ? "1" : "0"); xml.WriteEndElement();
-                xml.WriteEmptyElement("need_folder_id");
-
-                parent.OrderEventIDs();
-                xml.WriteStartElement("event_id_list");
-                xml.WriteString(string.Join(",", parent.Events.Select(e => e.EventID)));
-                xml.WriteEndElement();
-
-                xml.WriteStartElement("argument1"); xml.WriteString((-1).ToString()); xml.WriteEndElement();
-                xml.WriteEmptyElement("argument2");
-                xml.WriteStartElement("argument3"); xml.WriteString(0.ToString()); xml.WriteEndElement();
-                xml.WriteEmptyElement("argument4");
-
-                xml.WriteEndElement();
+                xml.WriteStartElement(lang);
+                xml.WriteString(Title);
                 xml.WriteEndElement();
             }
+
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("description");
+            foreach (string lang in LocaliseLanguages)
+            {
+                xml.WriteStartElement(lang);
+                xml.WriteString(Description);
+                xml.WriteEndElement();
+            }
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("copy");
+            foreach (string lang in LocaliseLanguages)
+                xml.WriteEmptyElement(lang);
+
+            xml.WriteEndElement();
+
+            xml.WriteEmptyElement("ranking_list");
+            xml.WriteStartElement("id"); xml.WriteString(parent.FolderId.ToString()); xml.WriteEndElement();
+            xml.WriteEmptyElement("voucher");
+            xml.WriteStartElement("registration"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteEmptyElement("bg_image");
+            xml.WriteEmptyElement("icon_image");
+            xml.WriteEmptyElement("folder_image");
+            xml.WriteStartElement("event_type"); xml.WriteString(EventCategories.Find(x => x.name == eventType).typeID.ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("gameitem_type"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("gameitem_category"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("gameitem_id"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteEmptyElement("gameitem_value");
+            xml.WriteStartElement("dlc_flag"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("star"); xml.WriteString(parent.Events.Sum(e => e.Reward.Stars).ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("need_star"); xml.WriteString(StarsNeeded.ToString()); xml.WriteEndElement();
+            xml.WriteStartElement("championship_value"); xml.WriteString(IsChampionship ? "1" : "0"); xml.WriteEndElement();
+            xml.WriteEmptyElement("need_folder_id");
+
+            parent.OrderEventIDs();
+            xml.WriteStartElement("event_id_list");
+            xml.WriteString(string.Join(",", parent.Events.Select(e => e.EventID)));
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("argument1"); xml.WriteString((-1).ToString()); xml.WriteEndElement();
+            xml.WriteEmptyElement("argument2");
+            xml.WriteStartElement("argument3"); xml.WriteString(0.ToString()); xml.WriteEndElement();
+            xml.WriteEmptyElement("argument4");
+
+            xml.WriteEndElement();
+            xml.WriteEndElement();
+            */
         }
 
         public void ParseEventList(GameParameter parent, XmlDocument doc)

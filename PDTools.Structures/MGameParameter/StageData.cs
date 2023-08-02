@@ -1,0 +1,161 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
+
+using PDTools.Utils;
+using PDTools.Enums;
+
+namespace PDTools.Structures.MGameParameter
+{
+    public class StageData
+    {
+        public List<StageResetData> AtQuickBack { get; set; } = new List<StageResetData>();
+        public List<StageResetData> BeforeStart { get; set; } = new List<StageResetData>();
+        public List<StageResetData> Countdown { get; set; } = new List<StageResetData>();
+        public List<StageResetData> RaceEnd { get; set; } = new List<StageResetData>();
+
+        /// <summary>
+        /// Defaults to <see cref="StageLayoutType.DEFAULT"/>
+        /// </summary>
+        public StageLayoutType LayoutTypeAtQuick { get; set; } = StageLayoutType.DEFAULT;
+
+        /// <summary>
+        /// Defaults to <see cref="StageLayoutType.DEFAULT"/>
+        /// </summary>
+        public StageLayoutType LayoutTypeBeforeStart { get; set; }
+
+        /// <summary>
+        /// Defaults to <see cref="StageLayoutType.DEFAULT"/>
+        /// </summary>
+        public StageLayoutType LayoutTypeCountdown { get; set; }
+
+        /// <summary>
+        /// Defaults to <see cref="StageLayoutType.DEFAULT"/>
+        /// </summary>
+        public StageLayoutType LayoutTypeRaceEnd { get; set; }
+
+        public bool IsDefault()
+        {
+            var defaultStageData = new StageData();
+            return AtQuickBack.Count == 0 &&
+                BeforeStart.Count == 0 &&
+                Countdown.Count == 0 &&
+                RaceEnd.Count == 0 &&
+                LayoutTypeAtQuick == defaultStageData.LayoutTypeAtQuick &&
+                LayoutTypeBeforeStart == defaultStageData.LayoutTypeBeforeStart &&
+                LayoutTypeCountdown == defaultStageData.LayoutTypeCountdown &&
+                LayoutTypeRaceEnd == defaultStageData.LayoutTypeRaceEnd;
+        }
+
+        public void ParseFromXml(XmlNode node)
+        {
+            foreach (XmlNode pNode in node.ChildNodes)
+            {
+                switch (pNode.Name)
+                {
+                    case "at_quick_back":
+                    case "at_quick":
+                        AtQuickBack = ParseStageDataResetList(pNode);
+                        break;
+
+                    case "before_start":
+                        BeforeStart = ParseStageDataResetList(pNode);
+                        break;
+
+                    case "countdown":
+                    case "race_start":
+                        Countdown = ParseStageDataResetList(pNode);
+                        break;
+                    case "race_end":
+                        RaceEnd = ParseStageDataResetList(pNode);
+                        break;
+
+                    case "layout_type_at_quick":
+                        LayoutTypeAtQuick = pNode.ReadValueEnum<StageLayoutType>();
+                        break;
+                    case "layout_type_before_start":
+                        LayoutTypeBeforeStart = pNode.ReadValueEnum<StageLayoutType>();
+                        break;
+                    case "layout_type_countdown":
+                        LayoutTypeCountdown = pNode.ReadValueEnum<StageLayoutType>();
+                        break;
+                    case "layout_type_race_end":
+                        LayoutTypeRaceEnd = pNode.ReadValueEnum<StageLayoutType>();
+                        break;
+
+                }
+            }
+        }
+
+        public void WriteToXml(XmlWriter xml)
+        {
+            xml.WriteStartElement("at_quick_back");
+            foreach (var stage in AtQuickBack)
+                stage.WriteToXml(xml);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("before_start");
+            foreach (var stage in BeforeStart)
+                stage.WriteToXml(xml);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("countdown");
+            foreach (var stage in Countdown)
+                stage.WriteToXml(xml);
+            xml.WriteEndElement();
+
+            xml.WriteStartElement("race_end");
+            foreach (var stage in RaceEnd)
+                stage.WriteToXml(xml);
+            xml.WriteEndElement();
+
+            xml.WriteElementValue("layout_type_at_quick", LayoutTypeAtQuick.ToString());
+            xml.WriteElementValue("layout_type_before_start", LayoutTypeBeforeStart.ToString());
+            xml.WriteElementValue("layout_type_countdown", LayoutTypeCountdown.ToString());
+            xml.WriteElementValue("layout_type_race_end", LayoutTypeRaceEnd.ToString());
+        }
+
+        public List<StageResetData> ParseStageDataResetList(XmlNode node)
+        {
+            var list = new List<StageResetData>();
+            foreach (XmlNode pNode in node.SelectNodes("stage_reset_data"))
+            {
+                var data = new StageResetData();
+                data.ParseFromXml(pNode);
+                list.Add(data);
+            }
+
+            return list;
+        }
+
+
+        public void Serialize(ref BitStream bs)
+        {
+            bs.WriteUInt32(0xE6_E6_04_DD);
+            bs.WriteUInt32(1_02); // Version
+
+            bs.WriteSByte((sbyte)LayoutTypeAtQuick);
+            bs.WriteInt32(AtQuickBack.Count);
+            foreach (var stageResetData in AtQuickBack)
+                stageResetData.Serialize(ref bs);
+
+            bs.WriteSByte((sbyte)LayoutTypeBeforeStart);
+            bs.WriteInt32(BeforeStart.Count);
+            foreach (var stageResetData in BeforeStart)
+                stageResetData.Serialize(ref bs);
+
+            bs.WriteSByte((sbyte)LayoutTypeCountdown);
+            bs.WriteInt32(Countdown.Count);
+            foreach (var stageResetData in Countdown)
+                stageResetData.Serialize(ref bs);
+
+            bs.WriteSByte((sbyte)LayoutTypeRaceEnd);
+            bs.WriteInt32(RaceEnd.Count);
+            foreach (var stageResetData in RaceEnd)
+                stageResetData.Serialize(ref bs);
+        }
+    }
+}

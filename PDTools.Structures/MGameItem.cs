@@ -56,7 +56,7 @@ namespace PDTools.Structures
             if (stream.ReadUInt32() != SerializeMagic)
                 throw new ArgumentException("Provided MGameItem buffer is not valid, magic did not match.");
 
-            stream.ReadUInt32();
+            uint version = stream.ReadUInt32();
             MGameItem item = new MGameItem();
             item.ItemType = (GameItemType)stream.ReadUInt32();
             item.ItemCategory = (GameItemCategory)stream.ReadUInt32();

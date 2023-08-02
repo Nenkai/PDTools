@@ -387,7 +387,7 @@ namespace PDTools.Structures.PS3
         /// <summary>
         /// GT5 Only
         /// </summary>
-        public byte ColorIndex { get; set; }
+        public byte ColorIndex { get; set; } = 0;
 
         /// <summary>
         /// GT5 Only
@@ -532,11 +532,11 @@ namespace PDTools.Structures.PS3
         public short PowerLimiter { get; set; } = 1000;
 
         public int HornSoundID { get; set; }
-        private byte wheel_color;
+        private byte wheel_color { get; set; } = 0;
         public short BodyPaintID { get; set; } = -1;
-        public short WheelPaintID { get; set; } = -1;
-        public short BrakeCaliperPaintID { get; set; } = -1;
-        public short CustomRearWingPaintID { get; set; } = -1;
+        public short WheelPaintID { get; set; } = 0;
+        public short BrakeCaliperPaintID { get; set; } = 0;
+        public short CustomRearWingPaintID { get; set; } = 0;
         public short FrontWheelWidth { get; set; }
         public short FrontWheelDiameter { get; set; }
         public short RearWheelWidth { get; set; }

@@ -12,8 +12,8 @@ namespace PDTools.Structures
     {
         public int? CarCode { get; set; }
         public string CarLabel { get; set; }
-
         public short Paint { get; set; }
+
         public MCarThin(int code)
         {
             CarCode = code;

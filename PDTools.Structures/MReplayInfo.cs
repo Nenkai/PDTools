@@ -185,7 +185,7 @@ namespace GTReplayInfo
                 sr.Position = (int)carDriverParameterOffset + (i * 0x10);
                 int paramOffset = sr.ReadInt32();
                 sr.Position = paramOffset;
-                DriverParameter[i] = MCarDriverParameter.Read(ref sr);
+                DriverParameter[i].Deserialize(ref sr);
             }
         }
     }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-
 using PDTools.Utils;
 
 namespace PDTools.Structures.MGameParameter
@@ -57,8 +56,8 @@ namespace PDTools.Structures.MGameParameter
                 if (Postures.Count > 0)
                 {
                     xml.WriteStartElement("posture");
-                    foreach (var param in Postures)
-                        xml.WriteElementFloat("param", param);
+                    foreach (var value in Postures)
+                        xml.WriteElementFloat("value", value);
                     xml.WriteEndElement();
                 }
             }
