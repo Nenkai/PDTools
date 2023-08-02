@@ -5,17 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
-/* Unmerged change from project 'PDTools.Structures (net6.0)'
-Before:
-using PDTools.Utils;
-After:
-using PDTools;
-using PDTools.Structures;
-using PDTools.Structures.MGameParameter;
-using PDTools.Structures.MGameParameter;
-using PDTools.Structures.MGameParameter.Event;
-using PDTools.Utils;
-*/
 using PDTools.Utils;
 
 namespace PDTools.Structures.MGameParameter
