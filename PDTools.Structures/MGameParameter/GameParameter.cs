@@ -9,6 +9,7 @@ using System.IO;
 using Syroot.BinaryData;
 
 using PDTools.Utils;
+using PDTools.Enums;
 using System.Text;
 
 namespace PDTools.Structures.MGameParameter
@@ -16,11 +17,22 @@ namespace PDTools.Structures.MGameParameter
     public class GameParameter
     {
         public ulong FolderId { get; set; }
-        public List<Event> Events { get; set; } = new List<Event>();
-        public OnlineRoomParameter OnlineRoom { get; set; } = new OnlineRoomParameter();
-        public Reward SeriesRewards { get; set; } = new Reward();
-        public Information SeriesInformation { get; set; } = new Information();
-        public EditorInfo EditorInfo { get; set; } = new EditorInfo();
+        public List<Event> Events { get; } = new List<Event>();
+        public OnlineRoomParameter OnlineRoom { get; } = new OnlineRoomParameter();
+        public Reward SeriesRewards { get; } = new Reward();
+        public Information SeriesInformation { get;  } = new Information();
+        public EditorInfo EditorInfo { get; } = new EditorInfo();
+        public Event Event
+        {
+            get
+            {
+                if (Events.Count == 0)
+                    Events.Add(new Event());
+
+                return Events[0];
+            }
+        }
+
         public bool Championship { get; set; }
         public bool Arcade { get; set; }
 
@@ -163,7 +175,6 @@ namespace PDTools.Structures.MGameParameter
             int event_index = reader.ReadInt32();
             int event_count = reader.ReadInt32();
 
-            Events = new List<Event>(event_count);
             for (int i = 0; i < event_count; i++)
             {
                 Event evnt = new Event();
@@ -241,6 +252,217 @@ namespace PDTools.Structures.MGameParameter
 
                 return ms.ToArray();
             }
+        }
+
+        public static GameParameter CreateSingleRace(int course_code, int entry_num, int arcade_laps, int ai_skill = -1, int enemy_lv = -1, 
+            int boost_lv = -1, PenaltyLevelTypes penalty_level = PenaltyLevelTypes.OFF, List<int> prize_table = null, bool one_make = false)
+        {
+            var gp = new GameParameter();
+            if (entry_num > 16)
+                entry_num = 16;
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.SINGLE_RACE;
+
+            var playStyle = evnt.PlayStyle;
+            playStyle.PlayType = PlayType.RACE;
+            playStyle.ReplayRecordEnable = true;
+
+            var entrySet = evnt.EntrySet;
+            var entryGenerate = entrySet.EntryGenerate;
+            entryGenerate.EntryNum = entry_num;
+            entryGenerate.PlayerPos = (entry_num - 1) / 2;
+
+            if (ai_skill != -1)
+                entryGenerate.AISkill = ai_skill;
+
+            if (enemy_lv != -1)
+                entryGenerate.EnemyLevel = enemy_lv;
+
+            if (one_make)
+                entryGenerate.GenerateType = EntryGenerateType.ONE_MAKE;
+            else
+                entryGenerate.GenerateType = EntryGenerateType.ENEMY_LIST;
+
+            Track track = evnt.Track;
+            track.CourseCode = course_code;
+
+            RaceParameter rp = evnt.RaceParameter;
+            rp.RaceType = RaceType.COMPETITION;
+            rp.StartType = StartType.GRID;
+            rp.CompleteType = CompleteType.BYLAPS;
+            rp.FinishType = FinishType.TARGET;
+            rp.TimeToFinish = TimeSpan.FromSeconds(30);
+            rp.RaceLimitLaps = (short)arcade_laps;
+            rp.EnablePit = false;
+            rp.EntryMax = (short)entry_num;
+            rp.RacersMax = (short)entry_num;
+            rp.PenaltyLevel = penalty_level;
+
+            if (boost_lv != -1)
+                rp.BoostLevel = (byte)boost_lv;
+            rp.LineGhostPlayMax = 0;
+            rp.LineGhostRecordType = LineGhostRecordType.OFF;
+
+            evnt.Reward.PrizeTable = prize_table ?? new List<int>();
+            return gp;
+        }
+
+        public static GameParameter CreateTimeAttack(int course_code)
+        {
+            var gp = new GameParameter();
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.TIME_ATTACK;
+
+            var playStyle = evnt.PlayStyle;
+            playStyle.PlayType = PlayType.RACE;
+            playStyle.NoQuickMenu = false;
+            playStyle.ReplayRecordEnable = true;
+
+            var entrySet = evnt.EntrySet;
+            entrySet.Entries.Add(new Entry());
+            entrySet.Entries[0].PlayerNumber = 0;
+
+            RaceParameter rp = evnt.RaceParameter;
+            rp.RaceType = RaceType.TIMEATTACK;
+            rp.StartType = StartType.ATTACK;
+            rp.CompleteType = CompleteType.NONE;
+            rp.GhostType = GhostType.ONELAP;
+            rp.PenaltyLevel = PenaltyLevelTypes.NO_TIME1;
+            rp.EntryMax = 1;
+            rp.RacersMax = 1;
+            rp.LineGhostPlayMax = 10;
+            rp.LineGhostRecordType = LineGhostRecordType.ONE;
+
+            Track track = evnt.Track;
+            track.CourseCode = course_code;
+
+            return gp;
+        }
+
+        public static GameParameter CreateDriftAttack(int course_code, int layout = -1, bool endless = false)
+        {
+            var gp = new GameParameter();
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.DRIFT_ATTACK;
+
+            var playStyle = evnt.PlayStyle;
+            playStyle.PlayType = PlayType.RACE;
+            playStyle.NoQuickMenu = false;
+            playStyle.ReplayRecordEnable = true;
+
+            var entrySet = evnt.EntrySet;
+            entrySet.Entries.Add(new Entry());
+            entrySet.Entries[0].PlayerNumber = 0;
+
+            short num = 1;
+            RaceParameter rp = evnt.RaceParameter;
+            rp.RaceType = RaceType.DRIFTATTACK;
+            if (endless)
+                rp.StartType = StartType.ATTACK;
+            else
+                rp.StartType = num > 1 ? StartType.COURSEINFO : StartType.COURSEINFO_ROLLING;
+
+            rp.StartType = StartType.ATTACK;
+            rp.PenaltyLevel = PenaltyLevelTypes.NO_TIME1;
+            rp.EntryMax = num;
+            rp.RacersMax = num;
+            rp.CompleteType = CompleteType.NONE;
+            rp.GhostType = GhostType.NONE;
+            rp.Endless = endless;
+            rp.TimeToStart = TimeSpan.FromMilliseconds(1900);
+            rp.TimeToFinish = TimeSpan.FromMilliseconds(2000);
+
+            rp.LineGhostPlayMax = 0;
+            rp.LineGhostRecordType = LineGhostRecordType.OFF;
+
+            Track track = evnt.Track;
+            track.CourseCode = course_code;
+            if (layout != -1)
+                track.CourseLayoutNumber = layout;
+
+            return gp;
+        }
+
+        public static GameParameter CreateOnlineTimeAttack(int course_code)
+        {
+            var gp = CreateTimeAttack(course_code);
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.ONLINE_TIME_ATTACK;
+            evnt.BeginDate = DateTime.Parse("1999/04/01 00:00:00");
+            evnt.EndDate = DateTime.Parse("2999/04/01 00:00:00");
+
+            var ranking = evnt.Ranking;
+            ranking.BeginDate = DateTime.Parse("1999/04/01 00:00:00");
+            ranking.EndDate = DateTime.Parse("2999/04/01 00:00:00");
+            ranking.IsLocal = false;
+            ranking.BoardID = 2000199;
+
+            RaceParameter rp = evnt.RaceParameter;
+            rp.LineGhostPlayMax = 10;
+            rp.LineGhostRecordType = LineGhostRecordType.ONE;
+            rp.EnableDamage = true;
+
+            return gp;
+        }
+
+        public static GameParameter CreateOnlineDriftAttack(int course_code, int layout = -1, bool endless = false)
+        {
+            var gp = CreateTimeAttack(course_code);
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.ONLINE_DRIFT_ATTACK;
+            return gp;
+        }
+
+        public static GameParameter CreateArcadeStyleRace(int course_code)
+        {
+            var gp = new GameParameter();
+            short nb_entries = 10;
+
+            var evnt = gp.Event;
+            evnt.GameMode = GameMode.ARCADE_STYLE_RACE;
+
+            var playStyle = evnt.PlayStyle;
+            playStyle.PlayType = PlayType.RACE;
+            playStyle.ReplayRecordEnable = true;
+
+            var entrySet = evnt.EntrySet;
+            for (var i = 0; i < nb_entries; i++)
+                entrySet.Entries.Add(new Entry());
+
+            var entryGenerate = entrySet.EntryGenerate;
+            entryGenerate.EntryNum = nb_entries;
+            entryGenerate.PlayerPos = 0;
+            entryGenerate.AISkill = 10;
+            entryGenerate.EnemyLevel = 0;
+
+            entryGenerate.GenerateType = EntryGenerateType.SPEC_DB;
+
+            RaceParameter rp = evnt.RaceParameter;
+            rp.RaceType = RaceType.TIMEATTACK;
+            rp.StartType = StartType.PIT;
+            rp.CompleteType = CompleteType.BYLAPS;
+            rp.FinishType = FinishType.TARGET;
+            rp.RaceLimitLaps = 1;
+            // race initial laps = 0
+            rp.GhostType = GhostType.NONE;
+            rp.PenaltyLevel = PenaltyLevelTypes.OFF;
+            rp.EntryMax = nb_entries;
+            rp.RacersMax = nb_entries;
+            rp.LineGhostPlayMax = 10;
+            rp.LineGhostRecordType = LineGhostRecordType.ONE;
+            rp.EnableDamage = false;
+            rp.BehaviorDamage = BehaviorDamageType.WEAK;
+
+            Track track = evnt.Track;
+            track.CourseCode = course_code;
+
+            return gp;
+
         }
 
         public enum LaunchContext

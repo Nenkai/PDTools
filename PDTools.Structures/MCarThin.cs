@@ -10,9 +10,14 @@ namespace PDTools.Structures
 {
     public class MCarThin
     {
-        public int? CarCode { get; set; }
+        public int CarCode { get; set; } = -1; // No code
         public string CarLabel { get; set; }
         public short Paint { get; set; }
+
+        public MCarThin()
+        {
+
+        }
 
         public MCarThin(int code)
         {
@@ -34,7 +39,7 @@ namespace PDTools.Structures
 
         public void Serialize(ref BitStream bs)
         {
-            bs.WriteInt32(CarCode ?? -1); // Code
+            bs.WriteInt32(CarCode); // Code
             bs.WriteInt16(Paint); // Paint
             bs.WriteInt16(0); // Is Tuned Car
             bs.WriteInt32(-1);

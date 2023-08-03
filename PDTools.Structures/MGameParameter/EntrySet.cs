@@ -31,21 +31,29 @@ namespace PDTools.Structures.MGameParameter
                         break;
 
                     case "entry":
-                        // TODO
+                        var entry = new Entry();
+                        entry.ReadFromXml(entryNode);
+                        Entries.Add(entry);
                         break;
 
                 }
             }
         }
+
         public void WriteToXml(XmlWriter xml)
         {
             if (!EntryGenerate.IsDefault())
+            {
+                xml.WriteStartElement("entry_generate");
                 EntryGenerate.WriteToXml(xml);
+                xml.WriteEndElement();
+            }
 
             foreach (var entry in Entries)
             {
-                // TODO
-                // entry.WriteToXml(xml);
+                xml.WriteStartElement("entry");
+                entry.WriteToXml(xml);
+                xml.WriteEndElement();
             }
         }
 
@@ -75,7 +83,7 @@ namespace PDTools.Structures.MGameParameter
 
             bs.WriteInt32(Entries.Count);
             foreach (var entry in Entries)
-                entry.WriteEntryToBuffer(ref bs);
+                entry.Serialize(ref bs);
         }
     }
 }

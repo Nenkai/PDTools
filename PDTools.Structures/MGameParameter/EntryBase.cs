@@ -17,7 +17,7 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// Car for this entry.
         /// </summary>
-        public MCarThin Car { get; set; }
+        public MCarThin Car { get; set; } = new MCarThin();
 
         /// <summary>
         /// Name of the driver.
@@ -292,7 +292,6 @@ namespace PDTools.Structures.MGameParameter
                 switch (entryDetailNode.Name)
                 {
                     case "car":
-                        Car = new MCarThin();
                         Car.CarLabel = entryDetailNode.Attributes["label"].Value;
                         Car.Paint = short.Parse(entryDetailNode.Attributes["color"].Value);
                         break;
@@ -389,7 +388,6 @@ namespace PDTools.Structures.MGameParameter
 
             int version = reader.ReadInt32();
 
-            Car = new MCarThin();
             Car.Read(ref reader);
 
             DriverName = reader.ReadString4Aligned();
@@ -484,9 +482,8 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteNullStringAligned4(DriverName);
             bs.WriteNullStringAligned4(DriverRegion);
             bs.WriteByte(RaceClassID);
-            bs.WriteSByte(ProxyDriverModel); // Proxy Driver Model
+            bs.WriteSByte(ProxyDriverModel);
 
-            // boost_rate count, ignore with empty list
             bs.WriteInt32(BoostRatio.Count);
             for (var i = 0; i < BoostRatio.Count; i++)
             {

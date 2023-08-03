@@ -44,10 +44,10 @@ namespace PDTools.Enums
 
         NO_TIME2 = -2,
 
-        NO_TIME1 = 1,
+        NO_TIME1 = -1,
 
         [Description("Off")]
-        OFF = -5,
+        OFF = 0,
     }
 
     public enum StartType : sbyte

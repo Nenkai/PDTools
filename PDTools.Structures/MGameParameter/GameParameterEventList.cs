@@ -18,12 +18,6 @@ namespace PDTools.Structures.MGameParameter
         public bool IsChampionship { get; set; }
 
         public List<string> eventIds = new List<string>();
-        public EventCategory Category { get; set; }
-
-        public GameParameterEventList()
-        {
-            Category = new EventCategory("", 1000);
-        }
 
         public void WriteToXML(XmlWriter xml)
         {
@@ -139,9 +133,6 @@ namespace PDTools.Structures.MGameParameter
                         parent.FolderId = ulong.Parse(node.InnerText);
                         break;
 
-                    case "event_type":
-                        Category = new EventCategory("", int.Parse(node.InnerText));
-                        break;
 
                     case "star":
                         //Stars = int.Parse(node.InnerText); // We don't need it

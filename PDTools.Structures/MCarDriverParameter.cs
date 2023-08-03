@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml;
 
-using Syroot.BinaryData.Memory;
 using PDTools.Utils;
 using PDTools.Enums;
+using System.Runtime.ConstrainedExecution;
 
 namespace PDTools.Structures
 {
@@ -13,7 +14,7 @@ namespace PDTools.Structures
         public int Version { get; set; }
         public uint unk2;
         public short unk3;
-        public string PlayerName { get; set; }
+        public string DisplayName { get; set; }
         public string OnlineID { get; set; }
         public string Region { get; set; }
         public byte Port { get; set; }
@@ -26,12 +27,112 @@ namespace PDTools.Structures
 
         public byte CorneringSkill { get; set; }
         public byte AcceleratingSkill { get; set; }
-        public byte BrakingSkill { get; set; }
-        public byte SpecialDriverType { get; set; }
+
+        /// <summary>
+        /// Linked to <see cref="AIReactionLevel"/> (3 bits), <see cref="AIRoughness"/> (4 bits), <see cref="DisableBSpecSkill"/> (1 bit)
+        /// </summary>
+        public byte BrakingSkillFlags { get; set; }
+
+        /// <summary>
+        /// 3 bits value (max 8)
+        /// </summary>
+        public byte AIReactionLevel
+        {
+            get => (byte)(BrakingSkillFlags >> 5 & 0b111);
+            set => BrakingSkillFlags |= (byte)((value & 0b111) << 5);
+        }
+
+        /// <summary>
+        /// 4 bits value (max 15)
+        /// </summary>
+        public byte AIRoughness
+        {
+            get => (byte)(((BrakingSkillFlags >> 1) & 0b1111) - 1);
+            set => BrakingSkillFlags |= (byte)(((value & 0b1111) << 1) + 1);
+        }
+
+        public bool DisableBSpecSkill
+        {
+            get => (BrakingSkillFlags & 1) != 0;
+            set => BrakingSkillFlags |= (byte)(value ? 1 : 0);
+        }
+
+        public byte SpecialAIType { get; set; }
         public byte StartingSkill { get; set; }
         public byte AILevel { get; set; }
 
-        public GrowthParameter GrowthParameter { get; set; } = new GrowthParameter();
+        public short HeadCode { get; set; }
+        public short BodyCode { get; set; }
+        public short HeadColorCode { get; set; }
+        public short BodyColorCode { get; set; }
+
+        public GrowthParameter GrowthParameter { get; } = new GrowthParameter();
+
+        public bool IsVacant()
+        {
+            return DriverType != DriverType.NONE;
+        }
+
+        public void WriteToXml(XmlWriter xml)
+        {
+            xml.WriteElementValue("type", DriverType.ToString());
+            xml.WriteElementInt("port", Port);
+            xml.WriteElementValue("display_name", DisplayName);
+            xml.WriteElementValue("region", Region);
+            xml.WriteElementBool("physics_pro", Settings.Physics_Pro);
+            xml.WriteElementInt("head_code", HeadCode);
+            xml.WriteElementInt("body_code", BodyCode);
+            xml.WriteElementInt("head_color_code", HeadColorCode);
+            xml.WriteElementInt("body_color_code", BodyColorCode);
+            xml.WriteElementInt("braking_skill", BrakingSkillFlags);
+            xml.WriteElementInt("cornering_skill", CorneringSkill);
+            xml.WriteElementInt("accelerating_skill", AcceleratingSkill);
+            xml.WriteElementInt("starting_skill", StartingSkill);
+            xml.WriteElementInt("ai_roughness", AIRoughness);
+            xml.WriteElementInt("special_ai_type", SpecialAIType);
+            xml.WriteElementBool("display_driving_line", DisplayDrivingLine);
+        }
+
+        public void ParseFromXml(XmlNode entryNode)
+        {
+            foreach (XmlNode entryDetailNode in entryNode)
+            {
+                switch (entryDetailNode.Name)
+                {
+                    case "type":
+                        DriverType = entryDetailNode.ReadValueEnum<DriverType>(); break;
+                    case "port":
+                        Port = entryDetailNode.ReadValueByte(); break;
+                    case "display_name":
+                        DisplayName = entryDetailNode.ReadValueString(); break;
+                    case "region":
+                        Region = entryDetailNode.ReadValueString(); break;
+                    case "head_code":
+                        HeadColorCode = entryDetailNode.ReadValueShort(); break;
+                    case "body_code":
+                        BodyCode = entryDetailNode.ReadValueShort(); break;
+                    case "head_color_code":
+                        HeadColorCode = entryDetailNode.ReadValueShort(); break;
+                    case "body_color_code":
+                        BodyColorCode = entryDetailNode.ReadValueShort(); break;
+
+                    case "braking_skill":
+                        BrakingSkillFlags = entryDetailNode.ReadValueByte(); break;
+                    case "cornering_skill":
+                        CorneringSkill = entryDetailNode.ReadValueByte(); break;
+                    case "accelerating_skill":
+                        AcceleratingSkill = entryDetailNode.ReadValueByte(); break;
+                    case "starting_skill":
+                        StartingSkill = entryDetailNode.ReadValueByte(); break;
+                    case "ai_roughness":
+                        AIRoughness = entryDetailNode.ReadValueByte(); break;
+                    case "special_ai_type":
+                        SpecialAIType = entryDetailNode.ReadValueByte(); break;
+                    case "display_driving_line":
+                        DisplayDrivingLine = entryDetailNode.ReadValueBool(); break;
+                }
+            }
+        }
 
         public void Deserialize(ref BitStream reader)
         {
@@ -47,7 +148,7 @@ namespace PDTools.Structures
 
             byte[] name = new byte[Version >= 110 ? 32 : 64];
             reader.ReadIntoByteArray(name.Length, name, BitStream.Byte_Bits);
-            PlayerName = Encoding.ASCII.GetString(name).TrimEnd((char)0);
+            DisplayName = Encoding.ASCII.GetString(name).TrimEnd((char)0);
             if (Version >= 109)
             {
                 byte[] onlineIdBuffer = new byte[18];
@@ -64,8 +165,8 @@ namespace PDTools.Structures
             AcceleratingSkill = reader.ReadByte();
             reader.ReadBits(4); // ai_pit_decision_10_vitality_before_race
             reader.ReadBits(4); // ai_pit_decision_10_tire_before_race
-            BrakingSkill = reader.ReadByte();
-            SpecialDriverType = reader.ReadByte();
+            BrakingSkillFlags = reader.ReadByte();
+            SpecialAIType = reader.ReadByte();
             StartingSkill = reader.ReadByte();
             reader.ReadBits(3); // ai_reaction_level
             reader.ReadBits(4); // unk6
@@ -80,10 +181,10 @@ namespace PDTools.Structures
                 if (Version >= 110)
                 {
                     // All use ReadBitsSafe, but for the purposes of making it more clean we arent
-                    reader.ReadInt16(); // Head Code
-                    reader.ReadInt16(); // Body Code
-                    reader.ReadInt16(); // Head Color Code
-                    reader.ReadInt16(); // Body Color Code
+                    HeadCode = reader.ReadInt16(); // Head Code
+                    BodyCode = reader.ReadInt16(); // Body Code
+                    HeadColorCode = reader.ReadInt16(); // Head Color Code
+                    BodyColorCode = reader.ReadInt16(); // Body Color Code
                     reader.ReadBits(2); 
                     reader.ReadBits(1); 
                     reader.ReadBits(5); 
@@ -166,7 +267,7 @@ namespace PDTools.Structures
             bs.WriteBoolBit(DisplayDrivingLine);
 
             byte[] name = new byte[Version >= 110 ? 32 : 64];
-            Encoding.UTF8.GetBytes(PlayerName).AsSpan().CopyTo(name);
+            Encoding.UTF8.GetBytes(DisplayName).AsSpan().CopyTo(name);
             bs.WriteByteData(name);
 
             if (Version >= 109)
@@ -186,8 +287,8 @@ namespace PDTools.Structures
             bs.WriteByte(AcceleratingSkill);
             bs.WriteBits(0, 4);
             bs.WriteBits(0, 4);
-            bs.WriteByte(BrakingSkill);
-            bs.WriteByte(SpecialDriverType);
+            bs.WriteByte(BrakingSkillFlags);
+            bs.WriteByte(SpecialAIType);
             bs.WriteByte(StartingSkill);
             bs.WriteBits(0, 3);
             bs.WriteBits(0, 4);
@@ -201,10 +302,10 @@ namespace PDTools.Structures
             {
                 if (Version >= 110)
                 {
-                    bs.WriteInt16(0);
-                    bs.WriteInt16(0);
-                    bs.WriteInt16(0);
-                    bs.WriteInt16(0);
+                    bs.WriteInt16(HeadCode);
+                    bs.WriteInt16(BodyCode);
+                    bs.WriteInt16(HeadColorCode);
+                    bs.WriteInt16(BodyColorCode);
                     bs.WriteBits(0, 2);
                     bs.WriteBits(0, 1);
                     bs.WriteBits(0, 5);
@@ -273,18 +374,35 @@ namespace PDTools.Structures
 
     public class DriverSettings
     {
+        /// <summary>
+        /// Should match PDISTD::getGtbVersion
+        /// GT6 1.22 is 131
+        /// </summary>
         public byte GTBehavior_version;
         public bool Manual { get; set; }
-        public bool Assist_TCS { get; set; }
+
+        /// <summary>
+        /// Defaults to 1
+        /// </summary>
+        public bool Assist_TCS { get; set; } = true;
         public bool Assist_ASM { get; set; }
-        public byte Steering_Assist_Type { get; set; }
+
+        /// <summary>
+        /// Defaults to 1
+        /// </summary>
+        public byte Steering_Assist_Type { get; set; } = 1;
+
         private byte unk;
         public bool Active_Steering { get; set; }
         public byte Active_Brake_Level;
         public bool Physics_Pro { get; set; }
         public byte Competition_Flags { get; set; } // 'academy_flag' in GT5, 'competition_flags' in GT6
         public byte Pad_Yaw_Gain { get; set; }
-        public byte Assist_4was { get; set; }
+
+        /// <summary>
+        /// Defaults to 1
+        /// </summary>
+        public byte Assist_4was { get; set; } = 1;
         private byte unk2;
         public byte RTAUnadjustable { get; set; }
 

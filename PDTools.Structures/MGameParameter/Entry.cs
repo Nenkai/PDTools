@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using PDTools.Enums;
+using System.Xml;
 
 using PDTools.Utils;
+using PDTools.Enums;
+using System.Runtime.ConstrainedExecution;
 
 namespace PDTools.Structures.MGameParameter
 {
     public class Entry
     {
-        public MCarThin CarThin { get; set; }
-        public byte[] CarParameterBlob { get; set; }
+        public MCarThin Car { get; set; } = new MCarThin();
         public MCarParameter CarParameter { get; set; }
+
+        public int PlayerNumber { get; set; }
 
         /// <summary>
         /// Name of the driver.
@@ -50,8 +53,8 @@ namespace PDTools.Structures.MGameParameter
 
         public short InitialFuel100 { get; set; } = -1;
 
-        public List<int> BoostRaceRatio { get; set; } = new List<int>();
-        public List<int> BoostRatio { get; set; } = new List<int>();
+        public List<sbyte> BoostRaceRatio { get; set; } = new List<sbyte>();
+        public List<byte> BoostRatio { get; set; } = new List<byte>();
 
         /// <summary>
         /// AI Braking Skill. Defaults to -1.
@@ -75,7 +78,136 @@ namespace PDTools.Structures.MGameParameter
 
         public sbyte AIRoughness { get; set; } = -1;
 
-        public void ReadEntryFromCache(ref BitStream reader)
+        public Entry()
+        {
+            for (var i = 0; i < 4; i++)
+                DriverParameter[i] = new MCarDriverParameter();
+        }
+
+        public void WriteToXml(XmlWriter xml)
+        {
+            xml.WriteStartElement("entry");
+            {
+                xml.WriteElementInt("driver_name", PlayerNumber);
+
+                if (string.IsNullOrEmpty(Car.CarLabel))
+                {
+                    xml.WriteStartElement("car");
+                    {
+                        xml.WriteAttributeString("label", Car.CarLabel);
+                        xml.WriteAttributeString("color", Car.Paint.ToString());
+                    }
+                    xml.WriteEndElement();
+                }
+
+                // TODO: car_parameter
+
+                xml.WriteElementValue("driver_name", DriverName);
+                xml.WriteElementValue("driver_region", DriverRegion);
+
+                if (!DriverParameter[0].IsVacant())
+                {
+                    xml.WriteStartElement("driver_parameter");
+                    DriverParameter[0].WriteToXml(xml);
+                    xml.WriteEndElement();
+                }
+
+                xml.WriteElementInt("pilot_id", PilotID);
+                if (string.IsNullOrEmpty(EntryBase.Car.CarLabel))
+                    EntryBase.WriteToXml(xml);
+
+                xml.WriteElementInt("initial_position", InitialPosition);
+                xml.WriteElementValue("start_type", StartType.ToString());
+                xml.WriteElementInt("delay", Delay);
+                xml.WriteElementInt("race_class_id", RaceClassID);
+                xml.WriteElementInt("proxy_driver_model", ProxyDriverModel);
+                xml.WriteElementInt("no_suitable_tire", NoSuitableTire);
+                xml.WriteElementInt("initial_fuel100", InitialFuel100);
+
+                xml.WriteStartElement("boost_race_ratio");
+                foreach (var ratio in BoostRaceRatio)
+                    xml.WriteElementInt("ratio", ratio);
+                xml.WriteEndElement();
+
+                xml.WriteStartElement("boost_ratio");
+                foreach (var ratio in BoostRatio)
+                    xml.WriteElementInt("ratio", ratio);
+                xml.WriteEndElement();
+
+
+                xml.WriteElementInt("ai_skill_breaking", AISkillBraking);
+                xml.WriteElementInt("ai_skill_cornering", AISkillCornering);
+                xml.WriteElementInt("ai_skill_accelerating", AISkillAccelerating);
+                xml.WriteElementInt("ai_skill_starting", AISkillStarting);
+                xml.WriteElementInt("ai_roughness", AIRoughness);
+            }
+        }
+
+        public void ReadFromXml(XmlNode entryNode)
+        {
+            foreach (XmlNode entryDetailNode in entryNode)
+            {
+                switch (entryDetailNode.Name)
+                {
+                    case "player_no":
+                        PlayerNumber = entryDetailNode.ReadValueInt(); break;
+                    case "car":
+                        Car.CarLabel = entryDetailNode.Attributes["label"].Value;
+                        Car.Paint = short.Parse(entryDetailNode.Attributes["color"].Value);
+                        break;
+                    case "car_parameter":
+                        throw new NotImplementedException("Implement car_parameter parsing!");
+                    case "driver_name":
+                        DriverName = entryDetailNode.ReadValueString(); break;
+                    case "driver_region":
+                        DriverRegion = entryDetailNode.ReadValueString(); break;
+                    case "driver_parameter":
+                        DriverParameter[0].ParseFromXml(entryDetailNode); break;
+                    case "pilot_id":
+                        PilotID = entryDetailNode.ReadValueByte(); break;
+                    case "entry_base":
+                        EntryBase.ReadFromXml(entryDetailNode); break;
+                    case "initial_position":
+                        InitialPosition = entryDetailNode.ReadValueInt(); break;
+                    case "initial_velocity":
+                        InitialVelocity = entryDetailNode.ReadValueInt(); break;
+                    case "start_type":
+                        StartType = entryDetailNode.ReadValueEnum<StartType>(); break;
+                    case "delay":
+                        Delay = entryDetailNode.ReadValueInt(); break;
+                    case "race_class_id":
+                        RaceClassID = entryDetailNode.ReadValueByte(); break;
+                    case "proxy_driver_model":
+                        ProxyDriverModel = entryDetailNode.ReadValueSByte(); break;
+                    case "no_suitable_tire":
+                        NoSuitableTire = entryDetailNode.ReadValueByte(); break;
+                    case "initial_fuel100":
+                        InitialFuel100 = entryDetailNode.ReadValueByte(); break;
+
+                    case "boost_race_ratio":
+                        foreach (XmlNode race_ratio_node in entryDetailNode.SelectNodes("race_ratio"))
+                            BoostRaceRatio.Add(race_ratio_node.ReadValueSByte());
+                        break;
+                    case "boost_ratio":
+                        foreach (XmlNode ratio_node in entryDetailNode.SelectNodes("ratio"))
+                            BoostRatio.Add(ratio_node.ReadValueByte());
+                        break;
+
+                    case "ai_skill_breaking":
+                        AISkillBraking = entryDetailNode.ReadValueShort(); break;
+                    case "ai_skill_cornering":
+                        AISkillCornering = entryDetailNode.ReadValueShort(); break;
+                    case "ai_skill_accelerating":
+                        AISkillAccelerating = entryDetailNode.ReadValueSByte(); break;
+                    case "ai_skill_starting":
+                        AISkillStarting = entryDetailNode.ReadValueSByte(); break;
+                    case "ai_roughness":
+                        AIRoughness = entryDetailNode.ReadValueSByte(); break;
+                }
+            }
+        }
+
+        public void Deserialize(ref BitStream reader)
         {
             uint magic = reader.ReadUInt32();
             if (magic != 0xE5_E5_25_EE && magic != 0xE6_E6_25_EE)
@@ -84,8 +216,7 @@ namespace PDTools.Structures.MGameParameter
 
             int player_no = reader.ReadInt32();
 
-            MCarThin car = new MCarThin(0);
-            car.Read(ref reader);
+            Car.Read(ref reader);
 
             CarParameter = MCarParameter.ImportFromBlob(ref reader);
             DriverName = reader.ReadString4Aligned();
@@ -123,15 +254,15 @@ namespace PDTools.Structures.MGameParameter
         }
 
 
-        public void WriteEntryToBuffer(ref BitStream bs)
+        public void Serialize(ref BitStream bs)
         {
             bs.WriteUInt32(0xE6_E6_25_EE);
             bs.WriteUInt32(1_08);
 
-            bs.WriteInt32(0); // player_no
+            bs.WriteInt32(PlayerNumber); // player_no
 
             // Write car (carthin)
-            CarThin.Serialize(ref bs);
+            Car.Serialize(ref bs);
             CarParameter.Serialize(ref bs);
 
             bs.WriteNullStringAligned4(DriverName);
@@ -151,9 +282,17 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteInt32((int)StartType);
             bs.WriteInt32(Delay);
             bs.WriteByte(NoSuitableTire);
-            bs.WriteInt16(-1); // initial_fuel100
+            bs.WriteInt16(InitialFuel100); // initial_fuel100
 
-            bs.WriteInt32(0); // boost_rate_count - ignore
+            bs.WriteInt32(BoostRatio.Count);
+            for (var i = 0; i < BoostRatio.Count; i++)
+            {
+                bs.WriteByte(BoostRatio[i]);
+                if (i < BoostRaceRatio.Count)
+                    bs.WriteSByte(BoostRaceRatio[i]);
+                else
+                    bs.WriteSByte(0);
+            }
 
             bs.WriteInt16(AISkillBraking);
             bs.WriteInt16(AISkillCornering);

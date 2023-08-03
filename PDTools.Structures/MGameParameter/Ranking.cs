@@ -49,7 +49,7 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// When the ranking registration period starts for this event.
         /// </summary>
-        public DateTime StartDate { get; set; }
+        public DateTime BeginDate { get; set; }
 
         /// <summary>
         /// When the ranking registration period ends for this event.
@@ -66,7 +66,7 @@ namespace PDTools.Structures.MGameParameter
                 BoardID == defaultRanking.BoardID &&
                 Registration == defaultRanking.Registration &&
                 RegistrationType == defaultRanking.RegistrationType &&
-                StartDate == defaultRanking.StartDate &&
+                BeginDate == defaultRanking.BeginDate &&
                 EndDate == defaultRanking.EndDate;
         }
 
@@ -94,7 +94,7 @@ namespace PDTools.Structures.MGameParameter
                     case "begin_date":
                         string date = rNode.InnerText.Replace("/00", "/01");
                         DateTime.TryParseExact(date, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time);
-                        StartDate = time;
+                        BeginDate = time;
                         break;
                     case "end_date":
                         string eDate = rNode.InnerText.Replace("/00", "/01");
@@ -115,7 +115,7 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("registration", Registration);
             xml.WriteElementValue("registration_type", RegistrationType.ToString());
 
-            xml.WriteStartElement("begin_date"); xml.WriteString(StartDate.ToString("yyyy/MM/dd HH:mm:ss")); xml.WriteEndElement();
+            xml.WriteStartElement("begin_date"); xml.WriteString(BeginDate.ToString("yyyy/MM/dd HH:mm:ss")); xml.WriteEndElement();
             xml.WriteStartElement("end_date"); xml.WriteString(EndDate.ToString("yyyy/MM/dd HH:mm:ss")); xml.WriteEndElement();
         }
 
@@ -129,7 +129,7 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteInt16(ReplayRankLimit);
             bs.WriteInt16(DisplayRankLimit);
             bs.WriteUInt64(BoardID);
-            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(StartDate));
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(BeginDate));
             bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(EndDate));
             bs.WriteInt16(Registration);
             bs.WriteSByte((sbyte)RegistrationType);

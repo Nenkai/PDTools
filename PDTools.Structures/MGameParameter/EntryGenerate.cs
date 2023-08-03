@@ -149,52 +149,47 @@ namespace PDTools.Structures.MGameParameter
 
         public void WriteToXml(XmlWriter xml)
         {
-            xml.WriteStartElement("entry_generate");
+            xml.WriteElementInt("entry_num", EntryNum);
+            xml.WriteElementInt("player_pos", PlayerPos);
+            xml.WriteElementValue("generate_type", GenerateType.ToString());
+            xml.WriteElementValue("enemy_list_type", EnemyListType.ToString());
+            xml.WriteElementValue("race_code", $"0x{RaceCode:x16}"); // Specifically hex string
+            xml.WriteElementInt("ai_skill", AISkill);
+            xml.WriteElementInt("ai_skill_breaking", AISkillBraking);
+            xml.WriteElementInt("ai_skill_cornering", AISkillCornering);
+            xml.WriteElementInt("ai_skill_accelerating", AISkillAccelerating);
+            xml.WriteElementInt("ai_skill_starting", AISkillStarting);
+            xml.WriteElementInt("ai_roughness", AIRoughness);
+            xml.WriteElementInt("enemy_lv", EnemyLevel);
+            xml.WriteElementInt("enemy_bspec_lv", EnemyBSpecLevel);
+            xml.WriteElementInt("bspec_lv_offset", BSpecLevelOffset);
+            xml.WriteElementInt("gap_for_start_rolling_distance", GapForStartRollingDistance);
+            xml.WriteElementInt("rolling_start_v", RollingStartV);
+            xml.WriteElementBool("use_rolling_start_param", UseRollingStartParameter);
+
+            xml.WriteStartElement("cars");
+            foreach (var car in Cars)
             {
-                xml.WriteElementInt("entry_num", EntryNum);
-                xml.WriteElementInt("player_pos", PlayerPos);
-                xml.WriteElementValue("generate_type", GenerateType.ToString());
-                xml.WriteElementValue("enemy_list_type", EnemyListType.ToString());
-                xml.WriteElementValue("race_code", $"0x{RaceCode:x16}"); // Specifically hex string
-                xml.WriteElementInt("ai_skill", AISkill);
-                xml.WriteElementInt("ai_skill_breaking", AISkillBraking);
-                xml.WriteElementInt("ai_skill_cornering", AISkillCornering);
-                xml.WriteElementInt("ai_skill_accelerating", AISkillAccelerating);
-                xml.WriteElementInt("ai_skill_starting", AISkillStarting);
-                xml.WriteElementInt("ai_roughness", AIRoughness);
-                xml.WriteElementInt("enemy_lv", EnemyLevel);
-                xml.WriteElementInt("enemy_bspec_lv", EnemyBSpecLevel);
-                xml.WriteElementInt("bspec_lv_offset", BSpecLevelOffset);
-                xml.WriteElementInt("gap_for_start_rolling_distance", GapForStartRollingDistance);
-                xml.WriteElementInt("rolling_start_v", RollingStartV);
-                xml.WriteElementBool("use_rolling_start_param", UseRollingStartParameter);
-
-                xml.WriteStartElement("cars");
-                foreach (var car in Cars)
-                {
-                    xml.WriteStartElement("car");
-                    xml.WriteAttributeString("label", car.CarLabel);
-                    xml.WriteEndElement();
-                }
+                xml.WriteStartElement("car");
+                xml.WriteAttributeString("label", car.CarLabel);
                 xml.WriteEndElement();
-
-
-                xml.WriteStartElement("delays");
-                foreach (var delay in Delays)
-                    xml.WriteElementInt("delay", delay);
-                xml.WriteEndElement();
-
-                xml.WriteElementValue("enemy_sort_type", EnemySortType.ToString());
-
-                if (EntryBaseArray.Count > 0)
-                {
-                    xml.WriteStartElement("entry_base_array");
-                    foreach (var entry in EntryBaseArray)
-                        entry.WriteToXml(xml);
-                    xml.WriteEndElement();
-                }
             }
             xml.WriteEndElement();
+
+            xml.WriteStartElement("delays");
+            foreach (var delay in Delays)
+                xml.WriteElementInt("delay", delay);
+            xml.WriteEndElement();
+
+            xml.WriteElementValue("enemy_sort_type", EnemySortType.ToString());
+
+            if (EntryBaseArray.Count > 0)
+            {
+                xml.WriteStartElement("entry_base_array");
+                foreach (var entry in EntryBaseArray)
+                    entry.WriteToXml(xml);
+                xml.WriteEndElement();
+            }
         }
 
         public void ParseFromXml(XmlNode node)
@@ -303,7 +298,7 @@ namespace PDTools.Structures.MGameParameter
             int carThinCount = reader.ReadInt32();
             for (int i = 0; i < carThinCount; i++)
             {
-                var carThin = new MCarThin(0);
+                var carThin = new MCarThin();
                 carThin.Read(ref reader);
             }
 

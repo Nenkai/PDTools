@@ -17,7 +17,7 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// Credit prizes for each rank.
         /// </summary>
-        public List<int> MoneyTable { get; set; } = new List<int>();
+        public List<int> PrizeTable { get; set; } = new List<int>();
 
         /// <summary>
         /// Point/XP prizes for each rank (GT5).
@@ -88,7 +88,7 @@ namespace PDTools.Structures.MGameParameter
         public bool IsDefault()
         {
             var defaultReward = new Reward();
-            return MoneyTable.Count == 0 &&
+            return PrizeTable.Count == 0 &&
                 PointTable.Count == 0 &&
                 StarTable.Count == 0 &&
                 Present.Count == 0 &&
@@ -111,8 +111,8 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteEndElement();
             
             xml.WriteStartElement("prize_table");
-            for (int i = 0; i < MoneyTable.Count; i++)
-               xml.WriteElementInt("prize", MoneyTable[i]);
+            for (int i = 0; i < PrizeTable.Count; i++)
+               xml.WriteElementInt("prize", PrizeTable[i]);
             xml.WriteEndElement();
             
             xml.WriteStartElement("star_table");
@@ -196,7 +196,7 @@ namespace PDTools.Structures.MGameParameter
                     case "prize_table":
                         int i = 0;
                         foreach (XmlNode prizeNode in rewardNode.SelectNodes("prize"))
-                            MoneyTable.Add(prizeNode.ReadValueInt());
+                            PrizeTable.Add(prizeNode.ReadValueInt());
                         break;
 
                     case "star_table":
@@ -217,9 +217,9 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteUInt32(0xE6_E6_A1_07);
             bs.WriteUInt32(1_03);
 
-            bs.WriteInt32(MoneyTable.Count);
-            for (int i = 0; i < MoneyTable.Count; i++)
-                bs.WriteInt32(MoneyTable[i]);
+            bs.WriteInt32(PrizeTable.Count);
+            for (int i = 0; i < PrizeTable.Count; i++)
+                bs.WriteInt32(PrizeTable[i]);
 
             bs.WriteInt32(PointTable.Count);
             for (int i = 0; i < PointTable.Count; i++)
