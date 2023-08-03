@@ -64,7 +64,7 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// For GT5
         /// </summary>
-        public string CoursePathway { get; set; }
+        public byte[] CoursePathway { get; set; }
 
         /// <summary>
         /// For GT6. Custom TED. Must be PS2ZIP'ed.
@@ -87,7 +87,9 @@ namespace PDTools.Structures.MGameParameter
             foreach (var gadget in Gadgets)
                 gadget.WriteToXml(xml);
 
-            xml.WriteElementValue("course_pathway", CoursePathway);
+            if (CoursePathway != null)
+                xml.WriteElementValue("course_pathway", Convert.ToBase64String(CoursePathway));
+
             xml.WriteElementInt("map_offset_world_x", MapOffsetWorldX);
             xml.WriteElementInt("map_offset_world_y", MapOffsetWorldY);
             xml.WriteElementInt("map_scale", MapScale);
@@ -95,6 +97,51 @@ namespace PDTools.Structures.MGameParameter
 
             if (EditData != null)
                 xml.WriteElementValue("edit_data", Convert.ToBase64String(EditData));
+        }
+
+        public void ParseFromXml(XmlNode node)
+        {
+            foreach (XmlNode trackNode in node.ChildNodes)
+            {
+                switch (trackNode.Name)
+                {
+                    case "course_code":
+                        CourseLabel = trackNode.Attributes["label"].Value; break;
+
+                    case "generated_course_id":
+                        GeneratedCourseID = trackNode.ReadValueULong(); break;
+
+                    case "use_generator":
+                        UseGenerator = trackNode.ReadValueBool(); break;
+
+                    case "course_generator_param":
+                        CourseGeneratorParam = new CourseGeneratorParam();
+                        CourseGeneratorParam.ParseFromXml(trackNode); break;
+
+                    case "course_pathway":
+                        CoursePathway = Convert.FromBase64String(trackNode.ReadValueString()); break;
+
+                    case "edit_data":
+                        EditData = Convert.FromBase64String(trackNode.ReadValueString()); break;
+
+                    case "course_layout_no":
+                        CourseLayoutNumber = trackNode.ReadValueInt(); break;
+
+                    case "map_offset_world_x":
+                        MapOffsetWorldX = trackNode.ReadValueShort(); break;
+
+                    case "map_offset_world_y":
+                        MapOffsetWorldY = trackNode.ReadValueShort(); break;
+
+                    case "map_scale":
+                        MapScale = trackNode.ReadValueShort(); break;
+
+                    case "gadget":
+                        var gadget = new Gadget();
+                        gadget.ReadGadgetNode(trackNode);
+                        Gadgets.Add(gadget); break;
+                }
+            }
         }
 
         public void Deserialize(ref BitStream reader)
@@ -180,38 +227,6 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteBool(IsOmodetoDifficulty);
             bs.WriteByte(0); // field_0x3b
             bs.WriteUInt64(GeneratedCourseID); // Generated Course ID
-        }
-
-        public void ParseFromXml(XmlNode node)
-        {
-            foreach (XmlNode trackNode in node.ChildNodes)
-            {
-                switch (trackNode.Name)
-                {
-                    case "course_code":
-                        CourseLabel = trackNode.Attributes["label"].Value; break;
-
-                    case "edit_data":
-                        EditData = Convert.FromBase64String(trackNode.ReadValueString()); break;
-
-                    case "course_layout_no":
-                        CourseLayoutNumber = trackNode.ReadValueInt(); break;
-
-                    case "map_offset_world_x":
-                        MapOffsetWorldX = trackNode.ReadValueShort(); break;
-
-                    case "map_offset_world_y":
-                        MapOffsetWorldY = trackNode.ReadValueShort(); break;
-
-                    case "map_scale":
-                        MapScale = trackNode.ReadValueShort(); break;
-
-                    case "gadget":
-                        var gadget = new Gadget();
-                        gadget.ReadGadgetNode(trackNode);
-                        Gadgets.Add(gadget); break;
-                }
-            }
         }
     }
 }

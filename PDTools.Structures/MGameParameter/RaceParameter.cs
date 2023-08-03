@@ -169,20 +169,18 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public LightingMode LightingMode { get; set; } = LightingMode.AUTO;
 
-        public int[] BoostParams { get; set; } = new int[8];
-
         /// <summary>
         /// GT6 Only. Defaults to 0.
         /// </summary>
         public byte BoostLevel { get; set; }
 
         /// <summary>
-        /// Defautls to 0.
+        /// Whether to use reference rank possibly. Defaults to 0.
         /// </summary>
         public bool BoostType { get; set; }
 
         /// <summary>
-        /// GT6 Only. Defaults to 0.
+        /// GT6 Only. Whether to use only one table for boost - it'll be used as the general boost. Defaults to 0.
         /// </summary>
         public bool BoostFlag { get; set; }
 
@@ -355,7 +353,7 @@ namespace PDTools.Structures.MGameParameter
         public byte _weatherPointNum = 4;
 
         /// <summary>
-        /// Defaults to 4. <see cref="MaxWeatherPoints"/> for the maximum.
+        /// Defaults to 4. <see cref="MaxWeatherPoints"/> for the maximum (for GT6), otherwise 4 for GT5.
         /// </summary>
         public byte WeatherPointNum
         {
@@ -371,9 +369,45 @@ namespace PDTools.Structures.MGameParameter
         }
 
         /// <summary>
-        /// Defaults to 180.0.
+        /// Total length of the weather progression in seconds. In GT5 this will be the last step based on <see cref="WeatherPointNum"/>. Defaults to 180.0 (3 minutes).
         /// </summary>
         public float WeatherTotalSec { get; set; } = 180;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). At which second the 1st step will occur, which is after the start of the race. 
+        /// Should be within <see cref="WeatherTotalSec"/>. Defaults to -1.
+        /// </summary>
+        public float WeatherRateSec1 { get; set; } = -1;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). At which second the 2nd step will occur. Should be within <see cref="WeatherTotalSec"/>.
+        /// Defaults to -1.
+        /// </summary>
+        public float WeatherRateSec2 { get; set; } = -1;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). Weather value for the start of the race. (which is at the start of the race, 0s).
+        /// Defaults to -1.
+        /// </summary>
+        public float WeatherValue0 { get; set; } = -1;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). Weather value for the start of the race to 1st step, specified by <see cref="WeatherRateSec1"/>).
+        /// Defaults to -1.
+        /// </summary>
+        public float WeatherValue1 { get; set; } = -1;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). Weather value for the 1st to 2nd step, specified by <see cref="WeatherRateSec2"/>).
+        /// Defaults to -1.
+        /// </summary>
+        public float WeatherValue2 { get; set; } = -1;
+
+        /// <summary>
+        /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). Weather value for the 2nd to last step/end of progression specified by <see cref="WeatherTotalSec"/>.
+        /// Defaults to -1.
+        /// </summary>
+        public float WeatherValue3 { get; set; } = -1;
 
         /// <summary>
         /// Defaults to 0.
@@ -494,6 +528,11 @@ namespace PDTools.Structures.MGameParameter
         public byte[] DelayStartList { get; set; } = new byte[32];
 
         /// <summary>
+        /// GT5 Only.
+        /// </summary>
+        public BoostParams BoostParams { get; set; }
+
+        /// <summary>
         /// GT6 Only.
         /// </summary>
         public BoostTable[] BoostTables { get; set; } = new BoostTable[2] { new BoostTable(), new BoostTable() };
@@ -513,7 +552,7 @@ namespace PDTools.Structures.MGameParameter
         /// Not part of XML
         /// </summary>
         public int CourseCode { get; set; }
-
+        
         public RaceParameter()
         {
             for (int i = 0; i < 32; i++)
@@ -558,8 +597,17 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementBool("academy_event", AcademyEvent);
             xml.WriteElementValue("lighting_mode", LightingMode.ToString());
 
-            // TODO: boost_params?
-
+            if (BoostParams != null)
+            {
+                xml.WriteStartElement("boost_params");
+                xml.WriteElementInt("param", BoostParams.BoostFront);
+                xml.WriteElementInt("param", BoostParams.BoostRear);
+                xml.WriteElementInt("param", BoostParams.BoostFrontMax);
+                xml.WriteElementInt("param", BoostParams.BoostRearMax);
+                xml.WriteElementInt("param", BoostParams.BoostFrontMin);
+                xml.WriteElementInt("param", BoostParams.BoostRearMin);
+                xml.WriteEndElement();
+            }
 
             if (BoostTables.Any(t => !t.IsDefault()))
             {
@@ -571,18 +619,18 @@ namespace PDTools.Structures.MGameParameter
                         xml.WriteElementInt("param", i);
 
                         BoostTable table = BoostTables[i];
-                        xml.WriteElementInt("param", table.FrontLimit);
-                        xml.WriteElementInt("param", table.FrontMaximumRate);
-                        xml.WriteElementInt("param", table.FrontStart);
-                        xml.WriteElementInt("param", table.FrontInitialRate);
+                        xml.WriteElementInt("param", table.RearDistance2);
+                        xml.WriteElementInt("param", table.RearRate2);
+                        xml.WriteElementInt("param", table.RearDistance1);
+                        xml.WriteElementInt("param", table.RearRate1);
 
-                        xml.WriteElementInt("param", table.RearLimit);
-                        xml.WriteElementInt("param", table.RearMaximumRate);
-                        xml.WriteElementInt("param", table.RearStart);
-                        xml.WriteElementInt("param", table.RearInitialRate);
+                        xml.WriteElementInt("param", table.FrontDistance2);
+                        xml.WriteElementInt("param", table.FrontRate2);
+                        xml.WriteElementInt("param", table.FrontDistance1);
+                        xml.WriteElementInt("param", table.FrontRate1);
 
-                        xml.WriteElementInt("param", table.ReferenceRank);
-                        xml.WriteElementInt("param", table.Unk);
+                        xml.WriteElementInt("param", table.TargetPosition);
+                        xml.WriteElementInt("param", table.RaceProgress);
                     }
                     xml.WriteEndElement();
 
@@ -677,7 +725,12 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("weather_max_celsius", WeatherMaxCelsius);
             xml.WriteElementInt("weather_min_celsius", WeatherMinCelsius);
 
-            // TODO GT5 weather parameters
+            xml.WriteElementFloat("weather_rate_sec1", WeatherRateSec1);
+            xml.WriteElementFloat("weather_rate_sec2", WeatherRateSec2);
+            xml.WriteElementFloat("weather_value0", WeatherValue0);
+            xml.WriteElementFloat("weather_value1", WeatherValue1);
+            xml.WriteElementFloat("weather_value2", WeatherValue2);
+            xml.WriteElementFloat("weather_value3", WeatherValue3);
 
             xml.WriteElementBool("weather_no_schedule", WeatherNoSchedule);
             xml.WriteElementBool("weather_no_precipitation", WeatherNoPrecipitation);
@@ -773,7 +826,8 @@ namespace PDTools.Structures.MGameParameter
                         AcademyEvent = raceNode.ReadValueBool(); break;
                     case "lighting_mode":
                         LightingMode = raceNode.ReadValueEnum<LightingMode>(); break;
-                    // TODO: boost_params
+                    case "boost_params":
+                        ParseBoostParams(raceNode); break;
                     case "boost_table_array":
                         ParseBoostTables(raceNode); break;
                     case "boost_level":
@@ -842,8 +896,26 @@ namespace PDTools.Structures.MGameParameter
                         LineGhostRecordType = raceNode.ReadValueEnum<LineGhostRecordType>(); break;
                     case "attack_separate_type":
                         AttackSeparateType = raceNode.ReadValueEnum<AttackSeparateType>(); break;
-                    // TODO: grid_list
-                    // TODO: event_v_list
+                    case "grid_list":
+                        int i = 0;
+                        foreach (XmlNode n in raceNode.SelectNodes("v"))
+                        {
+                            if (i >= 32)
+                                break;
+
+                            GridList[i] = n.ReadValueSByte();
+                        }
+                        break;
+                    case "event_v_list":
+                        foreach (XmlNode n in raceNode.SelectNodes("v"))
+                        {
+                            if (EventVList.Count > 30)
+                                break;
+
+                            EventVList.Add(n.ReadValueShort());
+                        }
+                        break;
+
                     case "event_start_v":
                         EventStartV = raceNode.ReadValueInt(); break;
                     case "event_goal_v":
@@ -886,6 +958,19 @@ namespace PDTools.Structures.MGameParameter
                     case "weather_min_celsius":
                         WeatherMinCelsius = raceNode.ReadValueSByte(); break;
 
+                    case "weather_rate_sec1":
+                        WeatherRateSec1 = raceNode.ReadValueSingle(); break;
+                    case "weather_rate_sec2":
+                        WeatherRateSec2 = raceNode.ReadValueSingle(); break;
+                    case "weather_value0":
+                        WeatherValue0 = raceNode.ReadValueSingle(); break;
+                    case "weather_value1":
+                        WeatherValue1 = raceNode.ReadValueSingle(); break;
+                    case "weather_value2":
+                        WeatherValue2 = raceNode.ReadValueSingle(); break;
+                    case "weather_value3":
+                        WeatherValue3 = raceNode.ReadValueSingle(); break;
+
                     /* Not part of XML reading
                     case "race_initial_laps":
                         RaceInitialLaps = raceNode.ReadValueByte(); break;
@@ -921,6 +1006,33 @@ namespace PDTools.Structures.MGameParameter
             }
         }
 
+        public void ParseBoostParams(XmlNode boostParamsNode)
+        {
+            BoostParams = new BoostParams();
+
+            int i = 0;
+            foreach (XmlNode node in boostParamsNode.SelectNodes("param"))
+            {
+                switch (i)
+                {
+                    case 0:
+                        BoostParams.BoostFront = node.ReadValueByte(); break;
+                    case 1:
+                        BoostParams.BoostRear = node.ReadValueSByte(); break;
+                    case 2:
+                        BoostParams.BoostFrontMax = node.ReadValueByte(); break;
+                    case 3:
+                        BoostParams.BoostRearMax = node.ReadValueSByte(); break;
+                    case 4:
+                        BoostParams.BoostFrontMin = node.ReadValueByte(); break;
+                    case 5:
+                        BoostParams.BoostRear = node.ReadValueSByte(); break;
+                }
+
+                i++;
+            }
+        }
+
         public void ParseBoostTables(XmlNode boostTableArrayNode)
         {
             foreach (XmlNode boostTableNode in boostTableArrayNode.SelectNodes("boost_table"))
@@ -941,27 +1053,27 @@ namespace PDTools.Structures.MGameParameter
                         switch (i)
                         {
                             case 1:
-                                BoostTables[currentIndex].FrontLimit = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].RearDistance2 = currentNode.ReadValueByte(); break;
                             case 2:
-                                BoostTables[currentIndex].FrontMaximumRate = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].RearRate2 = currentNode.ReadValueSByte(); break;
                             case 3:
-                                BoostTables[currentIndex].FrontStart = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].RearDistance1 = currentNode.ReadValueByte(); break;
                             case 4:
-                                BoostTables[currentIndex].FrontInitialRate = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].RearRate1 = currentNode.ReadValueSByte(); break;
 
                             case 5:
-                                BoostTables[currentIndex].RearLimit = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].FrontDistance2 = currentNode.ReadValueByte(); break;
                             case 6:
-                                BoostTables[currentIndex].RearMaximumRate = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].FrontRate2 = currentNode.ReadValueSByte(); break;
                             case 7:
-                                BoostTables[currentIndex].RearStart = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].FrontDistance1 = currentNode.ReadValueByte(); break;
                             case 8:
-                                BoostTables[currentIndex].RearInitialRate = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].FrontRate1 = currentNode.ReadValueSByte(); break;
 
                             case 9:
-                                BoostTables[currentIndex].ReferenceRank = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].TargetPosition = currentNode.ReadValueByte(); break;
                             case 10:
-                                BoostTables[currentIndex].Unk = currentNode.ReadValueByte(); break;
+                                BoostTables[currentIndex].RaceProgress = currentNode.ReadValueByte(); break;
                         }
                     }
 
@@ -1240,12 +1352,12 @@ namespace PDTools.Structures.MGameParameter
                 NewWeatherData[i].Low = reader.ReadBits(6);
 
             WeatherRandomSeed = reader.ReadInt32();
-            WeatherNoPrecipitation = reader.ReadBoolBit(); //   weather_no_precipitation
-            WeatherNoWind = reader.ReadBoolBit(); //   weather_no_wind
-            WeatherPrecRainOnly = reader.ReadBoolBit(); //   weather_prec_rain_only
-            WeatherPrecSnowOnly = reader.ReadBoolBit(); //   weather_prec_snow_only
-            WeatherNoSchedule = reader.ReadBoolBit(); //   weather_no_schedule
-            WeatherRandom = reader.ReadBoolBit(); //   weather_random
+            WeatherNoPrecipitation = reader.ReadBoolBit();
+            WeatherNoWind = reader.ReadBoolBit();
+            WeatherPrecRainOnly = reader.ReadBoolBit();
+            WeatherPrecSnowOnly = reader.ReadBoolBit();
+            WeatherNoSchedule = reader.ReadBoolBit();
+            WeatherRandom = reader.ReadBoolBit();
             reader.ReadBoolBit(); //   param_1->field_0xe0 = (uVar3 & 0x1) << 0x39 | param_1->field_0xe0 & 0xfdffffffffffffff;
             WeatherBaseCelsius = (sbyte)reader.ReadBits(7);
             WeatherMinCelsius = (sbyte)reader.ReadBits(4);
@@ -1269,17 +1381,17 @@ namespace PDTools.Structures.MGameParameter
             // boost_table
             for (int i = 0; i < 2; i++)
             {
-                BoostTables[i].FrontLimit = reader.ReadByte();
-                BoostTables[i].FrontMaximumRate = reader.ReadSByte();
-                BoostTables[i].FrontStart = reader.ReadByte();
-                BoostTables[i].FrontInitialRate = reader.ReadSByte();
+                BoostTables[i].RearDistance2 = reader.ReadByte();
+                BoostTables[i].RearRate2 = reader.ReadSByte();
+                BoostTables[i].RearDistance1 = reader.ReadByte();
+                BoostTables[i].RearRate1 = reader.ReadSByte();
 
-                BoostTables[i].RearLimit = reader.ReadByte();
-                BoostTables[i].RearMaximumRate = reader.ReadSByte();
-                BoostTables[i].RearStart = reader.ReadByte();
-                BoostTables[i].RearInitialRate = reader.ReadSByte();
+                BoostTables[i].FrontDistance2 = reader.ReadByte();
+                BoostTables[i].FrontRate2 = reader.ReadSByte();
+                BoostTables[i].FrontDistance1 = reader.ReadByte();
+                BoostTables[i].FrontRate1 = reader.ReadSByte();
 
-                BoostTables[i].ReferenceRank = reader.ReadByte();
+                BoostTables[i].TargetPosition = reader.ReadByte();
                 reader.ReadByte();
             }
 
@@ -1299,10 +1411,7 @@ namespace PDTools.Structures.MGameParameter
             GhostPresenceType = (GhostPresenceType)reader.ReadByte();
 
             for (var i = 0; i < 30; i++)
-            {
-                // TODO Fix this (event_v_list)
-                reader.ReadInt16();
-            }
+                EventVList.Add(reader.ReadInt16());
 
             PenaltyParameter.ReadPenaltyParameter(ref reader);
 
@@ -1482,17 +1591,17 @@ namespace PDTools.Structures.MGameParameter
 
             for (int i = 0; i < 2; i++)
             {
-                bs.WriteByte(BoostTables[i].FrontLimit);
-                bs.WriteSByte(BoostTables[i].FrontMaximumRate);
-                bs.WriteByte(BoostTables[i].FrontStart);
-                bs.WriteSByte(BoostTables[i].FrontInitialRate);
+                bs.WriteByte(BoostTables[i].RearDistance2);
+                bs.WriteSByte(BoostTables[i].RearRate2);
+                bs.WriteByte(BoostTables[i].RearDistance1);
+                bs.WriteSByte(BoostTables[i].RearRate1);
 
-                bs.WriteByte(BoostTables[i].RearLimit);
-                bs.WriteSByte(BoostTables[i].RearMaximumRate);
-                bs.WriteByte(BoostTables[i].RearStart);
-                bs.WriteSByte(BoostTables[i].RearInitialRate);
+                bs.WriteByte(BoostTables[i].FrontDistance2);
+                bs.WriteSByte(BoostTables[i].FrontRate2);
+                bs.WriteByte(BoostTables[i].FrontDistance1);
+                bs.WriteSByte(BoostTables[i].FrontRate1);
 
-                bs.WriteByte(BoostTables[i].ReferenceRank);
+                bs.WriteByte(BoostTables[i].TargetPosition);
                 bs.WriteByte(0);
             }
 

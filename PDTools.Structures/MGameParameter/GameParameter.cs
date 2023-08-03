@@ -128,10 +128,9 @@ namespace PDTools.Structures.MGameParameter
             }
         }
 
-        public void ParseFromXmlDocument(XmlDocument doc)
+        public void ParseFromXmlNode(XmlNode node)
         {
-            var nodes = doc["xml"]["GameParameter"];
-            foreach (XmlNode childNode in nodes)
+            foreach (XmlNode childNode in node.ChildNodes)
             {
                 switch (childNode.Name)
                 {

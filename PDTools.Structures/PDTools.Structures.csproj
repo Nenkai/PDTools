@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PDTools.Compression\PDTools.Compression.csproj" />
     <ProjectReference Include="..\PDTools.Enums\PDTools.Enums.csproj" />
     <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
   </ItemGroup>
