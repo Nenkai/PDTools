@@ -17,12 +17,12 @@ namespace PDTools.Structures.MGameParameter
         public float TimeRate { get; set; }
 
         /// <summary>
-        /// Lowest (worse) the weather condition is at this step.
+        /// Lowest (worse/wet) the weather condition is at this step.
         /// </summary>
         public float Low { get; set; }
 
         /// <summary>
-        /// Highest (worse) the weather condition is at this step.
+        /// Highest (better/sunny) the weather condition is at this step.
         /// </summary>
         public float High { get; set; }
 
