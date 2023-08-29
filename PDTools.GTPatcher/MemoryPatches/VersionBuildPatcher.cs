@@ -16,6 +16,7 @@ namespace PDTools.GTPatcher.MemoryPatches
         public const ulong GT7_V100_VersionBuild_Offset = 0x61298D0;
         public const ulong GT7_V125_VersionBuild_Offset = 0x51699D0;
         public const ulong GT7_V129_VersionBuild_Offset = 0x4FA2E20;
+        public const ulong GT7_V136_VersionBuild_Offset = 0x52BBB20;
 
         public ulong Offset { get; set; }
         private string _build;
@@ -43,6 +44,10 @@ namespace PDTools.GTPatcher.MemoryPatches
 
                 case GameType.GT7_V129:
                     Offset = GT7_V129_VersionBuild_Offset;
+                    break;
+
+                case GameType.GT7_V136:
+                    Offset = GT7_V136_VersionBuild_Offset;
                     break;
             }
         }

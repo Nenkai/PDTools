@@ -9,7 +9,7 @@ namespace PDTools.GTPatcher
     public class Breakpoint
     {
         public int Index { get; }
-        public ulong Offset { get; }
+        public ulong Offset { get; set; }
 
         public Breakpoint(int index, ulong offset)
         {

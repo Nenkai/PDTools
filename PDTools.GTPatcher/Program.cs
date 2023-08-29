@@ -27,7 +27,7 @@ namespace PDTools.GTPatcher
 
         public static async Task Options(Options options)
         {
-            var dbg = new GTPatcher(options.IPAddress, GameType.GT7_V129);
+            var dbg = new GTPatcher(options.IPAddress, GameType.GT7_V136);
 
             if (options.Arguments.Any())
             {
@@ -86,7 +86,8 @@ namespace PDTools.GTPatcher
             }
 
 
-            dbg.AddBreakLogger(new TestLogger());
+            dbg.AddBreakLogger(new EvalExpressionStringLogger());
+            dbg.AddBreakLogger(new EvalExpressionCompilationTokenTypeLogger());
 
             Console.CancelKeyPress += delegate {
                 _cts.Cancel();

@@ -126,3 +126,8 @@ livery_special_decken
 skip_online_title_movie
 enable_bridge_on_steward
 vr_showroom_open
+
+// Spotted in 1.36 in engine
+demo_preset_car
+online_debug
+offline

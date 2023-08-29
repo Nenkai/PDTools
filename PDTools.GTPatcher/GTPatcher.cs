@@ -134,10 +134,11 @@ namespace PDTools.GTPatcher
 
         private void AttachCallback(uint lwpid, uint status, string tdname, GeneralRegisters regs, FloatingPointRegisters fpregs, DebugRegisters dbregs)
         {
-            foreach (var breakLogger in _breakLoggers)
+            for (var i = _breakLoggers.Count - 1; i >= 0; i--)
             {
-                if (breakLogger.CheckHit(this, regs))
-                    breakLogger.OnBreak(this, regs);
+                var log = _breakLoggers[i];
+                if (log.CheckHit(this, regs))
+                    log.OnBreak(this, regs);
             }
 
             if (!_MemPatchesApplied)
@@ -215,6 +216,12 @@ namespace PDTools.GTPatcher
             return brk;
         }
 
+        public void UpdateBreakpoint(Breakpoint brk, ulong absoluteOffset)
+        {
+            brk.Offset = absoluteOffset;
+            PS4.ChangeBreakpoint(brk.Index, true, brk.Offset);
+        }
+
         public void Notify(string message)
         {
             PS4.Notify(222, message);
@@ -233,5 +240,6 @@ namespace PDTools.GTPatcher
         GT7_V100,
         GT7_V125,
         GT7_V129,
+        GT7_V136,
     }
 }

@@ -8,7 +8,7 @@ using libdebug;
 
 namespace PDTools.GTPatcher.BreakLoggers
 {
-    public class TestLogger : IBreakLogger
+    public class EvalExpressionStringLogger : IBreakLogger
     {
         // Address for debugging adhoc compilation exceptions from EvalExpressionString
         public const ulong GT7_V129_Offset = 0x26B5A4B;
@@ -18,7 +18,7 @@ namespace PDTools.GTPatcher.BreakLoggers
 
         public bool LogOnlyOnMiss { get; set; }
 
-        public TestLogger()
+        public EvalExpressionStringLogger()
         {
 
         }
@@ -47,6 +47,15 @@ namespace PDTools.GTPatcher.BreakLoggers
         {
             string err = dbg.ReadMemoryAbsolute<string>(dbg.ReadMemoryAbsolute<ulong>(registers.rsi + 8));
             Console.WriteLine(err);
+
+            /*
+            if (!dbg._breakLoggers.Any(e => e is EvalExpressionCompilationTokenTypeLogger))
+            {
+                var log = new EvalExpressionCompilationTokenTypeLogger();
+                log.Init(dbg);
+                dbg._breakLoggers.Add(log);
+            }
+            */
         }
     }
 }

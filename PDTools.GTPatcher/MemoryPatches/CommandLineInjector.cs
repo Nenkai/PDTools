@@ -27,6 +27,10 @@ namespace PDTools.GTPatcher.MemoryPatches
         public const ulong GT7_V129_Argv_Offset = 0x5E14CD8;
         public const ulong GT7_V129_SafeAddr = 0x370FF78;
 
+        public const ulong GT7_V136_Argc_Offset = 0x5F5F600;
+        public const ulong GT7_V136_Argv_Offset = 0x5F5F608;
+        public const ulong GT7_V136_SafeAddr = 0x2B536A0; // GTHD_TRIAL
+
         public const ulong PFSVolumePath_Offset = 0x2B72F80;
         public const ulong GT7_V129_PFSVolumePath_Offset = 0x4FA2E60;
 
@@ -68,6 +72,12 @@ namespace PDTools.GTPatcher.MemoryPatches
                     Argc_Offset = GT7_V129_Argc_Offset;
                     Argv_Offset = GT7_V129_Argv_Offset;
                     Safe_Addr = GT7_V129_SafeAddr;
+                    break;
+
+                case GameType.GT7_V136:
+                    Argc_Offset = GT7_V136_Argc_Offset;
+                    Argv_Offset = GT7_V136_Argv_Offset;
+                    Safe_Addr = GT7_V136_SafeAddr;
                     break;
             }
         }
