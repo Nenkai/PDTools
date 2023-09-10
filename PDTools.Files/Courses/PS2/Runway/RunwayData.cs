@@ -222,15 +222,15 @@ public class RunwayData
         float axisV1 = startPoint.GetAxis(axis);
         float axisV2 = endPoint.GetAxis(axis);
 
-        float v19 = MathUtils.Lerp(axisBoundsMin, axisBoundsMax, node.Value); // (axisBoundsMin * (1.0f - node.Value)) + (axisBoundsMax * node.Value);
-        float v20 = axisV1 - v19;
+        float pos = MathUtils.Lerp(axisBoundsMin, axisBoundsMax, node.Value); // (axisBoundsMin * (1.0f - node.Value)) + (axisBoundsMax * node.Value);
+        float v20 = axisV1 - pos;
 
         Node nextNode;
 
         clusterIndex *= 2;
 
         Span<Vector3> nextBounds = stackalloc Vector3[2];
-        if ((axisV1 - v19) * (axisV2 - v19) >= 0.0f)
+        if ((axisV1 - pos) * (axisV2 - pos) >= 0.0f)
         {
             nextBounds[0] = bounds[0];
             nextBounds[1] = bounds[1];
@@ -240,14 +240,14 @@ public class RunwayData
                 nextNode = node.Left;
                 depth--;
 
-                nextBounds[1].SetAxis(axis, v19);
+                nextBounds[1].SetAxis(axis, pos);
             }
             else
             {
                 nextNode = node.Right;
                 depth--;
 
-                nextBounds[0].SetAxis(axis, v19);
+                nextBounds[0].SetAxis(axis, pos);
                 clusterIndex++;
             }
         }
@@ -355,7 +355,6 @@ public class RunwayData
             result.Cluster = clusterIndex;
             result.TriIndex = resTri;
 
-            string t = $"{result.HitPoint:N7}";
             var tri = Tris[resTri];
             RunwayRoadVert p1 = Vertices[tri.Vert1];
             RunwayRoadVert p2 = Vertices[tri.Vert2];
@@ -463,6 +462,16 @@ public class RunwayData
         return vcoord;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="result"></param>
+    /// <param name="pos">Position</param>
+    /// <param name="p1">Rect P1</param>
+    /// <param name="p2">Rect P2</param>
+    /// <param name="p3">Rect P3</param>
+    /// <param name="p4">Rect P4</param>
+    /// <returns></returns>
     public static bool QuadSTCompute(out Vector3 result, Vector3 pos, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
     {
         float p3p1XDiff = p3.X - p1.X;

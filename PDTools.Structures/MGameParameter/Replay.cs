@@ -69,6 +69,20 @@ namespace PDTools.Structures.MGameParameter
                 AudioFormat == defaultReplay.AudioFormat;
         }
 
+        public void CopyTo(Replay other)
+        {
+            other.LocalPath = LocalPath;
+            other.Url = Url;
+            other.DemoDataPath = DemoDataPath;
+            other.UploadVideo = UploadVideo;
+            other.ExportVideo = ExportVideo;
+            other.DataLogger = DataLogger;
+            other.ReplayRecordingQuality = ReplayRecordingQuality;
+            other.AutoSave = AutoSave;
+            other.VideoFormat = VideoFormat;
+            other.AudioFormat = AudioFormat;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteElementValue("local_path", LocalPath);

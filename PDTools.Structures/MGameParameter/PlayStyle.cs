@@ -58,9 +58,6 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public int LeaveLimit { get; set; } = 0;
 
-        //rentcar_setting_enable
-        //no_instant_replay
-
         public bool IsDefault()
         {
             var defaultObj = new PlayStyle();
@@ -73,6 +70,19 @@ namespace PDTools.Structures.MGameParameter
                    WindowNum == defaultObj.WindowNum &&
                    TimeLimit == defaultObj.TimeLimit &&
                    LeaveLimit == defaultObj.LeaveLimit;
+        }
+
+        public void CopyTo(PlayStyle other)
+        {
+            other.BSpecType = BSpecType;
+            other.PlayType = PlayType;
+            other.NoQuickMenu = NoQuickMenu;
+            other.NoInstantReplay = NoInstantReplay;
+            other.ReplayRecordEnable = ReplayRecordEnable;
+            other.RentCarSettingEnable = RentCarSettingEnable;
+            other.WindowNum = WindowNum;
+            other.TimeLimit = TimeLimit;
+            other.LeaveLimit = LeaveLimit;
         }
 
         public void WriteToXml(XmlWriter xml)

@@ -18,13 +18,6 @@ namespace PDTools.Files.Courses.PS2.Runway
             Runway = runway;
         }
 
-        /*
-        var pos = new Vector3(127.673156738281f, 1000.0f, -384.175567626953f);
-        var calculator = new CourseVCalculator();
-        calculator.Position = pos;
-        getVPosition(calculator);
-        */
-
         public float getVPosition(CourseVCalculator calc)
         {
             // Begin by first searching where the provided position is on the track, on the cluster and tri level
@@ -38,6 +31,7 @@ namespace PDTools.Files.Courses.PS2.Runway
                 if (!Runway.search(out RunwayResult result, pos))
                 {
                     calc.Result = default;
+                    return 0.0f;
                 }
 
                 calc.Result = new RunwayHint(result.TriIndex, result.Cluster);

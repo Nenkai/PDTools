@@ -23,6 +23,25 @@ namespace PDTools.Structures.MGameParameter
         public List<CourseGeneratorParamSection> Sections { get; set; } = new List<CourseGeneratorParamSection>();
         public bool FirstVersionIncompatible { get; set; }
 
+        public void CopyTo(CourseGeneratorParam other)
+        {
+            other.Seed = Seed;
+            other.UseRandomSeed = UseRandomSeed;
+            other.LengthY = LengthY;
+            other.CourseGeneratorKind = CourseGeneratorKind;
+            other.CourseGeneratorLengthType = CourseGeneratorLengthType;
+            other.CourseName = CourseName;
+
+            foreach (var section in Sections)
+            {
+                var param = new CourseGeneratorParamSection();
+                section.CopyTo(param);
+                other.Sections.Add(section);
+            }
+
+            other.FirstVersionIncompatible = FirstVersionIncompatible;
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode childNode in node)

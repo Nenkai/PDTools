@@ -40,17 +40,17 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// AI Skill. Defaults to 100.
         /// </summary>
-        public int AISkill { get; set; } = 100;
+        public short AISkill { get; set; } = 100;
 
         /// <summary>
         /// AI Braking Skill. Defaults to -1.
         /// </summary>
-        public int AISkillBraking { get; set; } = -1;
+        public short AISkillBraking { get; set; } = -1;
 
         /// <summary>
         /// AI Cornering Skill. Defaults to -1.
         /// </summary>
-        public int AISkillCornering { get; set; } = -1;
+        public short AISkillCornering { get; set; } = -1;
 
         /// <summary>
         /// AI Accelerating Skill. Defaults to -1.
@@ -142,6 +142,43 @@ namespace PDTools.Structures.MGameParameter
                 EntryBaseArray.Count == 0;
         }
 
+        public void CopyTo(EntryGenerate other)
+        {
+            other.EntryNum = EntryNum;
+            other.PlayerPos = PlayerPos;
+            other.GenerateType = GenerateType;
+            other.EnemyListType = EnemyListType;
+            other.RaceCode = RaceCode;
+            other.AISkill = AISkill;
+            other.AISkillBraking = AISkillBraking;
+            other.AISkillCornering = AISkillCornering;
+            other.AISkillAccelerating = AISkillAccelerating;
+            other.AIRoughness = AIRoughness;
+            other.EnemyLevel = EnemyLevel;
+
+            for (int i = 0; i < Cars.Count; i++)
+            {
+                var mcarThin = new MCarThin();
+                Cars[i].CopyTo(mcarThin);
+                other.Cars.Add(mcarThin);
+            }
+
+            other.EnemyBSpecLevel = EnemyBSpecLevel;
+            other.BSpecLevelOffset = BSpecLevelOffset;
+            other.GapForStartRollingDistance = GapForStartRollingDistance;
+            other.RollingStartV = RollingStartV;
+            other.UseRollingStartParameter = UseRollingStartParameter;
+            Delays.AsSpan().CopyTo(other.Delays);
+            other.EnemySortType = EnemySortType;
+
+            for (int i = 0; i < EntryBaseArray.Count; i++)
+            {
+                var entryBase = new EntryBase();
+                EntryBaseArray[i].CopyTo(entryBase);
+                other.EntryBaseArray.Add(entryBase);
+            }
+        }
+
         /// <summary>
         /// Delays used for entry bases, when they cannot be provided by fixed entries
         /// </summary>
@@ -167,6 +204,7 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("rolling_start_v", RollingStartV);
             xml.WriteElementBool("use_rolling_start_param", UseRollingStartParameter);
 
+            
             xml.WriteStartElement("cars");
             foreach (var car in Cars)
             {
@@ -175,11 +213,17 @@ namespace PDTools.Structures.MGameParameter
                 xml.WriteEndElement();
             }
             xml.WriteEndElement();
+            
 
+            
             xml.WriteStartElement("delays");
-            foreach (var delay in Delays)
-                xml.WriteElementInt("delay", delay);
+            if (Delays.Any(e => e != 0))
+            {
+                foreach (var delay in Delays)
+                    xml.WriteElementInt("delay", delay);
+            }
             xml.WriteEndElement();
+            
 
             xml.WriteElementValue("enemy_sort_type", EnemySortType.ToString());
 

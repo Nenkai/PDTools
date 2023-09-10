@@ -42,6 +42,37 @@ namespace PDTools.Structures.MGameParameter
                 SuccessCondition.Count == 0;
         }
 
+        public void CopyTo(LicenseCondition other)
+        {
+            other.UseBasicFinish = UseBasicFinish;
+            other.StopOnFinish = StopOnFinish;
+            other.DisplayMode = DisplayMode;
+
+            foreach (var gadget in GadgetNames)
+                other.GadgetNames.Add(gadget);
+
+            foreach (var thisData in FinishCondition)
+            {
+                var data = new LicenseConditionData();
+                thisData.CopyTo(data);
+                other.FinishCondition.Add(data);
+            }
+
+            foreach (var thisData in FailureCondition)
+            {
+                var data = new LicenseConditionData();
+                thisData.CopyTo(data);
+                other.FailureCondition.Add(data);
+            }
+
+            foreach (var thisData in SuccessCondition)
+            {
+                var data = new LicenseConditionData();
+                thisData.CopyTo(data);
+                other.SuccessCondition.Add(data);
+            }
+        }
+
         public void ParseFromXml(XmlNode licenseCondNode)
         {
             foreach (XmlNode node in licenseCondNode.ChildNodes)
@@ -63,20 +94,23 @@ namespace PDTools.Structures.MGameParameter
                         break;
 
                     case "failure_condition":
-                        ParseConditionList(node, FailureCondition); break;
+                        foreach (XmlNode childNode in node.SelectNodes("data"))
+                            ParseConditionList(childNode, FailureCondition); break;
                     case "finish_condition":
-                        ParseConditionList(node, FinishCondition); break;
+                        foreach (XmlNode childNode in node.SelectNodes("data"))
+                            ParseConditionList(childNode, FinishCondition); break;
                     case "success_condition":
-                        ParseConditionList(node, SuccessCondition); break;
+                        foreach (XmlNode childNode in node.SelectNodes("data"))
+                            ParseConditionList(childNode, SuccessCondition); break;
                 }
             }
         }
 
         public void ParseConditionList(XmlNode condNode, List<LicenseConditionData> list)
         {
-            foreach (XmlNode node in condNode.SelectNodes("data"))
+            var cond = new LicenseConditionData();
+            foreach (XmlNode node in condNode.ChildNodes)
             {
-                var cond = new LicenseConditionData();
                 switch (node.Name)
                 {
                     case "check_type":
@@ -100,8 +134,9 @@ namespace PDTools.Structures.MGameParameter
                     case "int_value":
                         cond.IntValue = node.ReadValueInt(); break;
                 }
-                list.Add(cond);
             }
+
+            list.Add(cond);
         }
 
         public void WriteToXml(XmlWriter xml)
@@ -129,13 +164,17 @@ namespace PDTools.Structures.MGameParameter
 
             foreach (var cond in conditions)
             {
-                xml.WriteElementValue("check_type", cond.CheckType.ToString());
-                xml.WriteElementValue("condition", cond.Condition.ToString());
-                xml.WriteElementValue("connection", cond.Connection.ToString());
-                xml.WriteElementEnumInt("result_type", cond.ResultType);
-                xml.WriteElementFloat("float_value", cond.FloatValue);
-                xml.WriteElementUInt("uint_value", cond.UIntValue);
-                xml.WriteElementInt("int_value", cond.IntValue);
+                xml.WriteStartElement("data");
+                {
+                    xml.WriteElementValue("check_type", cond.CheckType.ToString());
+                    xml.WriteElementValue("condition", cond.Condition.ToString());
+                    xml.WriteElementValue("connection", cond.Connection.ToString());
+                    xml.WriteElementEnumInt("result_type", cond.ResultType);
+                    xml.WriteElementFloat("float_value", cond.FloatValue);
+                    xml.WriteElementUInt("uint_value", cond.UIntValue);
+                    xml.WriteElementInt("int_value", cond.IntValue);
+                }
+                xml.WriteEndElement();
             }
 
             xml.WriteEndElement();
@@ -187,6 +226,17 @@ namespace PDTools.Structures.MGameParameter
         public float FloatValue { get; set; }
         public uint UIntValue { get; set; }
         public int IntValue { get; set; }
+        
+        public void CopyTo(LicenseConditionData other)
+        {
+            other.CheckType = CheckType;
+            other.Condition = Condition;
+            other.Connection = Connection;
+            other.ResultType = ResultType;
+            other.FloatValue = FloatValue;
+            other.UIntValue = UIntValue;
+            other.IntValue = IntValue;
+        }
 
         public void Serialize(ref BitStream bs)
         {
@@ -200,6 +250,11 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteSingle(FloatValue);
             bs.WriteUInt32(UIntValue);
             bs.WriteInt32(IntValue);
+        }
+
+        public override string ToString()
+        {
+            return $"[{ResultType}] {CheckType} is {Condition} to ({IntValue}/{UIntValue}/{FloatValue}) {Connection}";
         }
     }
 }

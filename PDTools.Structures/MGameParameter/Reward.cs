@@ -9,6 +9,8 @@ using System.ComponentModel;
 
 using PDTools.Utils;
 using PDTools.Enums;
+using PDTools.Enums.PS3;
+using PDTools.Structures.PS3;
 
 namespace PDTools.Structures.MGameParameter
 {
@@ -103,6 +105,36 @@ namespace PDTools.Structures.MGameParameter
                 // TODO TunedEntryPresent
         }
 
+        public void CopyTo(Reward other)
+        {
+            for (int i = 0; i < PrizeTable.Count; i++)
+                other.PrizeTable.Add(PrizeTable[i]);
+
+            for (int i = 0; i < PointTable.Count; i++)
+                other.PointTable.Add(PointTable[i]);
+
+            for (int i = 0; i < StarTable.Count; i++)
+                other.StarTable.Add(StarTable[i]);
+
+            for (int i = 0; i < Present.Count; i++)
+            {
+                var present = new EventPresent();
+                Present[i].CopyTo(present);
+                other.Present.Add(present);
+            }
+
+            other.SpecialRewardCode = SpecialRewardCode;
+            other.PrizeType = PrizeType;
+            other.PPBase = PPBase;
+            other.PercentAtPP100 = PercentAtPP100;
+            other.IsOnce = IsOnce;
+            other.PresentType = PresentType;
+            other.EntryPresentType = EntryPresentType;
+
+            if (TunedEntryPresent != null)
+                TunedEntryPresent.CopyTo(other.TunedEntryPresent);
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteStartElement("point_table");
@@ -143,7 +175,8 @@ namespace PDTools.Structures.MGameParameter
                 xml.WriteEndElement();
             }
             
-            xml.WriteElementValue("entry_present_type", EntryPresentType.ToString());
+            if (EntryPresentType != RewardEntryPresentType.FINISH)
+                xml.WriteElementValue("entry_present_type", EntryPresentType.ToString());
             
             TunedEntryPresent?.WriteToXml(xml);
         }
@@ -263,6 +296,17 @@ namespace PDTools.Structures.MGameParameter
         // Only parsed as a blob in Seasonals Root
         public string FName { get; set; }
 
+        public void CopyTo(EventPresent other)
+        {
+            other.TypeID = TypeID;
+            other.CategoryID = CategoryID;
+            other.Argument1 = Argument1;
+            other.Argument2 = Argument2;
+            other.Argument3 = Argument3;
+            other.Argument4 = Argument4;
+            other.FName = FName;
+        }
+
         public static EventPresent FromCar(string carLabel)
         {
             var present = new EventPresent();
@@ -378,22 +422,44 @@ namespace PDTools.Structures.MGameParameter
 
     public enum LicenseResultType
     {
+        [Description("Result: Empty/None")]
         EMPTY,
+
+        [Description("Result: Fail")]
         FAILURE,
+
+        [Description("Result: Clear")]
         CLEAR,
+
+        [Description("Result: Bronze")]
         BRONZE,
+
+        [Description("Result: Silver")]
         SILVER,
+
+        [Description("Result: Gold")]
         GOLD
     }
 
     public enum LicenseDisplayModeType
     {
+        [Description("None")]
         NONE,
-        PYLON_NUM,
-        FUEL_DIST,
-        FUEL_TIME,
-        DRIFT_SCORE,
 
+        [Description("Pylon/Cone Time")]
+        PYLON_TIME,
+
+        [Description("Pylon/Cone Number")]
+        PYLON_NUM,
+
+        [Description("Fuel Distance")]
+        FUEL_DIST,
+
+        [Description("Fuel Time")]
+        FUEL_TIME,
+
+        [Description("Drift Score")]
+        DRIFT_SCORE,
     }
 
     public enum LicenseConnectionType
@@ -405,36 +471,88 @@ namespace PDTools.Structures.MGameParameter
 
     public enum LicenseConditionType
     {
+        [Description("Equal (==)")]
         EQUAL,
+
+        [Description("Not Equal (!=)")]
         NOTEQUAL,
+
+        [Description("Greater (>)")]
         GREATER,
+
+        [Description("Less (<)")]
         LESS,
+
+        [Description("Greater Equal (>=)")]
         GREATER_EQUAL,
+
+        [Description("Less Equal (<=)")]
         LESS_EQUAL,
     }
 
     public enum LicenseCheckType
     {
+        [Description("Ranking")]
         RANK,
+
+        [Description("Other Submode")]
         OTHER_SUBMODE,
+
+        [Description("Total Time")]
         TOTAL_TIME,
+
+        [Description("Lap Time")]
         LAP_TIME,
+
+        [Description("Best Lap Time")]
         BEST_LAP_TIME,
+
+        [Description("Lap Count")]
         LAP_COUNT,
+
+        [Description("Velocity/Speed")]
         VELOCITY,
+
+        [Description("VCoord")]
         V_POSITION,
+
+        [Description("Gadget Hits")]
         GADGET_COUNT,
+
+        [Description("Course Outs")]
         COURSE_OUT,
+
+        [Description("Hit Count")]
         HIT_COUNT,
+
+        [Description("Hit Power")]
         HIT_POWER,
+
+        [Description("Wall Hits")]
         HIT_WALL,
+
+        [Description("Fuel Amount")]
         FUEL_AMOUNT,
+
+        [Description("Complete Flag")]
         COMPLETE_FLAG,
+
+        [Description("Wrongway Count")]
         WRONG_WAY_COUNT,
+
+        [Description("Road Distance")]
         ROAD_DISTANCE,
+
+        [Description("Standing Time")]
         STANDING_TIME,
+
+        [Description("Course-out Time")]
         COURSE_OUT_TIME,
+
+        [Description("Fuel Capacity")]
         FUEL_CONSUMPTION,
+
+        [Description("Floating Time")]
         FLOATING_TIME,
         ILLEGAL,
     }

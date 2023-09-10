@@ -33,6 +33,15 @@ namespace PDTools.Structures.MGameParameter
                 GhostDataPath == defaultEvalCondition.GhostDataPath;
         }
 
+        public void CopyTo(EvalCondition other)
+        {
+            other.ConditionType = ConditionType;
+            other.Gold = Gold;
+            other.Silver = Silver;
+            other.Bronze = Bronze;
+            other.GhostDataPath = GhostDataPath;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteElementValue("type", ConditionType.ToString());
@@ -40,7 +49,7 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("silver", Silver);
             xml.WriteElementInt("bronze", Bronze);
 
-            if (!string.IsNullOrEmpty("ghost_data_path"))
+            if (!string.IsNullOrEmpty(GhostDataPath))
                 xml.WriteElementValue("ghost_data_path", GhostDataPath);
         }
 

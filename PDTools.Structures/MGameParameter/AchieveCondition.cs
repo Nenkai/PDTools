@@ -30,6 +30,12 @@ namespace PDTools.Structures.MGameParameter
                 Type == defaultAchieveCondition.Type;
         }
 
+        public void CopyTo(AchieveCondition other)
+        {
+            other.Num = Num;
+            other.Type = Type;
+        }
+
         public void Serialize(ref BitStream bs)
         {
             bs.WriteUInt32(0xE6_E6_A1_00);

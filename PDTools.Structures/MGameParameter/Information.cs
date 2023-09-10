@@ -50,6 +50,36 @@ namespace PDTools.Structures.MGameParameter
                 RaceInfoMinute == defaultInformation.RaceInfoMinute;
         }
 
+        public void CopyTo(Information other)
+        {
+            Title.CopyTo(other.Title);
+            OneLineTitle.CopyTo(other.OneLineTitle);
+            Description.CopyTo(other.Description);
+            AdvancedNotice.CopyTo(other.AdvancedNotice);
+            RegistrationNotice.CopyTo(other.RegistrationNotice);
+            other.NarrationID = NarrationID;
+            other.LogoImagePath = LogoImagePath;
+
+            if (LogoImageBuffer != null)
+            {
+                other.LogoImageBuffer = new byte[LogoImageBuffer.Length];
+                LogoImageBuffer.AsSpan().CopyTo(other.LogoImageBuffer);
+            }
+
+            other.LogoOtherInfo = LogoOtherInfo;
+            other.FlierImagePath = FlierImagePath;
+
+            if (FlierImageBuffer != null)
+            {
+                other.FlierImageBuffer = new byte[FlierImageBuffer.Length];
+                FlierImageBuffer.AsSpan().CopyTo(other.FlierImageBuffer);
+            }
+
+            other.FlierOtherInfo = FlierOtherInfo;
+            other.RaceLabel = RaceLabel;
+            other.RaceInfoMinute = RaceInfoMinute;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteStartElement("title");

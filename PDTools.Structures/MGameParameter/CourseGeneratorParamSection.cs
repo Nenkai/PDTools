@@ -20,6 +20,14 @@ namespace PDTools.Structures.MGameParameter
         public float Sharpness { get; set; }
         public float BankAngularity { get; set; }
 
+        public void CopyTo(CourseGeneratorParamSection other)
+        {
+            other.Width = Width;
+            other.Curvy = Curvy;
+            other.Sharpness = Sharpness;
+            other.BankAngularity = BankAngularity;
+        }
+
         public void ReadCourseGeneratorSectionNode(XmlNode node)
         {
             foreach (XmlNode childNode in node)

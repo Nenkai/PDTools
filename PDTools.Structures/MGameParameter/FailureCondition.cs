@@ -26,6 +26,17 @@ namespace PDTools.Structures.MGameParameter
                 NoFailureAtResult == defaultFailureCondition.NoFailureAtResult;
         }
 
+        public void CopyTo(FailureCondition other)
+        {
+            for (int i = 0; i < FailConditions.Count; i++)
+                other.FailConditions.Add(FailConditions[i]);
+
+            for (int i = 0; i < DataList.Count; i++)
+                other.DataList.Add(DataList[i]);
+
+            other.NoFailureAtResult = NoFailureAtResult;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
 

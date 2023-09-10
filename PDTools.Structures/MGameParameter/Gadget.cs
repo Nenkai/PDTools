@@ -16,6 +16,17 @@ namespace PDTools.Structures.MGameParameter
         public int KindDBId { get; set; }
         public List<float> Postures { get; set; } = new List<float>();
 
+        public void CopyTo(Gadget other)
+        {
+            other.X = X;
+            other.Y = Y;
+            other.Z = Z;
+            other.KindDBId = KindDBId;
+
+            for (int i = 0; i < Postures.Count; i++)
+                other.Postures.Add(Postures[i]);
+        }
+
         public void ReadGadgetNode(XmlNode node)
         {
             foreach (XmlNode childNode in node)

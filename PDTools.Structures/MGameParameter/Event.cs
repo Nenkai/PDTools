@@ -103,6 +103,35 @@ namespace PDTools.Structures.MGameParameter
         public string AIScript { get; set; }
         public string PenaltyScript { get; set; }
 
+        public void CopyTo(Event other)
+        {
+            other.EventID = EventID;
+            other.GameMode = GameMode;
+            PlayStyle.CopyTo(PlayStyle);
+            other.EventType = EventType;
+            other.Inheritance = Inheritance;
+            other.IsSeasonalEvent = IsSeasonalEvent;
+            Regulation.CopyTo(other.Regulation);
+            Constraint.CopyTo(other.Constraint);
+            ArcadeSetting.CopyTo(other.ArcadeSetting);
+            RaceParameter.CopyTo(other.RaceParameter);
+            Track.CopyTo(other.Track);
+            EntrySet.CopyTo(other.EntrySet);
+            EvalCondition.CopyTo(other.EvalCondition);
+            AchieveCondition.CopyTo(other.AchieveCondition);
+            FailureCondition.CopyTo(other.FailureCondition);
+            LicenseCondition.CopyTo(other.LicenseCondition);
+            DriftCondition.CopyTo(other.DriftCondition);
+            Reward.CopyTo(other.Reward);
+            Replay.CopyTo(other.Replay);
+            Information.CopyTo(other.Information);
+            other.BeginDate = BeginDate;
+            other.EndDate = EndDate;
+            StageData.CopyTo(other.StageData);
+            other.PenaltyScript = PenaltyScript;
+            other.AIScript = AIScript;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteStartElement("event");
@@ -373,6 +402,12 @@ namespace PDTools.Structures.MGameParameter
 
                     case "stage_data":
                         StageData.ParseFromXml(node); break;
+
+                    case "ai_script":
+                        AIScript = node.ReadValueString(); break;
+
+                    case "penalty_script":
+                        PenaltyScript = node.ReadValueString(); break;
                 }
             }
         }

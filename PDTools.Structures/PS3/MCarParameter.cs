@@ -90,6 +90,29 @@ namespace PDTools.Structures.PS3
             return ImportFromBlob(ref reader);
         }
 
+        public void Serialize(ref BitStream bs)
+        {
+            bs.WriteInt32(ParameterVersion);
+            bs.WriteByte(0);
+            bs.Position += 3;
+            Condition.WriteCondition(ref bs);
+
+            bs.WriteInt32(0);
+            bs.WriteUInt32(ObtainDate.GetRawData());
+            bs.WriteInt16(WinCount);
+
+            // TODO
+            bs.WriteInt16(0);
+            bs.WriteInt16(0);
+            bs.WriteInt16(0);
+            bs.WriteUInt32(0);
+            bs.WriteUInt16(0);
+            bs.WriteInt16(0);
+            bs.WriteUInt16(0);
+
+            Settings.Serialize(ref bs, ParameterVersion);
+        }
+
         public static MCarParameter ImportFromBlob(ref BitStream reader)
         {
             int baseOffset = reader.Position;
@@ -367,6 +390,28 @@ namespace PDTools.Structures.PS3
             reader.ReadInt16();
             reader.ReadInt16();
         }
+
+        public void WriteCondition(ref BitStream bs)
+        {
+            bs.WriteUInt32(Odometer);
+            bs.WriteInt32(EngineLife);
+            bs.WriteSingle(OilLife);
+            bs.WriteUInt32(BodyLife);
+            bs.WriteByte(Dirtiness100);
+            bs.WriteByte(RainX);
+            bs.WriteByte(BodyCoating);
+            bs.WriteByte(unk2);
+            bs.WriteInt32(Everlasting);
+
+            // TODO
+            bs.WriteInt16(0);
+            bs.WriteInt32(0);
+            bs.WriteInt16(0);
+            bs.WriteInt16(0);
+            bs.WriteSingle(0);
+            bs.WriteInt16(0);
+            bs.WriteByteData(new byte[12]);
+        }
     }
 
     public class MCarSettings
@@ -387,7 +432,7 @@ namespace PDTools.Structures.PS3
         /// <summary>
         /// GT5 Only
         /// </summary>
-        public byte ColorIndex { get; set; } = 0;
+        public byte ColorIndex { get; set; }
 
         /// <summary>
         /// GT5 Only
@@ -532,11 +577,11 @@ namespace PDTools.Structures.PS3
         public short PowerLimiter { get; set; } = 1000;
 
         public int HornSoundID { get; set; }
-        private byte wheel_color { get; set; } = 0;
+        private byte wheel_color;
         public short BodyPaintID { get; set; } = -1;
-        public short WheelPaintID { get; set; } = 0;
-        public short BrakeCaliperPaintID { get; set; } = 0;
-        public short CustomRearWingPaintID { get; set; } = 0;
+        public short WheelPaintID { get; set; } = -1;
+        public short BrakeCaliperPaintID { get; set; } = -1;
+        public short CustomRearWingPaintID { get; set; } = -1;
         public short FrontWheelWidth { get; set; }
         public short FrontWheelDiameter { get; set; }
         public short RearWheelWidth { get; set; }
@@ -832,7 +877,7 @@ namespace PDTools.Structures.PS3
             }
         }
 
-        public void WriteSettings(ref BitStream bs, int carParamVersion)
+        public void Serialize(ref BitStream bs, int carParamVersion)
         {
             int baseOffset = bs.Position;
             if (carParamVersion >= 110)

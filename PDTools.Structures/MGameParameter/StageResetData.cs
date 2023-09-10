@@ -19,6 +19,19 @@ namespace PDTools.Structures.MGameParameter
         public float RotYDeg { get; set; }
         public float VCoord { get; set; }
 
+        public void CopyTo(StageResetData other)
+        {
+            other.Code = Code;
+            other.Coord = Coord;
+            other.TargetID = TargetID;
+            other.ResourceID = ResourceID;
+            other.X = X;
+            other.Y = Y;
+            other.Z = Z;
+            other.RotYDeg = RotYDeg;
+            other.VCoord = VCoord;
+        }
+
         public void ParseFromXml(XmlNode stageDataResetNode)
         {
             foreach (XmlNode node in stageDataResetNode.ChildNodes)
@@ -28,6 +41,9 @@ namespace PDTools.Structures.MGameParameter
                     case "code":
                         Code = node.ReadValueString(); break;
                     case "coord":
+                        if (node.ReadValueString() == "NONE") // gt6 r180, kinda weird
+                            break;
+
                         Coord = node.ReadValueEnum<StageCoordType>(); break;
                     case "x":
                         X = node.ReadValueSingle(); break;

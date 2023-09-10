@@ -396,4 +396,127 @@ namespace PDTools.Enums.PS3
         [Description("Racing Exhaust")]
         RACING,
     }
+
+
+    public enum GameItemType
+    {
+        NONE,
+        CAR,
+        DRIVER,
+        DRIVER_ITEM,
+        MONEY,
+        TUNE_PARTS,
+        OTHERPARTS,
+        MUSEUMCARD,
+        MOVIE,
+        SPECIAL,
+        PARTS_TICKET,
+        AVATAR,
+        OTHER,
+    }
+
+    // x** = Main Category
+    // *x* = Sub Category
+    // **x = Item 
+    public enum GameItemCategory
+    {
+        [Description("None")]
+        NONE,
+
+        [Description("Car (100)")]
+        CAR = 100,
+
+        [Description("Driver (200)")]
+        DRIVER = 200,
+
+        [Description("Driver Item (300)")]
+        DRIVER_ITEM = 300,
+
+        [Description("Driver Head (301)")]
+        DRIVER_HEAD = 301,
+
+        [Description("Driver Body (302)")]
+        DRIVER_BODY = 302,
+
+        [Description("Driver Set (303)")]
+        DRIVER_SET = 303,
+
+        [Description("Money (400)")]
+        MONEY = 400,
+
+        [Description("Tuning Parts (500)")]
+        TUNERPARTS = 500,
+
+        [Description("Body/Chassis (511)")]
+        BODY_CHASSIS = 511,
+
+        [Description("Engine (521)")]
+        ENGINE = 521,
+
+        [Description("Admission (531)")]
+        ADMISSION = 531,
+
+        [Description("Emission (532)")]
+        EMISSION = 532,
+
+        [Description("Booster (541)")]
+        BOOSTER = 541,
+
+        [Description("Transmission (551)")]
+        TRANSMISSION = 551,
+
+        [Description("Drivetrain (556)")]
+        DRIVETRAIN = 556,
+
+        [Description("Suspension (561)")]
+        SUSPENSION = 561,
+
+        [Description("Brake (571)")]
+        BRAKE = 571,
+
+        [Description("B Tire (581)")]
+        BTIRE = 581,
+
+        [Description("C Tire (582)")]
+        CTIRE = 582,
+
+        [Description("V TIre (583)")]
+        VTIRE = 583,
+
+        [Description("S Tire (586)")]
+        STIRE = 586,
+
+        [Description("Others (591)")]
+        OTHERS = 591,
+
+        [Description("Horn (596)")]
+        HORN = 596,
+
+        [Description("Other Parts (600)")]
+        OTHER_PARTS = 600,
+
+        [Description("Paint Item (601)")]
+        PAINT_ITEM = 601,
+
+        [Description("Special Paint Item (602)")]
+        SPECIAL_PAINT_ITEM = 602,
+
+        [Description("Museum Card (700)")]
+        MUSEUMCARD = 700,
+
+        [Description("Movie (800)")]
+        MOVIE = 800,
+
+        [Description("Special (900)")]
+        SPECIAL = 900,
+
+        [Description("Car Ticket (901)")]
+        PRESENTCAR_TICKET = 901,
+
+        [Description("Item Ticket (902)")]
+        PRESENTITEM_TICKET = 902,
+
+        [Description("Special Ticket (903)")]
+        SPECIAL_TICKET = 903,
+    }
 }

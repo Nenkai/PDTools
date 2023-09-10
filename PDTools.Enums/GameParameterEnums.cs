@@ -59,61 +59,62 @@ namespace PDTools.Enums
         GRID = 0,
 
         [Description("Rolling Start (Start Line)")]
-        ROLLING,
+        ROLLING = 1,
 
         [Description("Pit Start")]
-        PIT,
+        PIT = 2,
 
         [Description("For Time Trial")]
-        ATTACK,
+        ATTACK = 3,
 
         [Description("Dispersed")]
-        DISPERSED,
+        DISPERSED = 4,
 
         [Description("Drift Position (Standing)")]
-        COURSEINFO,
+        COURSEINFO = 5,
 
         [Description("Rolling (Same Accel. as Own Car)")]
-        ROLLING2,
+        ROLLING2 = 6,
 
         [Description("Same Grid (collisions OFF)")]
-        SAME_GRID,
+        SAME_GRID = 7,
 
         [Description("Rolling (Define Start Time)")]
-        ROLLING3,
+        ROLLING3 = 8,
 
         [Description("Drift Position (Rolling)")]
-        COURSEINFO_ROLLING,
+        COURSEINFO_ROLLING = 9,
 
         [Description("Standing (Set Coordinates)")]
-        STANDING,
+        STANDING = 10,
 
         [Description("Rolling (Define Start & Accel)")]
-        ROLLING_NOLIMIT,
+        ROLLING_NOLIMIT = 11,
 
-        FREE,
-        STANDING_L,
-        STANDING_R,
-        PITWORK,
+        FREE = 12,
+        STANDING_L = 13,
+        STANDING_R = 14,
+        PITWORK = 15,
 
         [Description("Rolling Start - Dbl. File, Left Ahead")]
-        ROLLING_DL,
+        ROLLING_DL = 16,
 
         [Description("Rolling Start - Dbl. File, Right Ahead")]
-        ROLLING_DR,
+        ROLLING_DR = 17,
 
-        GRID_FLYING,
-        PITIN,
-        RALLY,
-        STANDING_CENTER,
+        GRID_FLYING = 18,
+        PITIN = 19,
+        RALLY = 20,
 
-        /*
-        [Description("Double-File Rolling (Left)")]
-        ROLLING_L,
+        /// <summary>
+        /// GT5 Only
+        /// </summary>
+        ROLLING_DIS = 21,
 
-        [Description("Double-File Rolling (Right)")]
-        ROLLING_R,
-        */
+        /// <summary>
+        /// GT6 Only, overrides <see cref="ROLLING_DIS"/>
+        /// </summary>
+        STANDING_CENTER = 21,
 
     }
     public enum GridSortType : byte
@@ -307,7 +308,7 @@ namespace PDTools.Enums
     }
 
 
-    public enum TireType : sbyte
+    public enum TireType : int
     {
         [Description("No restrictions")]
         NONE_SPECIFIED = -1,
@@ -623,28 +624,28 @@ namespace PDTools.Enums
 
     public enum EntryGenerateType
     {
-        [Description("None (Pool Ignored, use for fixed entries)")]
+        [Description("None (fixed entries only)")]
         NONE = 0,
 
-        [Description("Shuffle - Depends on entry_generate->cars XML node array")]
+        [Description("Shuffle - Depends on 'Car List'")]
         SHUFFLE = 1,
 
         [Description("One Make - Depends on the player's car")]
         ONE_MAKE = 2,
 
-        [Description("Enemy List - Randomly Chosen, Type depends on EnemyListType")]
+        [Description("Enemy List - From enemy lists (GT5)")]
         ENEMY_LIST = 3,
 
-        [Description("SpecDB (Do not use - unimplemented)")]
+        [Description("SpecDB - Entries from SpecDB RACE Table")]
         SPEC_DB = 4,
 
-        [Description("Order - Depends on entry_generate->cars XML node array")]
+        [Description("Order - Depends on 'Car List'")]
         ORDER = 5,
 
-        [Description("Shuffle and Randomly Pick (Default)")]
+        [Description("Pick generated entries and shuffle (GT6)")]
         ENTRY_BASE_SHUFFLE = 6,
 
-        [Description("Pick entries by Order")]
+        [Description("Pick generated entries by order (GT6)")]
         ENTRY_BASE_ORDER = 7,
     }
 

@@ -139,6 +139,30 @@ namespace PDTools.Structures.MGameParameter
                 SpeedTraps.Length == defaultArcadeStyle.SectionExtendSeconds.Length && SpeedTraps.SequenceEqual(defaultArcadeStyle.SpeedTraps);
         }
 
+        public void CopyTo(ArcadeStyleSetting other)
+        {
+            other.StartSeconds = StartSeconds;
+            other.DefaultExtendSeconds = DefaultExtendSeconds;
+            other.LimitSeconds = LimitSeconds;
+            other.LevelUpStep = LevelUpStep;
+            other.OvertakeSeconds = OvertakeSeconds;
+            other.EnableSpeedTrap = EnableSpeedTrap;
+            other.EnableJumpBonus = EnableJumpBonus;
+            other.AppearStepV = AppearStepV;
+            other.DisappearStepV = DisappearStepV;
+            other.AffordTime = AffordTime;
+            other.OvertakeScore = OvertakeScore;
+            other.SpeedTrapScore = SpeedTrapScore;
+            other.JumpBonusScore = JumpBonusScore;
+            other.StartupStepV = StartupStepV;
+            other.StartupOffsetV = StartupOffsetV;
+            other.InitialVelocityL = InitialVelocityL;
+            other.InitialVelocityH = InitialVelocityH;
+
+            SectionExtendSeconds.AsSpan().CopyTo(other.SectionExtendSeconds);
+            SpeedTraps.AsSpan().CopyTo(other.SpeedTraps);
+
+        }
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteElementInt("start_seconds", StartSeconds);
@@ -160,13 +184,31 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("initial_velocity_h", InitialVelocityH);
 
             xml.WriteStartElement("section_extend_seconds");
-            for (int i = 0; i < SectionExtendSeconds.Length; i++)
-                xml.WriteElementInt("seconds", SectionExtendSeconds[i]);
+            {
+                int last = 0;
+                for (var i = 0; i < SectionExtendSeconds.Length; i++)
+                {
+                    if (SectionExtendSeconds[i] != -1)
+                        last = i;
+                }
+
+                for (int i = 0; i < last + 1; i++)
+                    xml.WriteElementInt("seconds", SectionExtendSeconds[i]);
+            }
             xml.WriteEndElement();
 
             xml.WriteStartElement("speed_trap");
-            for (int i = 0; i < SpeedTraps.Length; i++)
-                xml.WriteElementUInt("coursev", SpeedTraps[i]);
+            {
+                int last = 0;
+                for (var i = 0; i < SpeedTraps.Length; i++)
+                {
+                    if (SpeedTraps[i] != 0)
+                        last = i;
+                }
+
+                for (int i = 0; i < last + 1; i++)
+                    xml.WriteElementUInt("coursev", SpeedTraps[i]);
+            }
             xml.WriteEndElement();
         }
 
@@ -221,6 +263,7 @@ namespace PDTools.Structures.MGameParameter
                             if (i >= 16)
                                 break;
                             SectionExtendSeconds[i] = sec.ReadValueSByte();
+                            i++;
                         }
                         break;
 
@@ -231,7 +274,8 @@ namespace PDTools.Structures.MGameParameter
                             if (j >= 16)
                                 break;
 
-                            SpeedTraps[j] = sec.ReadValueUInt();
+                            SpeedTraps[j] = (uint)sec.ReadValueSingle();
+                            j++;
                         }
                         break;
                 }

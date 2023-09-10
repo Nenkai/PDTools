@@ -50,6 +50,42 @@ namespace PDTools.Structures.MGameParameter
                 LayoutTypeRaceEnd == defaultStageData.LayoutTypeRaceEnd;
         }
 
+        public void CopyTo(StageData other)
+        {
+            for (int i = 0; i < AtQuickBack.Count; i++)
+            {
+                var resetData = new StageResetData();
+                AtQuickBack[i].CopyTo(resetData);
+                other.AtQuickBack.Add(resetData);
+            }
+
+            for (int i = 0; i < BeforeStart.Count; i++)
+            {
+                var resetData = new StageResetData();
+                BeforeStart[i].CopyTo(resetData);
+                other.BeforeStart.Add(resetData);
+            }
+
+            for (int i = 0; i < Countdown.Count; i++)
+            {
+                var resetData = new StageResetData();
+                Countdown[i].CopyTo(resetData);
+                other.Countdown.Add(resetData);
+            }
+
+            for (int i = 0; i < RaceEnd.Count; i++)
+            {
+                var resetData = new StageResetData();
+                RaceEnd[i].CopyTo(resetData);
+                other.RaceEnd.Add(resetData);
+            }
+
+            other.LayoutTypeAtQuick = LayoutTypeAtQuick;
+            other.LayoutTypeBeforeStart = LayoutTypeBeforeStart;
+            other.LayoutTypeCountdown = LayoutTypeCountdown;
+            other.LayoutTypeRaceEnd = LayoutTypeRaceEnd;
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode pNode in node.ChildNodes)
@@ -102,7 +138,7 @@ namespace PDTools.Structures.MGameParameter
                 stage.WriteToXml(xml);
             xml.WriteEndElement();
 
-            xml.WriteStartElement("countdown");
+            xml.WriteStartElement("race_start");
             foreach (var stage in Countdown)
                 stage.WriteToXml(xml);
             xml.WriteEndElement();
@@ -112,10 +148,17 @@ namespace PDTools.Structures.MGameParameter
                 stage.WriteToXml(xml);
             xml.WriteEndElement();
 
-            xml.WriteElementValue("layout_type_at_quick", LayoutTypeAtQuick.ToString());
-            xml.WriteElementValue("layout_type_before_start", LayoutTypeBeforeStart.ToString());
-            xml.WriteElementValue("layout_type_countdown", LayoutTypeCountdown.ToString());
-            xml.WriteElementValue("layout_type_race_end", LayoutTypeRaceEnd.ToString());
+            if (LayoutTypeAtQuick != StageLayoutType.DEFAULT)
+                xml.WriteElementValue("layout_type_at_quick", LayoutTypeAtQuick.ToString());
+
+            if (LayoutTypeBeforeStart != StageLayoutType.DEFAULT)
+                xml.WriteElementValue("layout_type_before_start", LayoutTypeBeforeStart.ToString());
+
+            if (LayoutTypeCountdown != StageLayoutType.DEFAULT)
+                xml.WriteElementValue("layout_type_countdown", LayoutTypeCountdown.ToString());
+
+            if (LayoutTypeRaceEnd != StageLayoutType.DEFAULT)
+                xml.WriteElementValue("layout_type_race_end", LayoutTypeRaceEnd.ToString());
         }
 
         public List<StageResetData> ParseStageDataResetList(XmlNode node)

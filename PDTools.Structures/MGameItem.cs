@@ -1,5 +1,6 @@
 ﻿using System;
 using PDTools.Utils;
+using PDTools.Enums.PS3;
 
 namespace PDTools.Structures
 {
@@ -71,67 +72,5 @@ namespace PDTools.Structures
                 stream.ReadByte();
             return item;
         }
-    }
-
-    public enum GameItemType
-    {
-        NONE,
-        CAR,
-        DRIVER,
-        DRIVER_ITEM,
-        MONEY,
-        TUNE_PARTS,
-        OTHERPARTS,
-        MUSEUMCARD,
-        MOVIE,
-        SPECIAL,
-        PARTS_TICKET,
-        AVATAR,
-        OTHER,
-    }
-
-    // x** = Main Category
-    // *x* = Sub Category
-    // **x = Item 
-    public enum GameItemCategory
-    {
-        NONE,
-        CAR = 100,
-        DRIVER = 200,
-
-        DRIVER_ITEM = 300,
-        DRIVER_HEAD = 301,
-        DRIVER_BODY = 302,
-        DRIVER_SET = 303,
-        MONEY = 400,
-
-        TUNERPARTS = 500,
-        BODY_CHASSIS = 511,
-        ENGINE = 521,
-        ADMISSION = 531,
-        EMISSION = 532,
-        BOOSTER = 541,
-        TRANSMISSION = 551,
-        DRIVETRAIN = 556,
-        SUSPENSION = 561,
-        BRAKE = 571,
-        BTIRE = 581,
-        CTIRE = 582,
-        VTIRE = 583,
-        STIRE = 586,
-        OTHERS = 591,
-        HORN = 596,
-
-        OTHER_PARTS = 600,
-        PAINT_ITEM = 601,
-        SPECIAL_PAINT_ITEM = 602,
-
-        MUSEUMCARD = 700,
-        MOVIE = 800,
-
-        SPECIAL = 900,
-        PRESENTCAR_TICKET = 901,
-        PRESENTITEM_TICKET = 902,
-        SPECIAL_TICKET = 903,
     }
 }

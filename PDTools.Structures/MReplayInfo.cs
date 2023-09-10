@@ -10,6 +10,7 @@ using PDTools.Structures;
 using PDTools.Structures.MGameParameter;
 
 using System.Linq;
+using PDTools.Structures.PS3;
 
 namespace GTReplayInfo
 {

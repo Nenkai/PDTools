@@ -184,18 +184,12 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public bool BoostFlag { get; set; }
 
-        public DateTime? Date { get; set; } = new DateTime(1970, 6, 1, 12, 00, 00);
-
-        private float _timeProgressSpeed = -1.0f;
+        public DateTime? Date { get; set; } = new DateTime(2010, 6, 1, 12, 00, 00);
 
         /// <summary>
         /// Time of day progression. Defaults to -1.0.
         /// </summary>
-        public float TimeProgressSpeed
-        {
-            get => _timeProgressSpeed;
-            set => _timeProgressSpeed = value > 300f ? 300f : value;
-        }
+        public sbyte TimeProgressSpeed { get; set; } = -1;
 
         // lucky_player
 
@@ -371,7 +365,7 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// Total length of the weather progression in seconds. In GT5 this will be the last step based on <see cref="WeatherPointNum"/>. Defaults to 180.0 (3 minutes).
         /// </summary>
-        public float WeatherTotalSec { get; set; } = 180;
+        public ushort WeatherTotalSec { get; set; } = 180;
 
         /// <summary>
         /// For GT5 mostly (still works in GT6 but <see cref="NewWeatherData"/> should be used instead). At which second the 1st step will occur, which is after the start of the race. 
@@ -562,6 +556,125 @@ namespace PDTools.Structures.MGameParameter
             }
         }
 
+        public void CopyTo(RaceParameter other)
+        {
+            other.RaceType = RaceType;
+            other.StartType = StartType;
+            other.CompleteType = CompleteType;
+            other.FinishType = FinishType;
+            other.RaceLimitLaps = RaceLimitLaps;
+            other.RaceLimitMinute = RaceLimitMinute;
+            other.TimeToStart = TimeToStart;
+            other.TimeToFinish = TimeToFinish;
+            other.EntryMax = EntryMax;
+            other.RacersMax = RacersMax;
+            other.KeepLoadGhost = KeepLoadGhost;
+            other.ImmediateFinish = ImmediateFinish;
+            other.GridSortType = GridSortType;
+            other.AutostartPitout = AutostartPitout;
+            other.Endless = Endless;
+            other.GhostType = GhostType;
+            other.DisableCollision = DisableCollision;
+            other.PenaltyLevel = PenaltyLevel;
+            other.Accumulation = Accumulation;
+            other.BSpecVitality10 = BSpecVitality10;
+            other.ConsumeFuelRate = ConsumeFuelRate;
+            other.ConsumeTireRate = ConsumeTireRate;
+            other.TemperatureTire = TemperatureTire;
+            other.TemperatureBrake = TemperatureBrake;
+            other.TemperatureEngine = TemperatureEngine;
+            other.GoalTimeUseLapTotal = GoalTimeUseLapTotal;
+            other.StartTimeOffset = StartTimeOffset;
+            other.StartSignalType = StartSignalType;
+            other.ConsiderationType = ConsiderationType;
+            other.AcademyEvent = AcademyEvent;
+            other.LightingMode = LightingMode;
+            other.BoostLevel = BoostLevel;
+            other.BoostType = BoostType;
+            other.BoostFlag = BoostFlag;
+            other.Date = Date;
+            other.TimeProgressSpeed = TimeProgressSpeed;
+            other.EnablePit = EnablePit;
+            other.PitConstraint = PitConstraint;
+            other.CourseOutPenaltyMargin = CourseOutPenaltyMargin;
+            other.BehaviorFallBack = BehaviorFallBack;
+            other.NeedTireChange = NeedTireChange;
+            other.DisableRecordingReplay = DisableRecordingReplay;
+            other.Flagset = Flagset;
+            other.OnlineOn = OnlineOn;
+            other.AutoStandingDelay = AutoStandingDelay;
+            other.AllowCoDriver = AllowCoDriver;
+            other.PaceNote = PaceNote;
+            other.EnableDamage = EnableDamage;
+            other.ReplaceAtCourseOut = ReplaceAtCourseOut;
+            other.MuRatio100 = MuRatio100;
+            other.PenaltyNoReset = PenaltyNoReset;
+            other.LowMuType = LowMuType;
+            other.BehaviorDamage = BehaviorDamage;
+            other.SlipstreamBehavior = SlipstreamBehavior;
+            other.GhostPresenceType = GhostPresenceType;
+            other.LineGhostPlayMax = LineGhostPlayMax;
+            other.LineGhostRecordType = LineGhostRecordType;
+            other.AttackSeparateType = AttackSeparateType;
+            GridList.AsSpan().CopyTo(other.GridList);
+
+            foreach (short v in EventVList)
+                other.EventVList.Add(v);
+
+            other.EventStartV = EventStartV;
+            other.EventGoalV = EventGoalV;
+            other.EventGoalWidth = EventGoalWidth;
+            other.FixedRetention = FixedRetention;
+            other.InitialRetention10_TrackWetness = InitialRetention10_TrackWetness;
+            other.DecisiveWeather = DecisiveWeather;
+            other.WeatherPointNum = WeatherPointNum;
+            other.WeatherTotalSec = WeatherTotalSec;
+            other.WeatherRateSec1 = WeatherRateSec1;
+            other.WeatherRateSec2 = WeatherRateSec2;
+            other.WeatherValue0 = WeatherValue0;
+            other.WeatherValue1 = WeatherValue1;
+            other.WeatherValue2 = WeatherValue2;
+            other.WeatherValue3 = WeatherValue3;
+            other.WeatherRandomSeed = WeatherRandomSeed;
+            other.WeatherNoPrecipitation = WeatherNoPrecipitation;
+            other.WeatherNoWind = WeatherNoWind;
+            other.WeatherPrecRainOnly = WeatherPrecRainOnly;
+            other.WeatherPrecSnowOnly = WeatherPrecSnowOnly;
+            other.WeatherNoSchedule = WeatherNoSchedule;
+            other.WeatherRandom = WeatherRandom;
+            other.WeatherAccel10 = WeatherAccel10;
+            other.WeatherAccelWaterRetention10 = WeatherAccelWaterRetention10;
+            other.WeatherBaseCelsius = WeatherBaseCelsius;
+            other.WeatherMaxCelsius = WeatherMaxCelsius;
+            other.WeatherMinCelsius = WeatherMinCelsius;
+            other.RollingPlayerGrid = RollingPlayerGrid;
+            other.SessionType = SessionType;
+            other.VehicleFreezeMode = VehicleFreezeMode;
+            other.WithGhost = WithGhost;
+
+            foreach (var weatherData in NewWeatherData)
+            {
+                var data = new WeatherData();
+                weatherData.CopyTo(data);
+                other.NewWeatherData.Add(weatherData);
+            }
+
+            DelayStartList.AsSpan().CopyTo(DelayStartList);
+
+            if (BoostParams != null && other.BoostParams != null)
+                BoostParams.CopyTo(other.BoostParams);
+
+            for (int i = 0; i < 2; i++)
+                BoostTables[i].CopyTo(other.BoostTables[i]);
+
+            LaunchSpeedList.AsSpan().CopyTo(LaunchSpeedList);
+            LaunchPositionList.AsSpan().CopyTo(LaunchPositionList);
+            StartTypeSlotList.AsSpan().CopyTo(StartTypeSlotList);
+
+            other.RaceInitialLaps = RaceInitialLaps;
+            other.CourseCode = CourseCode;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteElementValue("race_type", RaceType.ToString());
@@ -619,15 +732,15 @@ namespace PDTools.Structures.MGameParameter
                         xml.WriteElementInt("param", i);
 
                         BoostTable table = BoostTables[i];
-                        xml.WriteElementInt("param", table.RearDistance2);
-                        xml.WriteElementInt("param", table.RearRate2);
-                        xml.WriteElementInt("param", table.RearDistance1);
-                        xml.WriteElementInt("param", table.RearRate1);
-
-                        xml.WriteElementInt("param", table.FrontDistance2);
-                        xml.WriteElementInt("param", table.FrontRate2);
                         xml.WriteElementInt("param", table.FrontDistance1);
                         xml.WriteElementInt("param", table.FrontRate1);
+                        xml.WriteElementInt("param", table.FrontDistance2);
+                        xml.WriteElementInt("param", table.FrontRate2);
+
+                        xml.WriteElementInt("param", table.RearDistance1);
+                        xml.WriteElementInt("param", table.RearRate1);
+                        xml.WriteElementInt("param", table.RearDistance2);
+                        xml.WriteElementInt("param", table.RearRate2);
 
                         xml.WriteElementInt("param", table.TargetPosition);
                         xml.WriteElementInt("param", table.RaceProgress);
@@ -649,7 +762,7 @@ namespace PDTools.Structures.MGameParameter
                 xml.WriteAttributeString("datetime", Date.Value.ToString("yyyy/MM/dd HH:mm:ss"));
             xml.WriteEndElement();
 
-            xml.WriteElementFloat("time_progress_speed", TimeProgressSpeed);
+            xml.WriteElementInt("time_progress_speed", TimeProgressSpeed);
             // lucky_player
 
             xml.WriteElementBool("enable_pit", EnablePit);
@@ -708,12 +821,12 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementValue("behavior_damage_type", BehaviorDamage.ToString());
             xml.WriteElementValue("behavior_slip_stream_type", SlipstreamBehavior.ToString());
             xml.WriteElementValue("ghost_presence_type", GhostPresenceType.ToString());
-            xml.WriteElementIntIfSet("line_ghost_play_max", LineGhostPlayMax);
+            xml.WriteElementInt("line_ghost_play_max", LineGhostPlayMax);
             xml.WriteElementValue("line_ghost_record_type", LineGhostRecordType.ToString());
             xml.WriteElementValue("attack_separate_type", AttackSeparateType.ToString());
-            xml.WriteElementIntIfSet("event_start_v", EventStartV);
-            xml.WriteElementFloatOrNull("event_goal_v", EventGoalV);
-            xml.WriteElementFloatOrNull("event_goal_width", EventGoalWidth);
+            xml.WriteElementInt("event_start_v", EventStartV);
+            xml.WriteElementFloat("event_goal_v", EventGoalV);
+            xml.WriteElementFloat("event_goal_width", EventGoalWidth);
 
             xml.WriteElementBool("fixed_retention", FixedRetention);
             xml.WriteElementValue("decisive_weather", DecisiveWeather.ToString());
@@ -850,7 +963,7 @@ namespace PDTools.Structures.MGameParameter
                         }
                         break;
                     case "time_progress_speed":
-                        TimeProgressSpeed = raceNode.ReadValueSingle(); break;
+                        TimeProgressSpeed = raceNode.ReadValueSByte(); break;
                     // TODO: lucky_player
                     case "enable_pit":
                         EnablePit = raceNode.ReadValueBool(); break;
@@ -931,7 +1044,7 @@ namespace PDTools.Structures.MGameParameter
                     case "weeather_point_num":
                         WeatherPointNum = raceNode.ReadValueByte(); break;
                     case "weather_total_sec":
-                        WeatherTotalSec = raceNode.ReadValueUShort(); break;
+                        WeatherTotalSec = (ushort)raceNode.ReadValueSingle(); break;
                     case "weather_random_seed":
                         WeatherRandomSeed = raceNode.ReadValueInt(); break;
                     case "weather_random":
@@ -1053,22 +1166,22 @@ namespace PDTools.Structures.MGameParameter
                         switch (i)
                         {
                             case 1:
-                                BoostTables[currentIndex].RearDistance2 = currentNode.ReadValueByte(); break;
-                            case 2:
-                                BoostTables[currentIndex].RearRate2 = currentNode.ReadValueSByte(); break;
-                            case 3:
-                                BoostTables[currentIndex].RearDistance1 = currentNode.ReadValueByte(); break;
-                            case 4:
-                                BoostTables[currentIndex].RearRate1 = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].FrontDistance1 = currentNode.ReadValueByte(); break;
+                            case 2:                       
+                                BoostTables[currentIndex].FrontRate1 = currentNode.ReadValueSByte(); break;
+                            case 3:                       
+                                BoostTables[currentIndex].FrontDistance2 = currentNode.ReadValueByte(); break;
+                            case 4:                       
+                                BoostTables[currentIndex].FrontRate2 = currentNode.ReadValueSByte(); break;
 
                             case 5:
-                                BoostTables[currentIndex].FrontDistance2 = currentNode.ReadValueByte(); break;
-                            case 6:
-                                BoostTables[currentIndex].FrontRate2 = currentNode.ReadValueSByte(); break;
-                            case 7:
-                                BoostTables[currentIndex].FrontDistance1 = currentNode.ReadValueByte(); break;
-                            case 8:
-                                BoostTables[currentIndex].FrontRate1 = currentNode.ReadValueSByte(); break;
+                                BoostTables[currentIndex].RearDistance1 = currentNode.ReadValueByte(); break;
+                            case 6:                       
+                                BoostTables[currentIndex].RearRate1 = currentNode.ReadValueSByte(); break;
+                            case 7:                       
+                                BoostTables[currentIndex].RearDistance2 = currentNode.ReadValueByte(); break;
+                            case 8:                       
+                                BoostTables[currentIndex].RearRate2 = currentNode.ReadValueSByte(); break;
 
                             case 9:
                                 BoostTables[currentIndex].TargetPosition = currentNode.ReadValueByte(); break;
@@ -1176,7 +1289,7 @@ namespace PDTools.Structures.MGameParameter
             reader.ReadByte(); // unk field_0x5a
             LightingMode = (LightingMode)reader.ReadByte();
             Date = new PDIDATETIME32(reader.ReadUInt32()).GetDateTime(); // datetime
-            TimeProgressSpeed = reader.ReadByte();
+            TimeProgressSpeed = reader.ReadSByte();
             AllowCoDriver = reader.ReadBool();
             PaceNote = reader.ReadBool();
             reader.ReadByte(); // team_count

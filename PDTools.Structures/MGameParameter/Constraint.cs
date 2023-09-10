@@ -133,6 +133,34 @@ namespace PDTools.Structures.MGameParameter
                 Cars.Count == 0;
         }
 
+        public void CopyTo(Constraint other)
+        {
+            other.Transmission = Transmission;
+            other.DrivingLine = DrivingLine;
+            other.ASM = ASM;
+            other.TCS = TCS;
+            other.Transmission = Transmission;
+            other.SuggestTCS = SuggestTCS;
+            other.ABS = ABS;
+            other.Simulation_SkidRecoveryForce = Simulation_SkidRecoveryForce;
+            other.LimitTireFront = LimitTireFront;
+            other.NeedTireFront = NeedTireFront;
+            other.SuggestTireFront = SuggestTireFront;
+            other.ActiveSteering = ActiveSteering;
+            other.DriftType = DriftType;
+            other.SuggestedGear = SuggestedGear;
+            other.InCarView = InCarView;
+            other.EnemyTire = EnemyTire;
+            other.PowerRestrictorLimit = PowerRestrictorLimit;
+
+            foreach (var car in Cars)
+            {
+                var mcarThin = new MCarThin();
+                car.CopyTo(mcarThin);
+                other.Cars.Add(mcarThin);
+            }
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode constraintNode in node.ChildNodes)
@@ -257,7 +285,7 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("driving_line", DrivingLine);
             xml.WriteElementInt("asm", ASM);
             xml.WriteElementInt("tcs", TCS);
-            xml.WriteElementInt("suggest_tcs", SuggestTCS);
+            xml.WriteElementIntIfNotDefault("suggest_tcs", SuggestTCS);
             xml.WriteElementInt("simulation", Simulation_SkidRecoveryForce);
             xml.WriteElementEnumInt("limit_tire_f", LimitTireFront);
             xml.WriteElementEnumInt("need_tire_f", NeedTireFront);
@@ -267,9 +295,11 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementEnumInt("suggest_tire_r", SuggestTireRear);
             xml.WriteElementInt("active_steering", ActiveSteering);
             xml.WriteElementInt("drift_type", DriftType);
-            xml.WriteElementInt("suggested_gear", SuggestedGear);
-            xml.WriteElementInt("in_car_view", InCarView);
-            xml.WriteElementEnumInt("enemy_tire", EnemyTire);
+            xml.WriteElementIntIfNotDefault("suggested_gear", SuggestedGear);
+            xml.WriteElementIntIfNotDefault("in_car_view", InCarView);
+
+            if (EnemyTire != TireType.NONE_SPECIFIED)
+                xml.WriteElementEnumInt("enemy_tire", EnemyTire);
         }
     }
 }

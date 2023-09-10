@@ -14,6 +14,20 @@ namespace PDTools.Structures.MGameParameter
     {
         public Dictionary<Language, string> Texts { get; set; } = new Dictionary<Language, string>();
 
+        public LocalizeText()
+        {
+            foreach (Language lang in Enum.GetValues(typeof(Language)))
+            {
+                if (lang == Language.SYSTEM)
+                    continue;
+
+                if (lang == Language.MAX)
+                    break;
+
+                Texts[lang] = string.Empty;
+            }
+        }
+
         public void SetText(Language locale, string title)
         {
             Texts[locale] = title;
@@ -21,7 +35,21 @@ namespace PDTools.Structures.MGameParameter
 
         public bool IsDefault()
         {
-            return Texts.Count == 0;
+            foreach (var text in Texts)
+            {
+                if (!string.IsNullOrEmpty(text.Value))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public void CopyTo(LocalizeText other)
+        {
+            foreach (var text in Texts)
+            {
+                other.Texts[text.Key] = text.Value;
+            }
         }
 
         public void WriteToXml(XmlWriter xml)
@@ -36,8 +64,10 @@ namespace PDTools.Structures.MGameParameter
             {
                 if (Enum.TryParse(textNode.Name, out Language language))
                 {
-                    if (!Texts.ContainsKey(language))
-                        Texts.Add(language, textNode.InnerText);
+                    if (language == Language.MAX || language == Language.SYSTEM)
+                        continue;
+
+                    Texts[language] = textNode.InnerText;
                 }
             }
         }

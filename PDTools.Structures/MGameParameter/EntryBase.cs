@@ -224,6 +224,95 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public short HeadColorCode { get; set; } = -1;
 
+        public bool IsDefault()
+        {
+            var defaultEntryBase = new EntryBase();
+            return
+                this.Car.CarLabel == defaultEntryBase.Car.CarLabel &&
+                this.Car.Paint == defaultEntryBase.Car.Paint &&
+                this.DriverName == defaultEntryBase.DriverName &&
+                this.DriverRegion == defaultEntryBase.DriverRegion &&
+                this.RaceClassID == defaultEntryBase.RaceClassID &&
+                this.ProxyDriverModel == defaultEntryBase.ProxyDriverModel &&
+                BoostRaceRatio.Count > 0 &&
+                BoostRatio.Count > 0 &&
+                this.AIBrakingSkill == defaultEntryBase.AIBrakingSkill &&
+                this.AIAcceleratingSkill == defaultEntryBase.AIAcceleratingSkill &&
+                this.AICorneringSkill == defaultEntryBase.AICorneringSkill &&
+                this.AIStartingSkill == defaultEntryBase.AIStartingSkill &&
+                this.AIReaction == defaultEntryBase.AIReaction &&
+                this.AIRoughness == defaultEntryBase.AIRoughness &&
+                this.EngineNaTuneStage == defaultEntryBase.EngineNaTuneStage &&
+                this.EngineComputer == defaultEntryBase.EngineComputer &&
+                this.Suspension == defaultEntryBase.Suspension &&
+                this.Transmission == defaultEntryBase.Transmission &&
+                this.Muffler == defaultEntryBase.Muffler &&
+                this.GearMaxSpeed == defaultEntryBase.GearMaxSpeed &&
+                this.BallastWeight == defaultEntryBase.BallastWeight &&
+                this.BallastPosition == defaultEntryBase.BallastPosition &&
+                this.WheelID == defaultEntryBase.WheelID &&
+                this.WheelColor == defaultEntryBase.WheelColor &&
+                this.WheelInchUp == defaultEntryBase.WheelInchUp &&
+                this.TireFront == defaultEntryBase.TireFront &&
+                this.TireRear == defaultEntryBase.TireRear &&
+                this.AeroWing == defaultEntryBase.AeroWing &&
+                this.Aero1_AeroKit == defaultEntryBase.Aero1_AeroKit &&
+                this.Aero2_FlatFloor == defaultEntryBase.Aero2_FlatFloor &&
+                this.Aero3_AeroOther == defaultEntryBase.Aero3_AeroOther &&
+                this.DownforceFront == defaultEntryBase.DownforceFront &&
+                this.DownforceRear == defaultEntryBase.DownforceRear &&
+                this.PaintId == defaultEntryBase.PaintId &&
+                this.DeckenNumber == defaultEntryBase.DeckenNumber &&
+                this.DeckenType == defaultEntryBase.DeckenType &&
+                this.DeckenCustomID == defaultEntryBase.DeckenCustomID &&
+                this.DeckenCustomType == defaultEntryBase.DeckenCustomType;
+        }
+
+        public void CopyTo(EntryBase other)
+        {
+            Car.CopyTo(other.Car);
+            other.DriverName = DriverName;
+            other.DriverRegion = DriverRegion;
+            other.RaceClassID = RaceClassID;
+            other.ProxyDriverModel = ProxyDriverModel;
+
+            for (int i = 0; i < BoostRaceRatio.Count; i++)
+                other.BoostRaceRatio.Add(BoostRaceRatio[i]);
+
+            for (int i = 0; i < BoostRatio.Count; i++)
+                other.BoostRatio.Add(BoostRatio[i]);
+
+            other.AIBrakingSkill = AIBrakingSkill;
+            other.AIAcceleratingSkill = AIAcceleratingSkill;
+            other.AICorneringSkill = AICorneringSkill;
+            other.AIStartingSkill = AIStartingSkill;
+
+            other.EngineNaTuneStage = EngineNaTuneStage;
+            other.EngineComputer = EngineComputer;
+            other.Suspension = Suspension;
+            other.Transmission = Transmission;
+            other.Muffler = Muffler;
+            other.GearMaxSpeed = GearMaxSpeed;
+            other.BallastWeight = BallastWeight;
+            other.BallastPosition = BallastPosition;
+            other.WheelID = WheelID;
+            other.WheelColor = WheelColor;
+            other.WheelInchUp = WheelInchUp;
+            other.TireFront = TireFront;
+            other.TireRear = TireRear;
+            other.AeroWing = AeroWing;
+            other.Aero1_AeroKit = Aero1_AeroKit;
+            other.Aero2_FlatFloor = Aero2_FlatFloor;
+            other.Aero3_AeroOther = Aero3_AeroOther;
+            other.DownforceFront = DownforceFront;
+            other.DownforceRear = DownforceRear;
+            other.PaintId = PaintId;
+            other.DeckenNumber = DeckenNumber;
+            other.DeckenType = DeckenType;
+            other.DeckenCustomID = DeckenCustomID;
+            other.DeckenCustomType = DeckenCustomType;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteStartElement("entry_base");
@@ -235,54 +324,81 @@ namespace PDTools.Structures.MGameParameter
                 }
                 xml.WriteEndElement();
 
-                xml.WriteElementValue("driver_name", DriverName);
-                xml.WriteElementValue("driver_region", DriverName);
-                xml.WriteElementInt("race_class_id", RaceClassID);
-                xml.WriteElementInt("proxy_driver_model", ProxyDriverModel);
+                if (!string.IsNullOrEmpty(DriverName))
+                    xml.WriteElementValue("driver_name", DriverName);
 
-                xml.WriteStartElement("boost_race_ratio");
-                foreach (var ratio in BoostRaceRatio)
-                    xml.WriteElementInt("ratio", ratio);
-                xml.WriteEndElement();
+                if (!string.IsNullOrEmpty(DriverRegion))
+                    xml.WriteElementValue("driver_region", DriverRegion);
 
-                xml.WriteStartElement("boost_ratio");
-                foreach (var ratio in BoostRatio)
-                    xml.WriteElementInt("ratio", ratio);
-                xml.WriteEndElement();
+                xml.WriteElementIntIfNotDefault("race_class_id", RaceClassID, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("proxy_driver_model", ProxyDriverModel);
 
-                xml.WriteElementInt("ai_skill_breaking", AIBrakingSkill);
-                xml.WriteElementInt("ai_skill_cornering", AICorneringSkill);
-                xml.WriteElementInt("ai_skill_accelerating", AIAcceleratingSkill);
-                xml.WriteElementInt("ai_skill_starting", AIStartingSkill);
-                xml.WriteElementInt("ai_roughness", AIRoughness);
-                xml.WriteElementInt("ai_reaction", AIReaction);
+                if (BoostRaceRatio.Count > 0)
+                {
+                    xml.WriteStartElement("boost_race_ratio");
+                    foreach (var ratio in BoostRaceRatio)
+                        xml.WriteElementInt("ratio", ratio);
+                    xml.WriteEndElement();
+                }
 
-                xml.WriteElementValue("engine_na_tune_stage", EngineNaTuneStage.ToString());
-                xml.WriteElementValue("engine_turbo_kit", EngineTurboKit.ToString());
-                xml.WriteElementValue("engine_computer", EngineComputer.ToString());
-                xml.WriteElementValue("muffler", Muffler.ToString());
-                xml.WriteElementValue("suspension", Suspension.ToString());
-                xml.WriteElementValue("transmission", Transmission.ToString());
-                xml.WriteElementInt("gear_max_speed", GearMaxSpeed);
-                xml.WriteElementInt("ballast_weight", BallastWeight);
-                xml.WriteElementInt("ballast_position", BallastPosition);
-                xml.WriteElementInt("wheel", WheelID);
-                xml.WriteElementInt("wheel_color", WheelColor);
-                xml.WriteElementInt("wheel_inch_up", WheelInchUp);
-                xml.WriteElementValue("tire_f", TireFront.ToString());
-                xml.WriteElementValue("tire_r", TireRear.ToString());
-                xml.WriteElementInt("aero_wing", AeroWing);
-                xml.WriteElementInt("aero_1", Aero1_AeroKit);
-                xml.WriteElementInt("aero_2", Aero2_FlatFloor);
-                xml.WriteElementInt("aero_3", Aero3_AeroOther);
-                xml.WriteElementInt("downforce_f", DownforceFront);
-                xml.WriteElementInt("downforce_r", DownforceRear);
-                xml.WriteElementInt("paint_id", PaintId);
-                xml.WriteElementInt("decken_number", DeckenNumber);
-                xml.WriteElementInt("decken_type", DeckenType);
-                xml.WriteElementInt("decken_custom_id", DeckenCustomID);
-                xml.WriteElementInt("decken_custom_type", DeckenCustomType);
+                if (BoostRatio.Count > 0)
+                {
+                    xml.WriteStartElement("boost_ratio");
+                    foreach (var ratio in BoostRatio)
+                        xml.WriteElementInt("ratio", ratio);
+                    xml.WriteEndElement();
+                }
+
+                xml.WriteElementIntIfNotDefault("ai_skill_breaking", AIBrakingSkill);
+                xml.WriteElementIntIfNotDefault("ai_skill_cornering", AICorneringSkill);
+                xml.WriteElementIntIfNotDefault("ai_skill_accelerating", AIAcceleratingSkill);
+                xml.WriteElementIntIfNotDefault("ai_skill_starting", AIStartingSkill);
+                xml.WriteElementIntIfNotDefault("ai_roughness", AIRoughness);
+                xml.WriteElementIntIfNotDefault("ai_reaction", AIReaction, defaultValue: 0);
+
+                if (EngineNaTuneStage != PARTS_NATUNE.NONE)
+                    xml.WriteElementValue("engine_na_tune_stage", EngineNaTuneStage.ToString());
+
+                if (EngineTurboKit != PARTS_TURBINEKIT.NONE)
+                    xml.WriteElementValue("engine_turbo_kit", EngineTurboKit.ToString());
+
+                if (EngineComputer != PARTS_COMPUTER.NONE)
+                    xml.WriteElementValue("engine_computer", EngineComputer.ToString());
+
+                if (Muffler != PARTS_MUFFLER.UNSPECIFIED)
+                    xml.WriteElementValue("muffler", Muffler.ToString());
+
+                if (Suspension != PARTS_SUSPENSION.UNSPECIFIED)
+                    xml.WriteElementValue("suspension", Suspension.ToString());
+
+                if (Transmission != PARTS_GEAR.UNSPECIFIED)
+                    xml.WriteElementValue("transmission", Transmission.ToString());
+
+                xml.WriteElementIntIfNotDefault("gear_max_speed", GearMaxSpeed);
+                xml.WriteElementIntIfNotDefault("ballast_weight", BallastWeight, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("ballast_position", BallastPosition);
+                xml.WriteElementIntIfNotDefault("wheel", WheelID);
+                xml.WriteElementIntIfNotDefault("wheel_color", WheelColor);
+                xml.WriteElementIntIfNotDefault("wheel_inch_up", WheelInchUp);
+
+                if (TireFront != TireType.NONE_SPECIFIED)
+                    xml.WriteElementValue("tire_f", TireFront.ToString());
+
+                if (TireRear != TireType.NONE_SPECIFIED)
+                    xml.WriteElementValue("tire_r", TireRear.ToString());
+                xml.WriteElementIntIfNotDefault("aero_wing", AeroWing);
+                xml.WriteElementIntIfNotDefault("aero_1", Aero1_AeroKit);
+                xml.WriteElementIntIfNotDefault("aero_2", Aero2_FlatFloor);
+                xml.WriteElementIntIfNotDefault("aero_3", Aero3_AeroOther);
+                xml.WriteElementIntIfNotDefault("downforce_f", DownforceFront);
+                xml.WriteElementIntIfNotDefault("downforce_r", DownforceRear);
+                xml.WriteElementIntIfNotDefault("paint_id", PaintId);
+                xml.WriteElementIntIfNotDefault("decken_number", DeckenNumber);
+                xml.WriteElementIntIfNotDefault("decken_type", DeckenType, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("decken_custom_id", DeckenCustomID, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("decken_custom_type", DeckenCustomType, defaultValue: 0);
             }
+            xml.WriteEndElement();
         }
 
         public void ReadFromXml(XmlNode entryNode)

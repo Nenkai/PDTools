@@ -71,6 +71,38 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public byte[] EditData { get; set; }
 
+        public void CopyTo(Track other)
+        {
+            other.CourseCode = CourseCode;
+            other.CourseLabel = CourseLabel;
+            other.GeneratedCourseID = GeneratedCourseID;
+            other.CourseLayoutNumber = CourseLayoutNumber;
+            other.UseGenerator = UseGenerator;
+            CourseGeneratorParam.CopyTo(other.CourseGeneratorParam);
+
+            foreach (var gadget in Gadgets)
+            {
+                var newGadget = new Gadget();
+                gadget.CopyTo(newGadget);
+                other.Gadgets.Add(newGadget);
+            }
+
+            other.MapOffsetWorldX = MapOffsetWorldX;
+            other.MapScale = MapScale;
+            other.IsOmodetoDifficulty = IsOmodetoDifficulty;
+
+            if (CoursePathway != null)
+            {
+                other.CoursePathway = new byte[CoursePathway.Length];
+                CoursePathway.AsSpan().CopyTo(other.CoursePathway);
+            }
+
+            if (EditData != null)
+            {
+                other.EditData = new byte[EditData.Length];
+                EditData.AsSpan().CopyTo(other.EditData);
+            }
+        }
 
         public void WriteToXml(XmlWriter xml)
         {

@@ -6,6 +6,7 @@ using System.Xml;
 using PDTools.Utils;
 using PDTools.Enums;
 using System.Runtime.ConstrainedExecution;
+using PDTools.Structures.PS3;
 
 namespace PDTools.Structures.MGameParameter
 {
@@ -51,6 +52,9 @@ namespace PDTools.Structures.MGameParameter
 
         public byte NoSuitableTire { get; set; } = 0;
 
+        /// <summary>
+        /// Defaults to -1.
+        /// </summary>
         public short InitialFuel100 { get; set; } = -1;
 
         public List<sbyte> BoostRaceRatio { get; set; } = new List<sbyte>();
@@ -84,13 +88,53 @@ namespace PDTools.Structures.MGameParameter
                 DriverParameter[i] = new MCarDriverParameter();
         }
 
+        public void CopyTo(Entry other)
+        {
+            Car.CopyTo(other.Car);
+            //CarParameter.CopyTo(other.CarParameter);
+            other.PlayerNumber = PlayerNumber;
+            other.DriverName = DriverName;
+            other.DriverRegion = DriverRegion;
+
+            for (int i = 0; i < 4; i++)
+            {
+                var driverParameter = new MCarDriverParameter();
+                DriverParameter[i].CopyTo(driverParameter);
+                other.DriverParameter[i] = driverParameter;
+            }
+
+            other.PilotID = PilotID;
+            EntryBase.CopyTo(other.EntryBase);
+            other.AvailableInitialPosition = AvailableInitialPosition;
+            other.InitialPosition = InitialPosition;
+            other.InitialVelocity = InitialVelocity;
+            other.StartType = StartType;
+            other.Delay = Delay;
+            other.RaceClassID = RaceClassID;
+            other.ProxyDriverModel = ProxyDriverModel;
+            other.NoSuitableTire = NoSuitableTire;
+            other.InitialFuel100 = InitialFuel100;
+
+            for (int i = 0; i < BoostRaceRatio.Count; i++)
+                other.BoostRaceRatio.Add(BoostRaceRatio[i]);
+
+            for (int i = 0; i < BoostRatio.Count; i++)
+                other.BoostRatio.Add(BoostRatio[i]);
+
+            other.AISkillBraking = AISkillBraking;
+            other.AISkillCornering = AISkillCornering;
+            other.AISkillAccelerating = AISkillAccelerating;
+            other.AISkillStarting = AISkillStarting;
+            other.AIRoughness = AIRoughness;
+        }
+
         public void WriteToXml(XmlWriter xml)
         {
             xml.WriteStartElement("entry");
             {
-                xml.WriteElementInt("driver_name", PlayerNumber);
+                xml.WriteElementInt("player_no", PlayerNumber);
 
-                if (string.IsNullOrEmpty(Car.CarLabel))
+                if (!string.IsNullOrEmpty(Car.CarLabel))
                 {
                     xml.WriteStartElement("car");
                     {
@@ -102,8 +146,11 @@ namespace PDTools.Structures.MGameParameter
 
                 // TODO: car_parameter
 
-                xml.WriteElementValue("driver_name", DriverName);
-                xml.WriteElementValue("driver_region", DriverRegion);
+                if (!string.IsNullOrEmpty(DriverName))
+                    xml.WriteElementValue("driver_name", DriverName);
+
+                if (!string.IsNullOrEmpty(DriverRegion))
+                    xml.WriteElementValue("driver_region", DriverRegion);
 
                 if (!DriverParameter[0].IsVacant())
                 {
@@ -112,35 +159,42 @@ namespace PDTools.Structures.MGameParameter
                     xml.WriteEndElement();
                 }
 
-                xml.WriteElementInt("pilot_id", PilotID);
-                if (string.IsNullOrEmpty(EntryBase.Car.CarLabel))
+                xml.WriteElementIntIfNotDefault("pilot_id", PilotID, defaultValue: 0);
+                if (!string.IsNullOrEmpty(EntryBase.Car.CarLabel))
                     EntryBase.WriteToXml(xml);
 
-                xml.WriteElementInt("initial_position", InitialPosition);
+                xml.WriteElementIntIfNotDefault("initial_position", InitialPosition, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("initial_velocity", InitialVelocity, defaultValue: 0);
                 xml.WriteElementValue("start_type", StartType.ToString());
-                xml.WriteElementInt("delay", Delay);
-                xml.WriteElementInt("race_class_id", RaceClassID);
-                xml.WriteElementInt("proxy_driver_model", ProxyDriverModel);
-                xml.WriteElementInt("no_suitable_tire", NoSuitableTire);
-                xml.WriteElementInt("initial_fuel100", InitialFuel100);
+                xml.WriteElementIntIfNotDefault("delay", Delay, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("race_class_id", RaceClassID, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("proxy_driver_model", ProxyDriverModel);
+                xml.WriteElementIntIfNotDefault("no_suitable_tire", NoSuitableTire, defaultValue: 0);
+                xml.WriteElementIntIfNotDefault("initial_fuel100", InitialFuel100);
 
-                xml.WriteStartElement("boost_race_ratio");
-                foreach (var ratio in BoostRaceRatio)
-                    xml.WriteElementInt("ratio", ratio);
-                xml.WriteEndElement();
+                if (BoostRaceRatio.Count > 0)
+                {
+                    xml.WriteStartElement("boost_race_ratio");
+                    foreach (var ratio in BoostRaceRatio)
+                        xml.WriteElementInt("ratio", ratio);
+                    xml.WriteEndElement();
+                }
 
-                xml.WriteStartElement("boost_ratio");
-                foreach (var ratio in BoostRatio)
-                    xml.WriteElementInt("ratio", ratio);
-                xml.WriteEndElement();
+                if (BoostRatio.Count > 0)
+                {
+                    xml.WriteStartElement("boost_ratio");
+                    foreach (var ratio in BoostRatio)
+                        xml.WriteElementInt("ratio", ratio);
+                    xml.WriteEndElement();
+                }
 
-
-                xml.WriteElementInt("ai_skill_breaking", AISkillBraking);
-                xml.WriteElementInt("ai_skill_cornering", AISkillCornering);
-                xml.WriteElementInt("ai_skill_accelerating", AISkillAccelerating);
-                xml.WriteElementInt("ai_skill_starting", AISkillStarting);
-                xml.WriteElementInt("ai_roughness", AIRoughness);
+                xml.WriteElementIntIfNotDefault("ai_skill_breaking", AISkillBraking);
+                xml.WriteElementIntIfNotDefault("ai_skill_cornering", AISkillCornering);
+                xml.WriteElementIntIfNotDefault("ai_skill_accelerating", AISkillAccelerating);
+                xml.WriteElementIntIfNotDefault("ai_skill_starting", AISkillStarting);
+                xml.WriteElementIntIfNotDefault("ai_roughness", AIRoughness);
             }
+            xml.WriteEndElement();
         }
 
         public void ReadFromXml(XmlNode entryNode)

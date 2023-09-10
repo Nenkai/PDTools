@@ -219,7 +219,6 @@ namespace PDTools.Enums
         hudson = 132,
         ayrton_senna = 133,
         zagato = 134,
-        NumOfTuners = 134,
     }
 
     public enum Country

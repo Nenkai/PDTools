@@ -26,6 +26,13 @@ namespace PDTools.Structures.MGameParameter
         /// </summary>
         public float High { get; set; }
 
+        public void CopyTo(WeatherData other)
+        {
+            other.TimeRate = TimeRate;
+            other.Low = Low;
+            other.High = High;
+        }
+
         public override string ToString()
             => $"Step ({TimeRate}%) Low: {Low} - High: {High}";
 

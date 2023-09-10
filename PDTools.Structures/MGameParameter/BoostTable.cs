@@ -53,5 +53,19 @@ namespace PDTools.Structures.MGameParameter
 
             return false;
         }
+
+        public void CopyTo(BoostTable other)
+        {
+            other.RearDistance2 = RearDistance2;
+            other.RearRate2 = RearRate2;
+            other.RearDistance1 = RearDistance1;
+            other.RearRate1 = RearRate1;
+            other.FrontDistance2 = FrontDistance2;
+            other.FrontRate2 = FrontRate2;
+            other.FrontDistance1 = FrontDistance1;
+            other.FrontRate1 = FrontRate1;
+            other.TargetPosition = TargetPosition;
+            other.RaceProgress = RaceProgress;
+        }
     }
 }

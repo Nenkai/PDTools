@@ -13,39 +13,6 @@ namespace PDTools.Structures.MGameParameter
 {
     public class Regulation
     {
-        public static Dictionary<string, string> CountryDefinitions = new Dictionary<string, string>()
-        {
-            {"DE", "Germany"},
-            {"FR", "France"},
-            {"GB", "United Kingdom"},
-            {"IT", "Italy"},
-            {"JP", "Japan"},
-            {"SE", "Sweden" },
-            {"US", "USA" },
-            {"AU", "Australia" },
-            {"BE", "Belgium" },
-            {"ES", "Spain" },
-            {"KR", "South Korea" },
-            {"NL", "Netherlands" },
-            {"CA", "Canada" },
-            {"AE", "UAE" },
-            {"AR", "Argentina" },
-            {"AT", "Austria" },
-            {"CH", "Switzerland" },
-            {"PT", "Portugal" },
-            {"NZ", "New Zealand" },
-        };
-
-        public static Dictionary<CarCategoryRestriction, string> CategoryDefinitions = new Dictionary<CarCategoryRestriction, string>()
-        {
-            {CarCategoryRestriction.NORMAL, "Normal Cars" },
-            {CarCategoryRestriction.RACING, "Racing Cars"},
-            {CarCategoryRestriction.TUNING, "Tuned Cars"},
-            {CarCategoryRestriction.CONCEPT, "Concept Cars"},
-        };
-
-        public bool NeedsPopulating { get; set; } = true;
-
         public int LimitPP { get; set; } = -1;
         public int NeedPP { get; set; } = -1;
 
@@ -72,12 +39,12 @@ namespace PDTools.Structures.MGameParameter
         public int LimitTorque { get; set; } = -1;
 
         /// <summary>
-        /// GT5 Only
+        /// GT5 Only, appears unused
         /// </summary>
         public int LimitDisplacement { get; set; } = -1;
 
         /// <summary>
-        /// GT5 Only
+        /// GT5 Only, appears unused
         /// </summary>
         public int NeedDisplacement { get; set; } = -1;
 
@@ -88,6 +55,10 @@ namespace PDTools.Structures.MGameParameter
         public int NeedLength { get; set; } = -1;
         public DrivetrainBits NeedDrivetrain { get; set; } = DrivetrainBits.NONE_SPECIFIED;
         public AspirationBits NeedAspiration { get; set; } = AspirationBits.NONE_SPECIFIED;
+
+        /// <summary>
+        /// Appears unused
+        /// </summary>
         public int Tuning { get; set; } = -1;
 
         /// <summary>
@@ -101,7 +72,7 @@ namespace PDTools.Structures.MGameParameter
         public int KartPermitted { get; set; } = -1;
 
         /// <summary>
-        /// GT6 Only
+        /// GT6 Only, appears unused
         /// </summary>
         public int CarTagID { get; set; } = -1;
 
@@ -118,11 +89,6 @@ namespace PDTools.Structures.MGameParameter
         public int LimitBSpecDriverCount { get; set; } = -1;
         public int NeedBSpecDriverCount { get; set; } = -1;
         public string NeedEntitlement { get; set; }
-
-        public Regulation()
-        {
-
-        }
 
         public bool IsDefault()
         {
@@ -166,6 +132,69 @@ namespace PDTools.Structures.MGameParameter
                 LimitBSpecDriverCount == defaultRegulations.LimitBSpecDriverCount &&
                 NeedBSpecDriverCount == defaultRegulations.NeedBSpecDriverCount &&
                 NeedEntitlement == defaultRegulations.NeedEntitlement;
+        }
+
+        public void CopyTo(Regulation other)
+        {
+            other.LimitPP = LimitPP;
+            other.NeedPP = NeedPP;
+            other.NeedPP = NeedPP;
+            other.LimitTireFront = LimitTireFront;
+            other.NeedTireRear = NeedTireRear;
+            other.LimitTireFront = LimitTireFront;
+            other.LimitTireRear = LimitTireRear;
+
+            foreach (var category in CarCategories)
+                other.CarCategories.Add(category);
+
+            foreach (var car in Cars)
+            {
+                var mcarThin = new MCarThin();
+                car.CopyTo(mcarThin);
+                other.Cars.Add(mcarThin);
+            }
+
+            foreach (var car in BanCars)
+            {
+                var mcarThin = new MCarThin();
+                car.CopyTo(mcarThin);
+                other.BanCars.Add(mcarThin);
+            }
+
+            other.NeedLicense = NeedLicense;
+            other.LimitPower = LimitPower;
+            other.NeedPower = NeedPower;
+            other.LimitTorque = LimitTorque;
+            other.NeedTorque = NeedTorque;
+            other.LimitDisplacement = LimitDisplacement;
+            other.NeedDisplacement = NeedDisplacement;
+            other.LimitWeight = LimitWeight;
+            other.NeedWeight = NeedWeight;
+            other.LimitLength = LimitLength;
+            other.NeedLength = NeedLength;
+            other.NeedDrivetrain = NeedDrivetrain;
+            other.NeedAspiration = NeedAspiration;
+            other.Tuning = Tuning;
+            other.NOS = NOS;
+            other.KartPermitted = KartPermitted;
+            other.CarTagID = CarTagID;
+            other.RestrictorLimit = RestrictorLimit;
+            other.LimitYear = LimitYear;
+            other.NeedYear = NeedYear;
+
+            foreach (var tuner in Tuners)
+                other.Tuners.Add(tuner);
+
+            foreach (var country in Countries)
+                other.Countries.Add(country);
+
+            other.LimitASpecLevel = LimitASpecLevel;
+            other.NeedASpecLevel = NeedASpecLevel;
+            other.LimitBSpecLevel = LimitBSpecLevel;
+            other.NeedBSpecLevel = NeedBSpecLevel;
+            other.LimitBSpecDriverCount = LimitBSpecDriverCount;
+            other.NeedBSpecDriverCount = NeedBSpecDriverCount;
+            other.NeedEntitlement = NeedEntitlement;
         }
 
         public void WriteToXml(XmlWriter xml)
@@ -222,8 +251,10 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("limit_year", LimitYear);
             xml.WriteElementInt("need_year", LimitYear);
 
+            xml.WriteStartElement("tuners");
             foreach (Tuner tuner in Tuners)
                 xml.WriteElementValue("tuner", tuner.ToString());
+            xml.WriteEndElement();
 
             xml.WriteStartElement("countries");
             foreach (Country country in Countries)
@@ -566,24 +597,5 @@ namespace PDTools.Structures.MGameParameter
         RR = 0x20,
 
         All = FR | FF | AWD | MR | RR,
-    }
-
-    public enum Country
-    {
-        PDI,
-        JP = 2,
-        US,
-        GB,
-        DE,
-        FR,
-        IT,
-        AU,
-        KR,
-        BE,
-        NL,
-        SE,
-        ES,
-        CA,
-        AT,
     }
 }

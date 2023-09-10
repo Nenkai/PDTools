@@ -49,12 +49,12 @@ namespace PDTools.Structures.MGameParameter
         /// <summary>
         /// When the ranking registration period starts for this event.
         /// </summary>
-        public DateTime BeginDate { get; set; }
+        public DateTime? BeginDate { get; set; }
 
         /// <summary>
         /// When the ranking registration period ends for this event.
         /// </summary>
-        public DateTime EndDate { get; set; }
+        public DateTime? EndDate { get; set; }
 
         public bool IsDefault()
         {
@@ -68,6 +68,19 @@ namespace PDTools.Structures.MGameParameter
                 RegistrationType == defaultRanking.RegistrationType &&
                 BeginDate == defaultRanking.BeginDate &&
                 EndDate == defaultRanking.EndDate;
+        }
+
+        public void CopyTo(Ranking other)
+        {
+            other.Type = Type;
+            other.IsLocal = IsLocal;
+            other.ReplayRankLimit = ReplayRankLimit;
+            other.DisplayRankLimit = DisplayRankLimit;
+            other.BoardID = BoardID;
+            other.Registration = Registration;
+            other.RegistrationType = RegistrationType;
+            other.BeginDate = BeginDate;
+            other.EndDate = EndDate;
         }
 
         public void ParseFromXml(XmlNode node)
@@ -92,11 +105,17 @@ namespace PDTools.Structures.MGameParameter
                         RegistrationType = rNode.ReadValueEnum<RegistrationType>(); break;
 
                     case "begin_date":
+                        if (string.IsNullOrEmpty(rNode.InnerText))
+                            break;
+
                         string date = rNode.InnerText.Replace("/00", "/01");
                         DateTime.TryParseExact(date, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time);
                         BeginDate = time;
                         break;
                     case "end_date":
+                        if (string.IsNullOrEmpty(rNode.InnerText))
+                            break;
+
                         string eDate = rNode.InnerText.Replace("/00", "/01");
                         DateTime.TryParseExact(eDate, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime eTime);
                         EndDate = eTime;
@@ -115,8 +134,19 @@ namespace PDTools.Structures.MGameParameter
             xml.WriteElementInt("registration", Registration);
             xml.WriteElementValue("registration_type", RegistrationType.ToString());
 
-            xml.WriteStartElement("begin_date"); xml.WriteString(BeginDate.ToString("yyyy/MM/dd HH:mm:ss")); xml.WriteEndElement();
-            xml.WriteStartElement("end_date"); xml.WriteString(EndDate.ToString("yyyy/MM/dd HH:mm:ss")); xml.WriteEndElement();
+            if (BeginDate != null)
+            {
+                xml.WriteStartElement("begin_date"); 
+                xml.WriteString(BeginDate.Value.ToString("yyyy/MM/dd HH:mm:ss")); 
+                xml.WriteEndElement();
+            }
+
+            if (EndDate != null)
+            {
+                xml.WriteStartElement("end_date"); 
+                xml.WriteString(EndDate.Value.ToString("yyyy/MM/dd HH:mm:ss")); 
+                xml.WriteEndElement();
+            }
         }
 
         public void Serialize(ref BitStream bs)
@@ -129,8 +159,8 @@ namespace PDTools.Structures.MGameParameter
             bs.WriteInt16(ReplayRankLimit);
             bs.WriteInt16(DisplayRankLimit);
             bs.WriteUInt64(BoardID);
-            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(BeginDate));
-            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(EndDate));
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(BeginDate ?? default));
+            bs.WriteDouble(PDIDATETIME.DateTimeToJulian_64(EndDate ?? default));
             bs.WriteInt16(Registration);
             bs.WriteSByte((sbyte)RegistrationType);
         }

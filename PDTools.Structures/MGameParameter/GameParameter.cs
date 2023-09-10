@@ -253,7 +253,7 @@ namespace PDTools.Structures.MGameParameter
             }
         }
 
-        public static GameParameter CreateSingleRace(int course_code, int entry_num, int arcade_laps, int ai_skill = -1, int enemy_lv = -1, 
+        public static GameParameter CreateSingleRace(int course_code, int entry_num, int arcade_laps, short ai_skill = -1, int enemy_lv = -1, 
             int boost_lv = -1, PenaltyLevelTypes penalty_level = PenaltyLevelTypes.OFF, List<int> prize_table = null, bool one_make = false)
         {
             var gp = new GameParameter();

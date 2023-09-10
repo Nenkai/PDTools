@@ -18,6 +18,12 @@ namespace PDTools.Structures.MGameParameter
         public float StartV { get; set; }
         public float FinishV { get; set; }
 
+        public void CopyTo(DriftSection other)
+        {
+            other.StartV = StartV;
+            other.FinishV = FinishV;
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode secNode in node.ChildNodes)

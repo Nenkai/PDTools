@@ -29,6 +29,13 @@ namespace PDTools.Structures
             CarLabel = label;
         }
 
+        public void CopyTo(MCarThin carThin)
+        {
+            carThin.CarCode = CarCode;
+            carThin.CarLabel = CarLabel;
+            carThin.Paint = Paint;
+        }
+
         public void Read(ref BitStream bs)
         {
             CarCode = bs.ReadInt32(); // Code

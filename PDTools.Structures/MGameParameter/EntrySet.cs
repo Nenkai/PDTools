@@ -20,6 +20,17 @@ namespace PDTools.Structures.MGameParameter
             return EntryGenerate.IsDefault() && Entries.Count == 0;
         }
 
+        public void CopyTo(EntrySet other)
+        {
+            EntryGenerate.CopyTo(other.EntryGenerate);
+            for (int i = 0; i < Entries.Count; i++)
+            {
+                var entry = new Entry();
+                Entries[i].CopyTo(entry);
+                other.Entries.Add(entry);
+            }
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode entryNode in node.ChildNodes)
@@ -50,11 +61,7 @@ namespace PDTools.Structures.MGameParameter
             }
 
             foreach (var entry in Entries)
-            {
-                xml.WriteStartElement("entry");
                 entry.WriteToXml(xml);
-                xml.WriteEndElement();
-            }
         }
 
         public void Deserialize(ref BitStream reader)

@@ -145,44 +145,48 @@ namespace PDTools.Structures.PS3
 
         public MCarParameter Car { get; set; }
         public MCarDriverParameter[] DriverParameter { get; set; }
-        public void ParseEntry(ref BitStream sr, int bufferSize)
+
+        public void ParseEntry(ref BitStream bs, int bufferSize)
         {
-            EntryIndex = sr.ReadInt32();
+            EntryIndex = bs.ReadInt32();
             if (EntryIndex == -1)
                 return;
 
-            int carParameterOffset = sr.ReadInt32();
-            sr.Position += 8;
+            int carParameterOffset = bs.ReadInt32();
+            bs.Position += 8;
 
-            uint carDriverParameterCount = sr.ReadUInt32();
-            uint carDriverParameterOffset = sr.ReadUInt32();
+            uint carDriverParameterCount = bs.ReadUInt32();
+            uint carDriverParameterOffset = bs.ReadUInt32();
 
-            sr.Position += 8;
+            bs.Position += 8;
             for (int i = 0; i < 16; i++)
             {
-                var ms = sr.ReadUInt32();
+                var ms = bs.ReadUInt32();
                 if (ms != 1209599999)
                     SectorTimes[i] = TimeSpan.FromMilliseconds(ms);
             }
 
-            int basePos = sr.Position;
-            EntryName = sr.ReadNullTerminatedString();
-            sr.Position = basePos + 0x10;
-            sr.Position += 4;
+            int basePos = bs.Position;
+            EntryName = bs.ReadNullTerminatedString();
+            bs.Position = basePos + 0x10;
+            bs.Position += 4;
 
-            sr.Position = carParameterOffset;
+            bs.Position = carParameterOffset;
 
             DriverParameter = new MCarDriverParameter[carDriverParameterCount];
             byte[] carBlob = new byte[bufferSize];
-            sr.ReadIntoByteArray(bufferSize, carBlob, 8);
+            bs.ReadIntoByteArray(bufferSize, carBlob, 8);
             Car = MCarParameter.ImportFromBlob(carBlob);
 
             for (int i = 0; i < carDriverParameterCount; i++)
             {
-                sr.Position = (int)carDriverParameterOffset + i * 0x10;
-                int paramOffset = sr.ReadInt32();
-                sr.Position = paramOffset;
-                DriverParameter[i] = MCarDriverParameter.Read(ref sr);
+                bs.Position = (int)carDriverParameterOffset + i * 0x10;
+                int paramOffset = bs.ReadInt32();
+                bs.Position = paramOffset;
+
+                var param = new MCarDriverParameter();
+                param.Deserialize(ref bs);
+                DriverParameter[i] = param;
             }
         }
     }

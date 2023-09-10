@@ -16,5 +16,15 @@ namespace PDTools.Structures.MGameParameter
         public int BoostRearMax { get; set; }
         public int BoostFrontMin { get; set; }
         public int BoostRearMin { get; set; }
+
+        public void CopyTo(BoostParams other)
+        {
+            other.BoostFront = other.BoostFront;
+            other.BoostRear = other.BoostRear;
+            other.BoostFrontMax = other.BoostFrontMax;
+            other.BoostRearMax = other.BoostRearMax;
+            other.BoostFrontMin = other.BoostFrontMin;
+            other.BoostRearMin = other.BoostRearMin;
+        }
     }
 }

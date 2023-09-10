@@ -19,6 +19,11 @@ namespace PDTools.Structures.MGameParameter
             return PspMode != defaultEditorInfo.PspMode;
         }
 
+        public void CopyTo(EditorInfo other)
+        {
+            other.PspMode = PspMode;
+        }
+
         public void ParseFromXml(XmlNode node)
         {
             foreach (XmlNode secNode in node.ChildNodes)

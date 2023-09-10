@@ -40,6 +40,21 @@ namespace PDTools.Structures.MGameParameter
                 LaunchV == defaultDriftCondition.LaunchV &&
                 Sections.Count == 0;
         }
+
+        public void CopyTo(DriftCondition other)
+        {
+            other.DriftModeType = DriftModeType;
+            other.LaunchSpeed = LaunchSpeed;
+            other.LaunchV = LaunchV;
+
+            foreach (var section in Sections)
+            {
+                var newSection = new DriftSection();
+                section.CopyTo(newSection);
+                other.Sections.Add(section);
+            }
+        }
+
         public void ParseFromXml(XmlNode driftCondNode)
         {
             foreach (XmlNode node in driftCondNode.ChildNodes)
