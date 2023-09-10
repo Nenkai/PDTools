@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PDTools.Crypto
+namespace PDTools.Hashing
 {
 	public static class CRC32C
 	{

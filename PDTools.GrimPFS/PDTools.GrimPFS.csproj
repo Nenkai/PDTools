@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PDTools.Crypto\PDTools.Crypto.csproj" />
+    <ProjectReference Include="..\PDTools.Hashing\PDTools.Hashing.csproj" />
     <ProjectReference Include="..\PDTools.Utils\PDTools.Utils.csproj" />
   </ItemGroup>
 

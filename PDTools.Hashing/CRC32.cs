@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Crypto
+namespace PDTools.Hashing
 {
     public static class CRC32
     {

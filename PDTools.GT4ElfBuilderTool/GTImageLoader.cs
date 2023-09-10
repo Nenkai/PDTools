@@ -1,18 +1,16 @@
-﻿using PDTools.Crypto;
-
-using Syroot.BinaryData.Memory;
-
+﻿using Syroot.BinaryData.Memory;
 using System.IO;
 using System.Security.Cryptography;
-
 using System.Numerics;
 using System.Runtime.InteropServices;
-
-using ICSharpCodeInflater = ICSharpCode.SharpZipLib.Zip.Compression.Inflater;
 using System.Collections.Generic;
 using System;
 using System.Linq;
-using ICSharpCode.SharpZipLib.Zip.Compression;
+
+using ICSharpCodeInflater = ICSharpCode.SharpZipLib.Zip.Compression.Inflater;
+
+using PDTools.Crypto;
+using PDTools.Hashing;
 
 namespace PDTools.GT4ElfBuilderTool
 {

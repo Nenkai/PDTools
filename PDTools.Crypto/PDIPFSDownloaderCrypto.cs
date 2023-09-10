@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 using System.Runtime.InteropServices;
 using System.Buffers.Binary;
+
+using PDTools.Hashing;
+
 namespace PDTools.Crypto
 {
     public class PDIPFSDownloaderCrypto

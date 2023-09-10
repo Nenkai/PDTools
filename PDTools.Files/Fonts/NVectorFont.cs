@@ -6,8 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
-using PDTools.Crypto;
-using System.Diagnostics;
+
+using PDTools.Hashing;
 
 namespace PDTools.Files.Fonts
 {

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using PDTools.Hashing;
+
 namespace PDTools.Crypto
 {
     public class MiscCrypto

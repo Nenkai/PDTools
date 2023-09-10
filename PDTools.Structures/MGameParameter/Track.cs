@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Xml;
 
 using PDTools.Utils;
-using PDTools.Compression;
 using PDTools.Structures.PS3;
 
 namespace PDTools.Structures.MGameParameter

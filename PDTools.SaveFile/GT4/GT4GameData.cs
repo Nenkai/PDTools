@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 using System.Buffers.Binary;
 using System.IO;
 using Syroot.BinaryData.Memory;
-
-using PDTools.Crypto;
-using PDTools.Utils;
-
-using PDTools.SaveFile.GT4.UserProfile;
-using PDTools.SaveFile.GT4.Option;
 using System.Buffers;
 using System.Runtime.InteropServices;
 using Syroot.BinaryData;
+
+using PDTools.Crypto;
+using PDTools.Hashing;
+using PDTools.Utils;
+using PDTools.SaveFile.GT4.UserProfile;
+using PDTools.SaveFile.GT4.Option;
+
 
 namespace PDTools.SaveFile.GT4
 {

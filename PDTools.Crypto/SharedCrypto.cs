@@ -7,6 +7,8 @@ using System.Numerics;
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 
+using PDTools.Hashing;
+
 namespace PDTools.Crypto
 {
     public class SharedCrypto

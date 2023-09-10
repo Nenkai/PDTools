@@ -10,6 +10,7 @@ using System.IO;
 using Syroot.BinaryData.Memory;
 
 using PDTools.Crypto;
+using PDTools.Hashing;
 using PDTools.Structures.PS2;
 
 namespace PDTools.SaveFile.GT4

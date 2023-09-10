@@ -4,7 +4,7 @@ using System.Text;
 
 using System.Numerics;
 
-namespace PDTools.Crypto
+namespace PDTools.Hashing
 {
     // Not sure if this is finished
     class SHA512
