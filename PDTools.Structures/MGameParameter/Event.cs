@@ -107,7 +107,7 @@ namespace PDTools.Structures.MGameParameter
         {
             other.EventID = EventID;
             other.GameMode = GameMode;
-            PlayStyle.CopyTo(PlayStyle);
+            PlayStyle.CopyTo(other.PlayStyle);
             other.EventType = EventType;
             other.Inheritance = Inheritance;
             other.IsSeasonalEvent = IsSeasonalEvent;
