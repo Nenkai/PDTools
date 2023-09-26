@@ -118,12 +118,11 @@ namespace PDTools.GT4ElfBuilderTool
                 long regInfoSectionOffset = bs.Position;
                 file.Segments[0].OffsetInElf = regInfoSectionOffset;
                 bs.WriteBytes(file.Segments[0].Data);
-                bs.Align(4, grow: true);
+                bs.Align(0x100, grow: true); // Seems important? Otherwise crashes
 
                 long dataSectionOffset = bs.Position;
                 file.Segments[2].OffsetInElf = dataSectionOffset;
                 bs.WriteBytes(file.Segments[2].Data);
-                bs.Position += BssSize; // to fit bss?
                 bs.Align(0x1000, grow: true);
 
                 long lastPos = bs.Position;
@@ -134,8 +133,8 @@ namespace PDTools.GT4ElfBuilderTool
                 bs.WriteInt32((int)textOffset);
                 bs.WriteInt32(file.Segments[1].TargetOffset); // Virtual address
                 bs.WriteInt32(file.Segments[1].TargetOffset); // Physical address
-                bs.WriteInt32(file.Segments[1].Size - 0x18); // File length
-                bs.WriteInt32(file.Segments[1].Size - 0x18); // Ram length
+                bs.WriteInt32(file.Segments[1].Size); // File length
+                bs.WriteInt32(file.Segments[1].Size); // Ram length
                 bs.WriteInt32(7); // Flags, PF_Read_Write_Exec
                 bs.WriteInt32(0x1000); // Align
 
