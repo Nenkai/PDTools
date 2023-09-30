@@ -141,8 +141,8 @@ namespace PDTools.GT4ElfBuilderTool
                 // .reginfo
                 bs.WriteInt32((int)ElfEnums.PhType.PT_LOPROC);
                 bs.WriteInt32((int)regInfoSectionOffset);
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Virtual address
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Physical address
+                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Virtual address
+                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Physical address
                 bs.WriteInt32(file.Segments[0].Size); // File length
                 bs.WriteInt32(file.Segments[0].Size); // Ram length
                 bs.WriteInt32(4); // Flags, PF_Read
@@ -215,7 +215,7 @@ namespace PDTools.GT4ElfBuilderTool
                 bs.WriteInt32((int)dir[".reginfo"]);
                 bs.WriteInt32(1879048198); // Type
                 bs.WriteInt32(2); // Flags
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Addr
+                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Addr
                 bs.WriteInt32((int)file.Segments[0].OffsetInElf); // Offset
                 bs.WriteInt32(file.Segments[0].Size); // Size
                 bs.WriteInt32(0); // Link
