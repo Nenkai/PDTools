@@ -191,6 +191,8 @@ namespace PDTools.GT4ElfBuilderTool
             { 82001, "GT4 (JP)" },
             { 82101, "GT4 (US)" },
             { 82201, "GT4 (EU)" },
+            { 82301, "GT4 (AS)" },
+
             { 82501, "GT4 Press Copy (CN)" },
  
             { 83201, "GT4O (JP)" }, // GT4O (JP)
