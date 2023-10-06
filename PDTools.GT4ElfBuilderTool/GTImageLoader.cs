@@ -79,13 +79,33 @@ namespace PDTools.GT4ElfBuilderTool
                 Segments.Add(segment);
             }
 
+
             Console.WriteLine();
             Console.WriteLine("# Step 3: Attempt optional authentication by computing RSA numbers to a SHA-512 hash");
 
+
             // Values are reversed
+            // Doesn't always work i.e GT4P, refer to Egdc add operation comment, and the minus on -Egdc
             int authValue = AuthenticateELFBody(rsaValueToGenerateSha512Hash_1.Reverse().ToArray(), 
                                                 rsaValueToGenerateSha512Hash_2.Reverse().ToArray(), 
                                                 inflated.AsSpan(hashStartPos));
+
+            /* This was a test on GT4 EU, couldn't get it to work though..
+            using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(1024))
+            {
+                var @params = new RSAParameters()
+                {
+                    Exponent = new BigInteger(82201).ToByteArray(),
+                    Modulus = rsaValueToGenerateSha512Hash_1,
+                };
+                RSA.ImportParameters(@params);
+
+                if (RSA.VerifyData(inflated.AsSpan(hashStartPos), rsaValueToGenerateSha512Hash_2, HashAlgorithmName.SHA512, RSASignaturePadding.Pkcs1))
+                {
+                    ;
+                }
+            };*/
+
             if (authValue != -1)
                 Console.WriteLine($"ELF SHA-512 Matches using provided RSA numbers! Build specific value used: {authValue} ({KnownExponents[authValue]})");
             else
@@ -209,7 +229,6 @@ namespace PDTools.GT4ElfBuilderTool
             {
                 var hashedInputBytes = computedHash.ComputeHash(elfBody.ToArray());
                 Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(hashedInputBytes)}");
-
                 foreach (var exponent in KnownExponents)
                 {
                     var rsaCtx = new RSAContext();
