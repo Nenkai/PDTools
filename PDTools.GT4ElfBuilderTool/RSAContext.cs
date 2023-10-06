@@ -10,6 +10,8 @@ namespace PDTools.GT4ElfBuilderTool
 {
     internal class RSAContext
     {
+        // Offsets are based on GT4O US
+
         public BigInteger field_0x08_Gcd1;
         public BigInteger field_0x10_BigNumber1;
         public BigInteger field_0x18_Gcd2;
@@ -116,6 +118,8 @@ namespace PDTools.GT4ElfBuilderTool
             }
 
             // Added this, seems important
+            // 06/10/2023 comment from later on - this might still break on i.e some GT4P region
+            // Should it be "if (leftFactor < 0)" ?
             leftFactor = leftFactor + u;
 
             return (LeftFactor: leftFactor,

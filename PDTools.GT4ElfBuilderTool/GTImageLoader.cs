@@ -85,7 +85,8 @@ namespace PDTools.GT4ElfBuilderTool
 
 
             // Values are reversed
-            // Doesn't always work i.e GT4P, refer to Egdc add operation comment, and the minus on -Egdc
+            // Doesn't always work i.e GT4P, refer to Egcd add operation comment, and the minus on -Egcd
+            // Removing the minus on -Egcd or removing the add in egcd sometimes fixes it for some exponents, but ugh
             int authValue = AuthenticateELFBody(rsaValueToGenerateSha512Hash_1.Reverse().ToArray(), 
                                                 rsaValueToGenerateSha512Hash_2.Reverse().ToArray(), 
                                                 inflated.AsSpan(hashStartPos));
