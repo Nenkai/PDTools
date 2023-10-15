@@ -11,8 +11,8 @@ namespace PDTools.Files.Textures.PS2
 {
     public class sceGsTex0
     {
-        public ulong TBP0_TextureBaseAddress;
-        public ulong TBW_TextureBufferWidth;
+        public ushort TBP0_TextureBaseAddress;
+        public byte TBW_TextureBufferWidth;
 
         /// <summary>
         /// Texture pixel storage format
@@ -71,8 +71,8 @@ namespace PDTools.Files.Textures.PS2
 
         public void Read(ref BitStream stream)
         {
-            TBP0_TextureBaseAddress = stream.ReadBits(14);
-            TBW_TextureBufferWidth = stream.ReadBits(6);
+            TBP0_TextureBaseAddress = (ushort)stream.ReadBits(14);
+            TBW_TextureBufferWidth = (byte)stream.ReadBits(6);
             PSM = (SCE_GS_PSM)stream.ReadBits(6);
             TW_TextureWidth = (byte)stream.ReadBits(4);
             TH_TextureHeight = (byte)stream.ReadBits(4);

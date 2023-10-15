@@ -16,13 +16,33 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace PDTools.Files.Textures.PS2
 {
-    public class TextureInfo
+    /// <summary>
+    /// Represents a data transfer being made to the GS memory.
+    /// Dimensions may be different to texture dimensions - buffers may be swizzled for faster uploading to GS.
+    /// </summary>
+    public class GSTransfers
     {
-        public uint TextureDataOffset { get; set; }
+        public uint DataOffset { get; set; }
         public short BP { get; set; }
+
+        /// <summary>
+        /// Buffer Width
+        /// </summary>
         public byte BW { get; set; }
+
+        /// <summary>
+        /// "Image" format of the transfer
+        /// </summary>
         public SCE_GS_PSM Format { get; set; }
+
+        /// <summary>
+        /// "Image" width of the transfer
+        /// </summary>
         public short Width { get; set; }
+
+        /// <summary>
+        /// "Image" height of the transfer
+        /// </summary>
         public short Height { get; set; }
 
         // Used for serializing
@@ -33,19 +53,19 @@ namespace PDTools.Files.Textures.PS2
         public Rgba32[] TiledPalette { get; set; }
         public int[] LinearToTiledPaletteIndices { get; set; }
 
-        public void Read(ref BitStream bs)
+        public void Read(BinaryStream bs)
         {
-            TextureDataOffset = bs.ReadUInt32();
+            DataOffset = bs.ReadUInt32();
             BP = bs.ReadInt16();
-            BW = bs.ReadByte();
+            BW = bs.Read1Byte();
             Format = (SCE_GS_PSM)bs.ReadByte();
             Width = bs.ReadInt16();
             Height = bs.ReadInt16();
         }
 
-        public void Write(ref BitStream bs)
+        public void Write(BinaryStream bs)
         {
-            bs.WriteUInt32(TextureDataOffset);
+            bs.WriteUInt32(DataOffset);
             bs.WriteInt16(BP);
             bs.WriteByte(BW);
             bs.WriteByte((byte)Format);

@@ -16,11 +16,8 @@ using SixLabors.ImageSharp.Formats;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData;
 
-using Pfim;
-using Pfim.dds;
-
-using BCnEncoder.Decoder;
-using Microsoft.Toolkit.HighPerformance;
+using PDTools.Files.Textures.PS3;
+using PDTools.Files.Textures.PS4;
 
 namespace PDTools.Files.Textures
 {
@@ -70,7 +67,7 @@ namespace PDTools.Files.Textures
         {
             for (int i = 0; i < Textures.Count; i++)
             {
-                Texture? texture = Textures[i];
+                Texture texture = Textures[i];
                 texture.ConvertTextureToStandardFormat(outputName);
             }
         }
@@ -261,6 +258,7 @@ namespace PDTools.Files.Textures
                     {
                         TextureConsoleType.PS3 => new CellTexture(),
                         TextureConsoleType.PS4 => new OrbisTexture(),
+                        _ => throw new NotImplementedException("Unimplemented console texture type")
                     };
 
                     texture.ReadTextureDetails(bs);
@@ -281,6 +279,7 @@ namespace PDTools.Files.Textures
                     {
                         TextureConsoleType.PS3 => new PGLUCellTextureInfo(),
                         TextureConsoleType.PS4 => new PGLUOrbisTextureInfo(),
+                        _ => throw new NotImplementedException("Unimplemented console texture type")
                     };
 
                     textureInfo.Read(bs);

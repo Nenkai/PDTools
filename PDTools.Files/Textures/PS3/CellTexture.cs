@@ -20,12 +20,12 @@ using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
-namespace PDTools.Files.Textures
+namespace PDTools.Files.Textures.PS3
 {
     public class CellTexture : Texture
     {
-        public string Name 
-        { 
+        public new string Name
+        {
             get => (TextureRenderInfo as PGLUCellTextureInfo)?.Name;
             set
             {
@@ -47,7 +47,7 @@ namespace PDTools.Files.Textures
             TextureRenderInfo = new PGLUCellTextureInfo();
         }
 
-        public void InitFromDDSImage(Pfim.IImage image, CELL_GCM_TEXTURE_FORMAT format)
+        public void InitFromDDSImage(IImage image, CELL_GCM_TEXTURE_FORMAT format)
         {
             FormatBits = format;
             Width = (ushort)image.Width;
@@ -59,7 +59,7 @@ namespace PDTools.Files.Textures
             textureInfo.Height = Height;
             textureInfo.MipmapLevelLast = (byte)LastMipmapLevel;
 
-            textureInfo.Pitch = (int)Width * 4;
+            textureInfo.Pitch = Width * 4;
 
             textureInfo.FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
         }
@@ -132,12 +132,12 @@ namespace PDTools.Files.Textures
             {
                 var dds = Pfim.Pfim.FromStream(ms);
 
-                if (dds.Format == Pfim.ImageFormat.Rgb24)
+                if (dds.Format == ImageFormat.Rgb24)
                 {
                     var i = Image.LoadPixelData<Bgr24>(dds.Data, dds.Width, dds.Height);
                     i.Save(outputFileName);
                 }
-                else if (dds.Format == Pfim.ImageFormat.Rgba32)
+                else if (dds.Format == ImageFormat.Rgba32)
                 {
                     var i = Image.LoadPixelData<Bgra32>(dds.Data, dds.Width, dds.Height);
                     i.Save(outputFileName);
@@ -148,7 +148,7 @@ namespace PDTools.Files.Textures
                     return;
                 }
             }
-            
+
         }
 
         private static void ConvertFileToDDS(string fileName, CELL_GCM_TEXTURE_FORMAT imgFormat)
@@ -180,10 +180,10 @@ namespace PDTools.Files.Textures
             var header = new DdsHeader();
             header.Height = Height;
             header.Width = Width;
-            
+
             // https://gist.github.com/Scobalula/d9474f3fcf3d5a2ca596fceb64e16c98#file-directxtexutil-cs-L355
 
-            CELL_GCM_TEXTURE_FORMAT format = (FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN);
+            CELL_GCM_TEXTURE_FORMAT format = FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
 
             switch (format)   // dwPitchOrLinearSize
             {
@@ -221,7 +221,7 @@ namespace PDTools.Files.Textures
                     break;
                 case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8:
                 case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8:
-                    header.FormatFlags = (DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC);
+                    header.FormatFlags = DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC;
                     header.FourCCName = "DX10";
                     header.RGBBitCount = 32;
 
@@ -239,7 +239,7 @@ namespace PDTools.Files.Textures
             if ((format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
                 && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
             {
-                int byteCount = (Width * Height) * 4;
+                int byteCount = Width * Height * 4;
                 byte[] newImageData = new byte[byteCount];
 
                 Syroot.BinaryData.Memory.SpanReader sr = new Syroot.BinaryData.Memory.SpanReader(imageData);

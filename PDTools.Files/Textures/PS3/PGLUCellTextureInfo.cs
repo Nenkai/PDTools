@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Textures
+namespace PDTools.Files.Textures.PS3
 {
+    /// <summary>
+    /// PDI GL Cell (PS3) Texture Info. Thin wrapper over PS3 texture registers
+    /// </summary>
     public class PGLUCellTextureInfo : PGLUTextureInfo
     {
         public uint Head0 { get; set; }
@@ -91,60 +94,60 @@ namespace PDTools.Files.Textures
 
             // CELL_GCM_METHOD_DATA_TEXTURE_BORDER_FORMAT
             int bits = 0;
-            bits |= (byte)(((byte)MipmapLevelLast & 0b_11111111) << 16);
+            bits |= (byte)((MipmapLevelLast & 0b_11111111) << 16);
             bits |= (byte)(((byte)FormatBits & 0b_11111111) << 8);
             bits |= (byte)(((byte)Dimension & 0b_1111) << 4);
             bits |= (byte)(((byte)Border & 1) << 3);
             bits |= (byte)(((byte)CubeMap & 1) << 2);
-            bits |= (byte)(((byte)Location + 1) & 0b_11);
+            bits |= (byte)((byte)Location + 1 & 0b_11);
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_ADDRESS
             bits = 0;
-            bits |= (((byte)ZFunc & 0b_1111) << 28);
-            bits |= ((Gamma & 0b_1111_1111) << 20);
-            bits |= (((byte)WrapR & 0b_1111) << 16);
-            bits |= (((byte)UnsignedRemap << 0b1111) << 12);
-            bits |= (((byte)WrapT & 0b_1111) << 8);
-            bits |= ((AnisoBias & 0b_1111) << 4);
-            bits |= ((byte)WrapS & 0b_1111);
+            bits |= ((byte)ZFunc & 0b_1111) << 28;
+            bits |= (Gamma & 0b_1111_1111) << 20;
+            bits |= ((byte)WrapR & 0b_1111) << 16;
+            bits |= (byte)UnsignedRemap << 0b1111 << 12;
+            bits |= ((byte)WrapT & 0b_1111) << 8;
+            bits |= (AnisoBias & 0b_1111) << 4;
+            bits |= (byte)WrapS & 0b_1111;
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_CONTROL0_ALPHA_KILL
             bits = 0;
-            bits |= (((byte)VertexTextureSamplerEnable & 1) << 31);
-            bits |= ((LODMin & 0b_1111_11111111) << 19);
-            bits |= ((LODMax & 0b_1111_11111111) << 7);
-            bits |= (((byte)MaxAniso << 4) & 0b_111);
-            bits |= (((byte)AlphaKill << 2) & 1);
+            bits |= ((byte)VertexTextureSamplerEnable & 1) << 31;
+            bits |= (LODMin & 0b_1111_11111111) << 19;
+            bits |= (LODMax & 0b_1111_11111111) << 7;
+            bits |= (byte)MaxAniso << 4 & 0b_111;
+            bits |= (byte)AlphaKill << 2 & 1;
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_CONTROL1
             bits = 0;
-            bits |= (((byte)RemapOrder & 1) << 16);
-            bits |= (((byte)OutB & 0b_11) << 14);
-            bits |= (((byte)OutG & 0b_11) << 12);
-            bits |= (((byte)OutR & 0b_11) << 10);
-            bits |= (((byte)OutA & 0b_11) << 8);
-            bits |= (((byte)InB & 0b_11) << 6);
-            bits |= (((byte)InG & 0b_11) << 4);
-            bits |= (((byte)InR & 0b_11) << 2);
-            bits |= (((byte)InA & 0b_11));
+            bits |= ((byte)RemapOrder & 1) << 16;
+            bits |= ((byte)OutB & 0b_11) << 14;
+            bits |= ((byte)OutG & 0b_11) << 12;
+            bits |= ((byte)OutR & 0b_11) << 10;
+            bits |= ((byte)OutA & 0b_11) << 8;
+            bits |= ((byte)InB & 0b_11) << 6;
+            bits |= ((byte)InG & 0b_11) << 4;
+            bits |= ((byte)InR & 0b_11) << 2;
+            bits |= (byte)InA & 0b_11;
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_FILTER_SIGNED
             bits = 0;
-            bits |= ((SignedRGBA & 0b1_1111) << 27);
-            bits |= (((byte)Mag & 0b_111) << 24);
-            bits |= (((byte)Min & 0b_1111_1111) << 16);
-            bits |= (((byte)Convultion & 0b_111) << 13);
-            bits |= (LODBias & 0b_1111_1111_1111);
+            bits |= (SignedRGBA & 0b1_1111) << 27;
+            bits |= ((byte)Mag & 0b_111) << 24;
+            bits |= ((byte)Min & 0b_1111_1111) << 16;
+            bits |= ((byte)Convultion & 0b_111) << 13;
+            bits |= LODBias & 0b_1111_1111_1111;
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_IMAGE_RECT
             bits = 0;
-            bits |= ((Width & 0b11111111_11111111) << 16);
-            bits |= (Height & 0b11111111_11111111);
+            bits |= (Width & 0b11111111_11111111) << 16;
+            bits |= Height & 0b11111111_11111111;
             bs.WriteInt32(bits);
 
             // CELL_GCM_METHOD_DATA_TEXTURE_BORDER_COLOR
@@ -156,7 +159,7 @@ namespace PDTools.Files.Textures
             // CELL_GCM_METHOD_DATA_TEXTURE_CONTROL3
             int bits5 = 0;
             bits5 |= (int)((Depth & 0x1111_1111_1111) << 20);
-            bits5 |= (Pitch & 0b1111_1111_1111_1111_1111);
+            bits5 |= Pitch & 0b1111_1111_1111_1111_1111;
             bs.WriteInt32(bits5); // head1 fixme
 
             bs.WriteInt32(0); // Reserved.. or not?
@@ -173,45 +176,45 @@ namespace PDTools.Files.Textures
             Offset = bs.ReadUInt32();
 
             uint bits = bs.ReadUInt32();
-            MipmapLevelLast = (byte)((bits >> 16) & 0b11111111);
-            FormatBits = (CELL_GCM_TEXTURE_FORMAT)((bits >> 8) & 0b11111111);
-            Dimension = (CELL_GCM_TEXTURE_DIMENSION)((bits >> 4) & 0b1111);
-            Border = (CELL_GCM_TEXTURE_BORDER)((bits >> 3) & 1);
-            CubeMap = (CELL_GCM_BOOL)((bits >> 2) & 1);
+            MipmapLevelLast = (byte)(bits >> 16 & 0b11111111);
+            FormatBits = (CELL_GCM_TEXTURE_FORMAT)(bits >> 8 & 0b11111111);
+            Dimension = (CELL_GCM_TEXTURE_DIMENSION)(bits >> 4 & 0b1111);
+            Border = (CELL_GCM_TEXTURE_BORDER)(bits >> 3 & 1);
+            CubeMap = (CELL_GCM_BOOL)(bits >> 2 & 1);
             Location = (CELL_GCM_LOCATION)((bits & 0b11) - 1);
 
             bits = bs.ReadUInt32();
-            ZFunc = (CELL_GCM_TEXTURE_ZFUNC)((bits >> 28) & 0b11111);
-            Gamma = (byte)((bits >> 20) & 0b1111_1111);
-            WrapR = (CELL_GCM_TEXTURE_WRAP)((bits >> 16) & 0b1111);
-            UnsignedRemap = (CELL_GCM_TEXTURE_UNSIGNED_REMAP)((bits >> 12) & 0b1111);
-            WrapT = (CELL_GCM_TEXTURE_WRAP)((bits >> 8) & 0b1111);
-            AnisoBias = (byte)((bits >> 4) & 0b1111);
+            ZFunc = (CELL_GCM_TEXTURE_ZFUNC)(bits >> 28 & 0b11111);
+            Gamma = (byte)(bits >> 20 & 0b1111_1111);
+            WrapR = (CELL_GCM_TEXTURE_WRAP)(bits >> 16 & 0b1111);
+            UnsignedRemap = (CELL_GCM_TEXTURE_UNSIGNED_REMAP)(bits >> 12 & 0b1111);
+            WrapT = (CELL_GCM_TEXTURE_WRAP)(bits >> 8 & 0b1111);
+            AnisoBias = (byte)(bits >> 4 & 0b1111);
             WrapS = (CELL_GCM_TEXTURE_WRAP)(bits & 0b1111);
 
             bits = bs.ReadUInt32();
-            VertexTextureSamplerEnable = (CELL_GCM_BOOL)((bits >> 31) & 1);
-            LODMin = (short)((bits >> 19) & 0b_1111_1111_1111);
-            LODMax = (short)((bits >> 7) & 0b_1111_1111_1111);
-            MaxAniso = (CELL_GCM_TEXTURE_MAX_ANISO)((bits >> 4) & 0b_111);
-            AlphaKill = (CELL_GCM_BOOL)((bits >> 2) & 1); // Some padding before and after
+            VertexTextureSamplerEnable = (CELL_GCM_BOOL)(bits >> 31 & 1);
+            LODMin = (short)(bits >> 19 & 0b_1111_1111_1111);
+            LODMax = (short)(bits >> 7 & 0b_1111_1111_1111);
+            MaxAniso = (CELL_GCM_TEXTURE_MAX_ANISO)(bits >> 4 & 0b_111);
+            AlphaKill = (CELL_GCM_BOOL)(bits >> 2 & 1); // Some padding before and after
 
             bits = bs.ReadUInt32();
-            RemapOrder = (CELL_GCM_TEXTURE_REMAP_ORDER)((bits >> 16) & 1);
-            OutB = (CELL_GCM_TEXTURE_REMAP_OUT)((bits >> 14) & 0b11);
-            OutG = (CELL_GCM_TEXTURE_REMAP_OUT)((bits >> 12) & 0b11);
-            OutR = (CELL_GCM_TEXTURE_REMAP_OUT)((bits >> 10) & 0b11);
-            OutA = (CELL_GCM_TEXTURE_REMAP_OUT)((bits >> 8) & 0b11);
-            InB = (CELL_GCM_TEXTURE_REMAP_FROM)((bits >> 6) & 0b11);
-            InG = (CELL_GCM_TEXTURE_REMAP_FROM)((bits >> 4) & 0b11);
-            InR = (CELL_GCM_TEXTURE_REMAP_FROM)((bits >> 2) & 0b11);
-            InA = (CELL_GCM_TEXTURE_REMAP_FROM)((bits) & 0b11);
+            RemapOrder = (CELL_GCM_TEXTURE_REMAP_ORDER)(bits >> 16 & 1);
+            OutB = (CELL_GCM_TEXTURE_REMAP_OUT)(bits >> 14 & 0b11);
+            OutG = (CELL_GCM_TEXTURE_REMAP_OUT)(bits >> 12 & 0b11);
+            OutR = (CELL_GCM_TEXTURE_REMAP_OUT)(bits >> 10 & 0b11);
+            OutA = (CELL_GCM_TEXTURE_REMAP_OUT)(bits >> 8 & 0b11);
+            InB = (CELL_GCM_TEXTURE_REMAP_FROM)(bits >> 6 & 0b11);
+            InG = (CELL_GCM_TEXTURE_REMAP_FROM)(bits >> 4 & 0b11);
+            InR = (CELL_GCM_TEXTURE_REMAP_FROM)(bits >> 2 & 0b11);
+            InA = (CELL_GCM_TEXTURE_REMAP_FROM)(bits & 0b11);
 
             bits = bs.ReadUInt32();
-            SignedRGBA = (byte)((bits >> 27) & 0b1_1111);
-            Mag = (CELL_GCM_TEXTURE_MAG)((bits >> 24) & 0b_111);
-            Min = (CELL_GCM_TEXTURE_MIN)((bits >> 16) & 0b_11111111);
-            Convultion = (CELL_GCM_TEXTURE_CONVOLUTION)((bits >> 13) & 0b_111);
+            SignedRGBA = (byte)(bits >> 27 & 0b1_1111);
+            Mag = (CELL_GCM_TEXTURE_MAG)(bits >> 24 & 0b_111);
+            Min = (CELL_GCM_TEXTURE_MIN)(bits >> 16 & 0b_11111111);
+            Convultion = (CELL_GCM_TEXTURE_CONVOLUTION)(bits >> 13 & 0b_111);
             LODBias = (byte)(bits & 0b_1111_1111_1111);
 
             bits = bs.ReadUInt32();
@@ -222,8 +225,8 @@ namespace PDTools.Files.Textures
             bs.ReadInt32(); // CELL_GCM_METHOD_DATA_TEXTURE_CONTROL2 TODO
 
             bits = bs.ReadUInt32();
-            Depth = (short)((bits >> 20) & 0x1111_1111_1111);
-            Pitch = (int)((bits & 0b1111_11111111_11111111));
+            Depth = (short)(bits >> 20 & 0x1111_1111_1111);
+            Pitch = (int)(bits & 0b1111_11111111_11111111);
 
             bs.ReadUInt32();
             bs.ReadUInt32();

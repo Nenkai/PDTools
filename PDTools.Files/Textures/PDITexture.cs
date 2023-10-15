@@ -10,7 +10,7 @@ using System.IO;
 namespace PDTools.Files.Textures
 {
     /// <summary>
-    /// Used in Gran Turismo 7
+    /// Used in Gran Turismo 7. Wrapper over Texture Set
     /// </summary>
     public class PDITexture
     {
@@ -24,6 +24,8 @@ namespace PDTools.Files.Textures
 
         public void FromStream(Stream stream)
         {
+            long basePos = stream.Position;
+
             using var bs = new BinaryStream(stream);
             uint magic = bs.ReadUInt32();
 
@@ -33,7 +35,7 @@ namespace PDTools.Files.Textures
             int type = bs.ReadInt32();
             long offsetToc = bs.ReadInt64();
 
-            bs.Position = offsetToc;
+            bs.Position = basePos + offsetToc;
             long extractColorNameOffset = bs.ReadInt64();
             long extractColorOffset = bs.ReadInt64();
             long extractColorSize = bs.ReadInt64();
@@ -42,7 +44,7 @@ namespace PDTools.Files.Textures
             long textureSetOffset = bs.ReadInt64();
             long textureSetSize = bs.ReadInt64();
 
-            bs.Position = textureSetOffset;
+            bs.Position = basePos + textureSetOffset;
             TextureSet.FromStream(bs, TextureSet3.TextureConsoleType.PS4);
         }
     }

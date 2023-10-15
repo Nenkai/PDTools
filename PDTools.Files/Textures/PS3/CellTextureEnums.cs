@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Textures
+namespace PDTools.Files.Textures.PS3
 {
     [Flags]
     public enum CELL_GCM_TEXTURE_FORMAT : byte
@@ -133,7 +133,7 @@ namespace PDTools.Files.Textures
         CELL_GCM_TEXTURE_MIRROR_ONCE_BORDER,
         CELL_GCM_TEXTURE_MIRROR_ONCE_CLAMP,
     }
-     
+
     public enum CELL_GCM_TEXTURE_UNSIGNED_REMAP
     {
         CELL_GCM_TEXTURE_UNSIGNED_REMAP_NORMAL,

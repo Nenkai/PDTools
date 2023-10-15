@@ -18,14 +18,12 @@ using SixLabors.ImageSharp.Formats;
 
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
+using PDTools.Files.Textures.PS3;
 
-
-namespace PDTools.Files.Textures
+namespace PDTools.Files.Textures.PS4
 {
     public class OrbisTexture : Texture
     {
-        public string Name { get; set; }
-
         public int Mipmap { get; set; }
 
         public ushort Width { get; set; }
@@ -62,7 +60,7 @@ namespace PDTools.Files.Textures
 
             PGLUOrbisTextureInfo textureInfo = TextureRenderInfo as PGLUOrbisTextureInfo;
             int rawWidth = textureInfo.Pitch;
-            int paddedHeight = textureInfo.IsPaddedToPow2 ? (int)BitOperations.RoundUpToPowerOf2((uint)Height) : Height;
+            int paddedHeight = textureInfo.IsPaddedToPow2 ? (int)BitOperations.RoundUpToPowerOf2(Height) : Height;
 
             DoSwizzle(ImageData.Span, unswizzled, rawWidth, paddedHeight, 16);
 
@@ -84,7 +82,7 @@ namespace PDTools.Files.Textures
             else
             {
                 BcDecoder decoder = new BcDecoder();
-                ColorRgba32[] colors = decoder.DecodeRaw(unswizzled, rawWidth, paddedHeight, BCnEncoder.Shared.CompressionFormat.Bc7);
+                ColorRgba32[] colors = decoder.DecodeRaw(unswizzled, rawWidth, paddedHeight, CompressionFormat.Bc7);
 
                 ReadOnlySpan<Rgba32> rgba32 = MemoryMarshal.Cast<ColorRgba32, Rgba32>(colors);
                 Image<Rgba32> image = Image.LoadPixelData(rgba32, rawWidth, paddedHeight);
@@ -117,8 +115,8 @@ namespace PDTools.Files.Textures
                         int pixelIndex = Swizzler.MortonReorder(t, 8, 8);
                         int cPixel = pixelIndex / 8;
                         int remPixel = pixelIndex % 8;
-                        var yOffset = (y * 8) + cPixel;
-                        var xOffset = (x * 8) + remPixel;
+                        var yOffset = y * 8 + cPixel;
+                        var xOffset = x * 8 + remPixel;
 
                         if (xOffset < widthTexels && yOffset < heightTexels)
                         {
