@@ -50,302 +50,110 @@ namespace PDTools.Files.Textures.PS2
         /// GS's Users Manual - Page 161 to 170 are useful
         /// </summary>
         /// <param name="pixelFormat"></param>
-        /// <param name="w"></param>
-        /// <param name="h"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static int FindBlockIndexAtPosition(SCE_GS_PSM pixelFormat, int w, int h)
+        public static int FindBlockIndexAtPosition(SCE_GS_PSM pixelFormat, int x, int y)
         {
             // https://patchwork.kernel.org/project/linux-mips/patch/25b6c975d334c0678ab3963d6c76584ed9471c35.1567326213.git.noring@nocrew.org/
             // https://patchwork.kernel.org/project/linux-mips/patch/afe499daf7605ced1373efafbc9c28a035d646df.1567326213.git.noring@nocrew.org/
             // arch/mips/include/asm/mach-ps2/gs.h
             // arch/mips/include/uapi/asm/gs.h
 
-            int blockCount = 0;
+            if (x == 0 && y == 0)
+                return 0;
 
             if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMT8) // Page 166
             {
                 int blocksPerPage = GS_PSMT8_PAGE_COLS * GS_PSMT8_PAGE_ROWS;
-                var pagesPerRow = MiscUtils.AlignValue((uint)w, GS_PSMT8_PAGE_WIDTH) / GS_PSMT8_PAGE_WIDTH;
+                var pagesPerRow = MiscUtils.AlignValue((uint)x, GS_PSMT8_PAGE_WIDTH) / GS_PSMT8_PAGE_WIDTH;
 
-                if (h > GS_PSMT8_PAGE_HEIGHT)
-                {
-                    if ((h % GS_PSMT8_PAGE_HEIGHT) == 0)
-                        h--;
+                int pageX = x / 128;
+                int pageY = y / 64;
+                int page = pageX + pageY * (int)pagesPerRow;
 
-                    int blocksPerPageRow = (int)(pagesPerRow * blocksPerPage);
-                    int pageRowsToSkip = (h / GS_PSMT8_PAGE_HEIGHT);
-                    blockCount += pageRowsToSkip * blocksPerPageRow;
-                    h %= GS_PSMT8_PAGE_HEIGHT;
-                }
+                int px = x - (pageX * 128);
+                int py = y - (pageY * 64);
 
-                if (w >= GS_PSMT8_PAGE_WIDTH)
-                {
-                    if (w == (pagesPerRow * GS_PSMT8_PAGE_WIDTH))
-                        w--;
+                int blockX = px / 16;
+                int blockY = py / 16;
+                int block = GSMemory.block8[blockX + blockY * 8];
 
-                    int pagesToSkip = (w / GS_PSMT8_PAGE_WIDTH);
-                    blockCount += (pagesToSkip * blocksPerPage);
-                    w %= GS_PSMT8_PAGE_WIDTH;
-                }
-
-                if (h > 64)
-                {
-                    blockCount += blocksPerPage;
-                    h -= 64;
-                }
-
-                if (w > 64)
-                {
-                    blockCount += (4 * 4);
-                    w -= 64;
-                }
-
-                if (h > 32)
-                {
-                    blockCount += (2 * 4);
-                    h -= 32;
-                }
-
-                if (w > 32)
-                {
-                    blockCount += (2 * 2);
-                    w -= 32;
-                }
-
-                if (h > 16)
-                {
-                    blockCount += 2;
-                    h -= 16;
-                }
-
-                if (w > 16)
-                {
-                    blockCount++;
-                    w -= 16;
-                }
-
-                if (h > 0 || w > 0)
-                {
-                    blockCount++;
-                    h = 0;
-                    w = 0;
-                }
+                return (page * blocksPerPage) + block;
             }
             else if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMT4) // Page 168
             {
                 int blocksPerPage = GS_PSMT4_PAGE_COLS * GS_PSMT4_PAGE_ROWS;
-                var pagesPerRow = MiscUtils.AlignValue((uint)w, GS_PSMT4_PAGE_WIDTH) / GS_PSMT4_PAGE_WIDTH;
+                var pagesPerRow = MiscUtils.AlignValue((uint)x, GS_PSMT4_PAGE_WIDTH) / GS_PSMT4_PAGE_WIDTH;
 
-                if (h > GS_PSMT4_PAGE_HEIGHT)
-                {
-                    if ((h % GS_PSMT4_PAGE_HEIGHT) == 0)
-                        h--;
+                int pageX = x / 128;
+                int pageY = y / 128;
+                int page = pageX + (pageY * (int)pagesPerRow);
 
-                    int totalBlocksPerPageRow = (int)(blocksPerPage * pagesPerRow);
-                    int pageRowsToSkip = (h / GS_PSMT4_PAGE_HEIGHT);
-                    blockCount += pageRowsToSkip * totalBlocksPerPageRow;
-                    h %= GS_PSMT4_PAGE_HEIGHT;
-                }
+                int px = x - (pageX * 128);
+                int py = y - (pageY * 128);
 
-                if (w >= GS_PSMT4_PAGE_WIDTH)
-                {
-                    if (w == (pagesPerRow * GS_PSMT4_PAGE_WIDTH))
-                        w--;
+                int blockX = px / 32;
+                int blockY = py / 16;
+                int block = GSMemory.block4[blockX + blockY * 4];
 
-                    int pagesToSkip = (w / GS_PSMT4_PAGE_WIDTH);
-                    blockCount += (pagesToSkip * blocksPerPage);
-                    w %= GS_PSMT4_PAGE_WIDTH;
-                }
-
-                if (h > 64)
-                {
-                    blockCount += (4 * 4);
-                    h %= 64;
-                }
-
-                if (w > 64)
-                {
-                    blockCount += (2 * 4);
-                    w %= 64;
-                }
-
-                if (h > 32)
-                {
-                    blockCount += (2 * 2);
-                    h %= 32;
-                }
-
-                if (w > 32)
-                {
-                    blockCount += 2;
-                    w -= 32;
-                }
-
-                if (h > 16)
-                {
-                    blockCount++;
-                    h -= 16;
-                }
-
-                if (h > 0 || w > 0)
-                {
-                    blockCount++;
-                    h = 0;
-                    w = 0;
-                }
+                return (page * blocksPerPage) + block;
             }
-            else if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMCT32 || pixelFormat == SCE_GS_PSM.SCE_GS_PSMCT24 ||
-                pixelFormat == SCE_GS_PSM.SCE_GS_PSMZ32 || pixelFormat == SCE_GS_PSM.SCE_GS_PSMZ24) // Page 162 & 168
+            else if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMCT32 || pixelFormat == SCE_GS_PSM.SCE_GS_PSMCT24) // Page 162 & 168
             {
-                int blocksPerPage = GS_PSM_CT32_PAGE_COLS * GS_PSM_CT32_PAGE_ROWS;
-                var pagesPerRow = MiscUtils.AlignValue((uint)w, GS_PSM_CT32_PAGE_WIDTH) / GS_PSM_CT32_PAGE_WIDTH;
+                var pagesPerRow = MiscUtils.AlignValue((uint)x, GS_PSM_CT32_PAGE_WIDTH) / GS_PSM_CT32_PAGE_WIDTH;
 
-                if (h > GS_PSM_CT32_PAGE_HEIGHT)
-                {
-                    if ((h % GS_PSM_CT32_PAGE_HEIGHT) == 0)
-                        h--;
+                int pageX = x / 64;
+                int pageY = y / 32;
+                int page = pageX + (pageY * (int)pagesPerRow);
 
-                    int blocksPerPageRow = (int)(pagesPerRow * blocksPerPage);
-                    int pageRowsToSkip = (h / GS_PSM_CT32_PAGE_HEIGHT);
-                    blockCount += pageRowsToSkip * blocksPerPageRow;
-                    h %= GS_PSM_CT32_PAGE_HEIGHT;
-                }
+                int px = x - (pageX * 64);
+                int py = y - (pageY * 32);
 
-                if (w >= GS_PSM_CT32_PAGE_WIDTH)
-                {
-                    if (w == (pagesPerRow * GS_PSM_CT32_PAGE_WIDTH))
-                        w--;
+                int blockX = px / 8;
+                int blockY = py / 8;
+                int block = GSMemory.block32[blockX + blockY * 8];
 
-                    int pagesToSkip = (w / GS_PSM_CT32_PAGE_WIDTH);
-                    blockCount += (pagesToSkip * blocksPerPage);
-                    w %= GS_PSM_CT32_PAGE_WIDTH;
-                }
-
-                if (w > 32)
-                {
-                    blockCount += (4 * 4);
-                    w -= 32;
-                }
-
-                if (h > 16)
-                {
-                    blockCount += (2 * 4);
-                    h -= 16;
-                }
-
-                if (w > 16)
-                {
-                    blockCount += (2 * 2);
-                    w -= 16;
-                }
-
-                if (h > 8)
-                {
-                    blockCount += 2;
-                    h -= 8;
-                }
-
-                if (w > 8)
-                {
-                    blockCount++;
-                    w -= 8;
-                }
-
-                if (h > 0 || w > 0)
-                {
-                    blockCount++;
-                    h = 0;
-                    w = 0;
-                }
+                return page * 32 + block;
             }
             else
             {
                 throw new NotImplementedException($"FindBlockIndex unimplemented format: {pixelFormat}");
             }
-
-            return blockCount;
         }
 
-        public static int DeterminePositionFromBlockIndex(SCE_GS_PSM pixelFormat, int blockIndex, int tw, int th)
+        public static int GetDataSize(int width, int height, SCE_GS_PSM format)
         {
-            int width = (int)Math.Pow(2, tw);
-            int height = (int)Math.Pow(2, th);
+            int bpp = Tex1Utils.GetBitsPerPixel(format);
+            int bytes = (int)(double)(width * height * ((double)bpp / 8));
+            return bytes;
+        }
 
-            if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMT4)
+        public static int GetBitsPerPixel(SCE_GS_PSM psm)
+        {
+            return psm switch
             {
-                int blocksPerPage = GS_PSMT4_PAGE_COLS * GS_PSMT4_PAGE_ROWS;
-                var pagesPerRow = MiscUtils.AlignValue((uint)width, GS_PSMT4_PAGE_WIDTH) / GS_PSMT4_PAGE_WIDTH;
-                int blocksPerPageRow = (int)(blocksPerPage * pagesPerRow);
+                SCE_GS_PSM.SCE_GS_PSMCT32 => 32,
+                SCE_GS_PSM.SCE_GS_PSMCT24 => 32, // RGB24, uses 24-bit per pixel with the upper 8 bit unused.
+                SCE_GS_PSM.SCE_GS_PSMCT16 => 16, // RGBA16 unsigned, pack two pixels in 32-bit in little endian order.
+                SCE_GS_PSM.SCE_GS_PSMCT16S => 16, // RGBA16 signed, pack two pixels in 32-bit in little endian order.
+                SCE_GS_PSM.SCE_GS_PSMT8 => 8, // 8-bit indexed, packing 4 pixels per 32-bit.
+                SCE_GS_PSM.SCE_GS_PSMT4 => 4, // 4-bit indexed, packing 8 pixels per 32-bit.
+                SCE_GS_PSM.SCE_GS_PSMT8H => 4, // 8-bit indexed, but the upper 24-bit are unused.
+                SCE_GS_PSM.SCE_GS_PSMT4HL => 4, // 4-bit indexed, but the upper 24-bit are unused.
+                SCE_GS_PSM.SCE_GS_PSMT4HH => 4,
+                SCE_GS_PSM.SCE_GS_PSMZ32 => 32,  // 32-bit Z buffer
+                SCE_GS_PSM.SCE_GS_PSMZ24 => 32, // 24-bit Z buffer with the upper 8-bit unused
+                SCE_GS_PSM.SCE_GS_PSMZ16 => 16, // 16-bit unsigned Z buffer, pack two pixels in 32-bit in little endian order.
+                SCE_GS_PSM.SCE_GS_PSMZ16S => 16, // 16-bit signed Z buffer, pack two pixels in 32-bit in little endian order.
+                _ => throw new InvalidOperationException($"Invalid pixel surface type '{psm}'")
+            };
+        }
 
-                int outWidth = 0, outHeight = 0;
-
-                if (blockIndex > blocksPerPageRow)
-                {
-                    int count = blockIndex / blocksPerPageRow;
-
-                    outHeight += (count * GS_PSMT4_PAGE_HEIGHT);
-                    blockIndex -= (count * blocksPerPageRow);
-                }
-
-                if (blockIndex >= 32)
-                {
-                    int count = blockIndex / 32;
-
-                    outWidth += (count * GS_PSMT4_PAGE_WIDTH);
-                    blockIndex -= (count * 32);
-                }
-
-                if (blockIndex >= 16)
-                {
-                    outHeight += (GS_PSMT4_PAGE_HEIGHT / 2);
-                    blockIndex -= 16;
-                }
-
-                if (blockIndex >= 8)
-                {
-                    outWidth += (GS_PSMT4_PAGE_WIDTH / 2);
-                    blockIndex -= 8;
-                }
-            }
-            else if (pixelFormat == SCE_GS_PSM.SCE_GS_PSMCT32)
-            {
-                int blocksPerPage = GS_PSM_CT32_PAGE_COLS * GS_PSM_CT32_PAGE_ROWS;
-                var pagesPerRow = MiscUtils.AlignValue((uint)width, GS_PSM_CT32_PAGE_WIDTH) / GS_PSM_CT32_PAGE_WIDTH;
-                int blocksPerPageRow = (int)(blocksPerPage * pagesPerRow);
-
-                int outWidth = 0, outHeight = 0;
-
-                if (blockIndex > blocksPerPageRow)
-                {
-                    int count = blockIndex / blocksPerPageRow;
-
-                    outHeight += (count * GS_PSM_CT32_PAGE_HEIGHT);
-                    blockIndex -= (count * blocksPerPageRow);
-                }
-
-                if (blockIndex >= 32)
-                {
-                    int count = blockIndex / 32;
-
-                    outWidth += (count * GS_PSM_CT32_PAGE_WIDTH);
-                    blockIndex -= (count * 32);
-                }
-
-                if (blockIndex >= 16)
-                {
-                    outWidth += (GS_PSM_CT32_PAGE_WIDTH / 2);
-                    blockIndex -= 16;
-                }
-
-                if (blockIndex >= 8)
-                {
-                    outWidth += (GS_PSM_CT32_PAGE_WIDTH / 2);
-                    blockIndex -= 8;
-                }
-            }
-
-            return 0;
+        public static double Normalize(double val, double valmin, double valmax, double min, double max)
+        {
+            return (((val - valmin) / (valmax - valmin)) * (max - min)) + min;
         }
     }
 }

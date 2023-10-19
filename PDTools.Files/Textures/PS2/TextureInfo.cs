@@ -23,7 +23,7 @@ namespace PDTools.Files.Textures.PS2
     public class GSTransfers
     {
         public uint DataOffset { get; set; }
-        public short BP { get; set; }
+        public ushort BP { get; set; }
 
         /// <summary>
         /// Buffer Width
@@ -38,39 +38,34 @@ namespace PDTools.Files.Textures.PS2
         /// <summary>
         /// "Image" width of the transfer
         /// </summary>
-        public short Width { get; set; }
+        public ushort Width { get; set; }
 
         /// <summary>
         /// "Image" height of the transfer
         /// </summary>
-        public short Height { get; set; }
+        public ushort Height { get; set; }
 
         // Used for serializing
-        public bool IsPalette { get; set; }
-        public Image<Rgba32> Image { get; set; }
-        public IndexedImageFrame<Rgba32> IndexedImage { get; set; }
-        public ReadOnlyMemory<Rgba32> Palette { get; set; }
-        public Rgba32[] TiledPalette { get; set; }
-        public int[] LinearToTiledPaletteIndices { get; set; }
+        public byte[] Data { get; set; }
 
         public void Read(BinaryStream bs)
         {
             DataOffset = bs.ReadUInt32();
-            BP = bs.ReadInt16();
+            BP = bs.ReadUInt16();
             BW = bs.Read1Byte();
             Format = (SCE_GS_PSM)bs.ReadByte();
-            Width = bs.ReadInt16();
-            Height = bs.ReadInt16();
+            Width = bs.ReadUInt16();
+            Height = bs.ReadUInt16();
         }
 
         public void Write(BinaryStream bs)
         {
             bs.WriteUInt32(DataOffset);
-            bs.WriteInt16(BP);
+            bs.WriteUInt16(BP);
             bs.WriteByte(BW);
             bs.WriteByte((byte)Format);
-            bs.WriteInt16(Width);
-            bs.WriteInt16(Height);
+            bs.WriteUInt16(Width);
+            bs.WriteUInt16(Height);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace PDTools.Files.Textures.PS2
     {
         private uint[] _gsMemory = new uint[1024 * 1024];
 
-        static int[] block32 = new int[32]
+        public static int[] block32 = new int[32]
         {
              0,  1,  4,  5, 16, 17, 20, 21,
              2,  3,  6,  7, 18, 19, 22, 23,
@@ -705,7 +705,7 @@ namespace PDTools.Files.Textures.PS2
             }
         }
 
-        static int[] block8 = new int[32]
+        public static int[] block8 = new int[32]
         {
              0,  1,  4,  5, 16, 17, 20, 21,
              2,  3,  6,  7, 18, 19, 22, 23,
@@ -839,7 +839,7 @@ namespace PDTools.Files.Textures.PS2
             }
         }
 
-        static int[] block4 = new int[32]
+        public static int[] block4 = new int[32]
         {
              0,  2,  8, 10,
              1,  3,  9, 11,

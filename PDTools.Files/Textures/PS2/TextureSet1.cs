@@ -18,6 +18,51 @@ using Microsoft.Toolkit.HighPerformance;
 
 namespace PDTools.Files.Textures.PS2
 {
+
+    /* So. Tex1 might seem like a simple format, but it can get complicated really quick.
+     * If you wanna follow along, grab 010 Editor and this template
+     * https://github.com/Nenkai/GT-File-Specifications-Documentation/blob/master/Formats/GT4/GT4_Tex1_TexSet.bt
+     * 
+     * PGLUTextures are just the textures present in the set and the registers 
+     * that are passed in to GS, any tbp field (including mipmap) is remapped at runtime. 
+     * 
+     * The GS Transfers are the hard part. 
+     * 
+     * But before explaining the transfers, it's important to be familiar with the block/page system,
+     * so refer to Page 161<->175 of the GS's Users Manual (Docs&Training\HardwareManuals in PS2 SDK).
+     * 
+     * The important registers to keep in mind are TBP and CBP (in tex0). These are block pointers/offsets.
+     * 
+     * Blocks kinda work as a separate coordinate system. For texture sets, some optimization is made as to where the textures go.
+     * When you have a texture that's for instance 350x350, the height and width are raised to the next power of 2, so 512x512.
+     * That leaves a space with what's rendered and what isn't, so extra data can be put there, it can be the image's palette, or another texture
+     * So don't be surprised if you see the CBP register of a texture in the middle of what would appear to be the main texture's.
+     * 
+     * Now, for GS transfers.
+     * 
+     * Suppose you have one basic texture with a palette, PDI's builder simply builds two transfers - one with the image data, the other with the palette.
+     * Simple enough, right?
+     * The problem is when larger textures or more than one texture exists within the set.
+     * 
+     * They're swizzled into buffers converted from i.e 4bit/8bit to PSMCT32 (32 bit) so the GS can load them faster.
+     * To read them (and convert to png), I used GSTextureConvert.
+     * https://ps2linux.no-ip.info/playstation2-linux.com/projects/ezswizzle/
+     * 
+     * You can also use TextureSwizzling.pdf for some notes, along with:
+     * - Docs&Training\Starting Guides\Graphics Synthesizer Starting Guide.pdf (PS2 SDK) - Page 
+     * - Source in Shell\Tools\shellTexture\
+     * - ee\sample\graphics\textrans\bitconv
+     * 
+     * For an example, look at advertise/us/premium.img (GT4 Online).
+     * There's 3 transfers, 64x1216, 32x16 and 8x8.
+     * 
+     * So summarize, tex1 allows for rather complex 4 optimizations:
+     * - Textures, or palettes, can be inside the non-rendered area of other textures, to save on blocks
+     * - Multiple texture buffers of different formats swizzled into PSMCT32 for faster upload to GS
+     * - Texture data is sometimes reused when a different palette is used, to save on size
+     * - When a different palette is used for certain textures, the CSA register is set, which presumably avoids using an extra block for a palette.
+     */
+
     public class TextureSet1
     {
         /// <summary>
@@ -54,7 +99,7 @@ namespace PDTools.Files.Textures.PS2
             _inputData = bs.ReadBytes(textureSetSize);
             bs.Position = basePos + 0x10;
 
-            short baseTbp = bs.ReadInt16(); // Realistically always 0
+            short baseTbp = bs.ReadInt16(); // Realistically always 0, only remapped at runtime
             TotalBlockSize = bs.ReadUInt16();
             ushort pgluTextureCount = bs.ReadUInt16();
             ushort textureInfoCount = bs.ReadUInt16();
@@ -76,21 +121,6 @@ namespace PDTools.Files.Textures.PS2
                 transfer.Read(bs);
                 GSTransfers.Add(transfer);
             }
-
-            /*
-            var genOffset = Tex1Utils.FindBlockIndexAtPosition(GSTransfers[0].Format, GSTransfers[0].Width, GSTransfers[0].Height);
-            Console.WriteLine($"Infos[0] - Format: {GSTransfers[0].Format} ({GSTransfers[0].Width}x{GSTransfers[0].Height}) - Size:{TotalBlockSize:X8} - Gen:{genOffset:X8}");
-            */
-
-            /*
-            for (var i = 0; i < pgluTextures.Count; i++)
-                Console.WriteLine($"- Textures[{i}] - {pgluTextures[i].tex0.PSM} ({pgluTextures[i].ClampSettings.MAXU + 1}x{pgluTextures[i].ClampSettings.MAXV + 1}) - Offset:{pgluTextures[i].tex0.TBP0_TextureBaseAddress:X8}");
-
-
-            for (var i = 0; i < GSTransfers.Count; i++)
-                Console.WriteLine($"- Transfers[{i}] - {GSTransfers[i].Format} ({GSTransfers[i].Width}x{GSTransfers[i].Height}) - Offset:{GSTransfers[i].BP:X8}");
-            */
-
 
             InitializeGSMemory();
         }
@@ -124,6 +154,23 @@ namespace PDTools.Files.Textures.PS2
             }
         }
 
+        public void Dump()
+        {
+            for (var i = 0; i < pgluTextures.Count; i++)
+            {
+                //PGLUtexture texture = pgluTextures.OrderByDescending(e => e.ClampSettings.MAXU * e.ClampSettings.MAXV).ToList()[i];
+                PGLUtexture texture = pgluTextures[i];
+
+                Console.WriteLine($"- Textures[{i}] - {texture.tex0.PSM} ({texture.ClampSettings.MAXU + 1}x{texture.ClampSettings.MAXV + 1}) - TBP:{texture.tex0.TBP0_TextureBaseAddress:X8} " +
+                    $"- CBP: {texture.tex0.CBP_ClutBlockPointer:X8}, CSA:{texture.tex0.CSA_ClutEntryOffset}");
+            }
+
+
+            for (var i = 0; i < GSTransfers.Count; i++)
+                Console.WriteLine($"- Transfers[{i}] - {GSTransfers[i].Format} ({GSTransfers[i].Width}x{GSTransfers[i].Height}) - Offset:{GSTransfers[i].BP:X8}");
+            
+        }
+
         /// <summary>
         /// Gets a texture by index in this texture set.
         /// </summary>
@@ -134,6 +181,7 @@ namespace PDTools.Files.Textures.PS2
             if (index > pgluTextures.Count)
                 throw new IndexOutOfRangeException("Texture index is out of range.");
 
+            //PGLUtexture texture = pgluTextures.OrderByDescending(e => e.ClampSettings.MAXU * e.ClampSettings.MAXV).ToList()[index];
             PGLUtexture texture = pgluTextures[index];
             return GetImageData(texture);
         }
@@ -171,7 +219,7 @@ namespace PDTools.Files.Textures.PS2
 
                     _gsMemory.ReadTexPSMCT32((int)texture.tex0.CBP_ClutBlockPointer,
                         1,
-                        0, 0,
+                        0, (int)texture.tex0.CSA_ClutEntryOffset,
                         8, 2, // Always 8x2 for PSMT4
                         palette);
 
@@ -188,7 +236,7 @@ namespace PDTools.Files.Textures.PS2
                     palette = new uint[16 * 16];
                     _gsMemory.ReadTexPSMCT32((int)texture.tex0.CBP_ClutBlockPointer,
                         1,
-                        0, 0,
+                        0, (int)texture.tex0.CSA_ClutEntryOffset,
                         16, 16, // Always 16x16 for PSMT8
                         palette);
                     break;
@@ -217,7 +265,7 @@ namespace PDTools.Files.Textures.PS2
                     paletteColors = MakeTiledPalette(paletteColors);
 
                 BitStream bs = new BitStream(BitStreamMode.Read, textureData, BitStreamSignificantBitOrder.MSB);
-                int bpp = GetBitsPerPixel(texture.tex0.PSM);
+                int bpp = Tex1Utils.GetBitsPerPixel(texture.tex0.PSM);
                 for (var y = 0; y < fullHeight; y++)
                 {
                     for (var x = 0; x < fullWidth; x++)
@@ -245,90 +293,48 @@ namespace PDTools.Files.Textures.PS2
             return img;
         }
 
-        public void Serialize(BinaryStream bs)
+        public void Serialize(Stream stream)
         {
+            var bs = new BinaryStream(stream, ByteConverter.Little);
+
             long basePos = bs.Position;
 
             bs.Position = basePos + 0x30;
-            int pgluTextureOffset = (int)(bs.Position - basePos);
+            uint pgluTextureOffset = (uint)(bs.Position - basePos);
 
             for (var i = 0; i < pgluTextures.Count; i++)
                 pgluTextures[i].Write(bs);
 
-            int textureInfoOffset = (int)(bs.Position - basePos);
-            uint dataOffset = (uint)(textureInfoOffset + (GSTransfers.Count * 0x0C));
+            uint transferInfoOffset = (uint)(bs.Position - basePos);
+            uint dataOffset = (uint)(transferInfoOffset + (GSTransfers.Count * 0x0C));
             dataOffset = MiscUtils.AlignValue(dataOffset, 0x10);
             for (var i = 0; i < GSTransfers.Count; i++)
             {
-                GSTransfers info = GSTransfers[i];
+                GSTransfers transfer = GSTransfers[i];
 
-                bs.Position = textureInfoOffset + (i * 0x0C);
-                info.DataOffset = dataOffset;
-                info.Write(bs);
+                bs.Position = basePos + transferInfoOffset + (i * 0x0C);
+                transfer.DataOffset = dataOffset;
+                transfer.Write(bs);
 
-                bs.Position = (int)dataOffset;
-
-                if (info.Format == SCE_GS_PSM.SCE_GS_PSMT8 || info.Format == SCE_GS_PSM.SCE_GS_PSMT4)
-                {
-                    var img = info.IndexedImage;
-                    ulong bpp = (ulong)GetBitsPerPixel(info.Format);
-                    for (var y = 0; y < img.Height; y++)
-                    {
-                        var row = img.DangerousGetRowSpan(y);
-                        for (var x = 0; x < img.Width; x++)
-                        {
-                            //bs.WriteBits(row[x], bpp);
-                        }
-                    }
-
-                    bs.Align(0x10);
-                }
-                else
-                {
-                    if (info.IsPalette)
-                    {
-                        Debug.Assert(info.Format == SCE_GS_PSM.SCE_GS_PSMCT32, "Palette is not RGBA32");
-
-                        for (var j = 0; j < info.Palette.Length; j++)
-                        {
-                            var col = info.TiledPalette[j];
-                            bs.WriteByte(col.R);
-                            bs.WriteByte(col.G);
-                            bs.WriteByte(col.B);
-                            bs.WriteByte((byte)Math.Clamp(col.A / 2, (byte)0x00, (byte)0x80));
-                        }
-                    }
-                    else
-                    {
-                        Image<Rgba32> image = info.Image;
-                        for (var y = 0; y < image.Height; y++)
-                        {
-                            for (var x = 0; x < image.Width; x++)
-                            {
-                                bs.WriteByte(image[x, y].R);
-                                bs.WriteByte(image[x, y].G);
-                                bs.WriteByte(image[x, y].B);
-                                bs.WriteByte((byte)Math.Round(Range(image[x, y].A, 0x00, 0x80), MidpointRounding.AwayFromZero));
-                            }
-                        }
-                    }
-                }
-
-                dataOffset = (uint)bs.Position;
+                bs.Position = basePos + (int)dataOffset;
+                bs.Write(transfer.Data);
+                dataOffset = (uint)(bs.Position - basePos);
             }
 
+            uint fileSize = (uint)(bs.Position - basePos);
+
             // Write header
-            bs.Position = 0;
+            bs.Position = basePos;
             bs.WriteUInt32(Magic); // Tex1
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt32(0);
-            bs.WriteInt16(0); // Base TBP - should be zero
+            bs.WriteUInt32(0); // Reloc ptr
+            bs.WriteUInt32(0); // Unk ptr
+            bs.WriteUInt32(fileSize); // File size
+            bs.WriteUInt16(0); // Base TBP - should be zero
             bs.WriteUInt16(TotalBlockSize); // Total size in blocks
-            bs.WriteInt16((short)pgluTextures.Count);
-            bs.WriteInt16((short)GSTransfers.Count);
-            bs.WriteInt32(pgluTextureOffset);
-            bs.WriteInt32(textureInfoOffset);
+            bs.WriteUInt16((ushort)pgluTextures.Count);
+            bs.WriteUInt16((ushort)GSTransfers.Count);
+            bs.WriteUInt32(pgluTextureOffset);
+            bs.WriteUInt32(transferInfoOffset);
         }
 
         // Credits tiledggd
@@ -350,28 +356,5 @@ namespace PDTools.Files.Textures.PS2
 
             return outpal;
         }
-
-        static int GetBitsPerPixel(SCE_GS_PSM psm)
-        {
-            return psm switch
-            {
-                SCE_GS_PSM.SCE_GS_PSMCT32 => 32,
-                SCE_GS_PSM.SCE_GS_PSMCT24 => 32, // RGB24, uses 24-bit per pixel with the upper 8 bit unused.
-                SCE_GS_PSM.SCE_GS_PSMCT16 => 16, // RGBA16 unsigned, pack two pixels in 32-bit in little endian order.
-                SCE_GS_PSM.SCE_GS_PSMCT16S => 16, // RGBA16 signed, pack two pixels in 32-bit in little endian order.
-                SCE_GS_PSM.SCE_GS_PSMT8 => 8, // 8-bit indexed, packing 4 pixels per 32-bit.
-                SCE_GS_PSM.SCE_GS_PSMT4 => 4, // 4-bit indexed, packing 8 pixels per 32-bit.
-                SCE_GS_PSM.SCE_GS_PSMT8H => 4, // 8-bit indexed, but the upper 24-bit are unused.
-                SCE_GS_PSM.SCE_GS_PSMT4HL => 4, // 4-bit indexed, but the upper 24-bit are unused.
-                SCE_GS_PSM.SCE_GS_PSMT4HH => 4,
-                SCE_GS_PSM.SCE_GS_PSMZ32 => 32,  // 32-bit Z buffer
-                SCE_GS_PSM.SCE_GS_PSMZ24 => 32, // 24-bit Z buffer with the upper 8-bit unused
-                SCE_GS_PSM.SCE_GS_PSMZ16 => 16, // 16-bit unsigned Z buffer, pack two pixels in 32-bit in little endian order.
-                SCE_GS_PSM.SCE_GS_PSMZ16S => 16, // 16-bit signed Z buffer, pack two pixels in 32-bit in little endian order.
-                _ => throw new InvalidOperationException($"Invalid pixel surface type '{psm}'")
-            };
-        }
-        public double Range(double val, double min, double max)
-            => min + val * (max - min);
     }
 }
