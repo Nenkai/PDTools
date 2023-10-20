@@ -10,6 +10,8 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
+using PDTools.Files.Textures.PS2;
+
 namespace PDTools.Files.Models.ModelSet2
 {
     public class ModelSet2
@@ -21,8 +23,14 @@ namespace PDTools.Files.Models.ModelSet2
         public List<Model> Models { get; set; } = new List<Model>();
         public List<PGLUshape> Shapes { get; set; } = new List<PGLUshape>();
 
-        public static ModelSet2 FromStream(BinaryStream bs)
+        /// <summary>
+        /// Textures. Each texture set within a list represents seemingly one lod level.
+        /// </summary>
+        public List<List<TextureSet1>> TextureSetLists { get; set; } = new List<List<TextureSet1>>();
+
+        public static ModelSet2 FromStream(Stream stream)
         {
+            using var bs = new BinaryStream(stream);
             long basePos = bs.Position;
 
             string magic = bs.ReadString(4);
@@ -41,8 +49,8 @@ namespace PDTools.Files.Models.ModelSet2
             ushort modelCount = bs.ReadUInt16();
             ushort shapeCount = bs.ReadUInt16();
             ushort pgluMatTableCount = bs.ReadUInt16();
-            ushort pgluTexSetArrWidth = bs.ReadUInt16();
-            ushort pgluTexSetArrHeight = bs.ReadUInt16();
+            ushort textureSetLodLevelCount = bs.ReadUInt16();
+            ushort textureSetListCount = bs.ReadUInt16();
 
             bs.Position = basePos + 0x38;
             uint modelsOffset = bs.ReadUInt32();
@@ -57,6 +65,8 @@ namespace PDTools.Files.Models.ModelSet2
 
             modelSet.ReadModels(bs, basePos, modelsOffset, modelCount);
             modelSet.ReadShapes(bs, basePos, shapesOffset, shapeCount);
+            modelSet.ReadTextureSets(bs, basePos, pgluTexSetsOffset, textureSetListCount, textureSetLodLevelCount);
+            
 
             return modelSet;
         }
@@ -86,10 +96,35 @@ namespace PDTools.Files.Models.ModelSet2
             }
         }
 
+        private void ReadTextureSets(BinaryStream bs, long baseMdlPos, uint offset, uint listCount, uint textureLodLevels)
+        {
+            for (int i = 0; i < listCount; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * sizeof(int));
+                int entriesOffset = bs.ReadInt32();
+
+                // One texture set per lod level
+                List<TextureSet1> list = new List<TextureSet1>();
+                for (int j = 0; j < textureLodLevels; j++)
+                {
+                    bs.Position = baseMdlPos + entriesOffset + (j * sizeof(int));
+
+                    int off = bs.ReadInt32();
+                    bs.Position = baseMdlPos + off;
+
+                    TextureSet1 textureSet = new TextureSet1();
+                    textureSet.FromStream(bs);
+                    list.Add(textureSet);
+                }
+
+                TextureSetLists.Add(list);
+            }
+        }
+
         public void DumpShape(int shapeIndex)
         {
 
-            PGLUshape? shape = Shapes[shapeIndex];
+            PGLUshape shape = Shapes[shapeIndex];
             using StreamWriter sw = new StreamWriter($"shape{shapeIndex}.obj");
 
             int packetFaceStart = 1;

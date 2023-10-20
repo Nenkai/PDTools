@@ -127,7 +127,7 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 bs.Position = baseMdlPos + (i * 0x30);
 
-                ModelSet3Model? model = ModelSet.Models[i];
+                ModelSet3Model model = ModelSet.Models[i];
                 bs.WriteSingle(model.Unk);
                 bs.WriteSingle(model.Origin.X); bs.WriteSingle(model.Origin.Y); bs.WriteSingle(model.Origin.Z);
                 bs.WriteByte(0);
@@ -149,7 +149,7 @@ namespace PDTools.Files.Models.ModelSet3
             for (int i = 0; i < ModelSet.Models.Count; i++)
             {
                 bs.Position = lastOffset;
-                ModelSet3Model? model = ModelSet.Models[i];
+                ModelSet3Model model = ModelSet.Models[i];
 
                 // Write BBox - (NOTE: BBox starts aligned on 0x10)
                 bs.Align(0x10, grow: true);
@@ -202,7 +202,7 @@ namespace PDTools.Files.Models.ModelSet3
         {
             for (int i = 0; i < ModelSet.Models.Count; i++)
             {
-                ModelSet3Model? model = ModelSet.Models[i];
+                ModelSet3Model model = ModelSet.Models[i];
                 var key = new MDL3ModelKey();
                 key.Name = model.Name;
                 key.ModelID = (uint)i;
@@ -317,7 +317,7 @@ namespace PDTools.Files.Models.ModelSet3
         {
             for (int i = 0; i < ModelSet.Meshes.Count; i++)
             {
-                MDL3Mesh? mesh = ModelSet.Meshes[i];
+                MDL3Mesh mesh = ModelSet.Meshes[i];
                 var key = new MDL3MeshKey();
                 key.Name = mesh.Name;
                 key.MeshID = (uint)i;
@@ -436,7 +436,7 @@ namespace PDTools.Files.Models.ModelSet3
             long lastOffset = bs.Position;
             for (int i = 0; i < ModelSet.Materials.Definitions.Count; i++)
             {
-                MDL3Material? def = ModelSet.Materials.Definitions[i];
+                MDL3Material def = ModelSet.Materials.Definitions[i];
                 strTable.AddString(def.Name);
 
                 bs.Position = baseMaterialDefPos + (i * MDL3Material.GetSize());
@@ -463,7 +463,7 @@ namespace PDTools.Files.Models.ModelSet3
             int dataOffset = (int)lastOffset;
             for (int i = 0; i < ModelSet.Materials.MaterialDatas.Count; i++)
             {
-                MDL3MaterialData? entry = ModelSet.Materials.MaterialDatas[i];
+                MDL3MaterialData entry = ModelSet.Materials.MaterialDatas[i];
                 strTable.AddString(entry.Name);
 
                 bs.WriteInt32(0); // Name offset write later
@@ -1027,7 +1027,7 @@ namespace PDTools.Files.Models.ModelSet3
             // Write shader references
             for (int i = 0; i < ModelSet.Materials.MaterialDatas.Count; i++)
             {
-                MDL3MaterialData? mat = ModelSet.Materials.MaterialDatas[i];
+                MDL3MaterialData mat = ModelSet.Materials.MaterialDatas[i];
                 var @ref = mat.ShaderReferences;
                 int entryOffset = (int)bs.Position;
 
@@ -1076,7 +1076,7 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 for (int i = 0; i < ModelSet.Shaders.Programs0x20.Count; i++)
                 {
-                    ShadersProgram_0x20? p = ModelSet.Shaders.Programs0x20[i];
+                    ShadersProgram_0x20 p = ModelSet.Shaders.Programs0x20[i];
                     if (p.Program.AsSpan().SequenceEqual(prog.Program))
                         return _shaderProgram0x20Offsets[p];
                 }
@@ -1088,7 +1088,7 @@ namespace PDTools.Files.Models.ModelSet3
             {
                 for (int i = 0; i < ModelSet.Shaders.Programs0x20.Count; i++)
                 {
-                    ShadersProgram_0x2C? p = ModelSet.Shaders.Programs0x2C[i];
+                    ShadersProgram_0x2C p = ModelSet.Shaders.Programs0x2C[i];
                     if (p.Program.AsSpan().SequenceEqual(prog.Program))
                         return _shaderProgram0x2COffsets[p];
                 }
@@ -1108,7 +1108,6 @@ namespace PDTools.Files.Models.ModelSet3
 
             bs.Position = lastOffset;
 
-            int count = 0;
             int baseOffset = (int)bs.Position;
 
             List<(int Offset, MDL3TextureKey Key)?> writtenKeys = new List<(int, MDL3TextureKey)?>();
@@ -1118,7 +1117,7 @@ namespace PDTools.Files.Models.ModelSet3
             // Write texture keys from material definitions
             for (int i = 0; i < ModelSet.Materials.Definitions.Count; i++)
             {
-                MDL3Material? mat = ModelSet.Materials.Definitions[i];
+                MDL3Material mat = ModelSet.Materials.Definitions[i];
                 int entriesOffset = (int)bs.Position;
                 foreach (var key in mat.ImageEntries)
                 {
@@ -1147,7 +1146,7 @@ namespace PDTools.Files.Models.ModelSet3
             // Write texture keys from material datas
             for (int i = 0; i < ModelSet.Materials.MaterialDatas.Count; i++)
             {
-                MDL3MaterialData? data = ModelSet.Materials.MaterialDatas[i];
+                MDL3MaterialData data = ModelSet.Materials.MaterialDatas[i];
                 int entriesOffset = (int)bs.Position;
                 foreach (var key in data.TextureKeys)
                 {
@@ -1193,7 +1192,7 @@ namespace PDTools.Files.Models.ModelSet3
         {
             for (int i = 0; i < ModelSet.WingData.Count; i++)
             {
-                MDL3WingData? wing = ModelSet.WingData[i];
+                MDL3WingData wing = ModelSet.WingData[i];
 
                 var key = new MDL3WingKey();
                 key.Name = wing.Name;

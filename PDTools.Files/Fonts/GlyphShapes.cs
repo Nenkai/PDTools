@@ -218,7 +218,7 @@ namespace PDTools.Files.Fonts
             float currentX = 0, currentY = 0;
             for (int i1 = 0; i1 < Data.Count; i1++)
             {
-                IGlyphShapeData? i = Data[i1];
+                IGlyphShapeData i = Data[i1];
                 if (i is GlyphStartPoint startPoint)
                 {
                     if (startPoint.Unk == true)

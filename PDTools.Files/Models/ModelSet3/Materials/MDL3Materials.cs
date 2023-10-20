@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Syroot.BinaryData;
-using PDTools.Files.Textures;
+using PDTools.Files.Textures.PS3;
 
 namespace PDTools.Files.Models.ModelSet3.Materials
 {

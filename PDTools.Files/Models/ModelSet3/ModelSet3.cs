@@ -402,7 +402,7 @@ namespace PDTools.Files.Models.ModelSet3
         /// <exception cref="NotSupportedException"></exception>
         public Vector3[] GetVerticesOfMesh(ushort meshIndex)
         {
-            if (meshIndex == -1)
+            if ((short)meshIndex == -1)
                 throw new InvalidOperationException("Mesh Index was -1.");
 
             var mesh = Meshes[meshIndex];
@@ -743,7 +743,7 @@ namespace PDTools.Files.Models.ModelSet3
         /// </summary>
         /// <param name="meshIndex"></param>
         /// <returns></returns>
-        public Vector3[]? GetBBoxOfMesh(ushort meshIndex)
+        public Vector3[] GetBBoxOfMesh(ushort meshIndex)
         {
             var mesh = Meshes[meshIndex];
 

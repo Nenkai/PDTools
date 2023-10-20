@@ -64,12 +64,11 @@ namespace PDTools.Files.Fonts
                 float currentX = 0, currentY = 0;
 
                 PathBuilder path = new PathBuilder();
-                bool originSet = false;
 
                 var pen = new Pen(new SolidBrush(Color.Black), 2);
                 for (int i1 = 0; i1 < Points.Data.Count; i1++)
                 {
-                    IGlyphShapeData? i = Points.Data[i1];
+                    IGlyphShapeData i = Points.Data[i1];
                     if (i is GlyphStartPoint startPoint)
                     {
                         currentX = startPoint.X + 1024;

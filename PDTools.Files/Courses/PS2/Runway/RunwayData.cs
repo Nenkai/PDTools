@@ -254,7 +254,6 @@ public class RunwayData
         else
         {
             throw new NotImplementedException("Reverse/Implement this part");
-            nextNode = null;
         }
 
         return traverse(out result, nextBounds, startPoint, endPoint, nextNode, depth, clusterIndex);
