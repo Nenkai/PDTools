@@ -23,12 +23,12 @@ namespace PDTools.Files.Textures.PS2
      * If you wanna follow along, grab 010 Editor and this template
      * https://github.com/Nenkai/GT-File-Specifications-Documentation/blob/master/Formats/GT4/GT4_Tex1_TexSet.bt
      * 
-     * PGLUTextures are just the textures present in the set and the registers 
-     * that are passed in to GS, any tbp field (including mipmap) is remapped at runtime. 
+     * PGLUTextures defines the textures in the set, and passes GS registers for each one. 
+     * Any tbp field (including mipmap) is remapped at runtime. 
      * 
      * The GS Transfers are the hard part. 
      * 
-     * But before explaining the transfers, it's important to be familiar with the block/page system,
+     * But before explaining the transfers, it's important to be familiar with the GS's block/page system,
      * so refer to Page 161<->175 of the GS's Users Manual (Docs&Training\HardwareManuals in PS2 SDK).
      * 
      * The important registers to keep in mind are TBP and CBP (in tex0). These are block pointers/offsets.
@@ -49,18 +49,20 @@ namespace PDTools.Files.Textures.PS2
      * https://ps2linux.no-ip.info/playstation2-linux.com/projects/ezswizzle/
      * 
      * You can also use TextureSwizzling.pdf for some notes, along with:
-     * - Docs&Training\Starting Guides\Graphics Synthesizer Starting Guide.pdf (PS2 SDK) - Page 
+     * - Docs&Training\Starting Guides\Graphics Synthesizer Starting Guide.pdf (PS2 SDK)
      * - Source in Shell\Tools\shellTexture\
      * - ee\sample\graphics\textrans\bitconv
      * 
      * For an example, look at advertise/us/premium.img (GT4 Online).
      * There's 3 transfers, 64x1216, 32x16 and 8x8.
      * 
-     * So summarize, tex1 allows for rather complex 4 optimizations:
+     * So summarize, tex1 allows for 4 rather complex optimizations:
      * - Textures, or palettes, can be inside the non-rendered area of other textures, to save on blocks
      * - Multiple texture buffers of different formats swizzled into PSMCT32 for faster upload to GS
      * - Texture data is sometimes reused when a different palette is used, to save on size
      * - When a different palette is used for certain textures, the CSA register is set, which presumably avoids using an extra block for a palette.
+     * 
+     * So far this tool makes none of these optimizations, each texture built is just one or two transfers.
      */
 
     public class TextureSet1
@@ -259,7 +261,7 @@ namespace PDTools.Files.Textures.PS2
             {
                 var paletteColors = MemoryMarshal.Cast<uint, Rgba32>(palette);
                 for (int i = 0; i < paletteColors.Length; i++)
-                    paletteColors[i].A = (byte)Math.Clamp(paletteColors[i].A * 2, 0x00, 0xFF); // Rescale alpha 0-128 to 0-256. PS2 things
+                    paletteColors[i].A = (byte)Tex1Utils.Normalize(paletteColors[i].A, 0x00, 0x80, 0x00, 0xFF); // Rescale alpha 0-128 to 0-256. PS2 things
 
                 if (texture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMT8)
                     paletteColors = MakeTiledPalette(paletteColors);
@@ -283,6 +285,7 @@ namespace PDTools.Files.Textures.PS2
                     for (var x = 0; x < fullWidth; x++)
                     {
                         img[x, y] = pixels[(y * fullWidth) + x];
+                        img[x, y] = new Rgba32(img[x, y].R, img[x, y].G, img[x, y].B, (byte)Tex1Utils.Normalize(img[x, y].A, 0x00, 0x80, 0x00, 0xFF)); // Rescale alpha 0-128 to 0-256. PS2 things
                     }
                 }
             }

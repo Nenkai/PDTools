@@ -130,7 +130,7 @@ namespace PDTools.Files.Textures.PS2
                         bs.WriteByte(image[x, y].R);
                         bs.WriteByte(image[x, y].G);
                         bs.WriteByte(image[x, y].B);
-                        bs.WriteByte((byte)Math.Round(Tex1Utils.Normalize(image[x, y].A, 0x00, 0xFF, 0x00, 0x80), MidpointRounding.AwayFromZero));
+                        bs.WriteByte((byte)Tex1Utils.Normalize(image[x, y].A, 0x00, 0xFF, 0x00, 0x80));
                     }
                 }
             }
