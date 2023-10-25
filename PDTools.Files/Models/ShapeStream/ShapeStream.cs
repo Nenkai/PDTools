@@ -1,9 +1,11 @@
-﻿using PDTools.Files.Models.ModelSet3.Meshes;
-using PDTools.Files.Models.ModelSet3.ShapeStream;
-using Syroot.BinaryData;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using MDL3 = PDTools.Files.Models.ModelSet3.ModelSet3;
+using MDL3 = PDTools.Files.Models.PS3.ModelSet3.ModelSet3;
+
+using Syroot.BinaryData;
+
+using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
+
 
 namespace PDTools.Files.Models.ShapeStream
 {

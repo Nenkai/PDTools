@@ -71,11 +71,12 @@ namespace PDTools.Files.Textures.PS2
         /// Magic - "Tex1".
         /// </summary>
         public const uint Magic = 0x31786554;
+        public const uint HeaderSize = 0x30;
 
         public ushort TotalBlockSize { get; set; }
 
         public List<PGLUtexture> pgluTextures { get; set; } = new List<PGLUtexture>();
-        public List<GSTransfers> GSTransfers { get; set; } = new List<GSTransfers>();
+        public List<GSTransfer> GSTransfers { get; set; } = new List<GSTransfer>();
 
         private GSMemory _gsMemory = new();
 
@@ -84,6 +85,9 @@ namespace PDTools.Files.Textures.PS2
         public void FromStream(Stream stream)
         {
             long basePos = stream.Position;
+
+            if (stream.Length - stream.Position < HeaderSize)
+                throw new InvalidDataException("TextureSet1 header size too small");
 
             var bs = new BinaryStream(stream);
             uint magic = bs.ReadUInt32();
@@ -116,11 +120,12 @@ namespace PDTools.Files.Textures.PS2
                 pgluTextures.Add(tex);
             }
 
-            bs.Position = basePos + (int)textureInfosOffset;
+            
             for (var i = 0; i < textureInfoCount; i++)
             {
-                GSTransfers transfer = new GSTransfers();
-                transfer.Read(bs);
+                GSTransfer transfer = new GSTransfer();
+                bs.Position = basePos + (int)textureInfosOffset + (i * GSTransfer.GetSize());
+                transfer.Read(bs, basePos);
                 GSTransfers.Add(transfer);
             }
 
@@ -302,25 +307,33 @@ namespace PDTools.Files.Textures.PS2
 
             long basePos = bs.Position;
 
-            bs.Position = basePos + 0x30;
+            // Workaround to doing:
+            // - bs.Position += HeaderSize
+            // Would not write if contents of the tex set were empty
+            bs.WriteBytes(new byte[HeaderSize]);
+            
             uint pgluTextureOffset = (uint)(bs.Position - basePos);
 
             for (var i = 0; i < pgluTextures.Count; i++)
                 pgluTextures[i].Write(bs);
 
             uint transferInfoOffset = (uint)(bs.Position - basePos);
-            uint dataOffset = (uint)(transferInfoOffset + (GSTransfers.Count * 0x0C));
+            uint dataOffset = (uint)(transferInfoOffset + (GSTransfers.Count * GSTransfer.GetSize()));
             dataOffset = MiscUtils.AlignValue(dataOffset, 0x10);
+
+            long lastOffset = bs.Position;
             for (var i = 0; i < GSTransfers.Count; i++)
             {
-                GSTransfers transfer = GSTransfers[i];
+                GSTransfer transfer = GSTransfers[i];
 
-                bs.Position = basePos + transferInfoOffset + (i * 0x0C);
+                bs.Position = basePos + transferInfoOffset + (i * GSTransfer.GetSize());
                 transfer.DataOffset = dataOffset;
                 transfer.Write(bs);
 
                 bs.Position = basePos + (int)dataOffset;
                 bs.Write(transfer.Data);
+                lastOffset = bs.Position;
+
                 dataOffset = (uint)(bs.Position - basePos);
             }
 
@@ -338,6 +351,8 @@ namespace PDTools.Files.Textures.PS2
             bs.WriteUInt16((ushort)GSTransfers.Count);
             bs.WriteUInt32(pgluTextureOffset);
             bs.WriteUInt32(transferInfoOffset);
+
+            bs.Position = lastOffset;
         }
 
         // Credits tiledggd

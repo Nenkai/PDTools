@@ -9,8 +9,7 @@ using ICSharpCode.SharpZipLib.Zip.Compression;
 using Syroot.BinaryData;
 using Syroot.BinaryData.Memory;
 using Syroot.BinaryData.Core;
-
-using PDTools.Files.Models.ModelSet3.ShapeStream;
+using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
 
 namespace PDTools.Files.Models.ShapeStream
 {

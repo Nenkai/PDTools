@@ -9,7 +9,7 @@ using System.IO;
 using Syroot.BinaryData;
 
 using PDTools.Files;
-using PDTools.Files.Models.ModelSet3;
+using PDTools.Files.Models.PS3.ModelSet3;
 
 namespace PDTools.Files.Courses.CourseData;
 

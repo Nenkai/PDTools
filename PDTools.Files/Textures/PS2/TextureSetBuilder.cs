@@ -282,7 +282,7 @@ namespace PDTools.Files.Textures.PS2
 
         private void AddTransfer(SCE_GS_PSM format, byte bw, ushort width, ushort height, byte[] data)
         {
-            var inf = new GSTransfers()
+            var inf = new GSTransfer()
             {
                 BP = TBP_Transfers,
                 BW = bw,

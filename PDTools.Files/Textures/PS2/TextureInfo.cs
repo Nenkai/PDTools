@@ -20,7 +20,7 @@ namespace PDTools.Files.Textures.PS2
     /// Represents a data transfer being made to the GS memory.
     /// Dimensions may be different to texture dimensions - buffers may be swizzled for faster uploading to GS.
     /// </summary>
-    public class GSTransfers
+    public class GSTransfer
     {
         public uint DataOffset { get; set; }
         public ushort BP { get; set; }
@@ -48,7 +48,7 @@ namespace PDTools.Files.Textures.PS2
         // Used for serializing
         public byte[] Data { get; set; }
 
-        public void Read(BinaryStream bs)
+        public void Read(BinaryStream bs, long texSetBasePos)
         {
             DataOffset = bs.ReadUInt32();
             BP = bs.ReadUInt16();
@@ -56,6 +56,9 @@ namespace PDTools.Files.Textures.PS2
             Format = (SCE_GS_PSM)bs.ReadByte();
             Width = bs.ReadUInt16();
             Height = bs.ReadUInt16();
+
+            bs.Position = texSetBasePos + DataOffset;
+            Data = bs.ReadBytes(Tex1Utils.GetDataSize(Width, Height, Format));
         }
 
         public void Write(BinaryStream bs)
@@ -66,6 +69,11 @@ namespace PDTools.Files.Textures.PS2
             bs.WriteByte((byte)Format);
             bs.WriteUInt16(Width);
             bs.WriteUInt16(Height);
+        }
+
+        public static int GetSize()
+        {
+            return 0x0C;
         }
     }
 }
