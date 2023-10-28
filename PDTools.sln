@@ -43,7 +43,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Files.Fonts.NVecBui
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.GrimSonyDLSBuilder", "PDTools.GrimSonyDLSBuilder\PDTools.GrimSonyDLSBuilder.csproj", "{E0DD3840-97E8-467C-9EBF-FFF44F7B2403}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDTools.Hashing", "PDTools.Hashing\PDTools.Hashing.csproj", "{029104D0-C543-451A-BCE0-B58D9F979B19}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDTools.Hashing", "PDTools.Hashing\PDTools.Hashing.csproj", "{029104D0-C543-451A-BCE0-B58D9F979B19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -131,6 +131,14 @@ Global
 		{029104D0-C543-451A-BCE0-B58D9F979B19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{029104D0-C543-451A-BCE0-B58D9F979B19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{029104D0-C543-451A-BCE0-B58D9F979B19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6B90B3E-6957-4229-B5C1-86D2730A3E91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6B90B3E-6957-4229-B5C1-86D2730A3E91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6B90B3E-6957-4229-B5C1-86D2730A3E91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6B90B3E-6957-4229-B5C1-86D2730A3E91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF66D6C7-D9C5-4043-BC36-0AA22C2B27A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF66D6C7-D9C5-4043-BC36-0AA22C2B27A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF66D6C7-D9C5-4043-BC36-0AA22C2B27A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF66D6C7-D9C5-4043-BC36-0AA22C2B27A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

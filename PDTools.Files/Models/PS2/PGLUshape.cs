@@ -12,11 +12,10 @@ namespace PDTools.Files.Models.PS2
 {
     public class PGLUshape
     {
-        public float Scale { get; set; }
         public byte Unk1 { get; set; }
         public byte Unk2 { get; set; }
         public byte Unk3 { get; set; }
-        public ushort NumVerts { get; set; }
+        public ushort TotalStripVerts { get; set; }
         public ushort NumTriangles { get; set; }
 
         public List<VIFDescriptor> VIFDescriptors { get; set; } = new();
@@ -27,7 +26,7 @@ namespace PDTools.Files.Models.PS2
             long shapeBasePos = bs.Position;
 
             bs.ReadInt32(); // Reloc ptr
-            Scale = bs.ReadSingle();
+            uint size = bs.ReadUInt32();
 
             byte bits = bs.Read1Byte();
             Unk1 = (byte)(bits & 0b11111);
@@ -35,7 +34,7 @@ namespace PDTools.Files.Models.PS2
             Unk3 = bs.Read1Byte();
 
             ushort vifChunksCount = bs.ReadUInt16();
-            NumVerts = bs.ReadUInt16();
+            TotalStripVerts = bs.ReadUInt16();
             NumTriangles = bs.ReadUInt16();
 
             for (var i = 0; i < vifChunksCount; i++)
@@ -56,12 +55,12 @@ namespace PDTools.Files.Models.PS2
         {
             long baseShapeOffset = bs.Position;
 
-            bs.WriteInt32(0);
-            bs.WriteSingle(Scale);
+            bs.WriteUInt32(0); // Reloc ptr
+            bs.WriteUInt32(0); // Shape size write later
             bs.WriteByte((byte)((Unk2 & 0b111) << 5 | (Unk1 & 0b11111)));
             bs.WriteByte(Unk3);
             bs.WriteUInt16((ushort)VIFDescriptors.Count);
-            bs.WriteUInt16(NumVerts);
+            bs.WriteUInt16(TotalStripVerts);
             bs.WriteUInt16(NumTriangles);
 
             // Skip descriptors for now
@@ -70,13 +69,14 @@ namespace PDTools.Files.Models.PS2
             bs.Align(0x10, grow: true);
 
             // Write strips
+            long lastPos = bs.Position;
             for (var i = 0; i < VIFPackets.Count; i++)
             {
                 long packetStartOffset = bs.Position;
                 VIFPacket packet = VIFPackets[i];
                 packet.Write(bs);
 
-                long lastPos = bs.Position;
+                lastPos = bs.Position;
                 long quadwordSize = (bs.Position - packetStartOffset) / 16;
 
                 bs.Position = descriptorsOffset + (i * VIFDescriptor.GetSize());
@@ -88,6 +88,11 @@ namespace PDTools.Files.Models.PS2
 
                 bs.Position = lastPos;
             }
+
+            uint shapeSize = (uint)(lastPos - baseShapeOffset);
+            bs.Position = (baseShapeOffset + 4);
+            bs.WriteUInt32(shapeSize);
+            bs.Position = lastPos;
         }
 
         public void DumpShape(string objFileName)
@@ -111,13 +116,14 @@ namespace PDTools.Files.Models.PS2
 
                 VIFPacket packet = VIFPackets[j];
                 VIFCommand vertCommand = packet.Commands.First(e => e.VUAddr == 0xC000 || e.VUAddr == 0x8000);
-                // VIFCommand uvCommand = packet.Commands.First(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[]));
-                //VIFCommand uvCommand = packet.Commands.First(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[]));
+                VIFCommand uvCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[])) ||
+                                                                  (e.VUAddr == 0x8040 && e.UnpackData.Any(a => a is short[])) );
+
                 VIFCommand resets = packet.Commands.Find(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is byte[]));
 
                 VIFDescriptor desc = VIFDescriptors[j];
                 matSw.WriteLine($"newmtl {fileName}.{0}.{desc.pgluTextureIndex}");
-                matSw.WriteLine($"map_Kd {fileName}_textures/{fileName}.{0}.{(desc.pgluTextureIndex) - 1}.png");
+                matSw.WriteLine($"map_Kd {fileName}_textures/{fileName}.{0}.{0}.{(desc.pgluTextureIndex) - 1}.png");
 
                 int resetIndex = 1;
                 int nextVertReset = ((resets.UnpackData[resetIndex] as byte[])[0] + 6) / 3;
@@ -126,18 +132,18 @@ namespace PDTools.Files.Models.PS2
 
                 for (var l = 0; l < vertCommand.UnpackData.Count; l++)
                 {
-                    if (vertCommand.UnpackData[l] is short[])
+                    if (vertCommand.UnpackData[l] is short[] vertShortArr)
                     {
-                        float xf = (vertCommand.UnpackData[l] as short[])[0] / 256f;
-                        float yf = (vertCommand.UnpackData[l] as short[])[1] / 256f;
-                        float zf = (vertCommand.UnpackData[l] as short[])[2] / 256f;
+                        float xf = vertShortArr[0] / 256f;
+                        float yf = vertShortArr[1] / 256f;
+                        float zf = vertShortArr[2] / 256f;
                         verts[l] = new Vector3(xf, yf, zf);
                     }
-                    else
+                    else if (vertCommand.UnpackData[l] is int[] vertFloatArr)
                     {
-                        var xf = BitConverter.Int32BitsToSingle((vertCommand.UnpackData[l] as int[])[0]);
-                        var yf = BitConverter.Int32BitsToSingle((vertCommand.UnpackData[l] as int[])[1]);
-                        var zf = BitConverter.Int32BitsToSingle((vertCommand.UnpackData[l] as int[])[2]);
+                        var xf = BitConverter.Int32BitsToSingle(vertFloatArr[0]);
+                        var yf = BitConverter.Int32BitsToSingle(vertFloatArr[1]);
+                        var zf = BitConverter.Int32BitsToSingle(vertFloatArr[2]);
                         verts[l] = new Vector3(xf, yf, zf);
                     }
 
@@ -171,17 +177,25 @@ namespace PDTools.Files.Models.PS2
 
                 sw.WriteLine();
 
-                /*
-                for (var l = 0; l < uvCommand.UnpackData.Count; l++)
+                if (uvCommand is not null)
                 {
-                    if (uvCommand.UnpackData[l] is int[] uvArr && uvArr.Length == 2) // float UVs
+                    for (var l = 0; l < uvCommand.UnpackData.Count; l++)
                     {
-                        var u = BitConverter.Int32BitsToSingle((uvCommand.UnpackData[l] as int[])[0]);
-                        var v = BitConverter.Int32BitsToSingle((uvCommand.UnpackData[l] as int[])[1]);
-                        sw.WriteLine($"vt {u} {-v}");
+                        if (uvCommand.UnpackData[l] is int[] uvArr && uvArr.Length == 2) // GT3 float UVs
+                        {
+                            var u = BitConverter.Int32BitsToSingle(uvArr[0]);
+                            var v = BitConverter.Int32BitsToSingle(uvArr[1]);
+                            sw.WriteLine($"vt {u} {-v}");
+                        }
+                        else if (uvCommand.UnpackData[l] is short[] uvShortArr && uvShortArr.Length == 2) // GT4
+                        {
+                            var u = uvShortArr[0] / 4096f;
+                            var v = uvShortArr[1] / 4096f;
+                            sw.WriteLine($"vt {u} {-v}");
+                        }
                     }
                 }
-                */
+                
 
                 sw.WriteLine();
                 sw.WriteLine($"usemtl {fileName}.{0}.{desc.pgluTextureIndex}");

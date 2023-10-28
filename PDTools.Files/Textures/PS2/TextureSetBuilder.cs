@@ -27,11 +27,20 @@ namespace PDTools.Files.Textures.PS2
         public List<TextureTask> Textures { get; set; } = new();
 
         // Adds an image to the texture set.
-        public void AddImage(string imagePath, SCE_GS_PSM format)
+
+        /// <summary>
+        /// Adds an image to the texture set.
+        /// </summary>
+        /// <param name="imagePath">Path to the image.</param>
+        /// <param name="format">Format. (Supported is PSMT4, PSMT8, PSMCT32)</param>
+        /// <param name="wrapModeS">Wrap mode U/S. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
+        /// <param name="wrapModeT">Wrap mode V/T. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
+        public void AddImage(string imagePath, SCE_GS_PSM format,
+            SCE_GS_CLAMP_PARAMS wrapModeS = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP, 
+            SCE_GS_CLAMP_PARAMS wrapModeT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
         {
             Image<Rgba32> img = Image.Load<Rgba32>(imagePath);
             var pgluTexture = new PGLUtexture();
-
             pgluTexture.tex0.PSM = format;
 
             // Calculate bounds of textures, which may be beyond actual render dimensions
@@ -46,8 +55,8 @@ namespace PDTools.Files.Textures.PS2
                 pgluTexture.tex0.TBW_TextureBufferWidth++;
 
             // Set actual render dimensions
-            pgluTexture.ClampSettings.WMS = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP;
-            pgluTexture.ClampSettings.WMT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP;
+            pgluTexture.ClampSettings.WMS = wrapModeS;
+            pgluTexture.ClampSettings.WMT = wrapModeT;
             pgluTexture.ClampSettings.MAXU = (ulong)img.Width - 1;
             pgluTexture.ClampSettings.MAXV = (ulong)img.Height - 1;
 
@@ -251,7 +260,7 @@ namespace PDTools.Files.Textures.PS2
             }*/
 
             foreach (var transfer in TextureSet.GSTransfers)
-                TextureSet.TotalBlockSize += (ushort)Tex1Utils.FindBlockIndexAtPosition(transfer.Format, transfer.Width - 1, transfer.Height - 1);
+                TextureSet.TotalBlockSize += (ushort)(Tex1Utils.FindBlockIndexAtPosition(transfer.Format, transfer.Width - 1, transfer.Height - 1) + 1);
         }
 
         public (Rgba32[] TiledPalette, int[] LinearToTiledPaletteIndices) MakeTiledPaletteFromLinearPalette(ReadOnlyMemory<Rgba32> palette)

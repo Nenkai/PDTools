@@ -25,12 +25,14 @@ namespace PDTools.Files.Models.PS2.Commands
             ModelSetupPS2Command cmd = opcode switch
             {
                 ModelSetupPS2Opcode.pgluCallShape_1ub => new Command_4_pgluCallShape1ub(),
-                ModelSetupPS2Opcode.pglUnk_Enable17_WithMatrix => new Command_10_pglUnk_Enable17_WithMatrix(),
+                ModelSetupPS2Opcode.pglUnk_Enable17_WithMatrix => new Command_10_BBoxRender(),
                 ModelSetupPS2Opcode.pglEnable17_ => new Command_11_pglEnable17(),
+                ModelSetupPS2Opcode.pglColorMask1ui => new Command_36_pglColorMask1ui(),
+                ModelSetupPS2Opcode.pglEnableDepthMask => new Command_38_pglEnableDepthMask(),
                 ModelSetupPS2Opcode.pgluTexTable_1ub => new Command_43_pgluTexTable1ub(),
 
-                _ => throw new Exception($"Unexpected opcode {opcode}")
-            };
+                _ => new Command_11_pglEnable17() //throw new Exception($"Unexpected opcode {opcode}")
+            };;
 
             return cmd;
         }

@@ -12,7 +12,15 @@ namespace PDTools.Files.Models.PS2
     {
         public uint VIFDataOffset { get; set; }
         public ushort DMATagQuadwordCount { get; set; }
+
+        /// <summary>
+        /// 0 means no texture, anything above means id is id - 1. 511 is external
+        /// </summary>
         public ushort pgluTextureIndex { get; set; }
+
+        /// <summary>
+        /// 0 means no material, anything above means id is id - 1.
+        /// </summary>
         public ushort pgluMaterialIndex { get; set; }
 
         public static VIFDescriptor FromStream(BinaryStream bs, long mdlBasePos)
