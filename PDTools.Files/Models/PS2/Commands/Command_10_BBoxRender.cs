@@ -14,7 +14,7 @@ namespace PDTools.Files.Models.PS2.Commands
     /// </summary>
     public class Command_10_BBoxRender : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglUnk_Enable17_WithMatrix;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.BBoxRender;
 
         public Vector3[] BBox { get; set; }
         public List<ModelSetupPS2Command> CommandsOnRender { get; set; } = new();

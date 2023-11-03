@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
+using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp;
 
 using PDTools.Utils;
@@ -26,8 +27,6 @@ namespace PDTools.Files.Textures.PS2
 
         public List<TextureTask> Textures { get; set; } = new();
 
-        // Adds an image to the texture set.
-
         /// <summary>
         /// Adds an image to the texture set.
         /// </summary>
@@ -40,6 +39,24 @@ namespace PDTools.Files.Textures.PS2
             SCE_GS_CLAMP_PARAMS wrapModeT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
         {
             Image<Rgba32> img = Image.Load<Rgba32>(imagePath);
+
+            AddImage(img, format, wrapModeS, wrapModeT);
+        }
+
+        /// <summary>
+        /// Adds an image to the texture set.
+        /// </summary>
+        /// <param name="imagePath">Path to the image.</param>
+        /// <param name="format">Format. (Supported is PSMT4, PSMT8, PSMCT32)</param>
+        /// <param name="wrapModeS">Wrap mode U/S. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
+        /// <param name="wrapModeT">Wrap mode V/T. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
+        private void AddImage(Image<Rgba32> img, SCE_GS_PSM format,
+            SCE_GS_CLAMP_PARAMS wrapModeS = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP,
+            SCE_GS_CLAMP_PARAMS wrapModeT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+        {
+            if (wrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REPEAT && wrapModeT == SCE_GS_CLAMP_PARAMS.SCE_GS_REPEAT)
+                img.Mutate(e => e.Resize((int)BitOperations.RoundUpToPowerOf2((uint)img.Width), (int)BitOperations.RoundUpToPowerOf2((uint)img.Height)));
+
             var pgluTexture = new PGLUtexture();
             pgluTexture.tex0.PSM = format;
 
@@ -180,8 +197,10 @@ namespace PDTools.Files.Textures.PS2
 
                 totalTextureSize += Tex1Utils.GetDataSize(texture.Image.Width, texture.Image.Height, texture.PGLUTexture.tex0.PSM);
 
-                uint nextTbp = (uint)Tex1Utils.FindBlockIndexAtPosition(texture.PGLUTexture.tex0.PSM, texture.Image.Width - 1, texture.Image.Height - 1) + 1;
-                _tbp_Textures += (ushort)nextTbp;
+                uint textureTbp = (uint)Tex1Utils.FindBlockIndexAtPosition(texture.PGLUTexture.tex0.PSM, texture.Image.Width - 1, texture.Image.Height - 1) + 1;
+                if (textureTbp == 1)
+                    textureTbp = 4;
+                _tbp_Textures += (ushort)textureTbp;
 
                 // TODO: Find an appropriate place to put the palette
                 // i.e place it outside the rendered range (using 2^width & 2^height's zone)
@@ -303,7 +322,11 @@ namespace PDTools.Files.Textures.PS2
 
             TextureSet.GSTransfers.Add(inf);
 
-            TBP_Transfers += (ushort)(Tex1Utils.FindBlockIndexAtPosition(format, width - 1, height - 1) + 1);
+            ushort blockSize = (ushort)(Tex1Utils.FindBlockIndexAtPosition(format, width - 1, height - 1) + 1);
+            if (blockSize == 1 && format != SCE_GS_PSM.SCE_GS_PSMCT32)
+                blockSize = 4; // Hack maybe for small indexed images? Otherwise other textures get jumbled..
+
+            TBP_Transfers += blockSize;
         }
     }
 

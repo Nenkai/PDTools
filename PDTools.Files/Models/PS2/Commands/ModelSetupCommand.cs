@@ -25,7 +25,7 @@ namespace PDTools.Files.Models.PS2.Commands
             ModelSetupPS2Command cmd = opcode switch
             {
                 ModelSetupPS2Opcode.pgluCallShape_1ub => new Command_4_pgluCallShape1ub(),
-                ModelSetupPS2Opcode.pglUnk_Enable17_WithMatrix => new Command_10_BBoxRender(),
+                ModelSetupPS2Opcode.BBoxRender => new Command_10_BBoxRender(),
                 ModelSetupPS2Opcode.pglEnable17_ => new Command_11_pglEnable17(),
                 ModelSetupPS2Opcode.pglColorMask1ui => new Command_36_pglColorMask1ui(),
                 ModelSetupPS2Opcode.pglEnableDepthMask => new Command_38_pglEnableDepthMask(),

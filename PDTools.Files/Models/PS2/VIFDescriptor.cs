@@ -14,7 +14,8 @@ namespace PDTools.Files.Models.PS2
         public ushort DMATagQuadwordCount { get; set; }
 
         /// <summary>
-        /// 0 means no texture, anything above means id is id - 1. 511 is external
+        /// 0 means no texture, anything above 0 means index = this value - 1.
+        /// 511 is external texture - i.e a car model shape that uses 511 refers to an external texture - eg. track reflection
         /// </summary>
         public ushort pgluTextureIndex { get; set; }
 

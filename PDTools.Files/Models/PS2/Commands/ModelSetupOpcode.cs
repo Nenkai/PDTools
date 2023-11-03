@@ -21,14 +21,17 @@ namespace PDTools.Files.Models.PS2.Commands
         pgluCallShape_1us = 5,
 
         // Calls the model's callback, passes parameter to it, returns value
+        // Used for stuff like brake lights in Car models!
         // Will be used for which branch to jump to
         // Callbacks depends on the kind of model:
-        // - GT4Model::CarModel::Callback::callback(int) at 2F3AC0 (GT4O US)
-        // WARN: This command exists in GT3 and is used, but there is no concept of callbacks. 
-        //       It will always return 0
+        // - GT4Model::CarModel::Callback::callback(int) at 2F3AC0 (GT4O US),
+        // CarModel::Callback::callback 21FD10 (GT3 EU)
         CallModelCallback = 6,
 
-        LODData = 7,
+        /// <summary>
+        /// Jumps to lod command data based on the current lod.
+        /// </summary>
+        LODSwitchTable = 7,
 
         // Jumps to a relative offset (byte)
         JumpByte = 8,
@@ -36,7 +39,7 @@ namespace PDTools.Files.Models.PS2.Commands
         // Jumps to a relative offset (short)
         JumpShort = 9,
 
-        pglUnk_Enable17_WithMatrix = 10,
+        BBoxRender = 10,
 
         // Calls pglEnable(17)
         pglEnable17_ = 11,

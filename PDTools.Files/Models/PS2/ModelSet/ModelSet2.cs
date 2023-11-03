@@ -10,7 +10,7 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS2;
 
-namespace PDTools.Files.Models.PS2.ModelSet2
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     /// <summary>
     /// Model Set 2. Used by GT4

@@ -10,7 +10,7 @@ using Syroot.BinaryData;
 using PDTools.Files.Models.PS2.Commands;
 using PDTools.Utils;
 
-namespace PDTools.Files.Models.PS2.ModelSet1
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     public class ModelSet1Model
     {

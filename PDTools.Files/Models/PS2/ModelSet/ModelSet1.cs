@@ -4,16 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-
 using Syroot.BinaryData;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 using PDTools.Files.Textures.PS2;
 using PDTools.Utils;
 
-namespace PDTools.Files.Models.PS2.ModelSet1
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     /// <summary>
-    /// Model Set. Used by GT3/C and earlier
+    /// Model Set. Used by GT3/C
     /// </summary>
     public class ModelSet1
     {
@@ -22,17 +23,38 @@ namespace PDTools.Files.Models.PS2.ModelSet1
         /// </summary>
         public const uint MAGIC = 0x314D5447;
 
+        /// <summary>
+        /// Models in this model set.
+        /// </summary>
         public List<ModelSet1Model> Models { get; set; } = new List<ModelSet1Model>();
+
+        /// <summary>
+        /// Shapes aka meshes.
+        /// </summary>
         public List<PGLUshape> Shapes { get; set; } = new List<PGLUshape>();
+
+        /// <summary>
+        /// Materials, for meshes.
+        /// </summary>
         public List<PGLUmaterial> Materials { get; set; } = new List<PGLUmaterial>();
+
+        /// <summary>
+        /// Texture sets for this model.
+        /// </summary>
         public List<TextureSet1> TextureSets { get; set; } = new List<TextureSet1>();
+
         public List<ModelSet1Bounding> Boundings { get; set; } = new List<ModelSet1Bounding>();
+
+        /// <summary>
+        /// Material per car variation - car color.
+        /// </summary>
+        public List<PGLUmaterial> VariationMaterials { get; set; } = new List<PGLUmaterial>();
 
         public void FromStream(Stream stream)
         {
             long basePos = stream.Position;
 
-            using var bs = new BinaryStream(stream, ByteConverter.Little);
+            var bs = new BinaryStream(stream, ByteConverter.Little);
 
             if (bs.ReadUInt32() != MAGIC)
                 throw new InvalidDataException("Not a model set stream.");
@@ -45,7 +67,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             ushort materialCount = bs.ReadUInt16();
             ushort texSetCount = bs.ReadUInt16();
             ushort unkCount = bs.ReadUInt16();
-            ushort unkCount2 = bs.ReadUInt16();
+            ushort variationMaterialCount = bs.ReadUInt16();
             bs.Position += 4;
 
             uint modelTableOffset = bs.ReadUInt32();
@@ -54,7 +76,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             uint texSetTableOffset = bs.ReadUInt32();
             uint boundingsOffset = bs.ReadUInt32();
             uint unkOffset0x34 = bs.ReadUInt32(); // Boundings may be used if this is set maybe? GT3 EU: 0x2261b0
-            uint unkOffset0x38 = bs.ReadUInt32();
+            uint variationMaterialsOffset = bs.ReadUInt32();
 
             bs.Position = basePos + modelTableOffset;
             int[] modelOffsets = bs.ReadInt32s(modelCount);
@@ -102,11 +124,22 @@ namespace PDTools.Files.Models.PS2.ModelSet1
 
             for (int i = 0; i < modelCount; i++)
             {
-                bs.Position = basePos + boundingsOffset + (i * ModelSet1Bounding.GetSize());
+                bs.Position = basePos + boundingsOffset + i * ModelSet1Bounding.GetSize();
 
                 var bounding = new ModelSet1Bounding();
                 bounding.FromStream(bs);
                 Boundings.Add(bounding);
+            }
+
+            bs.Position = basePos + variationMaterialsOffset;
+            int[] materialVariationOffsets = bs.ReadInt32s(variationMaterialCount);
+            for (int i = 0; i < variationMaterialCount; i++)
+            {
+                bs.Position = basePos + materialVariationOffsets[i];
+
+                var material = new PGLUmaterial();
+                material.FromStream(bs, basePos);
+                VariationMaterials.Add(material);
             }
         }
     }

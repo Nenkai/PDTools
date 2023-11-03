@@ -33,7 +33,8 @@ namespace PDTools.Files.Textures.PS2
      * 
      * The important registers to keep in mind are TBP and CBP (in tex0). These are block pointers/offsets.
      * 
-     * Blocks kinda work as a separate coordinate system. For texture sets, some optimization is made as to where the textures go.
+     * Blocks are in essence just 256 bytes aka "64 words". They kinda work as a separate coordinate system and denotes where pixels go in GS (per pixel format).
+     * For texture sets, some optimization is made as to where the textures go.
      * When you have a texture that's for instance 350x350, the height and width are raised to the next power of 2, so 512x512.
      * That leaves a space with what's rendered and what isn't, so extra data can be put there, it can be the image's palette, or another texture
      * So don't be surprised if you see the CBP register of a texture in the middle of what would appear to be the main texture's.
@@ -70,7 +71,7 @@ namespace PDTools.Files.Textures.PS2
         /// <summary>
         /// Magic - "Tex1".
         /// </summary>
-        public const uint Magic = 0x31786554;
+        public const uint MAGIC = 0x31786554;
         public const uint HeaderSize = 0x30;
 
         public ushort TotalBlockSize { get; set; }
@@ -91,7 +92,7 @@ namespace PDTools.Files.Textures.PS2
 
             var bs = new BinaryStream(stream);
             uint magic = bs.ReadUInt32();
-            if (magic != Magic)
+            if (magic != MAGIC)
                 throw new InvalidDataException("Expected Tex1 magic");
 
             int relocPtr = bs.ReadInt32();
@@ -332,6 +333,7 @@ namespace PDTools.Files.Textures.PS2
 
                 bs.Position = basePos + (int)dataOffset;
                 bs.Write(transfer.Data);
+                bs.Align(0x10, grow: true); // Align. Appears to be the required minimum of padding required, otherwise gs memory gets jumbled for small textures
                 lastOffset = bs.Position;
 
                 dataOffset = (uint)(bs.Position - basePos);
@@ -341,7 +343,7 @@ namespace PDTools.Files.Textures.PS2
 
             // Write header
             bs.Position = basePos;
-            bs.WriteUInt32(Magic); // Tex1
+            bs.WriteUInt32(MAGIC); // Tex1
             bs.WriteUInt32(0); // Reloc ptr
             bs.WriteUInt32(0); // Unk ptr
             bs.WriteUInt32(fileSize); // File size

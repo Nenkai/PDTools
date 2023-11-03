@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Models.PS2.ModelSet2
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     public class ModelSet2Model
     {

@@ -7,7 +7,7 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.ModelSet1
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     /// <summary>
     /// Bounding (?)

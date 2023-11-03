@@ -123,7 +123,7 @@ namespace PDTools.Files.Models.PS2
 
                 VIFDescriptor desc = VIFDescriptors[j];
                 matSw.WriteLine($"newmtl {fileName}.{0}.{desc.pgluTextureIndex}");
-                matSw.WriteLine($"map_Kd {fileName}_textures/{fileName}.{0}.{0}.{(desc.pgluTextureIndex) - 1}.png");
+                matSw.WriteLine($"map_Kd {fileName}_textures/{fileName}.{0}.{(desc.pgluTextureIndex) - 1}.png");
 
                 int resetIndex = 1;
                 int nextVertReset = ((resets.UnpackData[resetIndex] as byte[])[0] + 6) / 3;

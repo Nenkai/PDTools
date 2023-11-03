@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS2;
 
-namespace PDTools.Files.Models.PS2.ModelSet1
+namespace PDTools.Files.Models.PS2.ModelSet
 {
     public class ModelSet1Serializer
     {
@@ -41,7 +41,13 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             bs.Position += _modelSet.Shapes.Count * sizeof(uint);
             bs.Align(0x10, grow: true);
 
+            // Skip variation materials offset table for now
+            long variationMaterialTableOffset = bs.Position;
+            bs.Position += _modelSet.VariationMaterials.Count * sizeof(uint);
+            bs.Align(0x10, grow: true);
+
             WriteBoundings(bs, basePos);
+            WriteVariationMaterials(bs, basePos, variationMaterialTableOffset);
             WriteModels(bs, basePos, modelTableOffset);
             WriteShapes(bs, basePos, shapeTableOffset);
 
@@ -73,7 +79,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             bs.WriteUInt16((ushort)_modelSet.Materials.Count);
 
             bs.Position = baseModelSetPos + 0x28;
-            bs.WriteUInt32((uint)materialsOffset);
+            bs.WriteUInt32((uint)(materialsOffset - baseModelSetPos));
 
             bs.Position = lastPos;
         }
@@ -91,9 +97,35 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             long lastPos = bs.Position;
 
             bs.Position = baseModelSetPos + 0x30;
-            bs.WriteUInt32((uint)boundingsOffset);
+            bs.WriteUInt32((uint)(boundingsOffset - baseModelSetPos));
 
             bs.Position = lastPos;
+        }
+
+        private void WriteVariationMaterials(BinaryStream bs, long baseModelSetPos, long variationMaterialTableOffset)
+        {
+            long lastDataOffset = bs.Position;
+            for (int i = 0; i < _modelSet.Models.Count; i++)
+            {
+                bs.Position = variationMaterialTableOffset + i * sizeof(uint);
+                bs.WriteUInt32((uint)(lastDataOffset - baseModelSetPos));
+
+                bs.Position = lastDataOffset;
+                PGLUmaterial mat = _modelSet.VariationMaterials[i];
+                mat.Write(bs);
+
+                lastDataOffset = bs.Position;
+            }
+            bs.Align(0x10, grow: true);
+            lastDataOffset = bs.Position;
+
+            bs.Position = baseModelSetPos + 0x1A;
+            bs.WriteUInt16((ushort)_modelSet.VariationMaterials.Count);
+
+            bs.Position = baseModelSetPos + 0x38;
+            bs.WriteUInt32((uint)(variationMaterialTableOffset - baseModelSetPos));
+
+            bs.Position = lastDataOffset;
         }
 
         private void WriteModels(BinaryStream bs, long baseModelSetOffset, long modelTableOffset)
@@ -101,7 +133,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             long lastDataOffset = bs.Position;
             for (int i = 0; i < _modelSet.Models.Count; i++)
             {
-                bs.Position = modelTableOffset + (i * sizeof(uint));
+                bs.Position = modelTableOffset + i * sizeof(uint);
                 bs.WriteUInt32((uint)(lastDataOffset - baseModelSetOffset));
 
                 bs.Position = lastDataOffset;
@@ -117,7 +149,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             bs.WriteUInt16((ushort)_modelSet.Models.Count);
 
             bs.Position = baseModelSetOffset + 0x20;
-            bs.WriteUInt32((uint)modelTableOffset);
+            bs.WriteUInt32((uint)(modelTableOffset - baseModelSetOffset));
 
             bs.Position = lastDataOffset;
         }
@@ -127,7 +159,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             long lastDataOffset = bs.Position;
             for (int i = 0; i < _modelSet.Shapes.Count; i++)
             {
-                bs.Position = shapeTableOffset + (i * sizeof(uint));
+                bs.Position = shapeTableOffset + i * sizeof(uint);
                 bs.WriteUInt32((uint)(lastDataOffset - baseModelSetOffset));
 
                 bs.Position = lastDataOffset;
@@ -141,7 +173,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             bs.WriteUInt16((ushort)_modelSet.Shapes.Count);
 
             bs.Position = baseModelSetOffset + 0x24;
-            bs.WriteUInt32((uint)shapeTableOffset);
+            bs.WriteUInt32((uint)(shapeTableOffset - baseModelSetOffset));
 
             bs.Position = lastDataOffset;
         }
@@ -151,7 +183,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             long lastDataOffset = bs.Position;
             for (int i = 0; i < _modelSet.TextureSets.Count; i++)
             {
-                bs.Position = textureSetsOffset + (i * sizeof(uint));
+                bs.Position = textureSetsOffset + i * sizeof(uint);
                 bs.WriteUInt32((uint)(lastDataOffset - baseModelSetOffset));
 
                 bs.Position = lastDataOffset;
@@ -165,7 +197,7 @@ namespace PDTools.Files.Models.PS2.ModelSet1
             bs.WriteUInt16((ushort)_modelSet.TextureSets.Count);
 
             bs.Position = baseModelSetOffset + 0x2C;
-            bs.WriteUInt32((uint)textureSetsOffset);
+            bs.WriteUInt32((uint)(textureSetsOffset - baseModelSetOffset));
 
             bs.Position = lastDataOffset;
         }
