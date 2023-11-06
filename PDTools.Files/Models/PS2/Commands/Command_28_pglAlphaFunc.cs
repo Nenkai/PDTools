@@ -9,25 +9,28 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_43_pgluSetTexTable : ModelSetupPS2Command
+    public class Command_28_pglAlphaFunc : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluSetTexTable;
+        public byte Func { get; set; }
+        public byte Ref { get; set; }
 
-        public byte TexSetIndex { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglAlphaFunc;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            TexSetIndex = bs.Read1Byte();
+            Func = bs.Read1Byte();
+            Ref = bs.Read1Byte();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(TexSetIndex);
+            Func = bs.Read1Byte();
+            Ref = bs.Read1Byte();
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_43_pgluSetTexTable)} - TexSet: {TexSetIndex}";
+            return $"{nameof(Command_28_pglAlphaFunc)}";
         }
     }
 }

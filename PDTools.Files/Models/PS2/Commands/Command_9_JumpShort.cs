@@ -9,25 +9,25 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_43_pgluSetTexTable : ModelSetupPS2Command
+    public class Command_09_Jump1us : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluSetTexTable;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.Jump1us;
 
-        public byte TexSetIndex { get; set; }
+        public ushort JumpOffset { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            TexSetIndex = bs.Read1Byte();
+            JumpOffset = bs.ReadUInt16();           
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(TexSetIndex);
+            bs.WriteUInt16(JumpOffset);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_43_pgluSetTexTable)} - TexSet: {TexSetIndex}";
+            return $"{nameof(Command_09_Jump1us)}";
         }
     }
 }

@@ -14,10 +14,14 @@ namespace PDTools.Files.Models.PS2.Commands
         RenderModel_1ub = 2,
         RenderModel_1us = 3,
 
-        // Calls a shape (mesh) to use (1 unsigned byte)
+        /// <summary>
+        /// Calls a shape (mesh) to use (1 unsigned byte)
+        /// </summary>
         pgluCallShape_1ub = 4,
 
-        // Calls a shape (mesh) to use (1 unsigned short)
+        /// <summary>
+        /// Calls a shape (mesh) to use (1 unsigned short)
+        /// </summary>
         pgluCallShape_1us = 5,
 
         // Calls the model's callback, passes parameter to it, returns value
@@ -31,127 +35,204 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// Jumps to lod command data based on the current lod.
         /// </summary>
-        LODSwitchTable = 7,
+        LODSelect = 7,
 
-        // Jumps to a relative offset (byte)
+        /// <summary>
+        /// Jumps to a relative offset (byte)
+        /// </summary>
         JumpByte = 8,
 
-        // Jumps to a relative offset (short)
-        JumpShort = 9,
+        /// <summary>
+        /// Jumps to a relative offset (short)
+        /// </summary>
+        Jump1us = 9,
 
         BBoxRender = 10,
 
-        // Calls pglEnable(17)
+        /// <summary>
+        /// Calls pglEnable(17)
+        /// </summary>
         pglEnable17_ = 11,
 
-        // Pushes a matrix. similar to glPushMatrix
+        /// <summary>
+        /// Pushes a matrix. similar to glPushMatrix
+        /// </summary>
         pglPushMatrix = 12,
 
-        // Pops a matrix. similar to glPopMatrix
+        /// <summary>
+        /// Pops a matrix. similar to glPopMatrix
+        /// </summary>
         pglPopMatrix = 13,
 
-        // Sets the matrix mode. Similar to glMatrixMode
+        /// <summary>
+        /// Sets the matrix mode. Similar to glMatrixMode
+        /// </summary>
         pglMatrixMode = 14,
 
-        // Calls pglInverse with a matrix
+        /// <summary>
+        /// Calls pglInverse with a matrix
+        /// </summary>
         pglInverse = 15,
 
-        // Calls a pgl command with a matrix. Could be similar in operation to command 15
+        /// <summary>
+        /// Calls a pgl command with a matrix. Could be similar in operation to command 15
+        /// </summary>
         pglUnk16 = 16,
 
-        // Calls pglTranslate. Similar to glTranslate
+        /// <summary>
+        /// Calls pglTranslate. Similar to glTranslate
+        /// </summary>
         pglTranslate = 17,
 
-        // Calls pglScale. Similar to glScale
+        /// <summary>
+        /// Calls pglScale. Similar to glScale
+        /// </summary>
         pglScale = 18,
 
-        // Calls pglRotate. Similar to glRotate
+        /// <summary>
+        /// Calls pglRotate. Similar to glRotate
+        /// </summary>
         pglRotate = 19,
 
-        // Calls pglRotateX. Custom, rotates on X axis
+        /// <summary>
+        /// Calls pglRotateX. Custom, rotates on X axis
+        /// </summary>
         pglRotateX = 20,
 
-        // Calls pglRotateX. Custom, rotates on Y axis
+        /// <summary>
+        /// Calls pglRotateX. Custom, rotates on Y axis
+        /// </summary>
         pglRotateY = 21,
 
-        // Calls pglRotateX. Custom, rotates on Z axis
+        /// <summary>
+        /// Calls pglRotateX. Custom, rotates on Z axis
+        /// </summary>
         pglRotateZ = 22,
 
-        // Presumably enables depth test, pglEnable(5) is called.
+        /// <summary>
+        /// Enables Depth Test by calling pglEnable(5), which sets GS ZBUF's ZMSK (Z Value Drawing Mask) & GS TEST's ZTE (Depth Test) bits
+        /// </summary>
         pglEnableDepthTest = 23,
 
-        // Presumably disables depth test, pglDisable(5) is called.
+        /// <summary>
+        /// Disables Depth Test by calling pglDisable(5), which unsets GS ZBUF's ZMSK (Z Value Drawing Mask) & GS TEST's ZTE (Depth Test) bits
+        /// </summary>
         pglDisableDepthTest = 24,
 
-        // Sets the depth func to use. Similar to glDepthFunc
+        /// <summary>
+        /// Sets the depth func to use. Sets GS TEST's ZTST value
+        /// 0 = NEVER, 1 = ALWAYS, 2 = GEQUAL, 3 = GREATER
+        /// </summary>
         pglDepthFunc = 25,
 
-        // Presumably enables alpha test. Calls pglEnable(4)
+        /// <summary>
+        /// Enables Alpha Test by calling pglEnable(4), which sets GS TEST's ATE (Alpha Test) bit
+        /// </summary>
         pglEnableAlphaTest = 26,
 
-        // Presumably disables alpha test. Calls pglDisable(4)
+        /// <summary>
+        /// Disables Alpha Test by calling pglDisable(4), which unsets GS TEST's ATE (Alpha Test) bit
+        /// </summary>
         pglDisableAlphaTest = 27,
 
-        // Sets the alpha function to use (1 unsigned byte) - similar to glAlphaFunc
-        pglAlphaFunc_1ub = 28,
+        /// <summary>
+        /// Sets the alpha function to use by setting GS TEST's ATST (Alpha Test Method) value
+        /// 0 = NEVER, 1 = ALWAYS, 2 = LESS, 3 = LEQUAL, 4 = EQUAL, 5 = GEQUAL, 6 = GREATER, 7 = NOTEQUAL
+        /// </summary>
+        pglAlphaFunc = 28,
 
-        // Presumably enables destination alpha testing. Calls pglEnable(3)
+        /// <summary>
+        /// Enables Destination Alpha Test by calling pglEnable(3), which toggles on GS TEST register bit 14 (DATE).
+        /// </summary>
         pglEnableDestinationAlphaTest = 29,
 
-        // Presumably enables destination alpha testing. Calls pglDisable(3)
+        /// <summary>
+        /// Disables Destination Alpha Test by calling pglDisable(3), which untoggles GS TEST register bit 14 (DATE).
+        /// </summary>
         pglDisableDestinationAlphaTest = 30,
 
-        // Calls pglDestinationAlphaFunc(value) - 1 unsigned byte - should be 2 or 5
-        pglDestinationAlphaFunc = 31,
+        /// <summary>
+        /// Calls pglDestinationAlphaFunc(value) - 1 unsigned byte - 2 unsets GS TEST register bit 15 (DATM), 5 sets it
+        /// </summary>
+        pglSetDestinationAlphaFunc = 31,
 
-        // Sets the blend function to use - similar to glBlendFunc
-        pglBlendFunc1ub = 32,
+        /// <summary>
+        /// Sets the blend function to use by setting GS ALPHA_1 & ALPHA_2 (FIX)
+        /// </summary>
+        pglBlendFunc = 32,
 
-        // Sets the fog color. 1 unsigned int
-        pglFogColor1ui = 33,
+        /// <summary>
+        /// Sets the fog color. 1 unsigned int to GS FOGCOL register
+        /// </summary>
+        pglSetFogColor = 33,
 
-        // Gets the fog color, to be used with command 35 later
-        pglGetFogColor = 34,
+        /// <summary>
+        /// Stores the fog color from current FOGCOL register
+        /// </summary>
+        pglStoreFogColor = 34,
 
-        // Sets fog color to default value
-        pglFogColor1ui_default = 35,
+        /// <summary>
+        /// Copies/Restores fog color from fog color value
+        /// </summary>
+        pglCopyFogColor = 35,
 
-        // Sets the color mask with pglColorMask1ui(~value) (1 unsigned int)
-        pglColorMask1ui = 36,
+        /// <summary>
+        /// Sets the color mask with pglColorMask1ui(~value) (1 unsigned int)
+        /// </summary>
+        pglColorMask = 36,
 
-        // Disables depth mask
+        /// <summary>
+        /// Disables depth mask
+        /// </summary>
         pglDisableDepthMask = 37,
 
-        // Enables depth mask
+        /// <summary>
+        /// Enables depth mask
+        /// </summary>
         pglEnableDepthMask = 38,
 
-        // Sets the depth bias.
+        /// <summary>
+        /// Sets the depth bias.
+        /// </summary>
         pglDepthBias = 39,
 
         // Does something with 4 float. Not used above GT3. Other games's code skips 4 floats.
         pglGT3_Unk40 = 40,
 
-        // Calls pgluExternalTexIndex
+        /// <summary>
+        /// Calls pgluExternalTexIndex
+        /// </summary>
         pglExternalTexIndex = 41,
 
-        // Calls pgluExternalMatIndex
+        /// <summary>
+        /// Calls pgluExternalMatIndex
+        /// </summary>
         pglExternalMatIndex = 42,
 
-        // Sets the tex table to use (1 unsigned byte)
-        // Calls: 
-        // - pgluCacheTexSetPath3(PGLUTexture*)
-        // - pgluTexTable(v55->PGLUTextureMapOffset_0x18)
-        pgluTexTable_1ub = 43,
+        /// <summary>
+        /// Sets the tex table to use (1 unsigned byte)
+        /// </summary>
+        pgluSetTexTable = 43,
 
-        // Same as command 43, but index is a short.
+        /// <summary>
+        /// Sets the tex table to use (1 unsigned short)
+        /// </summary>
         pgluTexTable_1us = 44,
 
-        // Calls pglEnable(17), may be related to alpha fail
+        /// <summary>
+        /// Calls pglEnable(17), may be related to alpha fail
+        /// </summary>
         pglEnable17 = 45,
 
-        // Calls pglDisable(17), may be related to alpha fail
+        /// <summary>
+        /// Calls pglDisable(17), may be related to alpha fail
+        /// </summary>
         pglDisable17 = 46,
 
+        /// <summary>
+        /// Sets the alpha fail by setting GS TEST's AFAIL value.
+        /// 0 = KEEP, 1 = FB_ONLY, 2 = ZB_ONLY, 3 = RGB_ONLY
+        /// </summary>
         pglAlphaFail = 47,
 
         // Calls pglCylinderMapHint - 3 floats
@@ -159,33 +240,47 @@ namespace PDTools.Files.Models.PS2.Commands
 
         // Does something with 1 float. Not used above GT3. Other games's code skips 1 float.
         // Operates similarly to command 51.
-        pglGT3_1Int = 50,
+        pglGT3_1ui = 50,
 
         // Does something with 4 floats. Not used above GT3. Other games's code skips 4 floats.
-        pglGT3_4Float = 51,
+        pglGT3_4f = 51,
 
         // GT4 and above. Calls ModelSet2::setShapeTweenRatio
         ModelSet_setShapeTweenRatio = 52,
 
-        // Calls pgluShapeTweenRatio() and pgluCallShape()
+        /// <summary>
+        /// Calls pgluShapeTweenRatio() and pgluCallShape()
+        /// </summary>
         pgl_53 = 53,
 
-        // Unknown. Used only in GT3, otherwise skips 1 float
+        /// <summary>
+        /// Unknown. Used only in GT3, otherwise skips 1 float
+        /// </summary>
         pgl_54 = 54,
 
-        // Calls pglGetCullFace, and pglCullFace
+        /// <summary>
+        /// Calls pglGetCullFace, and pglCullFace
+        /// </summary>
         pglCullFace = 64,
 
-        // GT4 and above. Unknown. Skips 3 bytes
+        /// <summary>
+        /// GT4 and above. Unknown. Skips 3 bytes
+        /// </summary>
         Unk_65 = 65,
 
-        // GT4 and above. Unknown. Skips 3 bytes
+        /// <summary>
+        /// GT4 and above. Unknown. Skips 3 bytes
+        /// </summary>
         Unk_66 = 66,
 
-        // GT4 and above. Calls model set VM.
+        /// <summary>
+        /// GT4 and above. Calls model set VM.
+        /// </summary>
         ModelSetVM_callVM = 67,
 
-        // GT4 and above.
+        /// <summary>
+        /// GT4 and above.
+        /// </summary>
         Unk_68 = 68,
 
         // GT4 and above. Calls these with a short (rescale?) - VM Instance related?
@@ -199,28 +294,44 @@ namespace PDTools.Files.Models.PS2.Commands
 
         UnkBranch = 77,
 
-        // GT4 and above. Calls pglCullFace(2)
+        /// <summary>
+        /// GT4 and above. Calls pglCullFace(2)
+        /// </summary>
         pglCullFace_2 = 78,
 
-        // GT4 and above. Calls pglCullFace(1)
+        /// <summary>
+        /// GT4 and above. Calls pglCullFace(1)
+        /// </summary>
         pglCullFace_1 = 79,
 
-        // GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned byte as index
+        /// <summary>
+        /// GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned byte as index
+        /// </summary>
         pgluTexTableFromExternalTexSet1ub = 80,
 
-        // GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned short as index
+        /// <summary>
+        /// GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned short as index
+        /// </summary>
         pgluTexTableFromExternalTexSet1us = 81,
 
-        // GT4 and above. Calls pglVariableColorScale
+        /// <summary>
+        /// GT4 and above. Calls pglVariableColorScale
+        /// </summary>
         pglVariableColorScale = 82,
 
-        // GT4 and above. Calls pglVariableColorOffset
+        /// <summary>
+        /// GT4 and above. Calls pglVariableColorOffset
+        /// </summary>
         pglVariableColorOffset = 83,
 
-        // GT4 and above. Calls pglVariableColorScale using shorts (vm instance related?)
+        /// <summary>
+        /// GT4 and above. Calls pglVariableColorScale using shorts (vm instance related?)
+        /// </summary>
         pglVariableColorScale_Shorts = 84,
 
-        // GT4 and above. Calls pglVariableColorOffset using shorts (vm instance related?)
+        /// <summary>
+        /// GT4 and above. Calls pglVariableColorOffset using shorts (vm instance related?)
+        /// </summary>
         pglVariableColorOffset_Shorts = 85,
 
         // GT4 and above. Calls pglTexGenf(3, facing_attenuation_) and pglTexGenf(2, facing_bias_)
@@ -228,16 +339,24 @@ namespace PDTools.Files.Models.PS2.Commands
         // Which are called by course env ptr code, it seems
         pglTexGenf_WithCurrentFacingParameters = 86,
 
-        // GT4 and above. Calls pglTexGenf(3, 0.0) and pglTexGenf(2, 1.0)
+        /// <summary>
+        /// GT4 and above. Calls pglTexGenf(3, 0.0) and pglTexGenf(2, 1.0)
+        /// </summary>
         pglTexGenf_Default = 87,
 
-        // GT4 and above. Calls pglDisable(19) and pglDisable(14)
+        /// <summary>
+        /// GT4 and above. Calls pglDisable(19) and pglDisable(14)
+        /// </summary>
         pglDisable19_14 = 88,
 
-        // GT4 and above. Calls modelset callback. takes unsigned byte parameter
+        /// <summary>
+        /// GT4 and above. Calls modelset callback. takes unsigned byte parameter
+        /// </summary>
         ModelSetCallback_89_1ub = 89,
 
-        // GT4 and above. Same as 89, with unsigned short index
+        /// <summary>
+        /// GT4 and above. Same as 89, with unsigned short index
+        /// </summary>
         ModelSetCallback_90_1us = 90,
     }
 }

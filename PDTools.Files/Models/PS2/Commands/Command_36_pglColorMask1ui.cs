@@ -9,9 +9,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_36_pglColorMask1ui : ModelSetupPS2Command
+    public class Command_36_pglColorMask : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglColorMask1ui;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglColorMask;
 
         public uint ColorMask { get; set; }
 
@@ -27,7 +27,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_36_pglColorMask1ui)} - ColorMask: {ColorMask:X8}";
+            return $"{nameof(Command_36_pglColorMask)} - ColorMask: {ColorMask:X8}";
         }
     }
 }

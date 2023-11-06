@@ -12,6 +12,8 @@ namespace PDTools.Files.Models.PS2
 {
     public class PGLUshape
     {
+        /* Valid values are 1-2-3-4-5, GT4 only supports 1 & 4. 
+         * 2 uses a value from command 51 (gt3 only command). */
         public byte Unk1 { get; set; }
         public byte Unk2 { get; set; }
         public byte Unk3 { get; set; }

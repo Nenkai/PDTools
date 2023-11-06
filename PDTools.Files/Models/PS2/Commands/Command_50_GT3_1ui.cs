@@ -9,25 +9,28 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_43_pgluSetTexTable : ModelSetupPS2Command
+    /// <summary>
+    /// Sets all 4 values linked to shape unk1 value 2 to the specified uint - GT3 only.
+    /// </summary>
+    public class Command_50_GT3_1ui : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluSetTexTable;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_1ui;
 
-        public byte TexSetIndex { get; set; }
+        public float Value { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            TexSetIndex = bs.Read1Byte();
+            Value = bs.ReadSingle();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(TexSetIndex);
+            bs.WriteSingle(Value);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_43_pgluSetTexTable)} - TexSet: {TexSetIndex}";
+            return $"{nameof(Command_50_GT3_1ui)}";
         }
     }
 }
