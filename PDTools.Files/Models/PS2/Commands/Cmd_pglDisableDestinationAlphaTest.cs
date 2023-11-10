@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_30_pglDisableDestinationAlphaTest : ModelSetupPS2Command
+    public class Cmd_pglDisableDestinationAlphaTest : ModelSetupPS2Command
     {
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglDisableDestinationAlphaTest;
 
@@ -25,7 +25,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_30_pglDisableDestinationAlphaTest)}";
+            return $"{nameof(Cmd_pglDisableDestinationAlphaTest)}";
         }
     }
 }

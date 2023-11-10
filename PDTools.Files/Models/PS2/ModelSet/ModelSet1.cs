@@ -45,10 +45,12 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public List<ModelSet1Bounding> Boundings { get; set; } = new List<ModelSet1Bounding>();
 
+        public List<List<TextureSet1>> VariationTexSet { get; set; } = new List<List<TextureSet1>>();
+
         /// <summary>
-        /// Material per car variation - car color.
+        /// Materials per car variation - car color.
         /// </summary>
-        public List<PGLUmaterial> VariationMaterials { get; set; } = new List<PGLUmaterial>();
+        public List<List<PGLUmaterial>> VariationMaterialsTable { get; set; } = new List<List<PGLUmaterial>>();
 
         public void FromStream(Stream stream)
         {
@@ -60,14 +62,15 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 throw new InvalidDataException("Not a model set stream.");
 
             bs.ReadUInt32(); // Reloc ptr
-            bs.Position += 8; // Empty
+            bs.Position += 4; // Empty
+            bs.Position += 4; // Empty
 
             ushort modelCount = bs.ReadUInt16();
             ushort shapeCount = bs.ReadUInt16();
             ushort materialCount = bs.ReadUInt16();
             ushort texSetCount = bs.ReadUInt16();
-            ushort unkCount = bs.ReadUInt16();
-            ushort variationMaterialCount = bs.ReadUInt16();
+            ushort variationTexSetCount = bs.ReadUInt16();
+            ushort variationMaterialsCount = bs.ReadUInt16();
             bs.Position += 4;
 
             uint modelTableOffset = bs.ReadUInt32();
@@ -75,7 +78,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
             uint materialsOffset = bs.ReadUInt32();
             uint texSetTableOffset = bs.ReadUInt32();
             uint boundingsOffset = bs.ReadUInt32();
-            uint unkOffset0x34 = bs.ReadUInt32(); // Boundings may be used if this is set maybe? GT3 EU: 0x2261b0
+            uint variationTexSetTableOffset = bs.ReadUInt32(); // Boundings may be used if this is set maybe? GT3 EU: 0x2261b0
             uint variationMaterialsOffset = bs.ReadUInt32();
 
             bs.Position = basePos + modelTableOffset;
@@ -122,6 +125,28 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 TextureSets.Add(texSet);
             }
 
+            bs.Position = basePos + variationTexSetTableOffset;
+            int[] variationTexSetOffsets = bs.ReadInt32s(variationTexSetCount);
+            for (int i = 0; i < variationTexSetCount; i++)
+            {
+                if (variationTexSetOffsets[i] == 0)
+                    continue;
+
+                bs.Position = basePos + variationTexSetOffsets[i];
+                int[] texSetsOffsets = bs.ReadInt32s(texSetCount);
+
+                List<TextureSet1> texSets = new List<TextureSet1>();
+                for (int j = 0; j < texSetCount; j++)
+                {
+                    bs.Position = basePos + texSetsOffsets[j];
+                    var texSet = new TextureSet1();
+                    texSet.FromStream(bs);
+                    texSets.Add(texSet);
+                }
+
+                VariationTexSet.Add(texSets);
+            }
+
             for (int i = 0; i < modelCount; i++)
             {
                 bs.Position = basePos + boundingsOffset + i * ModelSet1Bounding.GetSize();
@@ -132,14 +157,20 @@ namespace PDTools.Files.Models.PS2.ModelSet
             }
 
             bs.Position = basePos + variationMaterialsOffset;
-            int[] materialVariationOffsets = bs.ReadInt32s(variationMaterialCount);
-            for (int i = 0; i < variationMaterialCount; i++)
+            int[] materialVariationOffsets = bs.ReadInt32s(variationMaterialsCount);
+            for (int i = 0; i < variationMaterialsCount; i++)
             {
                 bs.Position = basePos + materialVariationOffsets[i];
 
-                var material = new PGLUmaterial();
-                material.FromStream(bs, basePos);
-                VariationMaterials.Add(material);
+                List<PGLUmaterial> materialsForThisVariation = new List<PGLUmaterial>();
+                for (int j = 0; j < materialCount; j++)
+                {
+                    var material = new PGLUmaterial();
+                    material.FromStream(bs, basePos);
+                    materialsForThisVariation.Add(material);
+                }
+
+                VariationMaterialsTable.Add(materialsForThisVariation);
             }
         }
     }

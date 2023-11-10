@@ -9,25 +9,23 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_4_pgluCallShape1ub : ModelSetupPS2Command
+    public class Cmd_pglCopyFogColor : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_1ub;
-
-        public byte ShapeIndex { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglCopyFogColor;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_4_pgluCallShape1ub)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pglCopyFogColor)}";
         }
     }
 }

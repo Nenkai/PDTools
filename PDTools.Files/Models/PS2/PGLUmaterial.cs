@@ -45,6 +45,23 @@ namespace PDTools.Files.Models.PS2
             bs.WriteSingle(Unk3);
         }
 
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashcode = 1430287;
+                hashcode = hashcode * 7302013 ^ Ambient.GetHashCode();
+                hashcode = hashcode * 7302013 ^ Diffuse.GetHashCode();
+                hashcode = hashcode * 7302013 ^ Specular.GetHashCode();
+                hashcode = hashcode * 7302013 ^ UnkColor.GetHashCode();
+                hashcode = hashcode * 7302013 ^ Unk.GetHashCode();
+                hashcode = hashcode * 7302013 ^ UnkFlags.GetHashCode();
+                hashcode = hashcode * 7302013 ^ Unk2.GetHashCode();
+                hashcode = hashcode * 7302013 ^ Unk3.GetHashCode();
+                return hashcode;
+            }
+        }
+
         public static int GetSize()
         {
             return 0x50;

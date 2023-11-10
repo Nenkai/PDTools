@@ -92,8 +92,8 @@ namespace PDTools.Files.Models.PS2
             }
 
             uint shapeSize = (uint)(lastPos - baseShapeOffset);
-            bs.Position = (baseShapeOffset + 4);
-            bs.WriteUInt32(shapeSize);
+            //bs.Position = (baseShapeOffset + 4);
+            //bs.WriteUInt32(shapeSize);
             bs.Position = lastPos;
         }
 

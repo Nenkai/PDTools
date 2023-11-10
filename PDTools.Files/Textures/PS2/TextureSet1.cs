@@ -78,6 +78,7 @@ namespace PDTools.Files.Textures.PS2
 
         public List<PGLUtexture> pgluTextures { get; set; } = new List<PGLUtexture>();
         public List<GSTransfer> GSTransfers { get; set; } = new List<GSTransfer>();
+        public List<ClutPatch> ClutPatches { get; set; } = new List<ClutPatch>();
 
         private GSMemory _gsMemory = new();
 
@@ -112,6 +113,7 @@ namespace PDTools.Files.Textures.PS2
             ushort textureInfoCount = bs.ReadUInt16();
             uint pgluTextureMapOffset = bs.ReadUInt32();
             uint textureInfosOffset = bs.ReadUInt32();
+            uint clutPatchesOffset = bs.ReadUInt32();
 
             bs.Position = basePos + (int)pgluTextureMapOffset;
             for (var i = 0; i < pgluTextureCount; i++)
@@ -121,13 +123,27 @@ namespace PDTools.Files.Textures.PS2
                 pgluTextures.Add(tex);
             }
 
-            
             for (var i = 0; i < textureInfoCount; i++)
             {
                 GSTransfer transfer = new GSTransfer();
                 bs.Position = basePos + (int)textureInfosOffset + (i * GSTransfer.GetSize());
                 transfer.Read(bs, basePos);
                 GSTransfers.Add(transfer);
+            }
+
+            if (clutPatchesOffset != 0)
+            {
+                bs.Position = basePos + clutPatchesOffset;
+                uint clutPatchCount = bs.ReadUInt32();
+                uint[] clutPatchesOffsets = bs.ReadUInt32s((int)clutPatchCount);
+
+                for (int i = 0; i < clutPatchCount; i++)
+                {
+                    bs.Position = basePos + clutPatchesOffsets[i];
+                    ClutPatch patch = new ClutPatch();
+                    patch.Read(bs);
+                    ClutPatches.Add(patch);
+                }
             }
 
             InitializeGSMemory();
@@ -323,6 +339,8 @@ namespace PDTools.Files.Textures.PS2
             dataOffset = MiscUtils.AlignValue(dataOffset, 0x10);
 
             long lastOffset = bs.Position;
+            long lastOffsetWithPadding = bs.Position;
+
             for (var i = 0; i < GSTransfers.Count; i++)
             {
                 GSTransfer transfer = GSTransfers[i];
@@ -333,13 +351,44 @@ namespace PDTools.Files.Textures.PS2
 
                 bs.Position = basePos + (int)dataOffset;
                 bs.Write(transfer.Data);
-                bs.Align(0x10, grow: true); // Align. Appears to be the required minimum of padding required, otherwise gs memory gets jumbled for small textures
+
                 lastOffset = bs.Position;
 
+                bs.Align(0x10, grow: true); // Align. Appears to be the required minimum of padding required, otherwise gs memory gets jumbled for small textures
+
+                lastOffsetWithPadding = lastOffset;
                 dataOffset = (uint)(bs.Position - basePos);
             }
 
-            uint fileSize = (uint)(bs.Position - basePos);
+            uint clutPatchesOffset = 0;
+            if (ClutPatches.Count > 0)
+            {
+                clutPatchesOffset = (uint)(bs.Position - basePos);
+                bs.WriteUInt32((uint)ClutPatches.Count);
+
+                long tableOffset = bs.Position;
+                lastOffset = (uint)(bs.Position + (ClutPatches.Count * sizeof(uint)));
+
+                for (int i = 0; i < ClutPatches.Count; i++)
+                {
+                    bs.Position = tableOffset + (i * sizeof(uint));
+                    bs.WriteUInt32((uint)(lastOffset - basePos));
+
+                    bs.Position = lastOffset;
+
+                    ClutPatch patch = ClutPatches[i];
+                    patch.Write(bs);
+
+                    lastOffset = (uint)bs.Position;
+                }
+
+                bs.Align(0x10, grow: true);
+                lastOffset = bs.Position;
+                lastOffsetWithPadding = bs.Position;
+               
+            }
+
+            uint fileSize = (uint)(lastOffset - basePos);
 
             // Write header
             bs.Position = basePos;
@@ -353,8 +402,9 @@ namespace PDTools.Files.Textures.PS2
             bs.WriteUInt16((ushort)GSTransfers.Count);
             bs.WriteUInt32(pgluTextureOffset);
             bs.WriteUInt32(transferInfoOffset);
+            bs.WriteUInt32(clutPatchesOffset);
 
-            bs.Position = lastOffset;
+            bs.Position = lastOffsetWithPadding;
         }
 
         // Credits tiledggd
@@ -375,6 +425,24 @@ namespace PDTools.Files.Textures.PS2
                             outpal[(ty * tileSizeH + y) * 16 + (tx * tileSizeW + x)] = pal[i++];
 
             return outpal;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = (int)2166136261;
+                foreach (var texture in pgluTextures)
+                    hash += texture.GetHashCode();
+
+                foreach (var transfer in GSTransfers)
+                    hash += transfer.GetHashCode();
+
+                foreach (var patch in ClutPatches)
+                    hash += patch.GetHashCode();
+
+                return hash;
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.PS2.Commands
     /// <summary>
     /// Sets GS TEST register bit 15 - DATM (Destination Alpha Test Mode)
     /// </summary>
-    public class Command_31_pglSetDestinationAlphaFunc : ModelSetupPS2Command
+    public class Cmd_pglSetDestinationAlphaFunc : ModelSetupPS2Command
     {
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglSetDestinationAlphaFunc;
 
@@ -34,7 +34,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_31_pglSetDestinationAlphaFunc)}";
+            return $"{nameof(Cmd_pglSetDestinationAlphaFunc)}";
         }
     }
 }

@@ -23,7 +23,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public void Write(BinaryStream bs)
         {
-            bs.WriteSingle(Value.X); bs.WriteSingle(Value.Y); bs.WriteSingle(Value.Z); bs.WriteSingle(Value.Z);
+            bs.WriteSingle(Value.X); bs.WriteSingle(Value.Y); bs.WriteSingle(Value.Z); bs.WriteSingle(Value.W);
         }
 
         public static int GetSize()

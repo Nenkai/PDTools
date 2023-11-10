@@ -9,23 +9,23 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_34_pglStoreFogColor : ModelSetupPS2Command
+    public class Cmd_pglEnableDestinationAlphaTest : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglStoreFogColor;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglEnableDestinationAlphaTest;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-
+            
         }
 
         public override void Write(BinaryStream bs)
         {
-
+            
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_34_pglStoreFogColor)}";
+            return $"{nameof(Cmd_pglEnableDestinationAlphaTest)}";
         }
     }
 }

@@ -9,9 +9,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_37_pglDisableDepthMask : ModelSetupPS2Command
+    public class Cmd_pglEnableAlphaTest : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglDisableDepthMask;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglEnableAlphaTest;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
@@ -25,7 +25,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_37_pglDisableDepthMask)}";
+            return $"{nameof(Cmd_pglEnableAlphaTest)}";
         }
     }
 }

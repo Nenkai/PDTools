@@ -21,6 +21,10 @@ namespace PDTools.Files.Models.PS2
             {
                 var cmd = new VIFCommand();
                 cmd.FromStream(bs, mdlBasePos);
+
+                if (cmd.CommandOpcode == VIFCommandOpcode.NOP)
+                    break;
+
                 packet.Commands.Add(cmd);
             }
 
@@ -35,10 +39,7 @@ namespace PDTools.Files.Models.PS2
                 command.Write(bs);
             }
 
-            if ((bs.Position % 0x10 == 0))
-                bs.Position += 0x10;
-            else
-                bs.Align(0x10, grow: true);
+            bs.Align(0x10, grow: true);
         }
     }
 }

@@ -9,9 +9,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Command_43_pgluSetTexTable : ModelSetupPS2Command
+    public class Cmd_pgluSetExternalTexIndex : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluSetTexTable;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglExternalTexIndex;
 
         public byte TexSetIndex { get; set; }
 
@@ -27,7 +27,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_43_pgluSetTexTable)} - TexSet: {TexSetIndex}";
+            return $"{nameof(Cmd_pgluSetExternalTexIndex)} - TexSet: {TexSetIndex}";
         }
     }
 }

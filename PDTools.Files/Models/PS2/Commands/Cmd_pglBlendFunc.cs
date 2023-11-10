@@ -10,30 +10,34 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.PS2.Commands
 {
     /// <summary>
-    /// Same as command 50 but sets all 4 values to specified.
+    /// Maps to GS ALPHA_1 & 2
     /// </summary>
-    public class Command_51_GT3_4f : ModelSetupPS2Command
+    public class Cmd_pglBlendFunc : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_4f;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglBlendFunc;
+
+        public byte ABCD { get; set; }
 
         /// <summary>
-        /// Color. RGB only, A is ignored
+        /// Fixed Alpha Value
         /// </summary>
-        public float[] Values { get; set; }
+        public byte FIX { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Values = bs.ReadSingles(4);
+            ABCD = bs.Read1Byte();
+            FIX = bs.Read1Byte();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteSingles(Values);
+            bs.WriteByte(ABCD);
+            bs.WriteByte(FIX);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_51_GT3_4f)}";
+            return $"{nameof(Cmd_pglBlendFunc)}";
         }
     }
 }

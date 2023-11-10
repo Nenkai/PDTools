@@ -10,34 +10,30 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.PS2.Commands
 {
     /// <summary>
-    /// Maps to GS ALPHA_1 & 2
+    /// Sets FOGCOL register
     /// </summary>
-    public class Command_32_pglBlendFunc : ModelSetupPS2Command
+    public class Cmd_pglSetFogColor : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglBlendFunc;
-
-        public byte ABCD { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglSetFogColor;
 
         /// <summary>
-        /// Fixed Alpha Value
+        /// Color. RGB only, A is ignored
         /// </summary>
-        public byte FIX { get; set; }
+        public uint Color { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ABCD = bs.Read1Byte();
-            FIX = bs.Read1Byte();
+            Color = bs.ReadUInt32();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ABCD);
-            bs.WriteByte(FIX);
+            bs.WriteUInt32(Color);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_32_pglBlendFunc)}";
+            return $"{nameof(Cmd_pglSetFogColor)}";
         }
     }
 }

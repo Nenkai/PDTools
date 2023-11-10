@@ -22,6 +22,9 @@ namespace PDTools.Files.Models.PS2.CarModel1
         public const uint MAGIC = 0x52545447;
 
         // Header size is 0x20
+        public uint Unk { get; set; }
+        public uint Unk2 { get; set; }
+        public float Unk3 { get; set; }
 
         public TextureSet1 TextureSet { get; set; } = new TextureSet1();
 
@@ -38,6 +41,9 @@ namespace PDTools.Files.Models.PS2.CarModel1
             bs.ReadUInt32(); // Reloc ptr
             bs.ReadUInt32(); // Empty
             uint fileSize = bs.ReadUInt32();
+            Unk = bs.ReadUInt32();
+            Unk2 = bs.ReadUInt32();
+            Unk3 = bs.ReadSingle();
 
             bs.Position = basePos + 0x1C;
             uint texSetOffset = bs.ReadUInt32();
@@ -60,8 +66,9 @@ namespace PDTools.Files.Models.PS2.CarModel1
             bs.WriteUInt32(0);
             bs.WriteUInt32(0);
             bs.WriteUInt32((uint)(lastPos - basePos));
-
-            bs.Position = basePos + 0x1C;
+            bs.WriteUInt32(Unk);
+            bs.WriteUInt32(Unk2);
+            bs.WriteSingle(Unk3);
             bs.WriteUInt32(0x20); // Offset of texture set
 
             bs.Position = lastPos;

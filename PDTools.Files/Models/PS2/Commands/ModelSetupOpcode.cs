@@ -45,7 +45,7 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// Jumps to a relative offset (short)
         /// </summary>
-        Jump1us = 9,
+        JumpShort = 9,
 
         BBoxRender = 10,
 
@@ -200,7 +200,7 @@ namespace PDTools.Files.Models.PS2.Commands
         pglGT3_Unk40 = 40,
 
         /// <summary>
-        /// Calls pgluExternalTexIndex
+        /// Sets the current external texture to use. Calls pgluExternalTexIndex
         /// </summary>
         pglExternalTexIndex = 41,
 

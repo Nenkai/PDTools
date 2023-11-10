@@ -65,6 +65,12 @@ namespace PDTools.Files.Models.PS2.CarModel1
             }
         }
 
+        public static uint AlignValue(uint x, uint alignment)
+        {
+            uint mask = ~(alignment - 1);
+            return (x + (alignment - 1)) & mask;
+        }
+
         public void Write(Stream stream)
         {
             long basePos = stream.Position;
@@ -74,7 +80,7 @@ namespace PDTools.Files.Models.PS2.CarModel1
 
             long carInfoOffset = bs.Position;
             CarInfo.Write(bs);
-            bs.Align(0x80, grow: true);
+            bs.Position = 0x40 + AlignValue((uint)bs.Position - 0x40, 0x80);
 
             long mainModelOffset = bs.Position;
             var modelSetSerializer = new ModelSet1Serializer(ModelSet);

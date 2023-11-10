@@ -75,5 +75,21 @@ namespace PDTools.Files.Textures.PS2
         {
             return 0x0C;
         }
+
+        public override int GetHashCode()
+        {
+            const int p = 16777619;
+            int hashcode = 1430287;
+            hashcode = hashcode * 7302013 ^ BP.GetHashCode();
+            hashcode = hashcode * 7302013 ^ BW.GetHashCode();
+            hashcode = hashcode * 7302013 ^ Format.GetHashCode();
+            hashcode = hashcode * 7302013 ^ Width.GetHashCode();
+            hashcode = hashcode * 7302013 ^ Height.GetHashCode();
+
+            for (int i = 0; i < Data.Length; i++)
+                hashcode = (hashcode ^ Data[i]) * p;
+
+            return hashcode;
+        }
     }
 }

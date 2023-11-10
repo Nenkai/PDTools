@@ -10,30 +10,27 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.PS2.Commands
 {
     /// <summary>
-    /// Sets FOGCOL register
+    /// Sets all 4 values linked to shape unk1 value 2 to the specified uint - GT3 only.
     /// </summary>
-    public class Command_33_pglSetFogColor : ModelSetupPS2Command
+    public class Cmd_GT3_1ui : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglSetFogColor;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_1ui;
 
-        /// <summary>
-        /// Color. RGB only, A is ignored
-        /// </summary>
-        public uint Color { get; set; }
+        public float Value { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Color = bs.ReadUInt32();
+            Value = bs.ReadSingle();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteUInt32(Color);
+            bs.WriteSingle(Value);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_33_pglSetFogColor)}";
+            return $"{nameof(Cmd_GT3_1ui)}";
         }
     }
 }

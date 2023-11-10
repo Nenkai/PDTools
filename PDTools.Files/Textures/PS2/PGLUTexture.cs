@@ -36,7 +36,7 @@ namespace PDTools.Files.Textures.PS2
             ClampSettings.Read(ref bitStream);
         }
 
-        public void Write(BinaryStream bs)
+        private byte[] GetByteData()
         {
             byte[] registerData = new byte[StructSize];
 
@@ -46,8 +46,29 @@ namespace PDTools.Files.Textures.PS2
             MipTable1.Write(ref bitStream);
             MipTable2.Write(ref bitStream);
             ClampSettings.Write(ref bitStream);
+            return registerData;
+        }
 
+        public void Write(BinaryStream bs)
+        {
+            byte[] registerData = GetByteData();
             bs.Write(registerData);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var byteData = GetByteData();
+
+                const int p = 16777619;
+                int hash = (int)2166136261;
+
+                for (int i = 0; i < byteData.Length; i++)
+                    hash = (hash ^ byteData[i]) * p;
+
+                return hash;
+            }
         }
     }
 }

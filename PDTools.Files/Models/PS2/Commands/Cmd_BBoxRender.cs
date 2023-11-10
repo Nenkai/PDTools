@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.PS2.Commands
     /// <summary>
     /// Whether to render this model based on bbox, seeks past commands if not
     /// </summary>
-    public class Command_10_BBoxRender : ModelSetupPS2Command
+    public class Cmd_BBoxRender : ModelSetupPS2Command
     {
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.BBoxRender;
 
@@ -35,10 +35,14 @@ namespace PDTools.Files.Models.PS2.Commands
                 if (opcode == ModelSetupPS2Opcode.End)
                     break;
 
+ 
                 var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
 
                 cmd.Read(bs, 0);
                 CommandsOnRender.Add(cmd);
+
+                if (opcode == ModelSetupPS2Opcode.pglEnable17_)
+                    break;
             }
         }
 
@@ -70,7 +74,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Command_10_BBoxRender)} - BBox={string.Join(", ", BBox)}";
+            return $"{nameof(Cmd_BBoxRender)} - BBox={string.Join(", ", BBox)}";
         }
     }
 }

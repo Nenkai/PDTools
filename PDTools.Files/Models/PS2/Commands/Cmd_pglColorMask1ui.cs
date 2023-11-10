@@ -9,28 +9,25 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    /// <summary>
-    /// Sets all 4 values linked to shape unk1 value 2 to the specified uint - GT3 only.
-    /// </summary>
-    public class Command_50_GT3_1ui : ModelSetupPS2Command
+    public class Cmd_pglColorMask : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_1ui;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglColorMask;
 
-        public float Value { get; set; }
+        public uint ColorMask { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Value = bs.ReadSingle();
+            ColorMask = bs.ReadUInt32();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteSingle(Value);
+            bs.WriteUInt32(ColorMask);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_50_GT3_1ui)}";
+            return $"{nameof(Cmd_pglColorMask)} - ColorMask: {ColorMask:X8}";
         }
     }
 }
