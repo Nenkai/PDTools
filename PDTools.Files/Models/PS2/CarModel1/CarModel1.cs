@@ -15,6 +15,16 @@ namespace PDTools.Files.Models.PS2.CarModel1
     {
         public const int HeaderSize = 0x20;
 
+        /// <summary>
+        /// Maximum size for a menu model.
+        /// </summary>
+        public const int MaxSizeMenu = 0xC8000;
+
+        /// <summary>
+        /// Maximum size for a race model.
+        /// </summary>
+        public const int MaxSizeRace = 0xA8000;
+
         public CarInfo CarInfo { get; set; }
         public ModelSet1 ModelSet { get; set; }
         public TireFile Tire { get; set; }
@@ -151,7 +161,7 @@ namespace PDTools.Files.Models.PS2.CarModel1
                 bs.Position = tireOffset;
                 bs.Position += 0x0C;
                 uint tireSize = bs.ReadUInt32();
-                bs.Position = carInfoOffset;
+                bs.Position = tireOffset;
 
                 byte[] data = bs.ReadBytes((int)tireSize);
                 fs.Write(data);
@@ -164,7 +174,7 @@ namespace PDTools.Files.Models.PS2.CarModel1
                 uint wheelSize = bs.ReadUInt32();
                 bs.Position = wheelOffset;
 
-                byte[] data = bs.ReadBytes((int)(wheelSize));
+                byte[] data = bs.ReadBytes((int)wheelSize);
                 fs.Write(data);
             }
 
