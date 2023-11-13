@@ -241,11 +241,37 @@ namespace PDTools.Files.Textures.PS2
 
                     palette = new uint[8 * 2];
 
-                    _gsMemory.ReadTexPSMCT32((int)texture.tex0.CBP_ClutBlockPointer,
-                        1,
-                        0, (int)texture.tex0.CSA_ClutEntryOffset,
-                        8, 2, // Always 8x2 for PSMT4
-                        palette);
+                    if (texture.tex0.CPSM_ClutPartPixelFormatSetup == SCE_GS_PSM.SCE_GS_PSMCT32)
+                    {
+                        _gsMemory.ReadTexPSMCT32((int)texture.tex0.CBP_ClutBlockPointer,
+                            1,
+                            0, (int)texture.tex0.CSA_ClutEntryOffset,
+                            8, 2, // Always 8x2 for PSMT4
+                            palette);
+                    }
+                    else if (texture.tex0.CPSM_ClutPartPixelFormatSetup == SCE_GS_PSM.SCE_GS_PSMCT16)
+                    {
+                        ushort[] palette16 = new ushort[16];
+                        _gsMemory.ReadTexPSMCT16((int)texture.tex0.CBP_ClutBlockPointer,
+                            1,
+                            0, (int)texture.tex0.CSA_ClutEntryOffset,
+                            8, 2, // Always 8x2 for PSMT4
+                            palette16);
+
+                        // Page 72, GS User's Manual
+                        // PSMCT16 stores the higher 5 bits of each color when converting to PSMCT32
+                        for (int i = 0; i < 16; i++)
+                        {
+                            byte r = (byte)(((palette16[i] >> 0) & 0b11111) << 3);
+                            byte g = (byte)(((palette16[i] >> 5) & 0b11111) << 3);
+                            byte b = (byte)(((palette16[i] >> 10) & 0b11111) << 3);
+                            byte a = (palette16[i] >> 15 == 1) ? (byte)0x80 : (byte)0x00;
+
+                            palette[i] = (uint)(r | g << 8 | b << 16 | a << 24);
+                        }
+                    }
+                    else
+                        throw new NotImplementedException($"Invalid or not supported palette format {texture.tex0.CPSM_ClutPartPixelFormatSetup}");
 
                     break;
 

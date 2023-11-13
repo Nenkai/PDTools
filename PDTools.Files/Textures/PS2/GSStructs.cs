@@ -47,7 +47,7 @@ namespace PDTools.Files.Textures.PS2
         /// <summary>
         /// Format in which CLUT entries are saved
         /// </summary>
-        public ulong CPSM_ClutPartPixelFormatSetup;
+        public SCE_GS_PSM CPSM_ClutPartPixelFormatSetup;
 
         /// <summary>
         /// CLUT storage mode
@@ -79,7 +79,7 @@ namespace PDTools.Files.Textures.PS2
             TCC_ColorComponent = (byte)stream.ReadBits(1);
             TFX_TextureFunction = stream.ReadBits(2);
             CBP_ClutBlockPointer = stream.ReadBits(14);
-            CPSM_ClutPartPixelFormatSetup = stream.ReadBits(4);
+            CPSM_ClutPartPixelFormatSetup = (SCE_GS_PSM)stream.ReadBits(4);
             CSM_ClutStorageMode = stream.ReadBits(1);
             CSA_ClutEntryOffset = stream.ReadBits(5);
             CLD_ClutBufferLoadControl = stream.ReadBits(3);
@@ -95,7 +95,7 @@ namespace PDTools.Files.Textures.PS2
             stream.WriteBits(TCC_ColorComponent, 1);
             stream.WriteBits(TFX_TextureFunction, 2);
             stream.WriteBits(CBP_ClutBlockPointer, 14);
-            stream.WriteBits(CPSM_ClutPartPixelFormatSetup, 4);
+            stream.WriteBits((byte)CPSM_ClutPartPixelFormatSetup, 4);
             stream.WriteBits(CSM_ClutStorageMode, 1);
             stream.WriteBits(CSA_ClutEntryOffset, 5);
             stream.WriteBits(CLD_ClutBufferLoadControl, 3);
