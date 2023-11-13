@@ -31,40 +31,50 @@ namespace PDTools.Files.Textures.PS2
         /// Adds an image to the texture set.
         /// </summary>
         /// <param name="imagePath">Path to the image.</param>
-        /// <param name="format">Format. (Supported is PSMT4, PSMT8, PSMCT32)</param>
-        /// <param name="wrapModeS">Wrap mode U/S. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
-        /// <param name="wrapModeT">Wrap mode V/T. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
-        public void AddImage(string imagePath, SCE_GS_PSM format,
-            SCE_GS_CLAMP_PARAMS wrapModeS = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP, 
-            SCE_GS_CLAMP_PARAMS wrapModeT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+        /// <param name="config">Texture config</param>
+        public void AddImage(string imagePath, TextureConfig config)
         {
             Image<Rgba32> img = Image.Load<Rgba32>(imagePath);
 
-            AddImage(img, format, wrapModeS, wrapModeT);
+            AddImage(img, config);
         }
 
         /// <summary>
         /// Adds an image to the texture set.
         /// </summary>
-        /// <param name="imagePath">Path to the image.</param>
-        /// <param name="format">Format. (Supported is PSMT4, PSMT8, PSMCT32)</param>
-        /// <param name="wrapModeS">Wrap mode U/S. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
-        /// <param name="wrapModeT">Wrap mode V/T. Use REGION_CLAMP for regular images, otherwise REPEAT/CLAMP for models</param>
-        private void AddImage(Image<Rgba32> img, SCE_GS_PSM format,
-            SCE_GS_CLAMP_PARAMS wrapModeS = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP,
-            SCE_GS_CLAMP_PARAMS wrapModeT = SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+        /// <param name="img">Image.</param>
+        /// <param name="config">Texture config</param>
+        private void AddImage(Image<Rgba32> img, TextureConfig config)
         {
-            if (wrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REPEAT && wrapModeT == SCE_GS_CLAMP_PARAMS.SCE_GS_REPEAT)
+            if (config.IsTextureMap)
                 img.Mutate(e => e.Resize((int)BitOperations.RoundUpToPowerOf2((uint)img.Width), (int)BitOperations.RoundUpToPowerOf2((uint)img.Height)));
 
             var pgluTexture = new PGLUtexture();
-            pgluTexture.tex0.PSM = format;
+            pgluTexture.tex0.PSM = config.Format;
 
             // Calculate bounds of textures, which may be beyond actual render dimensions
             uint widthPow2 = BitOperations.RoundUpToPowerOf2((uint)img.Width);
             uint heightPow2 = BitOperations.RoundUpToPowerOf2((uint)img.Height);
-            pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(widthPow2, 2);
-            pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(heightPow2, 2);
+
+            if (config.WrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+                pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(widthPow2, 2);
+            else
+            {
+                if (!BitOperations.IsPow2(config.RepeatWidth))
+                    throw new ArgumentException("Repeat width must be a power of 2.");
+
+                pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(config.RepeatWidth);
+            }
+
+            if (config.WrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+                pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(heightPow2, 2);
+            else
+            {
+                if (!BitOperations.IsPow2(config.RepeatHeight))
+                    throw new ArgumentException("Repeat height must be a power of 2.");
+
+                pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(config.RepeatHeight);
+            }
 
             // Calculate TBW
             pgluTexture.tex0.TBW_TextureBufferWidth = (byte)((img.Width + 63) / 64);
@@ -72,8 +82,8 @@ namespace PDTools.Files.Textures.PS2
                 pgluTexture.tex0.TBW_TextureBufferWidth++;
 
             // Set actual render dimensions
-            pgluTexture.ClampSettings.WMS = wrapModeS;
-            pgluTexture.ClampSettings.WMT = wrapModeT;
+            pgluTexture.ClampSettings.WMS = config.WrapModeS;
+            pgluTexture.ClampSettings.WMT = config.WrapModeT;
             pgluTexture.ClampSettings.MAXU = (ulong)img.Width - 1;
             pgluTexture.ClampSettings.MAXV = (ulong)img.Height - 1;
 
@@ -109,7 +119,7 @@ namespace PDTools.Files.Textures.PS2
                 for (int i = 0; i < fullPalette.Length; i++)
                     fullPalette[i].A = (byte)Tex1Utils.Normalize(fullPalette[i].A, 0x00, 0xFF, 0x00, 0x80);
 
-                byte[] imageData = new byte[(int)(double)(img.Width * img.Height * Tex1Utils.GetBitsPerPixel(format) / 8)];
+                byte[] imageData = new byte[(int)(double)(img.Width * img.Height * Tex1Utils.GetBitsPerPixel(pgluTexture.tex0.PSM) / 8)];
 
                 if (pgluTexture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMT8)
                 {
@@ -123,7 +133,7 @@ namespace PDTools.Files.Textures.PS2
             }
 
             TextureSet.pgluTextures.Add(pgluTexture);
-            CreateImageData(textureTask, format);
+            CreateImageData(textureTask, pgluTexture.tex0.PSM);
             Textures.Add(textureTask);
         }
 
