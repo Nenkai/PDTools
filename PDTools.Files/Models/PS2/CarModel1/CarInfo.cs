@@ -19,7 +19,7 @@ namespace PDTools.Files.Models.PS2.CarModel1
         public const uint MAGIC = 0x49435447;
         public const uint HeaderSize = 0x94;
 
-        public BrakeParameter[] BrakeParameters { get; private set; } = new BrakeParameter[2]
+        public BrakeParameter[] BrakeParameters { get; set; } = new BrakeParameter[2]
         {
             new BrakeParameter(),
             new BrakeParameter(),
@@ -200,28 +200,28 @@ namespace PDTools.Files.Models.PS2.CarModel1
 
     public class BrakeParameter
     {
-        public uint Unk1 { get; set; }
-        public uint Unk2 { get; set; }
-        public float Unk3 { get; set; }
-        public float Unk4 { get; set; }
-        public float Unk5 { get; set; }
+        public uint BrakeCaliperTextureIndex { get; set; }
+        public uint BrakeDiscTextureIndex { get; set; }
+        public float BrakeTextureSize { get; set; }
+        public float BrakeOffsetFromCenter { get; set; }
+        public float BrakeTextureOrientationDeg { get; set; }
 
         public void FromStream(BinaryStream bs)
         {
-            Unk1 = bs.ReadUInt32();
-            Unk2 = bs.ReadUInt32();
-            Unk3 = bs.ReadSingle();
-            Unk4 = bs.ReadSingle();
-            Unk5 = bs.ReadSingle();
+            BrakeCaliperTextureIndex = bs.ReadUInt32();
+            BrakeDiscTextureIndex = bs.ReadUInt32();
+            BrakeTextureSize = bs.ReadSingle();
+            BrakeOffsetFromCenter = bs.ReadSingle();
+            BrakeTextureOrientationDeg = bs.ReadSingle();
         }
 
         public void Write(BinaryStream bs)
         {
-            bs.WriteUInt32(Unk1);
-            bs.WriteUInt32(Unk2);
-            bs.WriteSingle(Unk3);
-            bs.WriteSingle(Unk4);
-            bs.WriteSingle(Unk5);
+            bs.WriteUInt32(BrakeCaliperTextureIndex);
+            bs.WriteUInt32(BrakeDiscTextureIndex);
+            bs.WriteSingle(BrakeTextureSize);
+            bs.WriteSingle(BrakeOffsetFromCenter);
+            bs.WriteSingle(BrakeTextureOrientationDeg);
         }
     }
 }
