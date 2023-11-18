@@ -9,9 +9,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_Jump1us : ModelSetupPS2Command
+    public class Cmd_JumpUShort : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.JumpShort;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.Jump_UShort;
 
         public ushort JumpOffset { get; set; }
 
@@ -27,7 +27,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_Jump1us)}";
+            return $"{nameof(Cmd_JumpUShort)}";
         }
     }
 }

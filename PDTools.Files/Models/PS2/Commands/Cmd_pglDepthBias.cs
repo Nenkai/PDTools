@@ -9,25 +9,25 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    public class Cmd_pglDepthBias : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglDepthBias;
 
-        public byte ShapeIndex { get; set; }
+        public float Value { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            Value = bs.ReadSingle();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            bs.WriteSingle(Value);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pglDepthBias)}";
         }
     }
 }

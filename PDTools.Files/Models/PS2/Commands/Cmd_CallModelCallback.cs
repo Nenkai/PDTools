@@ -63,9 +63,12 @@ namespace PDTools.Files.Models.PS2.Commands
                 var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
                 cmd.Read(bs, 0);
 
-                if (opcode == ModelSetupPS2Opcode.JumpShort || opcode == ModelSetupPS2Opcode.JumpByte)
+                if (opcode == ModelSetupPS2Opcode.Jump_UShort || opcode == ModelSetupPS2Opcode.Jump_Byte)
                 {
-                    endOfAllOffset = (bs.Position - 2) + (cmd as Cmd_Jump1us).JumpOffset;
+                    if (opcode == ModelSetupPS2Opcode.Jump_UShort)
+                        endOfAllOffset = (bs.Position - 2) + (cmd as Cmd_JumpUShort).JumpOffset;
+                    else if (opcode == ModelSetupPS2Opcode.Jump_Byte)
+                        endOfAllOffset = (bs.Position - 1) + (cmd as Cmd_JumpByte).JumpOffset;
                     break;
                 }
 
@@ -94,7 +97,7 @@ namespace PDTools.Files.Models.PS2.Commands
                     cmd.Read(bs, 0);
 
                     // New jump = likely branch end
-                    if (opcode == ModelSetupPS2Opcode.JumpShort || opcode == ModelSetupPS2Opcode.JumpByte)
+                    if (opcode == ModelSetupPS2Opcode.Jump_UShort || opcode == ModelSetupPS2Opcode.Jump_Byte)
                         break;
 
                     thisBranchCmds.Add(cmd);
@@ -119,7 +122,7 @@ namespace PDTools.Files.Models.PS2.Commands
                 cmd.Write(bs);
             }
 
-            bs.WriteByte((byte)ModelSetupPS2Opcode.JumpShort);
+            bs.WriteByte((byte)ModelSetupPS2Opcode.Jump_UShort);
             long skipAllJumpOffset = bs.Position;
             bs.WriteInt16(0);
 
@@ -142,7 +145,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
                 if (i != CommandsPerBranch.Count - 1)
                 {
-                    bs.WriteByte((byte)ModelSetupPS2Opcode.JumpShort);
+                    bs.WriteByte((byte)ModelSetupPS2Opcode.Jump_UShort);
                     jumpOffsets.Add(bs.Position);
                     bs.WriteInt16(0);
                 }

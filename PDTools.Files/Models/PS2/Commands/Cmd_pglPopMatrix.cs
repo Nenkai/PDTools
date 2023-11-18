@@ -9,25 +9,26 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    /// <summary>
+    /// Pops the current matrix stack, replacing the current matrix with the one below it on the stack. Similar to glPopMatrix
+    /// </summary>
+    public class Cmd_pglPopMatrix : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
-
-        public byte ShapeIndex { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglPopMatrix;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pglPopMatrix)}";
         }
     }
 }

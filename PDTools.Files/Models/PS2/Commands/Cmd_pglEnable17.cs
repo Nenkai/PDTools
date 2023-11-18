@@ -9,9 +9,9 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pglEnable17 : ModelSetupPS2Command
+    public class Cmd_pglEnableRendering : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglEnable17_;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglEnableRendering;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
@@ -25,7 +25,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pglEnable17)}";
+            return $"{nameof(Cmd_pglEnableRendering)}";
         }
     }
 }

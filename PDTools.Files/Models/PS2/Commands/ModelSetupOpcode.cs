@@ -11,18 +11,18 @@ namespace PDTools.Files.Models.PS2.Commands
         // End of setup commands.
         End = 0,
 
-        RenderModel_1ub = 2,
-        RenderModel_1us = 3,
+        RenderModel_Byte = 2,
+        RenderModel_UShort = 3,
 
         /// <summary>
         /// Calls a shape (mesh) to use (1 unsigned byte)
         /// </summary>
-        pgluCallShape_1ub = 4,
+        pgluCallShape_Byte = 4,
 
         /// <summary>
         /// Calls a shape (mesh) to use (1 unsigned short)
         /// </summary>
-        pgluCallShape_1us = 5,
+        pgluCallShape_UShort = 5,
 
         // Calls the model's callback, passes parameter to it, returns value
         // Used for stuff like brake lights in Car models!
@@ -40,27 +40,31 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// Jumps to a relative offset (byte)
         /// </summary>
-        JumpByte = 8,
+        Jump_Byte = 8,
 
         /// <summary>
         /// Jumps to a relative offset (short)
         /// </summary>
-        JumpShort = 9,
+        Jump_UShort = 9,
 
+        /// <summary>
+        /// Render commands, takes a bbox.
+        /// </summary>
         BBoxRender = 10,
 
         /// <summary>
-        /// Calls pglEnable(17)
+        /// Calls pglEnable(17) - Not entirely figured out, it may be just enabling rendering
+        /// It's always at the bottom of commands, so probably it?
         /// </summary>
-        pglEnable17_ = 11,
+        pglEnableRendering = 11,
 
         /// <summary>
-        /// Pushes a matrix. similar to glPushMatrix
+        /// Pushes the current matrix stack down by one, duplicating the current matrix. Similar to glPushMatrix
         /// </summary>
         pglPushMatrix = 12,
 
         /// <summary>
-        /// Pops a matrix. similar to glPopMatrix
+        /// Pops the current matrix stack, replacing the current matrix with the one below it on the stack. Similar to glPopMatrix
         /// </summary>
         pglPopMatrix = 13,
 
@@ -70,27 +74,27 @@ namespace PDTools.Files.Models.PS2.Commands
         pglMatrixMode = 14,
 
         /// <summary>
-        /// Calls pglInverse with a matrix
+        /// Calls pglLoadMatrix, same as glLoadMatrix. Replaces the current matrix with the one whose elements are specified by m. 
         /// </summary>
-        pglInverse = 15,
+        pglLoadMatrix = 15,
 
         /// <summary>
-        /// Calls a pgl command with a matrix. Could be similar in operation to command 15
+        /// Calls pglMultMatrix, same as glMultMatrix. Multiplies the current matrix with the one specified using m, and replaces the current matrix with the product.
         /// </summary>
-        pglUnk16 = 16,
+        pglMultMatrix = 16,
 
         /// <summary>
-        /// Calls pglTranslate. Similar to glTranslate
+        /// Calls pglTranslate, same as glTranslate. Multiplies the current matrix by the specified translation vector
         /// </summary>
         pglTranslate = 17,
 
         /// <summary>
-        /// Calls pglScale. Similar to glScale
+        /// Calls pglScale, same as glScale. Multiplies the current matrix by the specified scale vector.
         /// </summary>
         pglScale = 18,
 
         /// <summary>
-        /// Calls pglRotate. Similar to glRotate
+        /// Calls pglRotate, same as glRotate. Multiplies the current matrix by the specified rotation vector.
         /// </summary>
         pglRotate = 19,
 
@@ -212,28 +216,29 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// Sets the tex table to use (1 unsigned byte)
         /// </summary>
-        pgluSetTexTable = 43,
+        pgluSetTexTable_Byte = 43,
 
         /// <summary>
         /// Sets the tex table to use (1 unsigned short)
         /// </summary>
-        pgluTexTable_1us = 44,
+        pgluSetTexTable_UShort = 44,
 
         /// <summary>
-        /// Calls pglEnable(17), may be related to alpha fail
+        /// Calls glEnable(15). Enables face culling
         /// </summary>
-        pglEnable17 = 45,
+        pglEnableCullFace = 45,
 
         /// <summary>
-        /// Calls pglDisable(17), may be related to alpha fail
+        /// Calls pglDisable(15). Disables face culling
         /// </summary>
-        pglDisable17 = 46,
+        pglDisableCullFace = 46,
 
         /// <summary>
-        /// Sets the alpha fail by setting GS TEST's AFAIL value.
-        /// 0 = KEEP, 1 = FB_ONLY, 2 = ZB_ONLY, 3 = RGB_ONLY
+        /// Calls pglAlphaFail. Sets the alpha fail by setting GS TEST's AFAIL value.
         /// </summary>
         pglAlphaFail = 47,
+
+        // 48 not present at all in GT3 or 4
 
         // Calls pglCylinderMapHint - 3 floats
         pglCylinderMapHint = 49,
@@ -259,7 +264,7 @@ namespace PDTools.Files.Models.PS2.Commands
         pgl_54 = 54,
 
         /// <summary>
-        /// Calls pglGetCullFace, and pglCullFace
+        /// GT4 and above. Calls pglGetCullFace, and pglCullFace
         /// </summary>
         pglCullFace = 64,
 
@@ -307,12 +312,12 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned byte as index
         /// </summary>
-        pgluTexTableFromExternalTexSet1ub = 80,
+        pgluTexTableFromExternalTexSetByte = 80,
 
         /// <summary>
         /// GT4 and above. Calls pgluTexSet using external tex set (up to 16). Uses 1 unsigned short as index
         /// </summary>
-        pgluTexTableFromExternalTexSet1us = 81,
+        pgluTexTableFromExternalTexSetUShort = 81,
 
         /// <summary>
         /// GT4 and above. Calls pglVariableColorScale
@@ -352,11 +357,11 @@ namespace PDTools.Files.Models.PS2.Commands
         /// <summary>
         /// GT4 and above. Calls modelset callback. takes unsigned byte parameter
         /// </summary>
-        ModelSetCallback_89_1ub = 89,
+        VMCallback_Byte = 89,
 
         /// <summary>
         /// GT4 and above. Same as 89, with unsigned short index
         /// </summary>
-        ModelSetCallback_90_1us = 90,
+        VMCallback_UShort = 90,
     }
 }

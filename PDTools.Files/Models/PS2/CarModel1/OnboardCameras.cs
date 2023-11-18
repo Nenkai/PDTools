@@ -27,6 +27,12 @@ namespace PDTools.Files.Models.PS2.CarModel1
             set => SetCamera(1, value);
         }
 
+        public OnboardCameraData UNK_2
+        {
+            get => Cameras.Count >= 3 ? Cameras[2] : null;
+            set => SetCamera(2, value);
+        }
+
         public OnboardCameraData MIRROR_L
         {
             get => Cameras.Count >= 1 ? Cameras[3] : null;
@@ -131,7 +137,7 @@ namespace PDTools.Files.Models.PS2.CarModel1
 
         public void SetCamera(int index, OnboardCameraData data)
         {
-            while (index > Cameras.Count)
+            while (Cameras.Count < index + 1)
                 Cameras.Add(new OnboardCameraData());
 
             Cameras[index] = data;

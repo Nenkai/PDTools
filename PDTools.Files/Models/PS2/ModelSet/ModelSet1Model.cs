@@ -12,8 +12,14 @@ using PDTools.Utils;
 
 namespace PDTools.Files.Models.PS2.ModelSet
 {
+    /// <summary>
+    /// Represents a model within a ModelSet1.
+    /// </summary>
     public class ModelSet1Model
     {
+        /// <summary>
+        /// Commands interpreted on every tick to figure how and what shape should be rendered.
+        /// </summary>
         public List<ModelSetupPS2Command> Commands { get; set; } = new();
 
         public void FromStream(BinaryStream bs)

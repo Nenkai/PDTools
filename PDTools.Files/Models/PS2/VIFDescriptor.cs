@@ -10,6 +10,11 @@ namespace PDTools.Files.Models.PS2
 {
     public class VIFDescriptor
     {
+        public const int NO_TEXTURE = 0;
+        public const int EXTERNAL_TEXTURE = 511;
+
+        public const int NO_MATERIAL = 0;
+
         public uint VIFDataOffset { get; set; }
         public ushort DMATagQuadwordCount { get; set; }
 

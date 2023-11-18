@@ -82,10 +82,9 @@ namespace PDTools.Files.Models.PS2
                         bs.WriteInt32s(intArr);
                     else if (UnpackData[i] is byte[] byteArr)
                         bs.WriteBytes(byteArr);
-                    else
-                        ;
+                    else if (UnpackData[i] is short[] shortArr)
+                        bs.WriteInt16s(shortArr);
                 }
-                ;
             }
 
             bs.Align(0x04, grow: true);

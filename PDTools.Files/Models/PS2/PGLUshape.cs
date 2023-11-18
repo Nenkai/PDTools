@@ -97,22 +97,14 @@ namespace PDTools.Files.Models.PS2
             bs.Position = lastPos;
         }
 
-        public void DumpShape(string objFileName)
+        public PGLUshapeConverted GetShapeData()
         {
-            using StreamWriter sw = new StreamWriter(objFileName);
-            using StreamWriter matSw = new StreamWriter(objFileName + ".mtl");
-
-            string fileName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(objFileName));
-            sw.WriteLine($"mtllib {Path.GetFileNameWithoutExtension(objFileName)}.obj.mtl");
-
             int packetFaceStart = 1;
+
+            PGLUshapeConverted shapeData = new PGLUshapeConverted();
 
             for (var j = 0; j < VIFPackets.Count; j++)
             {
-                sw.WriteLine($"#############");
-                sw.WriteLine($"# Packet[{j}]");
-                sw.WriteLine($"#############");
-
                 int startFace = packetFaceStart;
                 int faceI = 0;
 
@@ -124,60 +116,27 @@ namespace PDTools.Files.Models.PS2
                 VIFCommand resets = packet.Commands.Find(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is byte[]));
 
                 VIFDescriptor desc = VIFDescriptors[j];
-                matSw.WriteLine($"newmtl {fileName}.{0}.{desc.pgluTextureIndex}");
-                matSw.WriteLine($"map_Kd {fileName}_textures/{fileName}.{0}.{(desc.pgluTextureIndex) - 1}.png");
 
                 int resetIndex = 1;
                 int nextVertReset = ((resets.UnpackData[resetIndex] as byte[])[0] + 6) / 3;
-
-                Vector3[] verts = new Vector3[vertCommand.Num];
 
                 for (var l = 0; l < vertCommand.UnpackData.Count; l++)
                 {
                     if (vertCommand.UnpackData[l] is short[] vertShortArr)
                     {
-                        float xf = vertShortArr[0] / 256f;
-                        float yf = vertShortArr[1] / 256f;
-                        float zf = vertShortArr[2] / 256f;
-                        verts[l] = new Vector3(xf, yf, zf);
+                        float xf = vertShortArr[0] / 4096f;
+                        float yf = vertShortArr[1] / 4096f;
+                        float zf = vertShortArr[2] / 4096f;
+                        shapeData.Vertices.Add(new Vector3(xf, yf, zf));
                     }
                     else if (vertCommand.UnpackData[l] is int[] vertFloatArr)
                     {
                         var xf = BitConverter.Int32BitsToSingle(vertFloatArr[0]);
                         var yf = BitConverter.Int32BitsToSingle(vertFloatArr[1]);
                         var zf = BitConverter.Int32BitsToSingle(vertFloatArr[2]);
-                        verts[l] = new Vector3(xf, yf, zf);
+                        shapeData.Vertices.Add(new Vector3(xf, yf, zf));
                     }
-
-                    sw.WriteLine($"v {verts[l].X} {verts[l].Y} {verts[l].Z}");
                 }
-
-                /*
-                float xmin = 0, ymin = 0, zmin = 0, xmax = 0, ymax = 0, zmax = 0;
-                for (var i = 0; i < verts.Length; i++)
-                {
-                    var vert = verts[i];
-                    if (vert.X < xmin)
-                        xmin = vert.X;
-
-                    if (vert.Y < ymin)
-                        ymin = vert.Y;
-
-                    if (vert.Z < zmin)
-                        zmin = vert.Z;
-
-                    if (vert.X > xmax)
-                        xmax = vert.X;
-
-                    if (vert.Y > ymax)
-                        ymax = vert.Y;
-
-                    if (vert.Z > zmax)
-                        zmax = vert.Z;
-                }
-                */
-
-                sw.WriteLine();
 
                 if (uvCommand is not null)
                 {
@@ -187,31 +146,26 @@ namespace PDTools.Files.Models.PS2
                         {
                             var u = BitConverter.Int32BitsToSingle(uvArr[0]);
                             var v = BitConverter.Int32BitsToSingle(uvArr[1]);
-                            sw.WriteLine($"vt {u} {-v}");
+                            shapeData.UVs.Add(new Vector2(u, 1.0f - v));
                         }
                         else if (uvCommand.UnpackData[l] is short[] uvShortArr && uvShortArr.Length == 2) // GT4
                         {
                             var u = uvShortArr[0] / 4096f;
                             var v = uvShortArr[1] / 4096f;
-                            sw.WriteLine($"vt {u} {-v}");
+                            shapeData.UVs.Add(new Vector2(u, 1.0f - v));
                         }
                     }
                 }
                 
-
-                sw.WriteLine();
-                sw.WriteLine($"usemtl {fileName}.{0}.{desc.pgluTextureIndex}");
-
-                List<ushort> faces = new List<ushort>();
-                for (var l = 0; l < verts.Length; l++)
+                for (var l = 0; l < shapeData.Vertices.Count; l++)
                 {
-                    faces.Add((ushort)(packetFaceStart + faceI));
-                    faces.Add((ushort)(packetFaceStart + faceI + 1));
-                    faces.Add((ushort)(packetFaceStart + faceI + 2));
-
-                    sw.WriteLine($"f {packetFaceStart + faceI}/{packetFaceStart + faceI} " +
-                        $"{packetFaceStart + faceI + 1}/{packetFaceStart + faceI + 1} " +
-                        $"{packetFaceStart + faceI + 2}/{packetFaceStart + faceI + 2}");
+                    shapeData.Faces.Add((
+                        (ushort)(packetFaceStart + faceI),
+                        (ushort)(packetFaceStart + faceI + 1), 
+                        (ushort)(packetFaceStart + faceI + 2),
+                        desc.pgluMaterialIndex,
+                        desc.pgluTextureIndex)
+                    );
 
                     if (faceI + 3 == nextVertReset)
                     {
@@ -222,8 +176,6 @@ namespace PDTools.Files.Models.PS2
                             break;
 
                         faceI += 3;
-
-                        sw.WriteLine("# Reset\n");
                     }
                     else
                     {
@@ -232,7 +184,65 @@ namespace PDTools.Files.Models.PS2
                 }
 
                 packetFaceStart += vertCommand.Num;
-                sw.WriteLine();
+            }
+
+            return shapeData;
+        }
+    }
+
+    public class PGLUshapeConverted
+    {
+        public int MaterialIndex { get; set; }
+        public int TextureIndex { get; set; }
+        public List<Vector3> Vertices { get; set; } = new();
+        public List<(int A, int B, int C, int MatIdx, int TexId)> Faces { get; set; } = new();
+        public List<Vector2> UVs { get; set; } = new();
+        public List<Vector3> Normals { get; set; } = new();
+
+        public void Dump(StreamWriter objWriter, StreamWriter matWriter, int texSetIndex, int faceIdxStart, int vtIdxStart)
+        {
+            for (int i = 0; i < Vertices.Count; i++)
+                objWriter.WriteLine($"v {Vertices[i].X} {Vertices[i].Y} {Vertices[i].Z}");
+            objWriter.WriteLine();
+
+            for (int i = 0; i < UVs.Count; i++)
+                objWriter.WriteLine($"vt {UVs[i].X} {UVs[i].Y}");
+
+            objWriter.WriteLine();
+
+            int currentTexId = -1;
+            int currentMatId = -1;
+            for (int i = 0; i < Faces.Count; i++)
+            {
+                if (Faces[i].MatIdx != currentMatId || Faces[i].TexId != currentTexId)
+                {
+                    currentMatId = Faces[i].MatIdx;
+                    currentTexId = Faces[i].TexId;
+
+                    objWriter.WriteLine($"usemtl Mat{currentMatId - 1}_Tex{currentTexId - 1}");
+
+                    matWriter.WriteLine($"newmtl Mat{currentMatId - 1}_Tex{currentTexId - 1}");
+
+                    if (Faces[i].TexId != 511) // External
+                        matWriter.WriteLine($"map_Kd {texSetIndex}.{currentTexId - 1}.png");
+
+                    matWriter.WriteLine();
+                }
+
+                objWriter.Write($"f {faceIdxStart + Faces[i].A}");
+                if (UVs.Count > 0)
+                    objWriter.Write($"/{vtIdxStart + Faces[i].A}");
+                objWriter.Write(" ");
+
+                objWriter.Write($"{faceIdxStart + Faces[i].B}");
+                if (UVs.Count > 0)
+                    objWriter.Write($"/{vtIdxStart + Faces[i].B}");
+                objWriter.Write(" ");
+
+                objWriter.Write($"{faceIdxStart + Faces[i].C}");
+                if (UVs.Count > 0)
+                    objWriter.Write($"/{vtIdxStart + Faces[i].C}");
+                objWriter.WriteLine();
             }
         }
     }

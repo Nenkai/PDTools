@@ -9,25 +9,26 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    /// <summary>
+    /// Calls glDisable(15). Disables face culling
+    /// </summary>
+    public class Cmd_pglDisableCullFace : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
-
-        public byte ShapeIndex { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglDisableCullFace;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pglDisableCullFace)}";
         }
     }
 }

@@ -44,7 +44,7 @@ namespace PDTools.Files.Models.PS2.Commands
                     if (opcode == ModelSetupPS2Opcode.End)
                         break;
 
-                    if (opcode == ModelSetupPS2Opcode.pglEnable17_)
+                    if (opcode == ModelSetupPS2Opcode.pglEnableRendering)
                     {
                         bs.Position -= 1;
                         break;
@@ -53,7 +53,7 @@ namespace PDTools.Files.Models.PS2.Commands
                     var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
                     cmd.Read(bs, 0);
 
-                    if (opcode != ModelSetupPS2Opcode.JumpByte && opcode != ModelSetupPS2Opcode.JumpShort)
+                    if (opcode != ModelSetupPS2Opcode.Jump_Byte && opcode != ModelSetupPS2Opcode.Jump_UShort)
                         lodCommands.Add(cmd);
                 }
 
@@ -92,7 +92,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
                 if (i != CommandsPerLOD.Count - 1)
                 {
-                    bs.WriteByte((byte)ModelSetupPS2Opcode.JumpShort);
+                    bs.WriteByte((byte)ModelSetupPS2Opcode.Jump_UShort);
                     jumpOffsets.Add(bs.Position);
                     bs.WriteInt16(0);
                 }
@@ -107,6 +107,13 @@ namespace PDTools.Files.Models.PS2.Commands
             }
 
             bs.Position = dataOffset;
+        }
+
+        public void SetNumberOfLODs(int num)
+        {
+            CommandsPerLOD.Clear();
+            for (int i = 0; i < num; i++)
+                CommandsPerLOD.Add(new List<ModelSetupPS2Command>());
         }
 
         public override string ToString()

@@ -9,25 +9,25 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    public class Cmd_pgluTexTableFromExternalTexSetByte : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluTexTableFromExternalTexSetByte;
 
-        public byte ShapeIndex { get; set; }
+        public byte ExternalTexSetIndex { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            bs.WriteByte(ExternalTexSetIndex);
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            ExternalTexSetIndex = bs.Read1Byte();
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pgluTexTableFromExternalTexSetByte)}";
         }
     }
 }

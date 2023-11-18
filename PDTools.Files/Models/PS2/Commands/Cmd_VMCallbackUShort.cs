@@ -9,25 +9,28 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    /// <summary>
+    /// GT4
+    /// </summary>
+    public class Cmd_VMCallbackUShort : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
+        public ushort Param { get; set; }
 
-        public byte ShapeIndex { get; set; }
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.VMCallback_UShort;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            Param = bs.ReadUInt16();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            bs.WriteUInt16(Param);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_VMCallbackUShort)}";
         }
     }
 }

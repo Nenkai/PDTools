@@ -9,25 +9,30 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.Commands
 {
-    public class Cmd_pgluCallShapeByte : ModelSetupPS2Command
+    public class Cmd_pglMatrixMode : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluCallShape_Byte;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglMatrixMode;
 
-        public byte ShapeIndex { get; set; }
+        /// <summary>
+        /// 0 = MODEL_VIEW
+        /// 1 = PROJECTION
+        /// 2 = TEXTURE
+        /// </summary>
+        public byte Mode { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            ShapeIndex = bs.Read1Byte();
+            
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(ShapeIndex);
+            
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluCallShapeByte)} - Shape: {ShapeIndex}";
+            return $"{nameof(Cmd_pglMatrixMode)}";
         }
     }
 }

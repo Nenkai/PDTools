@@ -41,7 +41,7 @@ namespace PDTools.Files.Models.PS2.Commands
                 cmd.Read(bs, 0);
                 CommandsOnRender.Add(cmd);
 
-                if (opcode == ModelSetupPS2Opcode.pglEnable17_)
+                if (opcode == ModelSetupPS2Opcode.pglEnableRendering)
                     break;
             }
         }
@@ -70,6 +70,11 @@ namespace PDTools.Files.Models.PS2.Commands
             bs.Position = jumpOffsetOffset;
             bs.WriteUInt16((ushort)(endOffset - jumpOffsetOffset));
             bs.Position = endOffset;
+        }
+
+        public void SetBBox(Vector3[] bbox)
+        {
+            BBox = bbox;
         }
 
         public override string ToString()

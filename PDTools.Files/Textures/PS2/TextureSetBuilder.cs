@@ -174,7 +174,7 @@ namespace PDTools.Files.Textures.PS2
             texture.PackedImageData = imageData;
         }
 
-        public void Build()
+        public TextureSet1 Build()
         {
             GSMemory mem = new GSMemory();
 
@@ -290,6 +290,8 @@ namespace PDTools.Files.Textures.PS2
 
             foreach (var transfer in TextureSet.GSTransfers)
                 TextureSet.TotalBlockSize += (ushort)(Tex1Utils.FindBlockIndexAtPosition(transfer.Format, transfer.Width - 1, transfer.Height - 1) + 1);
+
+            return TextureSet;
         }
 
         public (Rgba32[] TiledPalette, int[] LinearToTiledPaletteIndices) MakeTiledPaletteFromLinearPalette(ReadOnlyMemory<Rgba32> palette)

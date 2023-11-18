@@ -10,6 +10,10 @@ using System.Runtime.InteropServices;
 
 using PDTools.Files.Textures.PS2;
 using PDTools.Utils;
+using PDTools.Files.Models.PS2.Commands;
+
+using SixLabors.ImageSharp;
+using System.Reflection;
 
 namespace PDTools.Files.Models.PS2.ModelSet
 {
@@ -24,7 +28,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
         public const uint MAGIC = 0x314D5447;
 
         /// <summary>
-        /// Models in this model set.
+        /// Models in this model set. The game will iterate through all of these & their commands to render on every tick.
         /// </summary>
         public List<ModelSet1Model> Models { get; set; } = new List<ModelSet1Model>();
 
@@ -45,6 +49,9 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public List<ModelSet1Bounding> Boundings { get; set; } = new List<ModelSet1Bounding>();
 
+        /// <summary>
+        /// Texture set for each variation - car color.
+        /// </summary>
         public List<List<TextureSet1>> VariationTexSet { get; set; } = new List<List<TextureSet1>>();
 
         /// <summary>
@@ -171,6 +178,97 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 }
 
                 VariationMaterialsTable.Add(materialsForThisVariation);
+            }
+        }
+
+        //////////////////////////////////
+        /// Interpreter for dumping
+        //////////////////////////////////
+       
+        public void DumpModel(int modelIndex, string outdir)
+        {
+            ModelCommandContext context = new ModelCommandContext();
+            context.ModelIndex = modelIndex;
+            context.OutputDir = outdir;
+
+            ModelSet1Model model = Models[modelIndex];
+
+            ProcessCommands(context, model.Commands);
+        }
+
+        private void ProcessCommands(ModelCommandContext context, List<ModelSetupPS2Command> cmds)
+        {
+            foreach (ModelSetupPS2Command command in cmds)
+            {
+                switch (command.Opcode)
+                {
+                    case ModelSetupPS2Opcode.BBoxRender:
+                        ProcessCommands(context, (command as Cmd_BBoxRender).CommandsOnRender);
+                        context.FinishModel();
+                        break;
+
+                    case ModelSetupPS2Opcode.LODSelect:
+                        var lodSel = command as Cmd_LODSelect;
+                        for (int i = 0; i < lodSel.CommandsPerLOD.Count; i++)
+                        {
+                            context.SetLOD(i);
+
+                            ProcessCommands(context, lodSel.CommandsPerLOD[i]);
+
+                            context.FinishModel();
+                        }
+                        break;
+
+                    case ModelSetupPS2Opcode.CallModelCallback:
+                        var callbackCmd = command as Cmd_CallModelCallback;
+                        if (callbackCmd.Parameter == 0) // Tail Lamp
+                        {
+                            ProcessCommands(context, callbackCmd.Default);
+
+                            context.ExtraName = "tail_lamp_off";
+                            ProcessCommands(context, callbackCmd.CommandsPerBranch[0]);
+
+                            context.ExtraName = "tail_lamp_on";
+                            ProcessCommands(context, callbackCmd.CommandsPerBranch[1]);
+
+                            context.ExtraName = null;
+                        }
+
+                        break;
+
+                    case ModelSetupPS2Opcode.pgluSetTexTable_Byte:
+                        byte index = (command as Cmd_pgluSetTexTable_Byte).TexSetTableIndex;
+                        context.SetTexTable(index);
+                        break;
+
+                    case ModelSetupPS2Opcode.pgluCallShape_Byte:
+
+                        if (context.ObjWriter is null)
+                        {
+                            if (context.LOD == -1)
+                            {
+                                context.SetupObjWriter($"model{context.ModelIndex}");
+                                context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.mtl");
+                            }
+                            else
+                            {
+                                context.SetupObjWriter($"model{context.ModelIndex}.lod{context.LOD}");
+                                context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.lod{context.LOD}.mtl");
+                            }
+                            
+                        }
+
+                        var callShape = (command as Cmd_pgluCallShapeByte);
+                        int shapeIndex = callShape.ShapeIndex;
+                        PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
+
+                        string name = $"shape{shapeIndex}";
+                        if (!string.IsNullOrEmpty(context.ExtraName))
+                            name += $"_{context.ExtraName}";
+
+                        context.DumpShapeToObj(shapeData, shapeIndex, name);
+                        break;
+                }
             }
         }
     }

@@ -9,9 +9,9 @@ namespace PDTools.Files.Textures.PS2
     public class TextureConfig
     {
         /// <summary>
-        /// Pixel format. Defaults to <see cref="SCE_GS_PSM.SCE_GS_PSMT8"/>
+        /// Pixel format. Defaults to <see cref="SCE_GS_PSM.SCE_GS_PSMT4"/>
         /// </summary>
-        public SCE_GS_PSM Format { get; set; } = SCE_GS_PSM.SCE_GS_PSMT8;
+        public SCE_GS_PSM Format { get; set; } = SCE_GS_PSM.SCE_GS_PSMT4;
 
         /// <summary>
         /// Wrap Mode S. Defaults to <see cref="SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP"/>
