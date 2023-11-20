@@ -10,13 +10,14 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS2;
 using PDTools.Files.Models.PS2.Commands;
+using PDTools.Files.Models.VM;
 
 namespace PDTools.Files.Models.PS2.ModelSet
 {
     /// <summary>
     /// Model Set 2. Used by GT4
     /// </summary>
-    public class ModelSet2
+    public class ModelSet2 : ModelSetPS2Base
     {
         /// <summary>
         /// "MDLS"
@@ -25,15 +26,24 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public RelocatorBase Relocator { get; set; }
 
+        public byte InstanceFlags { get; set; }
+        public ushort InstanceOutRegisterCount { get; set; }
+        public ushort InstanceUnkRegisterCount { get; set; }
+        public ushort HostMethodInfoCount { get; set; }
+
         public List<ModelSet2Model> Models { get; set; } = new List<ModelSet2Model>();
         public List<PGLUshape> Shapes { get; set; } = new List<PGLUshape>();
+        public List<PGLUmaterial> Materials { get; set; } = new List<PGLUmaterial>();
+
+        public List<RegisterInfo> OutRegisterInfo { get; set; } = new List<RegisterInfo>();
+        public List<RegisterInfo> HostMethodInfo { get; set; } = new List<RegisterInfo>();
 
         /// <summary>
         /// Textures. Each texture set within a list represents seemingly one lod level.
         /// </summary>
         public List<List<TextureSet1>> TextureSetLists { get; set; } = new List<List<TextureSet1>>();
 
-        public ModelSet2 FromStream(Stream stream)
+        public void FromStream(Stream stream)
         {
             using var bs = new BinaryStream(stream);
             long basePos = bs.Position;
@@ -43,37 +53,82 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 throw new InvalidDataException("Not a valid ModelSet2 stream.");
 
             /* HEADER - 0xE4 */
-            ModelSet2 modelSet = new();
-
             int relocatorInfoOffset = bs.ReadInt32();
             int relocatorDataSize = bs.ReadInt32();
             int relocationBase = bs.ReadInt32();
             int fileSize = bs.ReadInt32();
 
-            ushort unk = bs.ReadUInt16();
+            byte unk = bs.Read1Byte();
+            InstanceFlags = bs.Read1Byte();
             ushort modelCount = bs.ReadUInt16();
             ushort shapeCount = bs.ReadUInt16();
-            ushort pgluMatTableCount = bs.ReadUInt16();
-            ushort textureSetLodLevelCount = bs.ReadUInt16();
-            ushort textureSetListCount = bs.ReadUInt16();
-
+            ushort materialCount = bs.ReadUInt16();
+            ushort texSetCount = bs.ReadUInt16();
+            ushort colorCount = bs.ReadUInt16();
+            InstanceOutRegisterCount = bs.ReadUInt16();
+            InstanceUnkRegisterCount = bs.ReadUInt16();
+            HostMethodInfoCount = bs.ReadUInt16();
+            ushort externalInfoCount = bs.ReadUInt16();
+            ushort outRegisterInfoCount = bs.ReadUInt16();
+            ushort symbolsCount = bs.ReadUInt16();
+            
             bs.Position = basePos + 0x38;
             uint modelsOffset = bs.ReadUInt32();
             uint shapesOffset = bs.ReadUInt32();
-            uint pgluMatTableOffset = bs.ReadUInt32();
+            uint materialsOffset = bs.ReadUInt32();
             uint pgluTexSetsOffset = bs.ReadUInt32();
+            uint bindMatricesOffset = bs.ReadUInt32();
+            uint hostMethodInfosOffset = bs.ReadUInt32();
+            uint externalInfoOffset = bs.ReadUInt32();
+            uint outRegisterInfoOffset = bs.ReadUInt32();
+            uint symbolsOffset = bs.ReadUInt32();
+            uint vmBytecodeOffset = bs.ReadUInt32();
 
             bs.Position = basePos + shapesOffset;
 
             bs.Position = basePos + relocatorInfoOffset;
             Relocator = RelocatorBase.FromStream(bs, basePos);
 
+            ReadMaterials(bs, basePos, materialsOffset, materialCount);
             ReadModels(bs, basePos, modelsOffset, modelCount);
             ReadShapes(bs, basePos, shapesOffset, shapeCount);
-            ReadTextureSets(bs, basePos, pgluTexSetsOffset, textureSetListCount, textureSetLodLevelCount);
+            ReadTextureSets(bs, basePos, pgluTexSetsOffset, colorCount, texSetCount);
+            ReadHostMethodInfos(bs, basePos, hostMethodInfosOffset, HostMethodInfoCount);
+            ReadOutRegisterInfo(bs, basePos, outRegisterInfoOffset, outRegisterInfoCount);
 
+            Instance instance = new Instance();
+            instance.ModelSet = this;
 
-            return modelSet;
+            if ((InstanceFlags & 1) != 0)
+            {
+                bs.Position = basePos + 0x7C;
+                uint instanceOffset = bs.ReadUInt32();
+                bs.Position = instanceOffset;
+                instance.Read(bs, basePos);
+            }
+            else
+            {
+                instance.OutputRegisters = new RegisterVal[InstanceOutRegisterCount];
+                instance.Unk2 = new RegisterVal[InstanceUnkRegisterCount];
+                instance.HostMethodRegisters = new RegisterVal[HostMethodInfoCount];
+            }
+
+            bs.Position = basePos + vmBytecodeOffset;
+            var bytecode = bs.ReadBytes(0x500);
+            var vm = new VMContext(instance);
+            vm.callVM(bytecode, 0, null);
+        }
+
+        private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + i * PGLUmaterial.GetSize();
+
+                var material = new PGLUmaterial();
+                material.FromStream(bs, baseMdlPos);
+                Materials.Add(material);
+            }
         }
 
         private void ReadModels(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -100,6 +155,30 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 var shape = new PGLUshape();
                 shape.FromStream(bs, baseMdlPos);
                 Shapes.Add(shape);
+            }
+        }
+
+        private void ReadHostMethodInfos(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + i * RegisterInfo.GetSize();
+
+                RegisterInfo registerInfo = new RegisterInfo();
+                registerInfo.FromStream(bs, baseMdlPos);
+                HostMethodInfo.Add(registerInfo);
+            }
+        }
+
+        private void ReadOutRegisterInfo(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + i * RegisterInfo.GetSize();
+
+                RegisterInfo registerInfo = new RegisterInfo();
+                registerInfo.FromStream(bs, baseMdlPos);
+                OutRegisterInfo.Add(registerInfo);
             }
         }
 
@@ -147,6 +226,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 {
                     case ModelSetupPS2Opcode.BBoxRender:
                         ProcessCommands(context, (command as Cmd_BBoxRender).CommandsOnRender);
+                        context.FinishModel();
                         break;
 
                     case ModelSetupPS2Opcode.LODSelect:
@@ -211,6 +291,71 @@ namespace PDTools.Files.Models.PS2.ModelSet
                         context.DumpShapeToObj(shapeData, shapeIndex, name);
                         break;
                 }
+            }
+        }
+
+        public override List<TextureSet1> GetTextureSetList()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int AddShape(PGLUshape shape)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int AddMaterial(PGLUmaterial material)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int GetMaterialCount()
+        {
+            throw new NotImplementedException();
+        }
+
+        public class Instance
+        {
+            public ModelSet2 ModelSet { get; set; }
+
+            /// <summary>
+            /// Info about each register provided in model set out register infos
+            /// </summary>
+            public RegisterVal[] OutputRegisters { get; set; }
+
+            /// <summary>
+            /// Maybe external?
+            /// </summary>
+            public RegisterVal[] Unk2 { get; set; }
+
+            /// <summary>
+            /// Engine provided from the specified model set host method infos
+            /// </summary>
+            public RegisterVal[] HostMethodRegisters { get; set; }
+
+            public void Read(BinaryStream bs, long baseMdlPos)
+            {
+                int parentModelSetPtr = bs.ReadInt32();
+                int outRegistersPtr = bs.ReadInt32();
+                int unkRegistersPtr = bs.ReadInt32();
+                int hostMethodRegistersPtr = bs.ReadInt32();
+                int hostMethodInfosFuncs = bs.ReadInt32();
+                // The rest we don't need
+
+                bs.Position = baseMdlPos + outRegistersPtr;
+                OutputRegisters = new RegisterVal[ModelSet.InstanceOutRegisterCount];
+                for (int i = 0; i < ModelSet.InstanceOutRegisterCount; i++)
+                    OutputRegisters[i] = new RegisterVal(bs.ReadInt32());
+
+                bs.Position = baseMdlPos + unkRegistersPtr;
+                Unk2 = new RegisterVal[ModelSet.InstanceUnkRegisterCount];
+                for (int i = 0; i < ModelSet.InstanceUnkRegisterCount; i++)
+                    Unk2[i] = new RegisterVal(bs.ReadInt32());
+
+                bs.Position = baseMdlPos + hostMethodRegistersPtr;
+                HostMethodRegisters = new RegisterVal[ModelSet.HostMethodInfoCount];
+                for (int i = 0; i < ModelSet.HostMethodInfoCount; i++)
+                    HostMethodRegisters[i] = new RegisterVal(bs.ReadInt32());
             }
         }
     }

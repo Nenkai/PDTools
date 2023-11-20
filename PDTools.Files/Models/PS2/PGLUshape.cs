@@ -224,7 +224,7 @@ namespace PDTools.Files.Models.PS2
                     matWriter.WriteLine($"newmtl Mat{currentMatId - 1}_Tex{currentTexId - 1}");
 
                     if (Faces[i].TexId != 511) // External
-                        matWriter.WriteLine($"map_Kd {texSetIndex}.{currentTexId - 1}.png");
+                        matWriter.WriteLine($"map_Kd Textures/{texSetIndex}.{currentTexId - 1}.png");
 
                     matWriter.WriteLine();
                 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Numerics;
 
 using PDTools.Files.Models.PS2.Commands;
 
@@ -62,6 +63,9 @@ namespace PDTools.Files.Models.PS2.ModelSet
            }
         */
 
+        public List<Vector3> Bounds { get; set; } = new();
+        public float Unk { get; set; }
+        public Vector3 Origin { get; set; }
         public List<ModelSetupPS2Command> Commands { get; set; } = new();
 
         public void FromStream(BinaryStream bs, long mdlBasePos)
@@ -72,9 +76,18 @@ namespace PDTools.Files.Models.PS2.ModelSet
             byte boundCount = bs.Read1Byte();
             bs.Position += 2;
             uint boundsOffset = bs.ReadUInt32();
-            bs.Position += 0x10;
+            Unk = bs.ReadSingle();
+            Origin = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
             uint commandsOffset = bs.ReadUInt32();
 
+            bs.Position = mdlBasePos + boundsOffset;
+            for (int i = 0; i < boundCount; i++)
+            {
+                Vector3 point = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+                Bounds.Add(point);
+            }
+
+            setBound(new float[] { Bounds[5].X, Bounds[5].Y, Bounds[5].Z }, new float[] { Bounds[3].X, Bounds[3].Y, Bounds[3].Z });
             bs.Position = mdlBasePos + commandsOffset;
             while (true)
             {
@@ -87,6 +100,56 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 cmd.Read(bs, 0);
                 Commands.Add(cmd);
             }
+        }
+
+        public void Write(BinaryStream bs)
+        {
+
+        }
+
+        // RE'd - GT4O ModelSet2::Model::setBound - 0x2F6DA0
+        private void setBound(float[] min, float[] max)
+        {
+            int x = 0;
+            int y = 0;
+
+            int i = 0;
+            while (true)
+            {
+                for (int z = 0; z < 2; z++)
+                {
+                    var vec = Bounds[i];
+                    vec.X = x != 0 ? min[0] : max[0];
+                    vec.Y = y != 0 ? min[1] : max[1];
+                    vec.Z = z != 0 ? min[2] : max[2];
+                    i++;
+                }
+
+                y++;
+                if (y >= 2)
+                {
+                    x++;
+                    y = 0;
+                    if (x >= 2)
+                        break;
+                }
+            }
+
+            float[] dist = new float[3];
+            float total_UNUSED = 0.0f;
+            float final = 0.0f;
+            for (i = 0; i < 3; i++)
+            {
+                float center = (min[i] + max[i]) * 0.5f;
+                dist[i] = center;
+                final = (max[i] - center) * (max[i] - center);
+                total_UNUSED += final;
+            }
+
+            // Not original, added for convenience
+            Origin = new Vector3(dist);
+
+            Unk = MathF.Sqrt(final);
         }
 
         public static uint GetSize()

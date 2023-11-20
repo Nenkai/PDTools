@@ -20,7 +20,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
     /// <summary>
     /// Model Set. Used by GT3/C
     /// </summary>
-    public class ModelSet1
+    public class ModelSet1 : ModelSetPS2Base
     {
         /// <summary>
         /// Magic - "GTM1".
@@ -268,8 +268,42 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
                         context.DumpShapeToObj(shapeData, shapeIndex, name);
                         break;
+
+                    case ModelSetupPS2Opcode.pgl_53:
+                        var callShape2 = (command as Cmd_Unk53);
+                        int shapeIndex2 = callShape2.ShapeIndex;
+                        PGLUshapeConverted shapeData2 = Shapes[shapeIndex2].GetShapeData();
+
+                        string name2 = $"shape{shapeIndex2}";
+                        if (!string.IsNullOrEmpty(context.ExtraName))
+                            name2 += $"_{context.ExtraName}";
+
+                        context.DumpShapeToObj(shapeData2, shapeIndex2, name2);
+                        break;
                 }
             }
+        }
+
+        public override List<TextureSet1> GetTextureSetList()
+        {
+            return TextureSets;
+        }
+
+        public override int AddShape(PGLUshape shape)
+        {
+            Shapes.Add(shape);
+            return Shapes.Count - 1;
+        }
+
+        public override int AddMaterial(PGLUmaterial material)
+        {
+            Materials.Add(material);
+            return Materials.Count - 1;
+        }
+
+        public override int GetMaterialCount()
+        {
+            return Materials.Count;
         }
     }
 }
