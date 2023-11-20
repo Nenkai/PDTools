@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMJump : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpUnk0x25;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpRelative;
 
         public short JumpOffset { get; set; }
 

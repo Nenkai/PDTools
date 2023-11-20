@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMVariableEval : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackPushValueFromStorageIdx0x12;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.RegisterEval;
 
         public bool IsHostMethod;
         public short Index;

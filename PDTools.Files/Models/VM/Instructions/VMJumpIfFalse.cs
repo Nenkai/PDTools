@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMJumpIfFalse : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpIfFalse0x26;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpNotZero;
 
         public short JumpOffset { get; set; }
 

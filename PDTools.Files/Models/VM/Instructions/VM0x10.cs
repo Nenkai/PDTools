@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VM0x10 : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackPushFromStackIndex0x10;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackVariableEval;
 
         public short Value { get; set; }
 

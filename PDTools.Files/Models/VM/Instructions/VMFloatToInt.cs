@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMFloatToInt : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.FloatToInt;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.ToInt;
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

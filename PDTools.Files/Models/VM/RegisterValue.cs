@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace PDTools.Files.Models.VM
 {
-    internal class VirtualMachine
+    public struct RegisterVal
     {
+        public int Value { get; set; }
+
+        public RegisterVal(int value)
+        {
+            Value = value;
+        }
     }
 }

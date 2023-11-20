@@ -10,7 +10,7 @@ namespace PDTools.Files.Models.VM.Instructions
 {
     public class VMStackSeek : VMInstruction
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.JumpToByte;
+        public override VMInstructionOpcode Opcode => VMInstructionOpcode.StackAdvance;
 
         public byte Count { get; set; }
 
