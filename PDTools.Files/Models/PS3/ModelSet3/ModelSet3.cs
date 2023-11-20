@@ -51,7 +51,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3
         public ushort _0x68Size { get; set; }
         public ushort VMStackSize { get; set; }
         public VMBytecode VirtualMachine { get; set; } = new VMBytecode();
-        public Dictionary<short, VMHostMethodEntry> VMHostMethodEntries { get; set; } = new();
+        public Dictionary<ushort, RegisterInfo> VMHostMethodEntries { get; set; } = new();
         public List<MDL3TextureKey> TextureKeys { get; set; } = new();
         public List<MDL3WingData> WingData { get; set; } = new();
         public List<MDL3WingKey> WingKeys { get; set; } = new();
@@ -272,8 +272,9 @@ namespace PDTools.Files.Models.PS3.ModelSet3
             {
                 bs.Position = baseMdlPos + offset + i * 0x08;
 
-                var hostMethodEntry = VMHostMethodEntry.FromStream(bs, baseMdlPos, Version);
-                VMHostMethodEntries.Add(hostMethodEntry.StorageID, hostMethodEntry);
+                var hostMethodEntry = new RegisterInfo();
+                hostMethodEntry.FromStream(bs, baseMdlPos);
+                VMHostMethodEntries.Add(hostMethodEntry.RegisterIndex, hostMethodEntry);
             }
         }
 

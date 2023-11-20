@@ -47,7 +47,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3
             long shadersHeaderOffset = bs.Position;
             WriteShaderHeader(bs, basePos);
 
-            // WRITE TODO: WRITE PMSH HEADER
+            // WRITE TODO: WRITE PMSH (Packed Mesh) HEADER
 
             bs.Position = 0x200;
 
