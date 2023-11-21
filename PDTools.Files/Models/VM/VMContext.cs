@@ -76,12 +76,12 @@ namespace PDTools.Files.Models.VM
                             {
                                 if (registerType == 0)
                                 {
-                                    RegisterInfo info = set.OutRegisterInfo.Find(e => e.RegisterIndex == registerIndex);
+                                    RegisterInfo info = set.OutRegisterInfos.Find(e => e.RegisterIndex == registerIndex);
                                     DebugPrint($"{opcode} - push stack index: {stackPtr} from OutRegister {registerIndex} ({info.Name})");
                                 }
                                 else if (registerType == 2)
                                 {
-                                    RegisterInfo info = set.HostMethodInfo.Find(e => e.RegisterIndex == registerIndex);
+                                    RegisterInfo info = set.HostMethodInfos.Find(e => e.RegisterIndex == registerIndex);
                                     Registers[registerType][registerIndex].Value = BitConverter.SingleToInt32Bits(1);
                                     DebugPrint($"{opcode} - push stack index: {stackPtr} from HostMethod {registerIndex} ({info.Name})");
                                 }
@@ -123,7 +123,7 @@ namespace PDTools.Files.Models.VM
                             {
                                 if (registerType == 0)
                                 {
-                                    RegisterInfo info = set.OutRegisterInfo.Find(e => e.RegisterIndex == registerIndex);
+                                    RegisterInfo info = set.OutRegisterInfos.Find(e => e.RegisterIndex == registerIndex);
                                     DebugPrint($"{opcode} - OutRegister {registerIndex} ({info.Name}) {lastValue} (from stack index: {stackPtr + 1}), stack index now {stackPtr}");
                                 }
                                 else

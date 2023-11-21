@@ -11,7 +11,7 @@ using PDTools.Files.Models.PS2.Commands;
 
 namespace PDTools.Files.Models.PS2.ModelSet
 {
-    public class ModelSet2Model
+    public class ModelSet2Model : ModelPS2Base
     {
         /* There are three things that are done for a model set to be rendered - begin(), render(), end().
          * ---------------------------------
@@ -66,7 +66,10 @@ namespace PDTools.Files.Models.PS2.ModelSet
         public List<Vector3> Bounds { get; set; } = new();
         public float Unk { get; set; }
         public Vector3 Origin { get; set; }
-        public List<ModelSetupPS2Command> Commands { get; set; } = new();
+
+        public int VMCtorBytecodeOffset { get; set; } = -1;
+        public int VMUpdateBytecodeOffset { get; set; } = -1;
+        public int VMUnkBytecodeOffset { get; set; } = -1;
 
         public void FromStream(BinaryStream bs, long mdlBasePos)
         {
@@ -87,7 +90,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 Bounds.Add(point);
             }
 
-            setBound(new float[] { Bounds[5].X, Bounds[5].Y, Bounds[5].Z }, new float[] { Bounds[3].X, Bounds[3].Y, Bounds[3].Z });
+            //setBound(new float[] { Bounds[5].X, Bounds[5].Y, Bounds[5].Z }, new float[] { Bounds[3].X, Bounds[3].Y, Bounds[3].Z });
             bs.Position = mdlBasePos + commandsOffset;
             while (true)
             {
@@ -104,7 +107,36 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public void Write(BinaryStream bs)
         {
+            bs.WriteByte(0);
+            bs.WriteByte((byte)Bounds.Count); // Should be either 0 or 8
+            bs.WriteSByte(-1);
+            bs.WriteSByte(-1);
+            bs.WriteInt32(0); // Skip bounds offset for now
+            bs.WriteSingle(Unk);
+            bs.WriteSingle(Origin.X); bs.WriteSingle(Origin.Y); bs.WriteSingle(Origin.Z);
+            bs.WriteInt32(0); // Skip setup opcodes offset
+            bs.WriteInt32(VMCtorBytecodeOffset);
+            bs.WriteInt32(VMUpdateBytecodeOffset);
+            bs.WriteInt32(VMUnkBytecodeOffset);
+        }
 
+        public void WriteBounds(BinaryStream bs)
+        {
+            for (int i = 0; i < Bounds.Count; i++)
+            {
+                bs.WriteSingle(Bounds[i].X); bs.WriteSingle(Bounds[i].Y); bs.WriteSingle(Bounds[i].Z);
+            }
+        }
+
+        public void WriteCommands(BinaryStream bs)
+        {
+            foreach (var cmd in Commands)
+            {
+                bs.Write((byte)cmd.Opcode);
+                cmd.Write(bs);
+            }
+
+            bs.WriteByte(0); // End
         }
 
         // RE'd - GT4O ModelSet2::Model::setBound - 0x2F6DA0

@@ -11,6 +11,7 @@ using Syroot.BinaryData;
 using PDTools.Files.Textures.PS2;
 using PDTools.Files.Models.PS2.Commands;
 using PDTools.Files.Models.VM;
+using PDTools.Files.Textures;
 
 namespace PDTools.Files.Models.PS2.ModelSet
 {
@@ -23,6 +24,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
         /// "MDLS"
         /// </summary>
         public const uint MAGIC = 0x534C444D;
+        public const uint HeaderSize = 0x80;
 
         public RelocatorBase Relocator { get; set; }
 
@@ -34,9 +36,11 @@ namespace PDTools.Files.Models.PS2.ModelSet
         public List<ModelSet2Model> Models { get; set; } = new List<ModelSet2Model>();
         public List<PGLUshape> Shapes { get; set; } = new List<PGLUshape>();
         public List<PGLUmaterial> Materials { get; set; } = new List<PGLUmaterial>();
+        public List<List<PGLUmaterial>> VariationMaterials { get; set; } = new List<List<PGLUmaterial>>();
 
-        public List<RegisterInfo> OutRegisterInfo { get; set; } = new List<RegisterInfo>();
-        public List<RegisterInfo> HostMethodInfo { get; set; } = new List<RegisterInfo>();
+        public List<RegisterInfo> OutRegisterInfos { get; set; } = new List<RegisterInfo>();
+        public List<RegisterInfo> ExternalInfos { get; set; } = new List<RegisterInfo>();
+        public List<RegisterInfo> HostMethodInfos { get; set; } = new List<RegisterInfo>();
 
         /// <summary>
         /// Textures. Each texture set within a list represents seemingly one lod level.
@@ -60,6 +64,8 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
             byte unk = bs.Read1Byte();
             InstanceFlags = bs.Read1Byte();
+
+            // Counts
             ushort modelCount = bs.ReadUInt16();
             ushort shapeCount = bs.ReadUInt16();
             ushort materialCount = bs.ReadUInt16();
@@ -71,8 +77,14 @@ namespace PDTools.Files.Models.PS2.ModelSet
             ushort externalInfoCount = bs.ReadUInt16();
             ushort outRegisterInfoCount = bs.ReadUInt16();
             ushort symbolsCount = bs.ReadUInt16();
-            
-            bs.Position = basePos + 0x38;
+            byte variationMaterialCount = bs.Read1Byte();
+            byte currentColorIndex = bs.Read1Byte();
+            ushort bindMatrixCount = bs.ReadUInt16();
+            bs.Position += 0x06;
+
+            ushort instanceSize = bs.ReadUInt16();
+
+            // Offsets
             uint modelsOffset = bs.ReadUInt32();
             uint shapesOffset = bs.ReadUInt32();
             uint materialsOffset = bs.ReadUInt32();
@@ -83,17 +95,21 @@ namespace PDTools.Files.Models.PS2.ModelSet
             uint outRegisterInfoOffset = bs.ReadUInt32();
             uint symbolsOffset = bs.ReadUInt32();
             uint vmBytecodeOffset = bs.ReadUInt32();
+            uint variationMaterialsOffset = bs.ReadUInt32();
 
             bs.Position = basePos + shapesOffset;
 
             bs.Position = basePos + relocatorInfoOffset;
             Relocator = RelocatorBase.FromStream(bs, basePos);
+            Relocator.MakeRelocatableGroups();
 
             ReadMaterials(bs, basePos, materialsOffset, materialCount);
+            ReadVariationMaterials(bs, basePos, variationMaterialsOffset, variationMaterialCount);
             ReadModels(bs, basePos, modelsOffset, modelCount);
             ReadShapes(bs, basePos, shapesOffset, shapeCount);
             ReadTextureSets(bs, basePos, pgluTexSetsOffset, colorCount, texSetCount);
             ReadHostMethodInfos(bs, basePos, hostMethodInfosOffset, HostMethodInfoCount);
+            ReadExternalInfos(bs, basePos, externalInfoOffset, externalInfoCount);
             ReadOutRegisterInfo(bs, basePos, outRegisterInfoOffset, outRegisterInfoCount);
 
             Instance instance = new Instance();
@@ -113,10 +129,6 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 instance.HostMethodRegisters = new RegisterVal[HostMethodInfoCount];
             }
 
-            bs.Position = basePos + vmBytecodeOffset;
-            var bytecode = bs.ReadBytes(0x500);
-            var vm = new VMContext(instance);
-            vm.callVM(bytecode, 0, null);
         }
 
         private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -128,6 +140,25 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 var material = new PGLUmaterial();
                 material.FromStream(bs, baseMdlPos);
                 Materials.Add(material);
+            }
+        }
+
+        private void ReadVariationMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + (i * 4);
+
+                uint materialsOffset = bs.ReadUInt32();
+                bs.Position = baseMdlPos + materialsOffset;
+                VariationMaterials.Add(new List<PGLUmaterial>());
+
+                for (int j = 0; j < Materials.Count; j++)
+                {
+                    var material = new PGLUmaterial();
+                    material.FromStream(bs, baseMdlPos);
+                    VariationMaterials[i].Add(material);
+                }
             }
         }
 
@@ -166,7 +197,19 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
                 RegisterInfo registerInfo = new RegisterInfo();
                 registerInfo.FromStream(bs, baseMdlPos);
-                HostMethodInfo.Add(registerInfo);
+                HostMethodInfos.Add(registerInfo);
+            }
+        }
+
+        private void ReadExternalInfos(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+        {
+            for (ushort i = 0; i < count; i++)
+            {
+                bs.Position = baseMdlPos + offset + i * RegisterInfo.GetSize();
+
+                RegisterInfo registerInfo = new RegisterInfo();
+                registerInfo.FromStream(bs, baseMdlPos);
+                ExternalInfos.Add(registerInfo);
             }
         }
 
@@ -178,7 +221,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
                 RegisterInfo registerInfo = new RegisterInfo();
                 registerInfo.FromStream(bs, baseMdlPos);
-                OutRegisterInfo.Add(registerInfo);
+                OutRegisterInfos.Add(registerInfo);
             }
         }
 
@@ -296,23 +339,54 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public override List<TextureSet1> GetTextureSetList()
         {
-            throw new NotImplementedException();
+            if (TextureSetLists.Count == 0)
+                TextureSetLists.Add(new List<TextureSet1>());
+
+            return TextureSetLists[0];
         }
 
         public override int AddShape(PGLUshape shape)
         {
-            throw new NotImplementedException();
+            Shapes.Add(shape);
+            return Shapes.Count - 1;
         }
 
         public override int AddMaterial(PGLUmaterial material)
         {
-            throw new NotImplementedException();
+            Materials.Add(material);
+            return Materials.Count - 1;
         }
 
         public override int GetMaterialCount()
         {
-            throw new NotImplementedException();
+            return Materials.Count;
         }
+
+        public int GetInstanceSize()
+        {
+            int size = 0x20; // header/meta
+            size += (OutRegisterInfos.Count + InstanceUnkRegisterCount + HostMethodInfos.Count) * sizeof(uint);
+
+            int maxRegisterSize = 0;
+            foreach (var hostMethodInfo in HostMethodInfos)
+            {
+                int registerSize = hostMethodInfo.RegisterIndex + hostMethodInfo.ArrayLength;
+                if (maxRegisterSize < registerSize)
+                    maxRegisterSize = registerSize;
+            }
+
+            int totalRegisterSize = 0;
+            foreach (var hostMethodInfo in HostMethodInfos)
+            {
+                int registerSize = hostMethodInfo.RegisterIndex + hostMethodInfo.ArrayLength;
+                if (maxRegisterSize < registerSize)
+                    maxRegisterSize = registerSize;
+            }
+
+            size += totalRegisterSize * sizeof(int);
+            return size;
+        }
+
 
         public class Instance
         {
