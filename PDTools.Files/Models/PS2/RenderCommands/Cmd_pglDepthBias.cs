@@ -15,6 +15,16 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public float Value { get; set; }
 
+        public Cmd_pglDepthBias()
+        {
+
+        }
+
+        public Cmd_pglDepthBias(float value)
+        {
+            Value = value;
+        }
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             Value = bs.ReadSingle();

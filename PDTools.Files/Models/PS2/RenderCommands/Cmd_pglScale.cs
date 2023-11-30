@@ -21,6 +21,16 @@ namespace PDTools.Files.Models.PS2.Commands
         /// </summary>
         public Vector3 Vector { get; set; }
 
+        public Cmd_pglScale()
+        {
+
+        }
+
+        public Cmd_pglScale(float x, float y, float z)
+        {
+            Vector = new Vector3(x, y, z);
+        }
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             Vector = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());

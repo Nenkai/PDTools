@@ -41,10 +41,7 @@ namespace PDTools.Files.Models.PS2.Commands
                 while (bs.Position < endOffset)
                 {
                     ModelSetupPS2Opcode opcode = (ModelSetupPS2Opcode)bs.Read1Byte();
-                    if (opcode == ModelSetupPS2Opcode.End)
-                        break;
-
-                    if (opcode == ModelSetupPS2Opcode.pglEnableRendering)
+                    if (opcode == ModelSetupPS2Opcode.End || opcode == ModelSetupPS2Opcode.pglEnableRendering)
                     {
                         bs.Position -= 1;
                         break;

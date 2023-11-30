@@ -146,6 +146,7 @@ namespace PDTools.Files.Models.PS2
                         {
                             var u = BitConverter.Int32BitsToSingle(uvArr[0]);
                             var v = BitConverter.Int32BitsToSingle(uvArr[1]);
+
                             shapeData.UVs.Add(new Vector2(u, 1.0f - v));
                         }
                         else if (uvCommand.UnpackData[l] is short[] uvShortArr && uvShortArr.Length == 2) // GT4

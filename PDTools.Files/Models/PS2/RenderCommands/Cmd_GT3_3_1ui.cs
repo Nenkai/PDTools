@@ -12,25 +12,36 @@ namespace PDTools.Files.Models.PS2.Commands
     /// <summary>
     /// Sets all 4 values linked to shape unk1 value 2 to the specified uint - GT3 only.
     /// </summary>
-    public class Cmd_GT3_1ui : ModelSetupPS2Command
+    // Refer to 0x250688 with param 3 (GT3 EU)
+    public class Cmd_GT3_3_1ui : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_1ui;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_3_1ui;
 
-        public float Value { get; set; }
+        public float Color { get; set; }
+
+        public Cmd_GT3_3_1ui()
+        {
+
+        }
+
+        public Cmd_GT3_3_1ui(float color)
+        {
+            Color = color;
+        }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Value = bs.ReadSingle();
+            Color = bs.ReadSingle();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteSingle(Value);
+            bs.WriteSingle(Color);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_GT3_1ui)}";
+            return $"{nameof(Cmd_GT3_3_1ui)}";
         }
     }
 }

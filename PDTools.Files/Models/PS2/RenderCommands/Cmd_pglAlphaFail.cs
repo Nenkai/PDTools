@@ -14,23 +14,56 @@ namespace PDTools.Files.Models.PS2.Commands
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglAlphaFail;
 
         /// <summary>
-        /// 0 = KEEP, 1 = FB_ONLY, 2 = ZB_ONLY, 3 = RGB_ONLY
+        /// GS TEST register - AFAIL field
         /// </summary>
-        public byte GS_TEST_AFAIL { get; set; }
+        public AlphaFailMethod FailMethod { get; set; }
+
+        public Cmd_pglAlphaFail()
+        {
+
+        }
+
+        public Cmd_pglAlphaFail(AlphaFailMethod method)
+        {
+            FailMethod = method;
+        }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            GS_TEST_AFAIL = bs.Read1Byte();
+            FailMethod = (AlphaFailMethod)bs.Read1Byte();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(GS_TEST_AFAIL);
+            bs.WriteByte((byte)FailMethod);
         }
 
         public override string ToString()
         {
             return $"{nameof(Cmd_pglAlphaFail)}";
         }
+    }
+
+    public enum AlphaFailMethod
+    {
+        /// <summary>
+        /// Neither frame buffer nor Z buffer is updated.
+        /// </summary>
+        KEEP,
+
+        /// <summary>
+        /// Only frame buffer is updated.
+        /// </summary>
+        FB_ONLY,
+
+        /// <summary>
+        /// Only Z buffer is updated.
+        /// </summary>
+        ZB_ONLY,
+
+        /// <summary>
+        /// Only frame-buffer RGB is updated.
+        /// </summary>
+        RGB_ONLY
     }
 }

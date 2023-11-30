@@ -10,30 +10,27 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.PS2.Commands
 {
     /// <summary>
-    /// Same as command 50 but sets all 4 values to specified.
+    /// GT4 and above. Calls pglRotate using VM output registers.
     /// </summary>
-    public class Cmd_GT3_4f : ModelSetupPS2Command
+    public class Cmd_VM_pgluShapeTweenRatio : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_4f;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.VM_pgluShapeTweenRatio;
 
-        /// <summary>
-        /// Color. RGB only, A is ignored
-        /// </summary>
-        public float[] Values { get; set; }
+        public ushort OutRegisterIndex { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Values = bs.ReadSingles(4);
+            OutRegisterIndex = bs.ReadUInt16();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteSingles(Values);
+            bs.WriteUInt16(OutRegisterIndex);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_GT3_4f)}";
+            return $"{nameof(Cmd_pglRotate)}";
         }
     }
 }

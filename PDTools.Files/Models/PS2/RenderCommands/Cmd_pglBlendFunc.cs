@@ -18,19 +18,55 @@ namespace PDTools.Files.Models.PS2.Commands
 
         // For each field,
         // - 0 = Cs - RGB value of the source is used
-        // - 1 = Cd - RGB value in frame buffer isu sed
+        // - 1 = Cd - RGB value in frame buffer is used
         // - 2 = 0
 
+        /// <summary>
+        /// 0 = Cs - RGB value of the source is used
+        /// 1 = Cd - RGB value in frame buffer is used
+        /// 2 = 0
+        /// </summary>
         public byte A { get; set; }
-        public byte B { get; set; }
-        public byte C { get; set; }
-        public byte D { get; set; }
 
+        /// <summary>
+        /// 0 = Cs - RGB value of the source is used
+        /// 1 = Cd - RGB value in frame buffer is used
+        /// 2 = 0
+        /// </summary>
+        public byte B { get; set; }
+
+        /// <summary>
+        /// 0 = As - Alpha of the source is used
+        /// 1 = Ad - Alpha in the frame buffer is used.
+        /// 2 = FIX - FIX-field value is used as Alpha.
+        /// </summary>
+        public byte C { get; set; }
+
+        /// <summary>
+        /// 0 = Cs - RGB value of the source is used
+        /// 1 = Cd - RGB value in frame buffer is used
+        /// 2 = 0
+        /// </summary>
+        public byte D { get; set; }
 
         /// <summary>
         /// Fixed Alpha Value
         /// </summary>
         public byte FIX { get; set; }
+
+        public Cmd_pglBlendFunc()
+        {
+
+        }
+
+        public Cmd_pglBlendFunc(byte a, byte b, byte c, byte d, byte fix)
+        {
+            A = a;
+            B = b;
+            C = c;
+            D = d;
+            FIX = fix;
+        }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {

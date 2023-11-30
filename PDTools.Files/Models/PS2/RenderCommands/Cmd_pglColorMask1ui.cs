@@ -15,6 +15,16 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public uint ColorMask { get; set; }
 
+        public Cmd_pglColorMask()
+        {
+
+        }
+
+        public Cmd_pglColorMask(uint mask)
+        {
+            ColorMask = mask;
+        }
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             ColorMask = bs.ReadUInt32();

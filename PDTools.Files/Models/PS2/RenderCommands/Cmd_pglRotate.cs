@@ -16,18 +16,33 @@ namespace PDTools.Files.Models.PS2.Commands
     {
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglRotate;
 
+        public float Angle { get; set; }
+
         /// <summary>
         /// Rotate vector.
         /// </summary>
         public Vector3 Vector { get; set; }
 
+        public Cmd_pglRotate()
+        {
+
+        }
+
+        public Cmd_pglRotate(float angle, float x, float y, float z)
+        {
+            Angle = angle;
+            Vector = new Vector3(x, y, z);
+        }
+
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
+            Angle = bs.ReadSingle();
             Vector = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
         }
 
         public override void Write(BinaryStream bs)
         {
+            bs.WriteSingle(Angle);
             bs.WriteSingle(Vector.X); bs.WriteSingle(Vector.Y); bs.WriteSingle(Vector.Z);
         }
 

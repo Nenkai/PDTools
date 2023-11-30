@@ -82,7 +82,7 @@ namespace PDTools.Files.Models.VM
                                 else if (registerType == 2)
                                 {
                                     RegisterInfo info = set.HostMethodInfos.Find(e => e.RegisterIndex == registerIndex);
-                                    Registers[registerType][registerIndex].Value = BitConverter.SingleToInt32Bits(1);
+                                    Registers[registerType][registerIndex].Value = BitConverter.SingleToInt32Bits(0);
                                     DebugPrint($"{opcode} - push stack index: {stackPtr} from HostMethod {registerIndex} ({info.Name})");
                                 }
                                 else

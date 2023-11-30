@@ -126,7 +126,7 @@ namespace PDTools.Files.Textures.PS2
         public static int GetDataSize(int width, int height, SCE_GS_PSM format)
         {
             int bpp = Tex1Utils.GetBitsPerPixel(format);
-            int bytes = (int)(double)(width * height * ((double)bpp / 8));
+            int bytes = (int)Math.Round((double)(width * height * ((double)bpp / 8)), MidpointRounding.AwayFromZero);
             return bytes;
         }
 

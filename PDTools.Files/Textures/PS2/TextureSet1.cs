@@ -232,7 +232,7 @@ namespace PDTools.Files.Textures.PS2
             switch (texture.tex0.PSM)
             {
                 case SCE_GS_PSM.SCE_GS_PSMT4:
-                    textureData = new byte[(fullWidth * fullHeight) / 2];
+                    textureData = new byte[Tex1Utils.GetDataSize(fullWidth, fullHeight, texture.tex0.PSM)];
 
                     _gsMemory.ReadTexPSMT4(texture.tex0.TBP0_TextureBaseAddress, texture.tex0.TBW_TextureBufferWidth,
                         0, 0,
