@@ -315,7 +315,7 @@ namespace PDTools.SpecDB.Core
             if (baseRowToUse != -1)
             {
                 // Build type 2 (differences) header where every bit tells whether to skip a row byte
-                BitStream bitStream = new BitStream(BitStreamMode.Write, 0x100, endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
+                BitStream bitStream = new BitStream(BitStreamMode.Write, 0x100, endian:  BitStreamSignificantBitOrder.MSB); // Always MSB
                 var baseRow = uncompressedRows[baseRowToUse];
                 for (var x = 0; x < baseRow.Length; x++)
                     bitStream.WriteBoolBit(baseRow[x] != current[x]); // Patch byte
