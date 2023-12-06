@@ -396,9 +396,7 @@ namespace PDTools.SpecDB.Core
         {
             foreach (var table in Tables)
             {
-#if DEBUG
                 table.Value.DisposeDebugPrinter();
-#endif
             }
         }
 

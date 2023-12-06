@@ -826,7 +826,9 @@ namespace PDTools.SpecDB.Core
 
         public void DisposeDebugPrinter()
         {
+#if DEBUG
             _debugWriter?.Dispose();
+#endif
         }
     }
 }
