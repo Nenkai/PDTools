@@ -18,7 +18,7 @@ using PDTools.Utils;
 
 namespace PDTools.SpecDB.Core
 {
-    public class SpecDB
+    public class SpecDB : IDisposable
     {
         public string FolderName { get; set; }
         public SpecDBFolder SpecDBFolderType { get; set; }
@@ -84,6 +84,11 @@ namespace PDTools.SpecDB.Core
                 for (int i = 0; i < Fixed_Tables.Length; i++)
                     Fixed_Tables[i] = new Table(TABLE_NAMES[i]);
             }
+
+#if DEBUG
+            // Will be used for debug printer
+            Directory.CreateDirectory(Path.Combine(folderName, "debug"));
+#endif
         }
 
         public static SpecDBFolder? DetectSpecDBType(string folderName)
@@ -145,6 +150,7 @@ namespace PDTools.SpecDB.Core
             {
                 Fixed_Tables[i].AddressInitialize(this);
                 Fixed_Tables[i].ReadIDIMapOffsets(this);
+                Fixed_Tables[i].CreateDebugPrinter(Path.Combine(FolderName, "debug", $"{Fixed_Tables[i].TableName}.txt"));
             }
         }
 
@@ -372,6 +378,8 @@ namespace PDTools.SpecDB.Core
                 var specdbTable = new Table(tableName);
                 specdbTable.AddressInitialize(this);
                 specdbTable.ReadIDIMapOffsets(this);
+                specdbTable.CreateDebugPrinter(Path.Combine(FolderName, "debug", $"{tableName}.txt"));
+
                 Tables.Add(specdbTable.TableName, specdbTable);
             }
         }
@@ -384,7 +392,15 @@ namespace PDTools.SpecDB.Core
                 PartsInfoBuilder.WritePartsInformationOld(this, progress, folder);
         }
 
-
+        public void Dispose()
+        {
+            foreach (var table in Tables)
+            {
+#if DEBUG
+                table.Value.DisposeDebugPrinter();
+#endif
+            }
+        }
 
         public enum SpecDBTables
         {

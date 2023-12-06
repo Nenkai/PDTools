@@ -593,16 +593,6 @@ namespace PDTools.SpecDB.Core
         {
             Rows = new ObservableCollection<RowData>();
 
-#if DEBUG
-            Directory.CreateDirectory("debug");
-            if (_debugWriter != null)
-            {
-                _debugWriter.BaseStream.Dispose();
-                _debugWriter?.Dispose();
-            }
-            _debugWriter = new StreamWriter($"debug/{TableName}.txt");
-#endif
-
             for (int i = 0; i < Keys.Count; i++)
             {
                 RowKey key = Keys[i];
@@ -620,7 +610,7 @@ namespace PDTools.SpecDB.Core
             }
 
 #if DEBUG
-            _debugWriter.Flush();
+            _debugWriter?.Flush();
 #endif
         }
 
@@ -809,9 +799,34 @@ namespace PDTools.SpecDB.Core
         private void DebugPrint(string message)
         {
 #if DEBUG
-            _debugWriter.WriteLine(message);
+            _debugWriter?.WriteLine(message);
             //Debug.WriteLine(message);
 #endif
+        }
+
+        public void CreateDebugPrinter(string path)
+        {
+#if DEBUG
+            if (_debugWriter != null)
+            {
+                _debugWriter.BaseStream.Dispose();
+                _debugWriter?.Dispose();
+            }
+
+            try
+            {
+                _debugWriter = new StreamWriter(path);
+            }
+            catch (Exception e)
+            {
+                // Already in use?
+            }
+#endif
+        }
+
+        public void DisposeDebugPrinter()
+        {
+            _debugWriter?.Dispose();
         }
     }
 }

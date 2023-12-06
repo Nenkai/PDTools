@@ -200,8 +200,9 @@ namespace PDTools.SpecDB.Core.Formats
         {
             /* Check if our bits yields a code that is less than 9 bits
              * If so, we can match our lookup table that maps 0x00 to 0xFF */
+
             SpanReader sr = new SpanReader(Buffer, Endian);
-            sr.Position = HuffmanPrefixLookupTable + (byte)code * 2;
+            sr.Position = HuffmanPrefixLookupTable + (byte)code * 2; // navigate to lookup table entry for < 8 bit code
             DebugPrint($"ProcessHuffmanCode: LookupOffset=0x{sr.Position:X4}");
 
             uint codeBitSize = sr.Span[sr.Position + 1];
