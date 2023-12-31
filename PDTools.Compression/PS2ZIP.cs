@@ -18,6 +18,24 @@ namespace PDTools.Compression
         public const uint PS2ZIP_MAGIC = 0xFF_F7_EE_C5;
 
         /// <summary>
+        /// Checks if a buffer is PS2ZIP compressed.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="outSize"></param>
+        /// <returns></returns>
+        public unsafe static bool IsCompressed(Span<byte> data)
+        {
+            // Inflated is always little
+            uint zlibMagic = BinaryPrimitives.ReadUInt32LittleEndian(data);
+            uint sizeComplement = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(4));
+
+            if ((long)zlibMagic != PS2ZIP_MAGIC)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
         /// Checks if compression is valid for the buffer.
         /// </summary>
         /// <param name="data"></param>
