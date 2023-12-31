@@ -63,7 +63,7 @@ namespace PDTools.Files.Textures.PS2
                 if (!BitOperations.IsPow2(config.RepeatWidth))
                     throw new ArgumentException("Repeat width must be a power of 2.");
 
-                pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(config.RepeatWidth);
+                pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(config.RepeatWidth, 2);
             }
 
             if (config.WrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
@@ -73,7 +73,7 @@ namespace PDTools.Files.Textures.PS2
                 if (!BitOperations.IsPow2(config.RepeatHeight))
                     throw new ArgumentException("Repeat height must be a power of 2.");
 
-                pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(config.RepeatHeight);
+                pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(config.RepeatHeight, 2);
             }
 
             // Calculate TBW

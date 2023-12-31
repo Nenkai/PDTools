@@ -129,11 +129,6 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 instance.HostMethodRegisters = new RegisterVal[HostMethodInfoCount];
             }
 
-            bs.Position = basePos + vmBytecodeOffset;
-            byte[] bytecode = bs.ReadBytes(0x500);
-
-            var vm = new VMContext(instance);
-            vm.callVM(bytecode, 0, null);
         }
 
         private void ReadMaterials(BinaryStream bs, long baseMdlPos, uint offset, uint count)
