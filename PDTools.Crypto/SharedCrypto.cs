@@ -69,6 +69,55 @@ namespace PDTools.Crypto
             return -1;
         }
 
+
+        /// <summary>
+        /// Used in >=GT6, no floats. Decrypts a buffer.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <param name="length">Length of the buffer to work with.</param>
+        /// <param name="crcSeed">Value for seeding the crc in the buffer to then verify the buffer's crc.</param>
+        /// <param name="mult">Swap bytes multiplier 1, between 0 and 1.</param>
+        /// <param name="mult">Swap bytes multiplier 2, between 0 and 1.</param>
+        /// <param name="useMt">Whether to have an extra (undocumented) step.</param>
+        /// <param name="bigEndian">Non original, but to specify for the type of endianess to work with.</param>
+        /// <returns>Size of the decrypted data. -1 if incorrect.</returns>
+        public static int EncryptUnit2_Decrypt(Span<byte> buffer, int length, uint crcSeed, bool useMt, bool bigEndian = true, bool randomUpdateOld1_OldVersion = false)
+        {
+            // First 8 reserved for encryption
+            int actualDataSize = buffer.Length - 8;
+
+            GT4MC_swapPlace_int(buffer,          length,     buffer,          4, (0xC0E2BE6EL * length - 0x3038AF9B8L) >> 32);
+            GT4MC_swapPlace_int(buffer.Slice(4), length - 4, buffer.Slice(4), 4, (0x4339334BL * (length - 8)) >> 32);
+
+            // PDISTD::MTRandom::MTRandom(rand, (uint*)buffer[1] + *(uint*)buffer);
+            int cryptoRand = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer) : BinaryPrimitives.ReadInt32LittleEndian(buffer);
+            int dataCrc = bigEndian ? BinaryPrimitives.ReadInt32BigEndian(buffer.Slice(4)) : BinaryPrimitives.ReadInt32LittleEndian(buffer.Slice(4));
+            uint seed = (uint)(dataCrc + cryptoRand);
+            var rand = new MTRandom(seed);
+
+            // GT4MC::easyDecrypt((uint*)buffer + 2, dataSize, rand, startCipher);
+            Span<uint> dataInts = MemoryMarshal.Cast<byte, uint>(buffer);
+            if (bigEndian) // Non original, just adapted to work with both endianess
+            {
+                for (int i = 0; i < dataInts.Length; i++)
+                    dataInts[i] = BinaryPrimitives.ReverseEndianness(dataInts[i]);
+            }
+
+            // Create the cipher based on the two key ints, decrypt the actual data 
+            uint startCipher = (uint)(dataCrc ^ cryptoRand);
+            GT4MC_easyDecrypt(buffer.Slice(8), actualDataSize, rand, ref startCipher, bigEndian, randomUpdateOld1_OldVersion);
+
+            // Seed potential CRC based on key
+            Span<uint> uintBuf = MemoryMarshal.Cast<byte, uint>(buffer);
+            uintBuf[1] ^= crcSeed;
+
+            // Verify checksum of the actual encrypted data.
+            if (uintBuf[1] == CRC32.crc32_0x77073096(buffer.Slice(8), actualDataSize))
+                return actualDataSize;
+
+            return -1;
+        }
+
         /// <summary>
         /// Original implementation of EncryptUnit. Encrypts a buffer.
         /// </summary>
@@ -309,6 +358,11 @@ namespace PDTools.Crypto
             GT4MC_swapPlace2(data, size, data2, count, (uint)offsetToSwapAt);
         }
 
+        public static void GT4MC_swapPlace_int(Span<byte> data, int size, Span<byte> data2, int count, long offsetToSwapAt)
+        {
+            GT4MC_swapPlace2(data, size, data2, count, (uint)offsetToSwapAt);
+        }
+        
         public static void GT4MC_swapPlace2(Span<byte> data, int size, Span<byte> data2, int count, uint offsetToSwapAt)
         {
             if (count == 0)
