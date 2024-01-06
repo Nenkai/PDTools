@@ -46,7 +46,7 @@ namespace PDTools.Utils
         private bool _needsFlush;
 
         /// <summary>
-        /// Byte position within the stream.
+        /// Returns the byte position of the CURRENT bit. Make sure to align to the next byte if you want to use this for offsets!
         /// </summary>
         // Non Original
         public unsafe int Position
@@ -59,7 +59,10 @@ namespace PDTools.Utils
                 fixed (byte* current = _currentBuffer,
                        start = SourceBuffer)
                 {
-                    return (int)(current - start);
+                    if (Mode == BitStreamMode.Read && BitCounter > 0)
+                        return (int)(current - start) - 1;
+                    else
+                        return (int)(current - start);
                 }
             }
             set
@@ -213,14 +216,18 @@ namespace PDTools.Utils
 
             // Update stream length if needed
             if (bytePos > _length)
-                _length = bytePos + 1;
+                _length = bytePos;
 
-            if (bytePos >= SourceBuffer.Length)
+            if (bytePos > SourceBuffer.Length)
                 EnsureCapacity((SourceBuffer.Length - bytePos) * Byte_Bits + Byte_Bits);
 
             _currentBuffer = SourceBuffer.Slice(bytePos);
-            CurrentByte = _currentBuffer[0];
-            BitCounter = Byte_Bits - bitPos;
+            if (_currentBuffer.IsEmpty)
+                CurrentByte = 0;
+            else
+                CurrentByte = _currentBuffer[0];
+
+            BitCounter = bitPos;
 
         }
 
@@ -239,7 +246,7 @@ namespace PDTools.Utils
                 AlignToNextByte();
 
                 if (byteOffset >= _length)
-                    _length = byteOffset + 1;
+                    _length = byteOffset;
 
                 if (_length > SourceBuffer.Length)
                     EnsureCapacity(_length * Byte_Bits);
@@ -291,13 +298,20 @@ namespace PDTools.Utils
                     _needsFlush = false;
                 }
 
-                _currentBuffer = _currentBuffer.Slice(1);
-
                 if (Position >= SourceBuffer.Length)
                     EnsureCapacity(Position + Byte_Bits);
 
                 CurrentByte = _currentBuffer[0];
-                BitCounter = 0;
+                _currentBuffer = _currentBuffer.Slice(1);
+
+                if (Mode == BitStreamMode.Read)
+                {
+                    BitCounter = Byte_Bits;
+                }
+                else
+                {
+                    BitCounter = 0;
+                }
             }
         }
 
@@ -1024,6 +1038,35 @@ namespace PDTools.Utils
 #endif
         }
         #endregion
+
+        private void Test()
+        {
+            byte[] test = new byte[] { 0, 1, 2, 3, 4 };
+            BitStream testRead = new BitStream(BitStreamMode.Read, test);
+            testRead.ReadBits(1);
+            int p = testRead.Position;
+            testRead.ReadBits(7);
+            p = testRead.Position;
+            testRead.ReadBits(1);
+            testRead.AlignToNextByte();
+            testRead.Position = 3;
+            testRead.ReadBits(8);
+
+            BitStream testWrite = new BitStream(BitStreamMode.Write, new byte[5]);
+            testWrite.WriteBits(1, 1);
+            p = testWrite.Position;
+            testWrite.WriteBits(1, 1);
+            testWrite.AlignToNextByte();
+            testWrite.WriteBits(1, 1);
+
+            BitStream testDynamicStream = new BitStream(BitStreamMode.Write);
+            testDynamicStream.SeekToByte(1024);
+            testDynamicStream.SeekToBit(8192);
+            testDynamicStream.WriteBoolBit(true);
+
+            Span<byte> span = testDynamicStream.GetSpanOfCurrentPosition();
+            int pos = testRead.Position;
+        }
     }
 
     public enum BitStreamSignificantBitOrder
@@ -1043,6 +1086,5 @@ namespace PDTools.Utils
     {
         Read,
         Write,
-        ReadWrite,
     }
 }
