@@ -187,19 +187,36 @@ namespace PDTools.Utils
                 return 5;
         }
 
-        /// <summary>
-        /// Returns a span of the stream at the current position.
-        /// </summary>
-        /// <returns></returns>
-        public Span<byte> GetSpanOfCurrentPosition()
-            => SourceBuffer.Slice(Position);
 
         /// <summary>
-        /// Returns a span of the stream.
+        /// Returns a span of the stream. Note that this will return the working span, and <see cref="GetSpanToCurrentPosition"/> should be used instead when getting buffers.
         /// </summary>
         /// <returns></returns>
         public Span<byte> GetSpan()
-            => SourceBuffer.Slice(0, _length);
+        { 
+            return SourceBuffer.Slice(0, _length);
+        }
+
+        public Span<byte> GetSpan(int start, int length)
+        {
+            return SourceBuffer.Slice(start, Math.Min(length, _length));
+        }
+
+        /// <summary>
+        /// Returns a span of the stream starting from the current position.
+        /// </summary>
+        /// <returns></returns>
+        public Span<byte> GetSpanFromCurrentPosition()
+            => SourceBuffer.Slice(Position);
+
+        /// <summary>
+        /// Returns a span of the stream from the start to the current position.
+        /// </summary>
+        /// <returns></returns>
+        public Span<byte> GetSpanToCurrentPosition()
+        {
+            return SourceBuffer.Slice(0, Position);
+        }
 
         /// <summary>
         /// Seeks to a specific bit within the whole stream.
@@ -1064,7 +1081,7 @@ namespace PDTools.Utils
             testDynamicStream.SeekToBit(8192);
             testDynamicStream.WriteBoolBit(true);
 
-            Span<byte> span = testDynamicStream.GetSpanOfCurrentPosition();
+            Span<byte> span = testDynamicStream.GetSpanFromCurrentPosition();
             int pos = testRead.Position;
         }
     }
