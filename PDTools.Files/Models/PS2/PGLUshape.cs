@@ -157,16 +157,32 @@ namespace PDTools.Files.Models.PS2
                         }
                     }
                 }
-                
+
+                bool oddTriangle = false;
                 for (var l = 0; l < shapeData.Vertices.Count; l++)
                 {
-                    shapeData.Faces.Add((
-                        (ushort)(packetFaceStart + faceI),
-                        (ushort)(packetFaceStart + faceI + 1), 
-                        (ushort)(packetFaceStart + faceI + 2),
-                        desc.pgluMaterialIndex,
-                        desc.pgluTextureIndex)
-                    );
+                    if (!oddTriangle)
+                    {
+                        shapeData.Faces.Add((
+                            (ushort)(packetFaceStart + faceI),
+                            (ushort)(packetFaceStart + faceI + 1),
+                            (ushort)(packetFaceStart + faceI + 2),
+                            desc.pgluMaterialIndex,
+                            desc.pgluTextureIndex)
+                        );
+                        oddTriangle = true;
+                    }
+                    else
+                    {
+                        shapeData.Faces.Add((
+                            (ushort)(packetFaceStart + faceI + 2),
+                            (ushort)(packetFaceStart + faceI + 1),
+                            (ushort)(packetFaceStart + faceI),
+                            desc.pgluMaterialIndex,
+                            desc.pgluTextureIndex)
+                        );
+                        oddTriangle = false;
+                    }
 
                     if (faceI + 3 == nextVertReset)
                     {
@@ -177,6 +193,7 @@ namespace PDTools.Files.Models.PS2
                             break;
 
                         faceI += 3;
+                        oddTriangle = false;
                     }
                     else
                     {
