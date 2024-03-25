@@ -11,6 +11,8 @@ using ICSharpCodeInflater = ICSharpCode.SharpZipLib.Zip.Compression.Inflater;
 
 using PDTools.Crypto;
 using PDTools.Hashing;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace PDTools.GT4ElfBuilderTool
 {
@@ -26,9 +28,13 @@ namespace PDTools.GT4ElfBuilderTool
             0x2C, 0x11, 0x3C, 0x32, 0x3C, 0x21, 0x34, 0x39,
         };
 
-
         public int EntryPoint { get; set; }
         public List<ElfSegment> Segments { get; set; }
+
+        /// <summary>
+        /// SHA-512
+        /// </summary>
+        public byte[] BodyHash { get; set; }
 
         // Mainly intended/implemented for GT4 Online's CORE.GT4 as it has some extra encryption
         public bool Load(byte[] file)
@@ -41,7 +47,7 @@ namespace PDTools.GT4ElfBuilderTool
             // Read Header
             SpanReader sr2 = new SpanReader(inflated);
             short rsaValue1Length = sr2.ReadInt16();
-            byte[] rsaValueToGenerateSha512Hash_1 = sr2.ReadBytes(rsaValue1Length);
+            byte[] modulus = sr2.ReadBytes(rsaValue1Length);
 
             short rsaValue2Length = sr2.ReadInt16();
             byte[] rsaValueToGenerateSha512Hash_2 = sr2.ReadBytes(rsaValue2Length);
@@ -52,7 +58,7 @@ namespace PDTools.GT4ElfBuilderTool
             Segments = new List<ElfSegment>(nSection);
 
             Console.WriteLine("----");
-            Console.WriteLine($"- RSA Value 1 (0x{rsaValue1Length:X4}): {Convert.ToHexString(rsaValueToGenerateSha512Hash_1)}");
+            Console.WriteLine($"- RSA Value 1 (0x{rsaValue1Length:X4}): {Convert.ToHexString(modulus)}");
             Console.WriteLine($"- RSA Value 2 (0x{rsaValue2Length:X4}): {Convert.ToHexString(rsaValueToGenerateSha512Hash_2)}");
             Console.WriteLine($"- Number of Sections: {nSection}");
             Console.WriteLine($"- Entrypoint: 0x{EntryPoint:X8}");
@@ -60,14 +66,24 @@ namespace PDTools.GT4ElfBuilderTool
 
             for (int i = 0; i < nSection; i++)
             {
-                if (i == 1)
-                    Console.WriteLine($"# Segment {i + 1} (likely .text)");
-                else if (i == 2)
-                    Console.WriteLine($"# Segment {i + 1} (likely .data)");
-                else
-                    Console.WriteLine($"# Segment {i + 1}");
-
                 var segment = new ElfSegment();
+                if (i == 0)
+                {
+                    segment.Name = ".text";
+                    Console.WriteLine($"# Segment {i + 1} (likely .text)");
+                }
+                else if (i == 1)
+                {
+                    segment.Name = ".data";
+                    Console.WriteLine($"# Segment {i + 1} (likely .data)");
+                }
+                else
+                {
+                    segment.Name = ".reginfo";
+                    Console.WriteLine($"# Segment {i + 1}");
+                }
+
+
                 segment.TargetOffset = sr2.ReadInt32();
                 segment.Size = sr2.ReadInt32();
                 segment.Data = sr2.ReadBytes(segment.Size);
@@ -79,33 +95,20 @@ namespace PDTools.GT4ElfBuilderTool
                 Segments.Add(segment);
             }
 
+            using (var computedHash = SHA512.Create())
+                BodyHash = computedHash.ComputeHash(inflated.AsSpan(hashStartPos).ToArray());
 
             Console.WriteLine();
             Console.WriteLine("# Step 3: Attempt optional authentication by computing RSA numbers to a SHA-512 hash");
 
 
+            
             // Values are reversed
             // Doesn't always work i.e GT4P, refer to Egcd add operation comment, and the minus on -Egcd
             // Removing the minus on -Egcd or removing the add in egcd sometimes fixes it for some exponents, but ugh
-            int authValue = AuthenticateELFBody(rsaValueToGenerateSha512Hash_1.Reverse().ToArray(), 
-                                                rsaValueToGenerateSha512Hash_2.Reverse().ToArray(), 
-                                                inflated.AsSpan(hashStartPos));
-
-            /* This was a test on GT4 EU, couldn't get it to work though..
-            using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider(1024))
-            {
-                var @params = new RSAParameters()
-                {
-                    Exponent = new BigInteger(82201).ToByteArray(),
-                    Modulus = rsaValueToGenerateSha512Hash_1,
-                };
-                RSA.ImportParameters(@params);
-
-                if (RSA.VerifyData(inflated.AsSpan(hashStartPos), rsaValueToGenerateSha512Hash_2, HashAlgorithmName.SHA512, RSASignaturePadding.Pkcs1))
-                {
-                    ;
-                }
-            };*/
+            int authValue = AuthenticateELFBody(modulus.Reverse().ToArray(), 
+                                                rsaValueToGenerateSha512Hash_2.Reverse().ToArray(),
+                                                BodyHash);
 
             if (authValue != -1)
                 Console.WriteLine($"ELF SHA-512 Matches using provided RSA numbers! Build specific value used: {authValue} ({KnownExponents[authValue]})");
@@ -113,7 +116,7 @@ namespace PDTools.GT4ElfBuilderTool
                 Console.WriteLine("Could not authenticate/verify executable with RSA computed/encrypted SHA-512 hash");
 
             Console.WriteLine("Done loading CORE file.");
-            Console.WriteLine();
+            Console.WriteLine("----");
             return true;
         }
 
@@ -122,6 +125,12 @@ namespace PDTools.GT4ElfBuilderTool
             Console.WriteLine("Building ELF file...");
             ElfBuilder elfBuilder = new ElfBuilder();
             elfBuilder.BuildFromInfo(outputFileName, this);
+            Console.WriteLine("Done building.\n");
+
+            Console.WriteLine("!!!! IDA USERS NOTE");
+            Console.WriteLine("For games older than GT4, you may need to set the $gp register value (if the .reginfo section is missing).");
+            Console.WriteLine("You can find it in the start function, then General -> Analysis -> Processor specific analysis options -> $gp value.");
+            Console.WriteLine("Also, ctors and dtors may need to be manually disassembled once found.");
         }
 
         private static byte[] ProcessFileHeaderAndDecompress(byte[] file)
@@ -200,7 +209,8 @@ namespace PDTools.GT4ElfBuilderTool
 
             { 69001, "GT Concept 2001 (JP)" },
             { 71003, "GT Concept 2002 Tokyo-Geneva (EU)" },
-            { 72001, "GT Concept 2002 Tokyo-Geneva (EU)" },
+            { 72001, "GT Concept 2002 Tokyo-Geneva (EU)" }, // Also Tokyo-Seoul (Korea)
+            { 75001, "GT Concept 2002 Tokyo-Geneva (Asia)"},
 
             { 77001, "GT4P (JP)" },
             { 78001, "GT4P (AS)" },
@@ -224,26 +234,25 @@ namespace PDTools.GT4ElfBuilderTool
             { 90401, "Tourist Trophy (EU)" },
         };
 
-        private static int AuthenticateELFBody(byte[] value1, byte[] value2, Span<byte> elfBody)
+        private static int AuthenticateELFBody(byte[] modulus, byte[] encHash, byte[] hash)
         {
-            using (var computedHash = SHA512.Create())
+            Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(hash)}");
+            foreach (var exponent in KnownExponents)
             {
-                var hashedInputBytes = computedHash.ComputeHash(elfBody.ToArray());
-                Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(hashedInputBytes)}");
-                foreach (var exponent in KnownExponents)
+                var rsaCtx = new RSAContext();
+                rsaCtx.Init_0x1030428(modulus, encHash);
+                var expectedNumber = rsaCtx.MontModPow_1030FE8(exponent.Key);
+
+                // Reverse it
+                var expectedHash = expectedNumber.ToByteArray().AsSpan(0, 0x40);
+                expectedHash.Reverse();
+
+                if (hash.AsSpan().SequenceEqual(expectedHash))
                 {
-                    var rsaCtx = new RSAContext();
-                    rsaCtx.InitMaybe_0x1030428(value1, value2);
-                    var expectedNumber = rsaCtx.ComputeOrDecrypt_1030FE8(exponent.Key);
-
-                    // Reverse it
-                    var expectedHash = expectedNumber.ToByteArray().AsSpan(0, 0x40);
-                    expectedHash.Reverse();
-
-                    if (hashedInputBytes.AsSpan().SequenceEqual(expectedHash))
-                        return exponent.Key;
+                    return exponent.Key;
                 }
             }
+            
 
             return -1;
         }

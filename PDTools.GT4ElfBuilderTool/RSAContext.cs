@@ -13,80 +13,81 @@ namespace PDTools.GT4ElfBuilderTool
         // Offsets are based on GT4O US
         // Some structures notes at the end of this file
 
-        public BigInteger field_0x08_Gcd1;
-        public BigInteger field_0x10_BigNumber1;
-        public BigInteger field_0x18_Gcd2;
-        public BigInteger field_0x20;
-        public BigInteger field_0x28;
+        // Maybe this is just a montgomery class?
+        // https://web.archive.org/web/20240214014200/https://www.codeproject.com/Tips/791253/ModPow
+        // https://web.archive.org/web/20151128235421/cs.ucsb.edu/~koc/docs/j34.pdf
+        // https://web.archive.org/web/20161127114659/http://www.hackersdelight.org/hdcodetxt/mont64.c.txt
+        // https://github.com/xfbs/montgomery/blob/main/montgomery.c
 
-        private BigInteger hash2r;
+        public BigInteger Reciprocal;
+        public BigInteger Modulus;
+        public BigInteger Factor;
+        //public BigInteger field_0x20; not needed
+        //public BigInteger field_0x28; not needed
+
+        // Other stuff, don't think that's part of the original struct
+        private BigInteger EncHash;
+        private BigInteger Mask;
+        public int ReducerBits;
+        private BigInteger Reducer;
 
         // Part 1 - 0x1030428 (Init RSA?)
-        public void InitMaybe_0x1030428(byte[] number1, byte[] number2)
+        public void Init_0x1030428(byte[] modulus, byte[] encHash)
         {
-            this.field_0x10_BigNumber1 = new BigInteger(number1, isUnsigned: true);
-            this.hash2r = new BigInteger(number2, isUnsigned: true);
+            this.Modulus = new BigInteger(modulus, isUnsigned: true);
+            this.EncHash = new BigInteger(encHash, isUnsigned: true);
 
-            BigInteger baseVal = new BigInteger(1);
-            baseVal <<= (0x400);
+            this.ReducerBits = modulus.Length * 8;
+            this.Reducer = new BigInteger(1) << ReducerBits;
+            this.Mask = this.Reducer - 1;
 
-            var subtracted = baseVal - this.field_0x10_BigNumber1;
-            var gcd1 = Egcd(subtracted, this.field_0x10_BigNumber1).LeftFactor; // 1032760
-            var gcd2 = -Egcd(this.field_0x10_BigNumber1, baseVal).LeftFactor; // 1032760
-
-            this.field_0x08_Gcd1 = gcd1;
-            this.field_0x18_Gcd2 = gcd2;
+            this.Reciprocal = Egcd(Reducer % Modulus, Modulus).LeftFactor; // 1032760
+            this.Factor = (Reducer * Reciprocal - 1) / Modulus;
         }
 
         // Part 2 - 0x10316A8 (Perform RSA?)
-        public BigInteger ComputeOrDecrypt_1030FE8(int exponent) // is it really exponent? not sure
+        public BigInteger MontModPow_1030FE8(int exponent) // is it really exponent? not sure
         {
-            BigInteger baseVal = new BigInteger(1);
-            baseVal <<= (0x400);
+            BigInteger one = new BigInteger(1) << 0x400;
+            BigInteger u = exponent;
 
-          
-            var multiplied = baseVal * this.hash2r;
-            var modHash1And2 = multiplied % this.field_0x10_BigNumber1;
+            var t = (one * this.EncHash) % this.Modulus;
+            var s = one - this.Modulus;
 
-            var prime = new BigInteger(exponent);
-            long numBits = prime.GetBitLength();
+            // Looks an awful lot like modPow here, refer to java source
+            // https://developer.classpath.org/doc/java/math/BigInteger-source.html
 
-            var subtracted = baseVal - this.field_0x10_BigNumber1;
-
-            var i = 0;
-            while (true)
+            while (!u.IsZero)
             {
-                if (((prime >> i) & 1) != 0)
-                {
-                    sub_1030B98(ref subtracted, modHash1And2);
-                }
+                if ((u & 1) == BigInteger.One)
+                    s = MontReduce_1030B98(s, t);
 
-                if (i == numBits)
-                    break;
-
-                i++;
-                sub_1030B98(ref modHash1And2, modHash1And2);
+                u >>= 1;
+                t = MontReduce_1030B98(t, t);
             }
 
-            var res = subtracted * this.field_0x08_Gcd1;
-            var decrypted = res % this.field_0x10_BigNumber1;
-            return decrypted;
+            // montout
+            var D = (s * this.Reciprocal) % this.Modulus;
+            return D;
         }
 
-        void sub_1030B98(ref BigInteger unk, BigInteger unk2)
+        public BigInteger MontReduce_1030B98(BigInteger T, BigInteger B)
         {
-            const int bit_size = 0x80 * 8; // Size depends on hash1? should be 0x400
-            this.field_0x20 = truncate((unk * unk2), bit_size * 2);
-            this.field_0x28 = truncate(this.field_0x20 * this.field_0x18_Gcd2, bit_size); /* ?? */
-            var v3 = truncate(this.field_0x28 * this.field_0x10_BigNumber1, bit_size * 2);
+            //this.field_0x20 = truncate((T * B), bit_size * 2);
+            T = truncate((T * B), ReducerBits * 2); // & operator?
+            var X = T;
 
-            var v4 = v3 + this.field_0x20;
-            v4 >>= 0x400;
+            //this.field_0x28 = truncate(this.field_0x20 * this.field_0x18_Gcd2, bit_size); /* ?? */
+            T = truncate(T * this.Factor, ReducerBits); // & operator?
 
-            if (this.field_0x10_BigNumber1.CompareTo(v4) <= 0)
-                v4 -= this.field_0x10_BigNumber1;
+            T = truncate(T * this.Modulus, ReducerBits * 2); // & operator?
+            T += X;
+            T >>= ReducerBits;
 
-            unk = v4;
+            if (this.Modulus.CompareTo(T) <= 0)
+                T -= this.Modulus;
+
+            return T;
         }
 
         public static (BigInteger LeftFactor,
@@ -127,7 +128,6 @@ namespace PDTools.GT4ElfBuilderTool
                     RightFactor: rightFactor,
                     Gcd: gcd);
         }
-
 
         public static BigInteger truncate(BigInteger big, int bit_size)
         {

@@ -6,6 +6,8 @@ namespace PDTools.GT4ElfBuilderTool
 {
     public class ElfSegment
     {
+        public string Name { get; set; }
+
         public int TargetOffset { get; set; }
         public int Size { get; set; }
 

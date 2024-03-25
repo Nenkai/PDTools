@@ -69,114 +69,150 @@ namespace PDTools.GT4ElfBuilderTool
             bs.WriteInt32(546455553); // flags
             bs.WriteInt16(52); // Elf header size
             bs.WriteInt16(0x20); // Program header size 
-            bs.WriteInt16(3);
+            bs.WriteInt16((short)file.Segments.Count);
             bs.WriteInt16(40); // Section header entry size
-            bs.WriteInt16(6); // section header count
-            bs.WriteInt16(5); // string table section index
+            bs.WriteInt16(0); // section header count - writen later
+            bs.WriteInt16(0); // string table section index - writen later
+
+            // Heuristic to find .data for older games than GT4 where only 1 segment is provided, by attempting to find the ctor table
+            if (file.Segments.Count == 1)
+            {
+                var fullSegment = file.Segments[0];
+
+                using var segms = new MemoryStream(file.Segments[0].Data);
+                using var segbs = new BinaryStream(segms);
+
+                int counter = 0;
+                uint last = 0;
+                for (int i = 0; i < fullSegment.Data.Length; i += 4)
+                {
+                    uint val = segbs.ReadUInt32();
+                    if (val > last && val < 0x800000)
+                    {
+                        counter++;
+
+                        // Vtables are typically increasing offsets, 10 should be enough
+                        if (counter >= 10)
+                        {
+                            // Potentially found .data, adjust segments
+
+                            int dataOffset = (int)(segms.Position - (counter * sizeof(int)));
+                            int oldFullSize = fullSegment.Size;
+                            int dataSize = oldFullSize - dataOffset;
+
+                            file.Segments.Add(new ElfSegment()
+                            {
+                                Name = ".data",
+                                OffsetInElf = fullSegment.OffsetInElf + dataOffset,
+                                Data = fullSegment.Data.AsSpan(dataOffset, dataSize).ToArray(),
+                                Size = dataSize,
+                                TargetOffset = fullSegment.TargetOffset + dataOffset
+                            });
+
+                            // Readjust full segment to just be .text
+                            fullSegment.Size = dataOffset;
+                            fullSegment.Data = fullSegment.Data.AsSpan(0, fullSegment.Size).ToArray();
+                            break;
+                        }
+
+                        last = val;
+                    }
+                    else
+                    {
+                        counter = 0;
+                        last = 0;
+                    }
+                }
+            }
 
             // Write program headers
             WriteProgramHeaders(bs, file);
 
-            WriteSectionHeaders(bs, file, out int shOffset);
+            int sh_num = WriteSectionHeaders(bs, file, out int shOffset);
             bs.Position = 0x20;
             bs.WriteInt32((int)shOffset);
+
+            bs.Position = 0x2C;
+            bs.WriteInt16((short)file.Segments.Count);
+
+            bs.Position = 0x30;
+            bs.WriteInt16((short)sh_num);
+            bs.WriteInt16((short)(sh_num - 1));
         }
 
         private void WriteProgramHeaders(BinaryStream bs, GTImageLoader file)
         {
             long cPos = bs.Position;
-
             bs.Position = 0x1000;
-            long textOffset = bs.Position;
-            if (file.Segments.Count == 1)
+
+            long segOffset = bs.Position;
+            foreach (ElfSegment segment in file.Segments)
             {
-                file.Segments[0].OffsetInElf = textOffset;
-                bs.WriteBytes(file.Segments[0].Data);
-                bs.Align(0x1000, grow: true);
+                segment.OffsetInElf = segOffset;
+                bs.WriteBytes(segment.Data);
 
-                long lastPos = bs.Position;
-                bs.Position = cPos;
-
-                // .text 
-                bs.WriteInt32((int)ElfEnums.PhType.Load);
-                bs.WriteInt32((int)textOffset);
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Virtual address
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Physical address
-                bs.WriteInt32(file.Segments[0].Size - 0x18); // File length
-                bs.WriteInt32(file.Segments[0].Size - 0x18); // Ram length
-                bs.WriteInt32(7); // Flags, PF_Read_Write_Exec
-                bs.WriteInt32(0x1000); // Align
-
-                bs.Position = lastPos;
+                segOffset += segment.Data.Length;
             }
-            else
+
+
+            long lastPos = bs.Position;
+            bs.Position = cPos;
+
+            foreach (ElfSegment segment in file.Segments)
             {
-                file.Segments[1].OffsetInElf = textOffset;
-                bs.WriteBytes(file.Segments[1].Data);
-                bs.Align(0x1000, grow: true);
-
-                long regInfoSectionOffset = bs.Position;
-                file.Segments[0].OffsetInElf = regInfoSectionOffset;
-                bs.WriteBytes(file.Segments[0].Data);
-                bs.Align(0x100, grow: true); // Seems important? Otherwise crashes
-
-                long dataSectionOffset = bs.Position;
-                file.Segments[2].OffsetInElf = dataSectionOffset;
-                bs.WriteBytes(file.Segments[2].Data);
-                bs.Align(0x1000, grow: true);
-
-                long lastPos = bs.Position;
-                bs.Position = cPos;
-
-                // .text 
-                bs.WriteInt32((int)ElfEnums.PhType.Load);
-                bs.WriteInt32((int)textOffset);
-                bs.WriteInt32(file.Segments[1].TargetOffset); // Virtual address
-                bs.WriteInt32(file.Segments[1].TargetOffset); // Physical address
-                bs.WriteInt32(file.Segments[1].Size); // File length
-                bs.WriteInt32(file.Segments[1].Size); // Ram length
-                bs.WriteInt32(7); // Flags, PF_Read_Write_Exec
-                bs.WriteInt32(0x1000); // Align
-
-                // .reginfo
-                bs.WriteInt32((int)ElfEnums.PhType.PT_LOPROC);
-                bs.WriteInt32((int)regInfoSectionOffset);
-                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Virtual address
-                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Physical address
-                bs.WriteInt32(file.Segments[0].Size); // File length
-                bs.WriteInt32(file.Segments[0].Size); // Ram length
-                bs.WriteInt32(4); // Flags, PF_Read
-                bs.WriteInt32(4); // Align
-
-                // .data
-                bs.WriteInt32((int)ElfEnums.PhType.Load);
-                bs.WriteInt32((int)dataSectionOffset);
-                bs.WriteInt32(file.Segments[2].TargetOffset); // Virtual address
-                bs.WriteInt32(file.Segments[2].TargetOffset); // Physical address
-                bs.WriteInt32(file.Segments[2].Size); // File length
-                bs.WriteInt32(file.Segments[2].Size + BssSize); // Ram length
-                bs.WriteInt32(6); // Flags, PF_Read_Write
-                bs.WriteInt32(0x1000); // Align
-
-                bs.Position = lastPos;
+                if (segment.Name == ".text")
+                {
+                    // .text 
+                    bs.WriteInt32((int)ElfEnums.PhType.Load);
+                    bs.WriteInt32((int)segment.OffsetInElf);
+                    bs.WriteInt32(segment.TargetOffset); // Virtual address
+                    bs.WriteInt32(segment.TargetOffset); // Physical address
+                    bs.WriteInt32(segment.Size); // File length
+                    bs.WriteInt32(segment.Size); // Ram length
+                    bs.WriteInt32(7); // Flags, PF_Read_Write_Exec
+                    bs.WriteInt32(0x1000); // Align
+                }
+                else if (segment.Name == ".data")
+                {
+                    // .data
+                    bs.WriteInt32((int)ElfEnums.PhType.Load);
+                    bs.WriteInt32((int)segment.OffsetInElf);
+                    bs.WriteInt32(segment.TargetOffset); // Virtual address
+                    bs.WriteInt32(segment.TargetOffset); // Physical address
+                    bs.WriteInt32(segment.Size); // File length
+                    bs.WriteInt32(segment.Size); // Ram length
+                    bs.WriteInt32(6); // Flags, PF_Read_Write
+                    bs.WriteInt32(0x1000); // Align
+                }
+                else if (segment.Name == ".reginfo")
+                {
+                    // .reginfo
+                    bs.WriteInt32((int)ElfEnums.PhType.PT_LOPROC);
+                    bs.WriteInt32((int)segment.OffsetInElf);
+                    bs.WriteInt32(segment.TargetOffset); // Virtual address
+                    bs.WriteInt32(segment.TargetOffset); // Physical address
+                    bs.WriteInt32(segment.Size); // File length
+                    bs.WriteInt32(segment.Size); // Ram length
+                    bs.WriteInt32(4); // Flags, PF_Read
+                    bs.WriteInt32(4); // Align
+                }
             }
+
+            bs.Position = lastPos;
         }
 
-        private void WriteSectionHeaders(BinaryStream bs, GTImageLoader file, out int shOffset)
+        private int WriteSectionHeaders(BinaryStream bs, GTImageLoader file, out int shOffset)
         {
             long shstrTabOffset = bs.Position;
             Dictionary<string, long> dir = new Dictionary<string, long>();
             dir.Add("", bs.Position - shstrTabOffset);
             bs.WriteString("", StringCoding.ZeroTerminated);
 
-            dir.Add(".text", bs.Position - shstrTabOffset);
-            bs.WriteString(".text", StringCoding.ZeroTerminated);
-
-            dir.Add(".reginfo", bs.Position - shstrTabOffset);
-            bs.WriteString(".reginfo", StringCoding.ZeroTerminated);
-
-            dir.Add(".data", bs.Position - shstrTabOffset);
-            bs.WriteString(".data", StringCoding.ZeroTerminated);
+            foreach (ElfSegment seg in file.Segments)
+            {
+                dir.Add(seg.Name, bs.Position - shstrTabOffset);
+                bs.WriteString(seg.Name, StringCoding.ZeroTerminated);
+            }
 
             dir.Add(".bss", bs.Position - shstrTabOffset);
             bs.WriteString(".bss", StringCoding.ZeroTerminated);
@@ -199,76 +235,81 @@ namespace PDTools.GT4ElfBuilderTool
             bs.WriteInt32(0); // Addralign
             bs.WriteInt32(0); // EntSize
 
-            if (file.Segments.Count > 1)
+            int bssOffset;
+            int bssElfOffset;
+
+            foreach (ElfSegment segment in file.Segments)
             {
-                bs.WriteInt32((int)dir[".text"]);
-                bs.WriteInt32(1); // Type
-                bs.WriteInt32(6); // Flags
-                bs.WriteInt32(file.Segments[1].TargetOffset); // Addr
-                bs.WriteInt32((int)file.Segments[1].OffsetInElf); // Offset
-                bs.WriteInt32(file.Segments[1].Size); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(0x40); // Addralign
-                bs.WriteInt32(0); // EntSize
-
-                bs.WriteInt32((int)dir[".reginfo"]);
-                bs.WriteInt32(1879048198); // Type
-                bs.WriteInt32(2); // Flags
-                bs.WriteInt32(file.Segments[0].TargetOffset + 0x18); // Addr
-                bs.WriteInt32((int)file.Segments[0].OffsetInElf); // Offset
-                bs.WriteInt32(file.Segments[0].Size); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(4); // Addralign
-                bs.WriteInt32(1); // EntSize
-
-                bs.WriteInt32((int)dir[".data"]);
-                bs.WriteInt32(1); // Type
-                bs.WriteInt32(2); // Flags
-                bs.WriteInt32(file.Segments[2].TargetOffset); // Addr
-                bs.WriteInt32((int)file.Segments[2].OffsetInElf); // Offset
-                bs.WriteInt32(file.Segments[2].Size); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(0x40); // Addralign
-                bs.WriteInt32(0); // EntSize
-
-                bs.WriteInt32((int)dir[".bss"]);
-                bs.WriteInt32(8); // Type
-                bs.WriteInt32(3); // Flags
-                bs.WriteInt32((int)file.Segments[2].TargetOffset + file.Segments[2].Size); // Addr
-                bs.WriteInt32((int)file.Segments[2].OffsetInElf + file.Segments[2].Size); // Offset
-                bs.WriteInt32(BssSize); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(0x40); // Addralign
-                bs.WriteInt32(0); // EntSize
-
-                bs.WriteInt32((int)dir[".shstrtab"]);
-                bs.WriteInt32(3); // Type
-                bs.WriteInt32(0); // Flags
-                bs.WriteInt32(0); // Addr
-                bs.WriteInt32((int)shstrTabOffset); // Offset
-                bs.WriteInt32((int)shstrtabLen); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(1); // Addralign
-                bs.WriteInt32(0); // EntSize
+                if (segment.Name == ".text")
+                {
+                    // .text 
+                    bs.WriteInt32((int)dir[".text"]);
+                    bs.WriteInt32(1); // Type
+                    bs.WriteInt32(6); // Flags
+                    bs.WriteInt32(file.Segments[0].TargetOffset); // Addr
+                    bs.WriteInt32((int)file.Segments[0].OffsetInElf); // Offset
+                    bs.WriteInt32(file.Segments[0].Size); // Size
+                    bs.WriteInt32(0); // Link
+                    bs.WriteInt32(0); // Info
+                    bs.WriteInt32(0x40); // Addralign
+                    bs.WriteInt32(0); // EntSize
+                }
+                else if (segment.Name == ".data")
+                {
+                    // .data
+                    bs.WriteInt32((int)dir[".data"]);
+                    bs.WriteInt32(1); // Type
+                    bs.WriteInt32(2); // Flags
+                    bs.WriteInt32(segment.TargetOffset); // Addr
+                    bs.WriteInt32((int)segment.OffsetInElf); // Offset
+                    bs.WriteInt32(segment.Size); // Size
+                    bs.WriteInt32(0); // Link
+                    bs.WriteInt32(0); // Info
+                    bs.WriteInt32(0x40); // Addralign
+                    bs.WriteInt32(0); // EntSize
+                }
+                else if (segment.Name == ".reginfo")
+                {
+                    // .reginfo
+                    bs.WriteInt32((int)dir[".reginfo"]);
+                    bs.WriteInt32(1879048198); // Type
+                    bs.WriteInt32(2); // Flags
+                    bs.WriteInt32(segment.TargetOffset); // Addr
+                    bs.WriteInt32((int)segment.OffsetInElf); // Offset
+                    bs.WriteInt32(segment.Size); // Size
+                    bs.WriteInt32(0); // Link
+                    bs.WriteInt32(0); // Info
+                    bs.WriteInt32(4); // Addralign
+                    bs.WriteInt32(1); // EntSize
+                }
             }
-            else
-            {
-                bs.WriteInt32((int)dir[".text"]);
-                bs.WriteInt32(1); // Type
-                bs.WriteInt32(6); // Flags
-                bs.WriteInt32(file.Segments[0].TargetOffset); // Addr
-                bs.WriteInt32((int)file.Segments[0].OffsetInElf); // Offset
-                bs.WriteInt32(file.Segments[0].Size); // Size
-                bs.WriteInt32(0); // Link
-                bs.WriteInt32(0); // Info
-                bs.WriteInt32(0x40); // Addralign
-                bs.WriteInt32(0); // EntSize
-            }
+
+            bssOffset = (int)file.Segments[^1].TargetOffset + file.Segments[^1].Size;
+            bssElfOffset = (int)file.Segments[^1].OffsetInElf + file.Segments[^1].Size;
+
+            bs.WriteInt32((int)dir[".bss"]);
+            bs.WriteInt32(8); // Type
+            bs.WriteInt32(3); // Flags
+            bs.WriteInt32(bssOffset); // Addr
+            bs.WriteInt32(bssElfOffset); // Offset
+            bs.WriteInt32(BssSize); // Size
+            bs.WriteInt32(0); // Link
+            bs.WriteInt32(0); // Info
+            bs.WriteInt32(0x40); // Addralign
+            bs.WriteInt32(0); // EntSize
+
+            bs.WriteInt32((int)dir[".shstrtab"]);
+            bs.WriteInt32(3); // Type
+            bs.WriteInt32(0); // Flags
+            bs.WriteInt32(0); // Addr
+            bs.WriteInt32((int)shstrTabOffset); // Offset
+            bs.WriteInt32((int)shstrtabLen); // Size
+            bs.WriteInt32(0); // Link
+            bs.WriteInt32(0); // Info
+            bs.WriteInt32(1); // Addralign
+            bs.WriteInt32(0); // EntSize
+
+            return dir.Count;
         }
     }
 }
