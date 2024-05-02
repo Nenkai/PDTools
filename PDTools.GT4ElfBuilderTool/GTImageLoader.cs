@@ -67,26 +67,25 @@ namespace PDTools.GT4ElfBuilderTool
             for (int i = 0; i < nSection; i++)
             {
                 var segment = new ElfSegment();
-                if (i == 0)
+                segment.TargetOffset = sr2.ReadInt32();
+                segment.Size = sr2.ReadInt32();
+                segment.Data = sr2.ReadBytes(segment.Size);
+
+                if (segment.Size != 0x18 && segment.TargetOffset % 0x10000 == 0)
                 {
                     segment.Name = ".text";
                     Console.WriteLine($"# Segment {i + 1} (likely .text)");
                 }
-                else if (i == 1)
+                else if (segment.Size == 0x18)
+                {
+                    segment.Name = ".reginfo";
+                    Console.WriteLine($"# Segment {i + 1} (likely .reginfo)");
+                }
+                else
                 {
                     segment.Name = ".data";
                     Console.WriteLine($"# Segment {i + 1} (likely .data)");
                 }
-                else
-                {
-                    segment.Name = ".reginfo";
-                    Console.WriteLine($"# Segment {i + 1}");
-                }
-
-
-                segment.TargetOffset = sr2.ReadInt32();
-                segment.Size = sr2.ReadInt32();
-                segment.Data = sr2.ReadBytes(segment.Size);
 
                 Console.WriteLine($"- Target Memory Offset: 0x{segment.TargetOffset:X8}");
                 Console.WriteLine($"- Size: 0x{segment.Size:X8}");
@@ -102,7 +101,6 @@ namespace PDTools.GT4ElfBuilderTool
             Console.WriteLine("# Step 3: Attempt optional authentication by computing RSA numbers to a SHA-512 hash");
 
 
-            
             // Values are reversed
             // Doesn't always work i.e GT4P, refer to Egcd add operation comment, and the minus on -Egcd
             // Removing the minus on -Egcd or removing the add in egcd sometimes fixes it for some exponents, but ugh
@@ -128,8 +126,9 @@ namespace PDTools.GT4ElfBuilderTool
             Console.WriteLine("Done building.\n");
 
             Console.WriteLine("!!!! IDA USERS NOTE");
-            Console.WriteLine("For games older than GT4, you may need to set the $gp register value (if the .reginfo section is missing).");
-            Console.WriteLine("You can find it in the start function, then General -> Analysis -> Processor specific analysis options -> $gp value.");
+            Console.WriteLine("For games older than GT4, you may need to set the $gp register value (ida sometimes doesn't pick it up, especially if the .reginfo section is missing).");
+            Console.WriteLine("-> If .reginfo is present, look at the value at .reginfo+0x14 - that's your $gp register.");
+            Console.WriteLine("You can set it in the start function, then General -> Analysis -> Processor specific analysis options -> $gp value.");
             Console.WriteLine("Also, ctors and dtors may need to be manually disassembled once found.");
         }
 

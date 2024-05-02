@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 
 using Syroot.BinaryData;
+using System.Linq;
 
 namespace PDTools.GT4ElfBuilderTool
 {
@@ -154,7 +155,6 @@ namespace PDTools.GT4ElfBuilderTool
                 segOffset += segment.Data.Length;
             }
 
-
             long lastPos = bs.Position;
             bs.Position = cPos;
 
@@ -162,6 +162,11 @@ namespace PDTools.GT4ElfBuilderTool
             {
                 if (segment.Name == ".text")
                 {
+                    // fix bug? Sometimes .reginfo range is part of .text's range
+                    var reginfo = file.Segments.FirstOrDefault(e => e.Name == ".reginfo");
+                    if (reginfo is not null && reginfo.TargetOffset < segment.TargetOffset + segment.Size)
+                        segment.Size -= reginfo.Size;
+
                     // .text 
                     bs.WriteInt32((int)ElfEnums.PhType.Load);
                     bs.WriteInt32((int)segment.OffsetInElf);
@@ -246,9 +251,9 @@ namespace PDTools.GT4ElfBuilderTool
                     bs.WriteInt32((int)dir[".text"]);
                     bs.WriteInt32(1); // Type
                     bs.WriteInt32(6); // Flags
-                    bs.WriteInt32(file.Segments[0].TargetOffset); // Addr
-                    bs.WriteInt32((int)file.Segments[0].OffsetInElf); // Offset
-                    bs.WriteInt32(file.Segments[0].Size); // Size
+                    bs.WriteInt32(segment.TargetOffset); // Addr
+                    bs.WriteInt32((int)segment.OffsetInElf); // Offset
+                    bs.WriteInt32(segment.Size); // Size
                     bs.WriteInt32(0); // Link
                     bs.WriteInt32(0); // Info
                     bs.WriteInt32(0x40); // Addralign
