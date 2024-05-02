@@ -103,11 +103,11 @@ namespace PDTools.SpecDB.Core
                     }
                     else if (result.BaseRowToUse != -1)
                     {
-                        byte typeHdr = MakeEntryHeader(ExtractCompressionType.CompressedWithBaseRowDifferences, (byte)result.BaseRowToUse);  // Type 2
+                        byte typeHdr = MakeEntryHeader(ExtractCompressionType.CompressedWithTemplateRowDifferences, (byte)result.BaseRowToUse);  // Type 2
                         huff.IncrementFrequencyOfByte(typeHdr);
                         huff.IncrementFrequencyOfBytes(result.DiffBitsAndData);
 
-                        rowCompressInfo.Add(new RowComparisonData(ExtractCompressionType.CompressedWithBaseRowDifferences)
+                        rowCompressInfo.Add(new RowComparisonData(ExtractCompressionType.CompressedWithTemplateRowDifferences)
                         {
                             EntryHeader = typeHdr,
                             DiffBitsAndData = result.DiffBitsAndData
@@ -137,7 +137,7 @@ namespace PDTools.SpecDB.Core
                         if (writtenUncompressedRows.Count >= 64)
                         {
                             // We can't, already exceeded total size, have a compressed row without base to patch
-                            byte typeHdr = MakeEntryHeader(ExtractCompressionType.CompressedWithoutBase, 0);
+                            byte typeHdr = MakeEntryHeader(ExtractCompressionType.CompressedWithoutTemplateRow, 0);
                             huff.IncrementFrequencyOfByte(typeHdr);
                             huff.IncrementFrequencyOfBytes(current);
 
@@ -174,8 +174,8 @@ namespace PDTools.SpecDB.Core
             /* Step 4: Start writing the GT Database Table header */
             BitStream bs = new BitStream(BitStreamMode.Write, endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
             bs.WriteByteData(Encoding.UTF8.GetBytes("GTDB"));
-            bs.WriteInt16(0x01);
-            bs.WriteInt16(0x08);
+            bs.WriteInt16(0x01); // Attributes
+            bs.WriteInt16(0x08); // AlignedBytes
             bs.WriteInt32(Table.Rows.Count);
             int columnSize = Table.TableMetadata.GetColumnSize();
             bs.WriteInt32(columnSize);
@@ -190,7 +190,7 @@ namespace PDTools.SpecDB.Core
                 int entryHuffmanCodesOffset = huffmanCodesWritter.Position;
 
                 var info = rowCompressInfo[i];
-                if (info.Type == ExtractCompressionType.CompressedWithBaseRowDifferences)
+                if (info.Type == ExtractCompressionType.CompressedWithTemplateRowDifferences)
                 {
                     Debug.Assert(1 + (info.DiffBitsAndData?.Length ?? 0) < 256, "Too many codes for CompressedWithBaseRowDifferences");
                     huffmanCodesWritter.WriteByte((byte)(1 + (byte)(info.DiffBitsAndData?.Length ?? 0)));
@@ -199,7 +199,7 @@ namespace PDTools.SpecDB.Core
                     for (var j = 0; j < info.DiffBitsAndData.Length; j++)
                         huff.EncodeValueToStream(ref huffmanCodesWritter, info.DiffBitsAndData[j]);
                 }
-                else if (info.Type == ExtractCompressionType.CompressedWithoutBase) // Unlikely to ever be hit, but here as a fallback
+                else if (info.Type == ExtractCompressionType.CompressedWithoutTemplateRow) // Unlikely to ever be hit, but here as a fallback
                 {
                     huffmanCodesWritter.WriteByte((byte)(1 + (byte)(info.RowDataWithoutBase?.Length ?? 0)));
                     huff.EncodeValueToStream(ref huffmanCodesWritter, info.EntryHeader);

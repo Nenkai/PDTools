@@ -16,12 +16,17 @@ namespace PDTools.SpecDB.Core.Formats
     /// </summary>
     public class IDI_LabelInformation
     {
+        /// <summary>
+        /// 'GTID'
+        /// </summary>
+        public const uint MAGIC = 0x44495447;
+
         public Endian Endian { get; }
         public byte[] Buffer { get; }
         public const int HeaderSize = 0x10;
         public const int EntrySize = 0x08;
 
-        public int KeyCount
+        public int IDCount
         {
             get
             {
@@ -32,7 +37,7 @@ namespace PDTools.SpecDB.Core.Formats
             }
         }
 
-        public int TableIndex
+        public int TableID
         {
             get
             {
@@ -53,15 +58,15 @@ namespace PDTools.SpecDB.Core.Formats
         {
             SpanReader sr = new SpanReader(Buffer, Endian);
             sr.Position = 4;
-            int keyCount = sr.ReadInt32();
+            int idCount = sr.ReadInt32();
 
-            if (keyCount > 0)
+            if (idCount > 0)
             {
-                int max = keyCount - 1;
-                int i = keyCount;
+                int max = idCount - 1;
+                int i = idCount;
                 int min = -1;
 
-                // Binary searching - Keys are ordered by length.
+                // Binary searching - IDs are ordered by length.
                 int mid;
                 do
                 {
@@ -71,7 +76,7 @@ namespace PDTools.SpecDB.Core.Formats
                     int compResult = CompareIDString(label, mid, label.Length);
                     if (compResult == 0) // Found match
                     {
-                        if (mid < 0 || mid > keyCount)
+                        if (mid < 0 || mid > idCount)
                             return -1;
 
                         sr.Position = HeaderSize + mid * EntrySize + 4;
@@ -99,14 +104,14 @@ namespace PDTools.SpecDB.Core.Formats
             //  iVar2 = (uint)*(ushort *)(buf + *(int *)(buf + index * 8 + 0x10) + *(int *)(buf + 4) * 8 + 0x10) - 1;
 
             // *(int *)(buf + 4) * 8 + 0x10)
-            int keyCount = KeyCount;
-            int keyMapOffset = HeaderSize + keyCount * EntrySize;
+            int idCount = IDCount;
+            int idMapOffset = HeaderSize + idCount * EntrySize;
 
             // *(int *)(buf + index * 8 + 0x10)
             sr.Position = HeaderSize + index * EntrySize;
-            int keyNameOffset = sr.ReadInt32();
+            int idNameOffset = sr.ReadInt32();
 
-            sr.Position = keyMapOffset + keyNameOffset;
+            sr.Position = idMapOffset + idNameOffset;
 
             short stringLength = sr.ReadInt16();
 

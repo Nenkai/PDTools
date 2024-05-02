@@ -236,14 +236,14 @@ namespace PDTools.SpecDB.Core
 
         public int GetCarLabelCount()
         {
-            IDI_LabelInformation idTable = Fixed_Tables[(int)SpecDBTables.GENERIC_CAR].IDI;
-            return idTable.KeyCount;
+            IDI_LabelInformation idTable = Fixed_Tables[(int)SpecDBTables.GENERIC_CAR].LabelInformation;
+            return idTable.IDCount;
         }
 
         public int GetLabelCountForTable(SpecDBTables table)
         {
-            IDI_LabelInformation idTable = Fixed_Tables[(int)table].IDI;
-            return idTable.KeyCount;
+            IDI_LabelInformation idTable = Fixed_Tables[(int)table].LabelInformation;
+            return idTable.IDCount;
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace PDTools.SpecDB.Core
             if (carLabelCount > -1 && index < carLabelCount)
             {
                 //idi = MSpecDB::GetIDITableByIndex(pMVar2, 0);
-                IDI_LabelInformation idTable = Fixed_Tables[(int)SpecDBTables.GENERIC_CAR].IDI;
+                IDI_LabelInformation idTable = Fixed_Tables[(int)SpecDBTables.GENERIC_CAR].LabelInformation;
                 SpanReader sr = new SpanReader(idTable.Buffer);
 
                 // buf = buf + *(int*)(buf + param_1 * 8 + 0x10) + *(int*)(buf + 4) * 8 + 0x12;
@@ -291,7 +291,7 @@ namespace PDTools.SpecDB.Core
         public int GetLabelOffsetByIDFromTable(SpecDBTables table, int code)
         {
             Table sTable = Fixed_Tables[(int)table];
-            IDI_LabelInformation idi = sTable.IDI;
+            IDI_LabelInformation idi = sTable.LabelInformation;
 
             SpanReader sr = new SpanReader(idi.Buffer);
             sr.Position = 4;

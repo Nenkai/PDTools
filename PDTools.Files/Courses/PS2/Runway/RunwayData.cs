@@ -67,8 +67,15 @@ public class RunwayData
     public byte TreeMaxDepth { get; set; }
     public Node Root { get; set; }
 
-    public const int RNW4_BE = 0x524E5734;
-    public const int RNW4_LE = 0x34574E52;
+    /// <summary>
+    /// '4WNR'
+    /// </summary>
+    public const int MAGIC_BE = 0x524E5734;
+
+    /// <summary>
+    /// 'RNW4'
+    /// </summary>
+    public const int MAGIC_LE = 0x34574E52;
 
     public uint Magic { get; set; }
 
@@ -80,9 +87,9 @@ public class RunwayData
         RunwayData rwy = new RunwayData();
         rwy.Magic = bs.ReadUInt32();
 
-        if (rwy.Magic == RNW4_BE)
+        if (rwy.Magic == MAGIC_BE)
             bs.ByteConverter = ByteConverter.Big;
-        else if (rwy.Magic == RNW4_LE)
+        else if (rwy.Magic == MAGIC_LE)
             bs.ByteConverter = ByteConverter.Little;
         else
             throw new InvalidDataException("Unsupported runway format.");
@@ -90,7 +97,7 @@ public class RunwayData
         bs.ReadInt32(); // Reloc Pointer
         bs.ReadUInt32(); // Reloc Size
         rwy.Flags = bs.ReadUInt32();
-        uint unk = bs.ReadUInt32();
+        uint version = bs.ReadUInt32(); // version
         rwy.TrackV = bs.ReadSingle();
         rwy.StartVCoord = bs.ReadSingle();
         rwy.GoalVCoord = bs.ReadSingle();

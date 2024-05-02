@@ -5,15 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.IO;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 using PDTools.Files;
 
-namespace PDTools.Files.Courses.Runway;
-
 using Syroot.BinaryData;
 
-using System.Runtime.Intrinsics.X86;
-using System.Runtime.Intrinsics;
+namespace PDTools.Files.Courses.Runway;
 
 public class RunwayFile
 {
