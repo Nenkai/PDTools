@@ -96,7 +96,7 @@ namespace PDTools.Files.Textures.PS3
             if (!File.Exists(ddsFileName))
                 return false;
 
-            var dds = Pfim.Pfim.FromFile(ddsFileName);
+            var dds = Pfimage.FromFile(ddsFileName);
             InitFromDDSImage(dds, format);
 
             Memory<byte> ddsData = File.ReadAllBytes(ddsFileName).AsMemory(0x80);
@@ -130,7 +130,7 @@ namespace PDTools.Files.Textures.PS3
             }
             else
             {
-                var dds = Pfim.Pfim.FromStream(ms);
+                var dds = Pfimage.FromStream(ms);
 
                 if (dds.Format == ImageFormat.Rgb24)
                 {
