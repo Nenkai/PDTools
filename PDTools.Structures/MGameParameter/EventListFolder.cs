@@ -15,9 +15,9 @@ namespace PDTools.Structures.MGameParameter
     // This is parsed by EventRace2.decodeOfflineEventList
     public class EventListFolder
     {
-        public Dictionary<Country, string> Title { get; set; } = new Dictionary<Country, string>();
-        public Dictionary<Country, string> Description { get; set; } = new Dictionary<Country, string>();
-        public Dictionary<Country, string> OneLineTitle { get; set; } = new Dictionary<Country, string>();
+        public Dictionary<Language, string> Title { get; set; } = new Dictionary<Language, string>();
+        public Dictionary<Language, string> Description { get; set; } = new Dictionary<Language, string>();
+        public Dictionary<Language, string> OneLineTitle { get; set; } = new Dictionary<Language, string>();
 
         /// <summary>
         /// Folder ID.
@@ -43,9 +43,9 @@ namespace PDTools.Structures.MGameParameter
 
         public EventListFolder()
         {
-            foreach (Country country in Enum.GetValues(typeof(Country)))
+            foreach (Language country in Enum.GetValues(typeof(Language)))
             {
-                if (country == Country.NumOfCountries)
+                if (country == Language.MAX)
                     break;
 
                 Title.Add(country, string.Empty);
@@ -132,7 +132,7 @@ namespace PDTools.Structures.MGameParameter
                     case "title":
                         foreach (XmlNode titleNode in node.ChildNodes)
                         {
-                            if (Enum.TryParse(titleNode.Name, out Country country))
+                            if (Enum.TryParse(titleNode.Name, out Language country))
                                 Title[country] = titleNode.InnerText;
                         }
                         break;
@@ -140,7 +140,7 @@ namespace PDTools.Structures.MGameParameter
                     case "description":
                         foreach(XmlNode descNode in node.ChildNodes)
                         {
-                            if (Enum.TryParse(descNode.Name, out Country country))
+                            if (Enum.TryParse(descNode.Name, out Language country))
                                 Description[country] = descNode.InnerText;
                         }
                         break;
@@ -148,7 +148,7 @@ namespace PDTools.Structures.MGameParameter
                     case "copy":
                         foreach (XmlNode oneLineTitleNode in node.ChildNodes)
                         {
-                            if (Enum.TryParse(oneLineTitleNode.Name, out Country country))
+                            if (Enum.TryParse(oneLineTitleNode.Name, out Language country))
                                 OneLineTitle[country] = oneLineTitleNode.InnerText;
                         }
                         break;
