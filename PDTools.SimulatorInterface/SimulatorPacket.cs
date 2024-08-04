@@ -8,6 +8,7 @@ using System.IO;
 
 using System.Numerics;
 using Syroot.BinaryData.Memory;
+using System.Net.Sockets;
 
 namespace PDTools.SimulatorInterface
 {
@@ -400,67 +401,103 @@ namespace PDTools.SimulatorInterface
             DateReceived = dateReceived;
         }
 
-        public void PrintPacket(bool debug = false)
+        public bool IsPaused {  get => Flags.HasFlag(SimulatorFlags.Paused);}
+
+        public bool IsCarOnTrack { get => Flags.HasFlag(SimulatorFlags.CarOnTrack); }
+
+        public bool IsLoadingOrProcessing { get => Flags.HasFlag(SimulatorFlags.LoadingOrProcessing); }
+
+        private static Vector3 _maxAngularVelocity = Vector3.Zero;
+
+        public void PrintPacket(bool debug = false, bool motionOnly = true)
         {
+            if (!IsCarOnTrack || IsPaused || IsLoadingOrProcessing)
+            {
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+                Console.WriteLine($"On Track: {this.Flags.HasFlag(SimulatorFlags.CarOnTrack)}  Paused: {IsPaused}  IsLoading: {IsLoadingOrProcessing}");
+
+                return;
+            }
             Console.SetCursorPosition(0, 0);
             Console.WriteLine($"[{DateReceived} - ID {PacketId}] Simulator Interface Packet                      ");
+
             Console.WriteLine("[Car Data]          ");
             Console.WriteLine($"- Car Code: {CarCode}         ");
             Console.WriteLine($"- Throttle: {Throttle}   ");
             Console.WriteLine($"- Brake: {Brake}   ");
             Console.WriteLine($"- RPM: {EngineRPM} - KPH: {Math.Round(MetersPerSecond * 3.6, 2)}     ");
-            Console.WriteLine($"- Turbo Boost: {((TurboBoost - 1.0) * 100.0):F2}kPa   ");
-            Console.WriteLine($"- Fuel Level: {GasLevel:F2}   ");
-            Console.WriteLine($"- Max Fuel Capacity: {GasCapacity:F2}   ");
 
-            Console.WriteLine($"- Oil Pressure: {OilPressure:F2}   ");
-            Console.WriteLine($"- Body Height: {BodyHeight:F2}   ");
-            Console.WriteLine($"- Clutch Pedal: {ClutchPedal:F2}   ");
-            Console.WriteLine($"- Clutch Engagement: {ClutchEngagement:F2}   ");
-            Console.WriteLine($"- RPM From Clutch To Gearbox: {RPMFromClutchToGearbox:F2}   ");
+            if (!motionOnly)
+            {
+                Console.WriteLine($"- Turbo Boost: {((TurboBoost - 1.0) * 100.0):F2}kPa   ");
+                Console.WriteLine($"- Fuel Level: {GasLevel:F2}   ");
+                Console.WriteLine($"- Max Fuel Capacity: {GasCapacity:F2}   ");
 
+                Console.WriteLine($"- Oil Pressure: {OilPressure:F2}   ");
+                Console.WriteLine($"- Body Height: {BodyHeight:F2}   ");
+                Console.WriteLine($"- Clutch Pedal: {ClutchPedal:F2}   ");
+                Console.WriteLine($"- Clutch Engagement: {ClutchEngagement:F2}   ");
+                Console.WriteLine($"- RPM From Clutch To Gearbox: {RPMFromClutchToGearbox:F2}   ");
+            }
 
             if (SuggestedGear == 15)
                 Console.WriteLine($"- Gear: {CurrentGear}                                    ");
             else
                 Console.WriteLine($"- Gear: {CurrentGear} (Suggested: {SuggestedGear})");
-            Console.WriteLine($"- Calculated Max Speed: {CalculatedMaxSpeed}kph  ");
-            Console.WriteLine($"- Min/Max RPM Alerts: {MinAlertRPM} - {MaxAlertRPM}  ");
 
-            Console.WriteLine($"- Flags: {Flags,-100}");
-            Console.WriteLine($"- Gear Ratios: {string.Join(", ", GearRatios)}");
-            Console.WriteLine($"- Tire Height / FL:{TireFL_SusHeight:F2} FR:{TireFR_SusHeight:F2} RL:{TireRL_SusHeight:F2} RR:{TireRR_SusHeight:F2}    ");
-            Console.WriteLine($"- Tire RPS / FL:{WheelFL_RevPerSecond:F2} FR:{WheelFR_RevPerSecond:F2} RL:{WheelRL_RevPerSecond:F2} RR:{WheelRR_RevPerSecond:F2}    ");
-            Console.WriteLine($"- Tire Radius / FL:{TireFL_TireRadius:F2} FR:{TireFR_TireRadius:F2} RL:{TireRL_TireRadius:F2} RR:{TireRR_TireRadius:F2}    ");
+            if (!motionOnly)
+            {
+                Console.WriteLine($"- Calculated Max Speed: {CalculatedMaxSpeed}kph  ");
+                Console.WriteLine($"- Min/Max RPM Alerts: {MinAlertRPM} - {MaxAlertRPM}  ");
 
-            Console.WriteLine($"- Tire Temperature");
-            Console.WriteLine($"    FL: {TireFL_SurfaceTemperature:F2}°C | FR: {TireFR_SurfaceTemperature:F2}°C   ");
-            Console.WriteLine($"    RL: {TireRL_SurfaceTemperature:F2}°C | RR: {TireRR_SurfaceTemperature:F2}°C   ");
+                Console.WriteLine($"- Flags: {Flags,-100}");
+                Console.WriteLine($"- Gear Ratios: {string.Join(", ", GearRatios)}");
+            }
+                Console.WriteLine($"- Tire Height / FL:{TireFL_SusHeight:F2} FR:{TireFR_SusHeight:F2} RL:{TireRL_SusHeight:F2} RR:{TireRR_SusHeight:F2}    ");
 
+            if (!motionOnly)
+            {
+                Console.WriteLine($"- Tire RPS / FL:{WheelFL_RevPerSecond:F2} FR:{WheelFR_RevPerSecond:F2} RL:{WheelRL_RevPerSecond:F2} RR:{WheelRR_RevPerSecond:F2}    ");
+                Console.WriteLine($"- Tire Radius / FL:{TireFL_TireRadius:F2} FR:{TireFR_TireRadius:F2} RL:{TireRL_TireRadius:F2} RR:{TireRR_TireRadius:F2}    ");
+
+                Console.WriteLine($"- Tire Temperature");
+                Console.WriteLine($"    FL: {TireFL_SurfaceTemperature:F2}°C | FR: {TireFR_SurfaceTemperature:F2}°C   ");
+                Console.WriteLine($"    RL: {TireRL_SurfaceTemperature:F2}°C | RR: {TireRR_SurfaceTemperature:F2}°C   ");
+
+                Console.WriteLine();
+                Console.WriteLine("[Race Data]");
+                Console.WriteLine($"- Current Lap: {LapCount}  ");
+
+                if (BestLapTime.TotalMilliseconds == -1)
+                    Console.WriteLine($"- Best: N/A      ");
+                else
+                    Console.WriteLine($"- Best: {BestLapTime:mm\\:ss\\.fff}     ");
+
+                if (LastLapTime.TotalMilliseconds == -1)
+                    Console.WriteLine($"- Last: N/A      ");
+                else
+                    Console.WriteLine($"- Last: {LastLapTime:mm\\:ss\\.fff}     ");
+
+                Console.WriteLine($"- Time of Day: {TimeOfDayProgression:hh\\:mm\\:ss}     ");
+                Console.WriteLine($"- PreRaceStartPositionOrQualiPos: {PreRaceStartPositionOrQualiPos}");
+                Console.WriteLine($"- NumCarsAtPreRace: {NumCarsAtPreRace}");
+
+            }
             Console.WriteLine();
-            Console.WriteLine("[Race Data]");
-            Console.WriteLine($"- Current Lap: {LapCount}  ");
 
-            if (BestLapTime.TotalMilliseconds == -1)
-                Console.WriteLine($"- Best: N/A      ");
-            else
-                Console.WriteLine($"- Best: {BestLapTime:mm\\:ss\\.fff}     ");
+            var ava = Vector3.Multiply((float)(180 / Math.PI) , AngularVelocity) ;
 
-            if (LastLapTime.TotalMilliseconds == -1)
-                Console.WriteLine($"- Last: N/A      ");
-            else
-                Console.WriteLine($"- Last: {LastLapTime:mm\\:ss\\.fff}     ");
+            _maxAngularVelocity.X = Math.Max(Math.Abs(_maxAngularVelocity.X), Math.Abs(ava.X));
+            _maxAngularVelocity.Y = Math.Max(Math.Abs(_maxAngularVelocity.Y), Math.Abs(ava.Y));
+            _maxAngularVelocity.Z = Math.Max(Math.Abs(_maxAngularVelocity.Z), Math.Abs(ava.Z));
 
-            Console.WriteLine($"- Time of Day: {TimeOfDayProgression:hh\\:mm\\:ss}     ");
-            Console.WriteLine($"- PreRaceStartPositionOrQualiPos: {PreRaceStartPositionOrQualiPos}");
-            Console.WriteLine($"- NumCarsAtPreRace: {NumCarsAtPreRace}");
-
-            Console.WriteLine();
             Console.WriteLine("[Positional Information]");
             Console.WriteLine($"- Position: {Position:F3}     ");
             Console.WriteLine($"- Velocity: {Velocity:F3}    ");
-            Console.WriteLine($"- Rotation: {Rotation:F3}     ");
-            Console.WriteLine($"- Angular Velocity: {AngularVelocity:F2}   ");
+            Console.WriteLine($"- Rotation: {Rotation:F3} w: {RelativeOrientationToNorth:F2}    ");
+            Console.WriteLine($"- Angular Velocity: {ava:F2}   ");
+            Console.WriteLine($"- Max Angular Velocity: {_maxAngularVelocity:F2}   ");
             Console.WriteLine($"- Road Plane: {RoadPlane:F2}   ");
 
             if (debug)

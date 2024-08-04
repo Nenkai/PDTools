@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+		<Nullable>disable</Nullable>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<OutputType>Library</OutputType>
 	</PropertyGroup>
 	<ItemGroup>
 	  <PackageReference Include="System.Memory" Version="4.5.5" />
-	  <PackageReference Include="System.Text.Json" Version="6.0.6" />
+	  <PackageReference Include="System.Text.Json" Version="8.0.4" />
 	</ItemGroup>
 </Project>

@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "gt6": {
+      "commandName": "Project",
+      "commandLineArgs": "0.0.0.0 --gt6"
+    },
+    "gtsport": {
+      "commandName": "Project",
+      "commandLineArgs": "0.0.0.0 --gtsport"
+    },
+    "gt7": {
+      "commandName": "Project",
+      "commandLineArgs": "0.0.0.0"
+    }
+  }
+}
