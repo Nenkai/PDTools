@@ -30,6 +30,7 @@ namespace PDTools.Files.Models.PS2.Commands
             ModelSetupPS2Command cmd = opcode switch
             {
                 ModelSetupPS2Opcode.pgluCallShape_Byte => new Cmd_pgluCallShapeByte(),
+                ModelSetupPS2Opcode.pgluCallShape_UShort => new Cmd_pgluCallShape_UShort(),
                 ModelSetupPS2Opcode.CallModelCallback => new Cmd_CallModelCallback(),
                 ModelSetupPS2Opcode.LODSelect => new Cmd_LODSelect(),
                 ModelSetupPS2Opcode.Jump_Byte => new Cmd_JumpByte(),

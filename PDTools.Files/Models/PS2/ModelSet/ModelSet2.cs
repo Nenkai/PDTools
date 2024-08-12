@@ -49,7 +49,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public void FromStream(Stream stream)
         {
-            using var bs = new BinaryStream(stream);
+            var bs = new BinaryStream(stream);
             long basePos = bs.Position;
 
             uint magic = bs.ReadUInt32();
@@ -184,7 +184,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 bs.Position = baseMdlPos + shapeOffset;
 
                 var shape = new PGLUshape();
-                shape.FromStream(bs, baseMdlPos);
+                shape.FromStream(bs);
                 Shapes.Add(shape);
             }
         }
@@ -269,7 +269,6 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 {
                     case ModelSetupPS2Opcode.BBoxRender:
                         ProcessCommands(context, (command as Cmd_BBoxRender).CommandsOnRender);
-                        context.FinishModel();
                         break;
 
                     case ModelSetupPS2Opcode.LODSelect:
@@ -279,8 +278,6 @@ namespace PDTools.Files.Models.PS2.ModelSet
                             context.SetLOD(i);
 
                             ProcessCommands(context, lodSel.CommandsPerLOD[i]);
-
-                            context.FinishModel();
                         }
                         break;
 
@@ -290,13 +287,13 @@ namespace PDTools.Files.Models.PS2.ModelSet
                         {
                             ProcessCommands(context, callbackCmd.Default);
 
-                            context.ExtraName = "tail_lamp_off";
+                            context.ExtraShapeName = "tail_lamp_off";
                             ProcessCommands(context, callbackCmd.CommandsPerBranch[0]);
 
-                            context.ExtraName = "tail_lamp_on";
+                            context.ExtraShapeName = "tail_lamp_on";
                             ProcessCommands(context, callbackCmd.CommandsPerBranch[1]);
 
-                            context.ExtraName = null;
+                            context.ExtraShapeName = null;
                         }
 
                         break;
@@ -307,34 +304,44 @@ namespace PDTools.Files.Models.PS2.ModelSet
                         break;
 
                     case ModelSetupPS2Opcode.pgluCallShape_Byte:
-
-                        if (context.ObjWriter is null)
                         {
-                            if (context.LOD == -1)
-                            {
-                                context.SetupObjWriter($"model{context.ModelIndex}");
-                                context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.mtl");
-                            }
-                            else
-                            {
-                                context.SetupObjWriter($"model{context.ModelIndex}.lod{context.LOD}");
-                                context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.lod{context.LOD}.mtl");
-                            }
-
+                            var callShape = (command as Cmd_pgluCallShapeByte);
+                            int shapeIndex = callShape.ShapeIndex;
+                            ProcessShape(context, shapeIndex);
                         }
-
-                        var callShape = (command as Cmd_pgluCallShapeByte);
-                        int shapeIndex = callShape.ShapeIndex;
-                        PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
-
-                        string name = $"shape{shapeIndex}";
-                        if (!string.IsNullOrEmpty(context.ExtraName))
-                            name += $"_{context.ExtraName}";
-
-                        context.DumpShapeToObj(shapeData, shapeIndex, name);
+                        break;
+                    case ModelSetupPS2Opcode.pgluCallShape_UShort:
+                        {
+                            var callShape = (command as Cmd_pgluCallShape_UShort);
+                            int shapeIndex = callShape.ShapeIndex;
+                            ProcessShape(context, shapeIndex);
+                        }
                         break;
                 }
             }
+        }
+
+        private void ProcessShape(ModelCommandContext context, int shapeIndex)
+        {
+            if (context.CurrentLOD == -1)
+            {
+                //context.SetupObjWriter($"model{context.ModelIndex}");
+                //context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.mtl");
+            }
+            else
+            {
+                //context.SetupObjWriter($"model{context.ModelIndex}.lod{context.CurrentLOD}");
+                //context.ObjWriter.WriteLine($"mtllib model{context.ModelIndex}.lod{context.CurrentLOD}.mtl");
+            }
+
+            PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
+            shapeData.ShapeIndex = shapeIndex;
+
+            string name = $"shape{shapeIndex}";
+            if (!string.IsNullOrEmpty(context.ExtraShapeName))
+                name += $"_{context.ExtraShapeName}";
+
+            context.AddShape(name, shapeData);
         }
 
         public override List<TextureSet1> GetTextureSetList()

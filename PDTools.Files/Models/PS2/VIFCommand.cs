@@ -18,7 +18,7 @@ namespace PDTools.Files.Models.PS2
         public GIFTag GIFTag { get; set; }
         public List<object> UnpackData { get; set; } = new List<object>();
 
-        public void FromStream(BinaryStream bs, long mdlBasePos)
+        public void FromStream(BinaryStream bs)
         {
             VUAddr = bs.ReadUInt16();
             Num = bs.Read1Byte();

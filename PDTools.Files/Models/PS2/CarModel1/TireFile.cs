@@ -9,69 +9,68 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS2;
 
-namespace PDTools.Files.Models.PS2.CarModel1
+namespace PDTools.Files.Models.PS2.CarModel1;
+
+/// <summary>
+/// GT3 Tire File (GTTR)
+/// </summary>
+public class TireFile
 {
     /// <summary>
-    /// GT3 Tire File (GTTR)
+    /// "GTTR" GT Tire
     /// </summary>
-    public class TireFile
+    public const uint MAGIC = 0x52545447;
+    public const uint HEADER_SIZE = 0x20;
+
+    public uint UnkTriStripRelated { get; set; }
+    public uint TriStripFlags { get; set; }
+    public float Unk3 { get; set; }
+
+    public TextureSet1 TextureSet { get; set; } = new TextureSet1();
+
+    public void FromStream(Stream stream)
     {
-        /// <summary>
-        /// "GTTR" GT Tire
-        /// </summary>
-        public const uint MAGIC = 0x52545447;
+        long basePos = stream.Position;
 
-        // Header size is 0x20
-        public uint Unk { get; set; }
-        public uint Unk2 { get; set; }
-        public float Unk3 { get; set; }
+        var bs = new BinaryStream(stream, ByteConverter.Little);
 
-        public TextureSet1 TextureSet { get; set; } = new TextureSet1();
+        uint magic = bs.ReadUInt32();
+        if (magic != MAGIC)
+            throw new InvalidDataException("Not a tire file (GTTR).");
 
-        public void FromStream(Stream stream)
-        {
-            long basePos = stream.Position;
+        bs.ReadUInt32(); // Reloc ptr
+        bs.ReadUInt32(); // Empty
+        uint fileSize = bs.ReadUInt32();
+        UnkTriStripRelated = bs.ReadUInt32();
+        TriStripFlags = bs.ReadUInt32();
+        Unk3 = bs.ReadSingle();
 
-            var bs = new BinaryStream(stream, ByteConverter.Little);
+        bs.Position = basePos + 0x1C;
+        uint texSetOffset = bs.ReadUInt32();
+        bs.Position = basePos + texSetOffset;
 
-            uint magic = bs.ReadUInt32();
-            if (magic != MAGIC)
-                throw new InvalidDataException("Not a tire file (GTTR).");
+        TextureSet.FromStream(stream);
+    }
 
-            bs.ReadUInt32(); // Reloc ptr
-            bs.ReadUInt32(); // Empty
-            uint fileSize = bs.ReadUInt32();
-            Unk = bs.ReadUInt32();
-            Unk2 = bs.ReadUInt32();
-            Unk3 = bs.ReadSingle();
+    public void Write(Stream stream)
+    {
+        long basePos = stream.Position;
 
-            bs.Position = basePos + 0x1C;
-            uint texSetOffset = bs.ReadUInt32();
-            bs.Position = basePos + texSetOffset;
+        var bs = new BinaryStream(stream, ByteConverter.Little);
+        stream.Position = basePos + 0x20;
+        TextureSet.Serialize(stream);
+        long lastPos = bs.Position;
 
-            TextureSet.FromStream(stream);
-        }
+        bs.Position = basePos;
+        bs.WriteUInt32(MAGIC);
+        bs.WriteUInt32(0);
+        bs.WriteUInt32(0);
+        bs.WriteUInt32((uint)(lastPos - basePos));
+        bs.WriteUInt32(UnkTriStripRelated);
+        bs.WriteUInt32(TriStripFlags);
+        bs.WriteSingle(Unk3);
+        bs.WriteUInt32(0x20); // Offset of texture set
 
-        public void Write(Stream stream)
-        {
-            long basePos = stream.Position;
-
-            var bs = new BinaryStream(stream, ByteConverter.Little);
-            stream.Position = basePos + 0x20;
-            TextureSet.Serialize(stream);
-            long lastPos = bs.Position;
-
-            bs.Position = basePos;
-            bs.WriteUInt32(MAGIC);
-            bs.WriteUInt32(0);
-            bs.WriteUInt32(0);
-            bs.WriteUInt32((uint)(lastPos - basePos));
-            bs.WriteUInt32(Unk);
-            bs.WriteUInt32(Unk2);
-            bs.WriteSingle(Unk3);
-            bs.WriteUInt32(0x20); // Offset of texture set
-
-            bs.Position = lastPos;
-        }
+        bs.Position = lastPos;
     }
 }

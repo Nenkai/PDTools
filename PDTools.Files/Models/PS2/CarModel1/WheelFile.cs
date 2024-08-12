@@ -9,65 +9,67 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Models.PS2.ModelSet;
 
-namespace PDTools.Files.Models.PS2.CarModel1
+namespace PDTools.Files.Models.PS2.CarModel1;
+
+/// <summary>
+/// GT3 Wheel File (GTTW)
+/// </summary>
+public class WheelFile
 {
     /// <summary>
-    /// GT3 Wheel File (GTTW)
+    /// "GTTW" GT ? Wheel
     /// </summary>
-    public class WheelFile
+    public const uint MAGIC = 0x57545447;
+    public const uint HEADER_SIZE = 0x20;
+
+    public uint UnkFlags { get; set; }
+
+    public ModelSet1 ModelSet { get; set; } = new ModelSet1();
+
+    public void FromStream(Stream stream)
     {
-        /// <summary>
-        /// "GTTW" GT ? Wheel
-        /// </summary>
-        public const uint MAGIC = 0x57545447;
+        long basePos = stream.Position;
 
-        // Header size is 0x20
+        var bs = new BinaryStream(stream, ByteConverter.Little);
 
-        public ModelSet1 ModelSet { get; set; } = new ModelSet1();
+        uint magic = bs.ReadUInt32();
+        if (magic != MAGIC)
+            throw new InvalidDataException("Not a wheel file (GTTW).");
 
-        public void FromStream(Stream stream)
-        {
-            long basePos = stream.Position;
+        bs.ReadUInt32(); // Reloc ptr
+        bs.ReadUInt32(); // Empty
+        uint fileSize = bs.ReadUInt32();
+        UnkFlags = bs.ReadUInt32();
 
-            var bs = new BinaryStream(stream, ByteConverter.Little);
+        bs.Position = basePos + 0x1C;
+        uint texSetOffset = bs.ReadUInt32();
+        bs.Position = basePos + texSetOffset;
 
-            uint magic = bs.ReadUInt32();
-            if (magic != MAGIC)
-                throw new InvalidDataException("Not a wheel file (GTTW).");
+        ModelSet.FromStream(stream);
+    }
 
-            bs.ReadUInt32(); // Reloc ptr
-            bs.ReadUInt32(); // Empty
-            uint fileSize = bs.ReadUInt32();
+    public void Write(Stream stream)
+    {
+        long basePos = stream.Position;
 
-            bs.Position = basePos + 0x1C;
-            uint texSetOffset = bs.ReadUInt32();
-            bs.Position = basePos + texSetOffset;
+        var bs = new BinaryStream(stream, ByteConverter.Little);
+        stream.Position = basePos + 0x20;
 
-            ModelSet.FromStream(stream);
-        }
+        var modelSet1Serializer = new ModelSet1Serializer(ModelSet);
+        modelSet1Serializer.Write(stream);
 
-        public void Write(Stream stream)
-        {
-            long basePos = stream.Position;
+        long lastPos = bs.Position;
 
-            var bs = new BinaryStream(stream, ByteConverter.Little);
-            stream.Position = basePos + 0x20;
+        bs.Position = basePos;
+        bs.WriteUInt32(MAGIC);
+        bs.WriteUInt32(0);
+        bs.WriteUInt32(0);
+        bs.WriteUInt32((uint)(lastPos - basePos));
+        bs.WriteUInt32(UnkFlags);
 
-            var modelSet1Serializer = new ModelSet1Serializer(ModelSet);
-            modelSet1Serializer.Write(stream);
+        bs.Position = basePos + 0x1C;
+        bs.WriteUInt32(0x20); // Offset of model set
 
-            long lastPos = bs.Position;
-
-            bs.Position = basePos;
-            bs.WriteUInt32(MAGIC);
-            bs.WriteUInt32(0);
-            bs.WriteUInt32(0);
-            bs.WriteUInt32((uint)(lastPos - basePos));
-
-            bs.Position = basePos + 0x1C;
-            bs.WriteUInt32(0x20); // Offset of model set
-
-            bs.Position = lastPos;
-        }
+        bs.Position = lastPos;
     }
 }
