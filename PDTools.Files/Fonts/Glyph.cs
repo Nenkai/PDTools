@@ -65,7 +65,7 @@ namespace PDTools.Files.Fonts
 
                 PathBuilder path = new PathBuilder();
 
-                var pen = new Pen(new SolidBrush(Color.Black), 2);
+                var pen = new SolidPen(new SolidBrush(Color.Black), 2);
                 for (int i1 = 0; i1 < Points.Data.Count; i1++)
                 {
                     IGlyphShapeData i = Points.Data[i1];
@@ -123,7 +123,7 @@ namespace PDTools.Files.Fonts
                     ctx.Draw(Color.Red, 5, path.Build());
                 }
 
-                ctx.DrawLines(Color.Red, 1f, new PointF[]
+                ctx.DrawLine(Color.Red, 1f, new PointF[]
                 {
                     new PointF(Points.XMin, Points.YMin),
                 });
