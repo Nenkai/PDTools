@@ -7,11 +7,9 @@ using System.Numerics;
 using System.IO;
 
 using Syroot.BinaryData;
-
-using PDTools.Files;
 using PDTools.Files.Models.PS3.ModelSet3;
 
-namespace PDTools.Files.Courses.CourseData;
+namespace PDTools.Files.Courses.PS3;
 
 /// <summary>
 /// Represents a course data file. (Disposable object)
@@ -52,7 +50,7 @@ public class CourseDataFile : IDisposable
 
         for (int i = 0; i < tocEntryCount; i++)
         {
-            bs.Position = 0x40 + (i * 0x10);
+            bs.Position = 0x40 + i * 0x10;
             uint type = bs.ReadUInt32();
             uint alignment = bs.ReadUInt32();
             uint dataStart = bs.ReadUInt32();
