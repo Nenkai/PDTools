@@ -73,8 +73,6 @@ namespace PDTools.Files.Models.PS2.ModelSet
 
         public void FromStream(BinaryStream bs, long mdlBasePos)
         {
-            ModelSet2Model model = new ModelSet2Model();
-
             bs.Read1Byte();
             byte boundCount = bs.Read1Byte();
             bs.Position += 2;

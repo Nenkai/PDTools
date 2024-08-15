@@ -34,7 +34,7 @@ public class TextureSetBuilder
 
     /* Used to keep track of GS blocks without texture data allocated
      * So that we can put other textures's data in them */
-    private List<ushort> _unusedGsBlocksIndices = [];
+    private Dictionary<int, GSBlock> _unusedGsBlocksIndices = [];
 
     /* Used to keep track of all GS blocks we've used up */
     private List<ushort> _usedGsBlocksIndices = [];
@@ -276,6 +276,15 @@ public class TextureSetBuilder
         }
     }
 
+    /// <summary>
+    /// Attempts to fit the specified palette into unused blocks. Otherwise allocates new blocks.
+    /// </summary>
+    /// <param name="textureFormat"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="palette"></param>
+    /// <param name="reuseOldPaletteLocations"></param>
+    /// <returns></returns>
     private (ushort CBP, byte CSA) FitPaletteToGSMemory(SCE_GS_PSM textureFormat, int width, int height, Rgba32[] palette, bool reuseOldPaletteLocations = false)
     {
         if (reuseOldPaletteLocations)
@@ -287,22 +296,49 @@ public class TextureSetBuilder
                 if (pgluTexture.tex0.PSM == textureFormat && _textures[i].Palette.AsSpan().SequenceEqual(palette))
                 {
                     // return its cbp - Save on size
-                    return (pgluTexture.tex0.CBP_ClutBlockPointer, 0); // TODO csa
+                    return (pgluTexture.tex0.CBP_ClutBlockPointer, pgluTexture.tex0.CSA_ClutEntryOffset);
                 }
             }
         }
 
+        /* The game cheats a bit with "CSA" - is it even used for its original purpose?
+         * "CSA" here is used as an offset WITHIN the block itself
+         * So a block (256 bytes) can store 4 PSMT4 palettes (64 * 4)
+         * CSA goes every 32 */
+
         List<ushort> usedBlocksOfTexture = GSPixelFormat.PSM_CT32.GetUsedBlocks(width, height);
-        int idx = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture);
+        int size = Tex1Utils.GetDataSize(width, height, SCE_GS_PSM.SCE_GS_PSMCT32);
+        int csa = 0;
+        byte csaTakenSpace = (byte)Math.Min(size / 32, 8);
+        int idx = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture, csaTakenSpace);
 
         ushort cbp;
         if (idx != -1)
         {
             cbp = (ushort)idx;
-            for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+
+            // Is this a palette that fits in one singular block?
+            if (usedBlocksOfTexture.Count == 1)
             {
-                _unusedGsBlocksIndices.Remove((ushort)(idx + usedBlocksOfTexture[i]));
-                _usedGsBlocksIndices.Add((ushort)(idx + usedBlocksOfTexture[i]));
+                GSBlock block = _unusedGsBlocksIndices[idx + usedBlocksOfTexture[0]];
+                csa = block.CurrentCSA;
+
+                block.CurrentCSA += csaTakenSpace;
+                if (block.CurrentCSA >= 8)
+                {
+                    // Block CSA is 8 (32 * 8 = 256 bytes). This block is filled, move on
+                    _unusedGsBlocksIndices.Remove(block.Index);
+                    _usedGsBlocksIndices.Add((ushort)block.Index);
+                    _tbp_Textures++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+                {
+                    _unusedGsBlocksIndices.Remove((ushort)(idx + usedBlocksOfTexture[i]));
+                    _usedGsBlocksIndices.Add((ushort)(idx + usedBlocksOfTexture[i]));
+                }
             }
         }
         else
@@ -310,8 +346,18 @@ public class TextureSetBuilder
             cbp = _tbp_Textures;
             _tbp_Textures += (ushort)usedBlocksOfTexture.Count;
 
-            for (int i = 0; i < usedBlocksOfTexture.Count; i++)
-                _usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[i]));
+            if (usedBlocksOfTexture.Count == 1)
+            {
+                csa = csaTakenSpace;
+
+                GSBlock partialFilledBlock = new GSBlock(_tbp_Textures + usedBlocksOfTexture[0], csaTakenSpace);
+                _unusedGsBlocksIndices.Add(partialFilledBlock.Index, partialFilledBlock);
+            }
+            else
+            {
+                for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+                    _usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[i]));
+            }
         }
 
         switch (textureFormat)
@@ -320,18 +366,20 @@ public class TextureSetBuilder
                 _gsMemory.WriteTexPSMCT32(cbp, 1,
                     0, 0,
                     16, 16,
-                    MemoryMarshal.Cast<Rgba32, uint>(palette));
+                    MemoryMarshal.Cast<Rgba32, uint>(palette),
+                    csa * 32);
                 break;
 
             case SCE_GS_PSM.SCE_GS_PSMT4:
                 _gsMemory.WriteTexPSMCT32(cbp, 1,
                     0, 0,
                     8, 2,
-                    MemoryMarshal.Cast<Rgba32, uint>(palette));
+                    MemoryMarshal.Cast<Rgba32, uint>(palette),
+                    csa * 32);
                 break;
         }
 
-        return (cbp, 0); // TODO CSA
+        return (cbp, (byte)csa);
     }
 
     private void WriteClutPatches()
@@ -402,7 +450,7 @@ public class TextureSetBuilder
                 // We were able to fit the texture in unused blocks
                 for (int i = 0; i < usedBlocksOfTexture.Count; i++)
                 {
-                    if (_unusedGsBlocksIndices.Contains((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i])))
+                    if (_unusedGsBlocksIndices.ContainsKey((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i])))
                         _unusedGsBlocksIndices.Remove((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
 
                     _usedGsBlocksIndices.Add((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
@@ -443,7 +491,7 @@ public class TextureSetBuilder
                 {
                     for (int i = 0; i < usedBlocksOfTexture.Count; i++)
                     {
-                        if (_unusedGsBlocksIndices.Contains((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i])))
+                        if (_unusedGsBlocksIndices.ContainsKey((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i])))
                             _unusedGsBlocksIndices.Remove((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
 
                         _usedGsBlocksIndices.Add((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
@@ -467,7 +515,10 @@ public class TextureSetBuilder
             _lastFreeVerticalBlock = (ushort)(_tbp_Textures + texture.FirstFreeVerticalBlock);
 
             for (int i = 0; i < texture.UnusedGSBlocks.Count; i++)
-                _unusedGsBlocksIndices.Add((ushort)(_tbp_Textures + texture.UnusedGSBlocks[i]));
+            {
+                ushort idx = (ushort)(_tbp_Textures + texture.UnusedGSBlocks[i]);
+                _unusedGsBlocksIndices.Add(idx, new GSBlock(idx, 0));
+            }
 
             for (int j = 0; j < usedBlocksOfTexture.Count; j++)
                 _usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[j]));
@@ -560,27 +611,35 @@ public class TextureSetBuilder
     /// <summary>
     /// Returns whether the specified block list can fit in unused blocks.
     /// </summary>
-    /// <param name="usedBlocksOfTexture"></param>
+    /// <param name="usedBlocksOfTexture">Blocks to fit</param>
+    /// <param name="csa">CSA to fit in a block</param>
     /// <returns>Block index start. -1 if it could not be fitted.</returns>
-    private int CanFitBlocksInUnusedBlocks(List<ushort> usedBlocksOfTexture)
+    private int CanFitBlocksInUnusedBlocks(List<ushort> usedBlocksOfTexture, int csa = 8)
     {
         int unusedBlockFitIndex = -1;
 
-        for (int i = 0; i < _unusedGsBlocksIndices.Count; i++)
+        foreach (GSBlock block in _unusedGsBlocksIndices.Values)
         {
-            ushort start = _unusedGsBlocksIndices[i];
+            // Special case when a texture/palette fits into a single block where we can
+            // tweak the csa register to point to it
+            if (usedBlocksOfTexture.Count == 1 && block.CurrentCSA + csa <= 8)
+            {
+                // We can reuse a partially filled block using CSA
+                return block.Index;
+            }
+
             int j = 0;
             for (j = 0; j < usedBlocksOfTexture.Count; j++)
             {
-                int blockIdx = start + usedBlocksOfTexture[j];
+                int blockIdx = block.Index + usedBlocksOfTexture[j];
 
-                if (!_unusedGsBlocksIndices.Contains((ushort)blockIdx))
+                if (!_unusedGsBlocksIndices.ContainsKey((ushort)blockIdx))
                     break;
             }
 
             if (j == usedBlocksOfTexture.Count)
             {
-                unusedBlockFitIndex = start;
+                unusedBlockFitIndex = block.Index;
                 break;
             }
         }
@@ -781,5 +840,17 @@ public class ClutPatchTask
     public ClutPatchTask(Rgba32[] palette)
     {
         Palette = palette;
+    }
+}
+
+public class GSBlock
+{
+    public int Index { get; set; }
+    public byte CurrentCSA { get; set; }
+
+    public GSBlock(int index, byte currentCSA)
+    {
+        Index = index;
+        CurrentCSA = currentCSA;
     }
 }

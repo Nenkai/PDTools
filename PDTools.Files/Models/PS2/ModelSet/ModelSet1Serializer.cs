@@ -175,7 +175,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
                 bs.WriteUInt32((uint)(lastDataOffset - baseModelSetOffset));
 
                 bs.Position = lastDataOffset;
-                ModelSet1Model model = _modelSet.Models[i];
+                ModelSet1Model model = (ModelSet1Model)_modelSet.Models[i];
                 model.Write(bs);
 
                 lastDataOffset = bs.Position;

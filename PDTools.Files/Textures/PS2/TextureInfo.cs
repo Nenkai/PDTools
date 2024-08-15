@@ -48,6 +48,37 @@ public class GSTransfer
     // Used for serializing
     public byte[] Data { get; set; }
 
+    /// <summary>
+    /// Read old transfer data (from GT2K)
+    /// </summary>
+    /// <param name="bs"></param>
+    public void ReadOld(BinaryStream bs)
+    {
+        BP = bs.ReadUInt16();
+        BW = bs.Read1Byte();
+        Format = (SCE_GS_PSM)bs.ReadByte();
+        bs.ReadUInt32(); // Removed in later games
+        Width = bs.ReadUInt16();
+        Height = bs.ReadUInt16();
+
+        Data = bs.ReadBytes(Tex1Utils.GetDataSize(Width, Height, Format));
+        if (Format == SCE_GS_PSM.SCE_GS_PSMCT24)
+        {
+            // PSMCT24 ACTUALLY only contains 24 bpp in the transfer data, alter it
+            // Used by GT2K opening/logo.img
+            byte[] newData = new byte[Width * Height * 4];
+            for (int i = 0; i < Data.Length / 3; i++)
+            {
+                newData[i*4] = Data[(i*3)];
+                newData[i*4+1] = Data[(i*3)+1];
+                newData[i*4+2] = Data[(i*3)+2];
+                newData[i*4+3] = 0x80; // As per GS documentation, Alpha is always 0x80 in PSMCT24
+            }
+
+            Data = newData;
+        }
+    }
+
     public void Read(BinaryStream bs, long texSetBasePos)
     {
         DataOffset = bs.ReadUInt32();

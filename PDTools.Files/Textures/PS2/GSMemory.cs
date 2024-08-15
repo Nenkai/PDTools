@@ -46,7 +46,7 @@ public class GSMemory
     /// <param name="rrw"></param>
     /// <param name="rrh"></param>
     /// <param name="data">Input data as PSMCT32</param>
-    public void WriteTexPSMCT32(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<uint> data)
+    public void WriteTexPSMCT32(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<uint> data, int offset = 0)
     {
         Span<uint> src = data;
         int startBlockPos = dbp * 64;
@@ -75,7 +75,7 @@ public class GSMemory
                 int cy = by - column * 2;
                 int cw = GSPixelFormat.PSM_CT32.columnWord32[cx + cy * 8];
 
-                _gsMemory[startBlockPos + page * 2048 + block * 64 + column * 16 + cw] = src[0];
+                _gsMemory[(startBlockPos + page * 2048 + block * 64 + column * 16 + cw) + (offset / sizeof(int))] = src[0];
                 src = src[1..];
             }
         }
@@ -91,7 +91,7 @@ public class GSMemory
     /// <param name="rrw"></param>
     /// <param name="rrh"></param>
     /// <param name="data">Where the data will be stored</param>
-    public void ReadTexPSMCT32(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<uint> data)
+    public void ReadTexPSMCT32(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<uint> data, int offset = 0)
     {
         Span<uint> src = data;
         int startBlockPos = dbp * 64;
@@ -120,7 +120,7 @@ public class GSMemory
                 int cy = by - column * 2;
                 int cw = GSPixelFormat.PSM_CT32.columnWord32[cx + cy * 8];
 
-                src[0] = _gsMemory[startBlockPos + page * 2048 + block * 64 + column * 16 + cw];
+                src[0] = _gsMemory[(startBlockPos + page * 2048 + block * 64 + column * 16 + cw) + (offset / sizeof(int))];
                 src = src[1..];
             }
         }
@@ -313,7 +313,7 @@ public class GSMemory
     /// <param name="rrw"></param>
     /// <param name="rrh"></param>
     /// <param name="data">Where the data will be stored</param>
-    public void ReadTexPSMCT16(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<ushort> data)
+    public void ReadTexPSMCT16(int dbp, int dbw, int dsax, int dsay, int rrw, int rrh, Span<ushort> data, int offset = 0)
     {
         //dbw >>= 1;
         Span<ushort> src = data;
@@ -344,7 +344,9 @@ public class GSMemory
                 int cw = columnWord16[cx + cy * 16];
                 int ch = columnHalf16[cx + cy * 16];
 
-                Span<ushort> dst = MemoryMarshal.Cast<uint, ushort>(_gsMemory.AsSpan(startBlockPos + page * 2048 + block * 64 + column * 16 + cw));
+                int location = (startBlockPos + page * 2048 + block * 64 + column * 16 + cw) + (offset / sizeof(int));
+                Span<ushort> dst = MemoryMarshal.Cast<uint, ushort>(_gsMemory.AsSpan(location));
+
                 src[0] = dst[ch];
                 src = src[1..];
             }

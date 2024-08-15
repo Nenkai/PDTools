@@ -22,7 +22,7 @@ public static class Tex1Utils
         return psm switch
         {
             SCE_GS_PSM.SCE_GS_PSMCT32 => 32,
-            SCE_GS_PSM.SCE_GS_PSMCT24 => 32, // RGB24, uses 24-bit per pixel with the upper 8 bit unused.
+            SCE_GS_PSM.SCE_GS_PSMCT24 => 24, // RGB24, uses 24-bit per pixel with the upper 8 bit unused.
             SCE_GS_PSM.SCE_GS_PSMCT16 => 16, // RGBA16 unsigned, pack two pixels in 32-bit in little endian order.
             SCE_GS_PSM.SCE_GS_PSMCT16S => 16, // RGBA16 signed, pack two pixels in 32-bit in little endian order.
             SCE_GS_PSM.SCE_GS_PSMT8 => 8, // 8-bit indexed, packing 4 pixels per 32-bit.

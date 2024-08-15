@@ -15,6 +15,7 @@ using PDTools.Files.Models.PS2.Commands;
 using SixLabors.ImageSharp;
 using System.Reflection;
 using System.Xml.Linq;
+using PDTools.Files.Models.PS3.ModelSet3;
 
 namespace PDTools.Files.Models.PS2.ModelSet;
 
@@ -27,16 +28,6 @@ public class ModelSet1 : ModelSetPS2Base
     /// Magic - "GTM1".
     /// </summary>
     public const uint MAGIC = 0x314D5447;
-
-    /// <summary>
-    /// Models in this model set. The game will iterate through all of these & their commands to render on every tick.
-    /// </summary>
-    public List<ModelSet1Model> Models { get; set; } = [];
-
-    /// <summary>
-    /// Shapes aka meshes.
-    /// </summary>
-    public List<PGLUshape> Shapes { get; set; } = [];
 
     /// <summary>
     /// Materials, for meshes.
@@ -182,105 +173,9 @@ public class ModelSet1 : ModelSetPS2Base
         }
     }
 
-    //////////////////////////////////
-    /// Interpreter for dumping
-    //////////////////////////////////
-   
-    public List<Dictionary<string, PGLUshapeConverted>> DumpModelLODs(int modelIndex, string outdir)
+    public override int GetNumModels()
     {
-        ModelCommandContext context = new()
-        {
-            ModelIndex = modelIndex,
-            OutputDir = outdir
-        };
-
-        ModelSet1Model model = Models[modelIndex];
-
-        ProcessCommands(context, model.Commands);
-        return context.LODToShapes;
-    }
-
-    private void ProcessCommands(ModelCommandContext context, List<ModelSetupPS2Command> cmds)
-    {
-        foreach (ModelSetupPS2Command command in cmds)
-        {
-            switch (command.Opcode)
-            {
-                case ModelSetupPS2Opcode.BBoxRender:
-                    ProcessCommands(context, (command as Cmd_BBoxRender).CommandsOnRender);
-                    break;
-
-                case ModelSetupPS2Opcode.LODSelect:
-                    var lodSel = command as Cmd_LODSelect;
-                    for (int i = 0; i < lodSel.CommandsPerLOD.Count; i++)
-                    {
-                        context.SetLOD(i);
-
-                        ProcessCommands(context, lodSel.CommandsPerLOD[i]);
-                    }
-                    break;
-
-                case ModelSetupPS2Opcode.CallModelCallback:
-                    var callbackCmd = command as Cmd_CallModelCallback;
-                    if (callbackCmd.Parameter == 0) // Tail Lamp
-                    {
-                        ProcessCommands(context, callbackCmd.Default);
-
-                        context.ExtraShapeName = "tail_lamp_off";
-                        ProcessCommands(context, callbackCmd.CommandsPerBranch[0]);
-
-                        context.ExtraShapeName = "tail_lamp_on";
-                        ProcessCommands(context, callbackCmd.CommandsPerBranch[1]);
-
-                        context.ExtraShapeName = null;
-                    }
-
-                    break;
-
-                case ModelSetupPS2Opcode.pgluSetTexTable_Byte:
-                    byte index = (command as Cmd_pgluSetTexTable_Byte).TexSetTableIndex;
-                    context.SetTexTable(index);
-                    break;
-
-                case ModelSetupPS2Opcode.pgluCallShape_Byte:
-                    {
-                        if (context.CurrentLOD == -1)
-                        {
-                            context.ModelName = $"model{context.ModelIndex}";
-                        }
-                        else
-                        {
-                            context.ModelName = $"model{context.ModelIndex}.lod{context.CurrentLOD}";
-                        }
-
-
-                        var callShape = (command as Cmd_pgluCallShapeByte);
-                        int shapeIndex = callShape.ShapeIndex;
-                        PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
-                        shapeData.ShapeIndex = shapeIndex;
-
-                        string name = $"shape{shapeIndex}";
-                        if (!string.IsNullOrEmpty(context.ExtraShapeName))
-                            name += $"_{context.ExtraShapeName}";
-                        context.AddShape(name, shapeData);
-                    }
-                    break;
-
-                case ModelSetupPS2Opcode.pgl_53:
-                    {
-                        var callShape = (command as Cmd_Unk53);
-                        int shapeIndex = callShape.ShapeIndex;
-                        PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
-                        shapeData.ShapeIndex = shapeIndex;
-
-                        string name = $"shape{shapeIndex}";
-                        if (!string.IsNullOrEmpty(context.ExtraShapeName))
-                            name += $"_{context.ExtraShapeName}";
-                        context.AddShape(name, shapeData);
-                    }
-                    break;
-            }
-        }
+        return Models.Count;
     }
 
     public override List<TextureSet1> GetTextureSetList()
@@ -288,10 +183,20 @@ public class ModelSet1 : ModelSetPS2Base
         return TextureSets;
     }
 
-    public override int AddShape(PGLUshape shape)
+    public override uint AddShape(PGLUshape shape)
     {
         Shapes.Add(shape);
-        return Shapes.Count - 1;
+        return (uint)(Shapes.Count - 1);
+    }
+
+    public override PGLUshape GetShape(int shapeIndex)
+    {
+        return Shapes[shapeIndex];
+    }
+
+    public override int GetNumShapes()
+    {
+        return Shapes.Count;
     }
 
     public override int AddMaterial(PGLUmaterial material)
@@ -303,5 +208,15 @@ public class ModelSet1 : ModelSetPS2Base
     public override int GetMaterialCount()
     {
         return Materials.Count;
+    }
+
+    public override List<PGLUmaterial> GetVariationMaterials(int varIndex)
+    {
+        return VariationMaterialsTable[varIndex];
+    }
+
+    public override int GetNumVariations()
+    {
+        return Math.Max(TextureSets[0].ClutPatchSet.Count, 1);
     }
 }

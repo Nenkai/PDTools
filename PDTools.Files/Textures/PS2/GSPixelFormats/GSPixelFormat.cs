@@ -188,4 +188,6 @@ public abstract class GSPixelFormat
     {
         return (int)MiscUtils.AlignValue((uint)x, (uint)PageWidth);
     }
+
+    public abstract (int Width, int Height) GetPaletteDimensions();
 }

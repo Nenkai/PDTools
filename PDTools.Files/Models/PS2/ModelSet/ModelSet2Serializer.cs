@@ -170,7 +170,7 @@ namespace PDTools.Files.Models.PS2.ModelSet
             {
                 long modelOffset = modelTableOffset + (i * ModelSet2Model.GetSize());
                 bs.Position = modelOffset;
-                ModelSet2Model model = _modelSet.Models[i];
+                ModelSet2Model model = (ModelSet2Model)_modelSet.Models[i];
                 model.Write(bs);
 
                 // Write bounds

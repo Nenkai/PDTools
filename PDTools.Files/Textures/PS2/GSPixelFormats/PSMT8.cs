@@ -77,4 +77,9 @@ public class PSMT8 : GSPixelFormat
             1, 1, 1, 1, 1, 1, 1, 1,  3, 3, 3, 3, 3, 3, 3, 3,
             1, 1, 1, 1, 1, 1, 1, 1,  3, 3, 3, 3, 3, 3, 3, 3
     };
+
+    public override (int Width, int Height) GetPaletteDimensions()
+    {
+        return (16, 16);
+    }
 }

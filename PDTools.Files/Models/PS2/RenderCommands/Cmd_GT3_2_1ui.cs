@@ -15,7 +15,7 @@ namespace PDTools.Files.Models.PS2.Commands
     // Refer to 0x250688 with param 2 (GT3 EU)
     public class Cmd_GT3_2_1ui : ModelSetupPS2Command
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_3_1ui;
+        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglGT3_2_1ui;
 
         public float Color { get; set; }
 

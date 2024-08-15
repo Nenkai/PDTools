@@ -52,4 +52,9 @@ public class PSM_CT32 : GSPixelFormat
         0,  1,  4,  5,  8,  9, 12, 13,
         2,  3,  6,  7, 10, 11, 14, 15
     };
+
+    public override (int Width, int Height) GetPaletteDimensions()
+    {
+        throw new NotSupportedException("PSMCT32 does not support palettes.");
+    }
 }

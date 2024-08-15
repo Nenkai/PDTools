@@ -57,7 +57,8 @@ public class sceGsTex0
     public ulong CSM_ClutStorageMode;
 
     /// <summary>
-    /// CLUT entry offset - CSA = Offset / 16, In CSM2, CSA must be 0
+    /// Original desc: CLUT entry offset - CSA = Offset / 16, In CSM2, CSA must be 0<br/>
+    /// GT uses this as an offset into the block, 32 bytes each (remember: one block = 256 bytes)
     /// </summary>
     public byte CSA_ClutEntryOffset;
 

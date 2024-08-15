@@ -41,11 +41,11 @@ namespace PDTools.Files.Models.PS2.Commands
            // 38 same
            // 39 same
         */
-        public ushort Parameter { get; set; }
+        public ModelCallbackParameter Parameter { get; set; }
         
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            Parameter = bs.ReadUInt16();
+            Parameter = (ModelCallbackParameter)bs.ReadUInt16();
 
             ushort branchCount = bs.Read1Byte();
 
@@ -112,7 +112,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteUInt16(Parameter);
+            bs.WriteUInt16((ushort)Parameter);
             bs.WriteByte((byte)(CommandsPerBranch.Count));
 
             long tableOffset = bs.Position;
@@ -174,8 +174,28 @@ namespace PDTools.Files.Models.PS2.Commands
         }
     }
 
-    public enum ModelCallbackParameter
+    public enum ModelCallbackParameter : ushort
     {
         IsTailLampActive = 0,
+
+        SetWheelSpeed_1 = 1,
+        SetWheelSpeed_2 = 2,
+        SetWheelSpeed_3 = 3,
+        SetWheelSpeed_4 = 4,
+
+        SetSteering = 5,
+        SetUnk_6 = 6,
+        GetTimeZone = 7,
+        RotateZ = 8,
+
+        RenderTire_1 = 15,
+        RenderTire_2 = 16,
+        RenderTire_3 = 17,
+        RenderTire_4 = 18,
+
+        RenderWheel_1 = 36,
+        RenderWheel_2 = 37,
+        RenderWheel_3 = 38,
+        RenderWheel_4 = 39,
     }
 }

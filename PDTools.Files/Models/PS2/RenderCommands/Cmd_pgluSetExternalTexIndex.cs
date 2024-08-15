@@ -15,6 +15,13 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public byte TexSetIndex { get; set; }
 
+        public Cmd_pgluSetExternalTexIndex() { }
+
+        public Cmd_pgluSetExternalTexIndex(byte index)
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, 16, "External tex set index must be below 0-15.");
+            TexSetIndex = index;
+        }
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             TexSetIndex = bs.Read1Byte();

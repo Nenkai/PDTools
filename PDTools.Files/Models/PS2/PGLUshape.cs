@@ -6,9 +6,9 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-using Syroot.BinaryData;
+using PDTools.Files.Models.PS2.Commands;
 
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2;
 
@@ -27,10 +27,10 @@ public class PGLUshape
 
     public void FromStream(BinaryStream bs)
     {
-        long shapeBasePos = bs.Position;
+        long basePos = bs.Position;
 
         bs.ReadInt32(); // Reloc ptr
-        uint size = bs.ReadUInt32();
+        uint unkSizeMaybe = bs.ReadUInt32(); // TODO: Investigate this - might actually be a pointer to something!
 
         byte bits = bs.Read1Byte();
         Unk1 = (byte)(bits & 0b11111);
@@ -49,7 +49,7 @@ public class PGLUshape
 
         for (var i = 0; i < vifChunksCount; i++)
         {
-            bs.Position = shapeBasePos + VIFDescriptors[i].VIFDataOffset;
+            bs.Position = basePos + VIFDescriptors[i].VIFDataOffset;
             var packet = VIFPacket.FromStream(bs, VIFDescriptors[i].DMATagQuadwordCount);
             VIFPackets.Add(packet);
         }
@@ -107,13 +107,21 @@ public class PGLUshape
 
         for (var j = 0; j < VIFPackets.Count; j++)
         {
-            int startFace = packetFaceStart;
             int faceI = 0;
 
             VIFPacket packet = VIFPackets[j];
-            VIFCommand vertCommand = packet.Commands.First(e => e.VUAddr == 0xC000 || e.VUAddr == 0x8000);
-            VIFCommand uvCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[])) ||
-                                                              (e.VUAddr == 0x8040 && e.UnpackData.Any(a => a is short[])) );
+            VIFCommand vertCommand = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC000 || // Regular
+                                                                         e.VUAddr == 0x8000);  // GT4 (compressed)
+
+            VIFCommand uvCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[])) ||  // Regular 
+                                                                       (e.VUAddr == 0x8040 && e.UnpackData.Any(a => a is short[]))); // GT4 (compressed)
+
+            VIFCommand normalsCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 ||   // Regular
+                                                                             e.VUAddr == 0xC080) &&  // External Texture
+                                                                             e.UnpackData.Any(a => a is int[] arr && arr.Length == 3));
+
+            VIFCommand vertColors = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC080 && e.UnpackData.Any(a => a is byte[]));
+
 
             VIFCommand resets = packet.Commands.Find(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is byte[]));
 
@@ -133,9 +141,9 @@ public class PGLUshape
                 }
                 else if (vertCommand.UnpackData[l] is int[] vertFloatArr)
                 {
-                    var xf = BitConverter.Int32BitsToSingle(vertFloatArr[0]);
-                    var yf = BitConverter.Int32BitsToSingle(vertFloatArr[1]);
-                    var zf = BitConverter.Int32BitsToSingle(vertFloatArr[2]);
+                    float xf = BitConverter.Int32BitsToSingle(vertFloatArr[0]);
+                    float yf = BitConverter.Int32BitsToSingle(vertFloatArr[1]);
+                    float zf = BitConverter.Int32BitsToSingle(vertFloatArr[2]);
                     shapeData.Vertices.Add(new Vector3(xf, yf, zf));
                 }
             }
@@ -146,17 +154,38 @@ public class PGLUshape
                 {
                     if (uvCommand.UnpackData[l] is int[] uvArr && uvArr.Length == 2) // GT3 float UVs
                     {
-                        var u = BitConverter.Int32BitsToSingle(uvArr[0]);
-                        var v = BitConverter.Int32BitsToSingle(uvArr[1]);
+                        float u = BitConverter.Int32BitsToSingle(uvArr[0]);
+                        float v = BitConverter.Int32BitsToSingle(uvArr[1]);
 
                         shapeData.UVs.Add(new Vector2(u, 1.0f - v));
                     }
                     else if (uvCommand.UnpackData[l] is short[] uvShortArr && uvShortArr.Length == 2) // GT4
                     {
-                        var u = uvShortArr[0] / 4096f;
-                        var v = uvShortArr[1] / 4096f;
+                        float u = uvShortArr[0] / 4096f;
+                        float v = uvShortArr[1] / 4096f;
                         shapeData.UVs.Add(new Vector2(u, 1.0f - v));
                     }
+                }
+            }
+
+            if (normalsCommand is not null)
+            {
+                for (var l = 0; l < normalsCommand.UnpackData.Count; l++)
+                {
+                    var norms = (int[])normalsCommand.UnpackData[l];
+                    float xf = BitConverter.Int32BitsToSingle(norms[0]);
+                    float yf = BitConverter.Int32BitsToSingle(norms[1]);
+                    float zf = BitConverter.Int32BitsToSingle(norms[2]);
+                    shapeData.Normals.Add(new Vector3(xf, yf, zf));
+                }
+            }
+
+            if (vertColors is not null)
+            {
+                for (var l = 0; l < vertColors.UnpackData.Count; l++)
+                {
+                    var colors = (byte[])vertColors.UnpackData[l];
+                    shapeData.Colors.Add([colors[0], colors[1], colors[2], colors[3]]);
                 }
             }
 
@@ -206,6 +235,7 @@ public class PGLUshape
             packetFaceStart += vertCommand.Num;
         }
 
+        shapeData.UsesExternalTexture = VIFDescriptors.Any(e => e.pgluTextureIndex == VIFDescriptor.EXTERNAL_TEXTURE);
         return shapeData;
     }
 }
@@ -217,24 +247,25 @@ public class PGLUshapeConverted
     /// </summary>
     public int ShapeIndex { get; set; }
 
-    public int MaterialIndex { get; set; }
+    public bool UsesExternalTexture { get; set; }
     public int TextureSetIndex { get; set; }
-    public int TextureIndex { get; set; }
     public List<Vector3> Vertices { get; set; } = [];
     public List<(int A, int B, int C, int MatIdx, int TexId)> Faces { get; set; } = [];
     public List<Vector2> UVs { get; set; } = [];
     public List<Vector3> Normals { get; set; } = [];
+    public List<byte[]> Colors { get; set; } = [];
+    public List<ModelSetupPS2Command> RenderCommands { get; set; }
 
     /// <summary>
     /// Dumps the shape to a obj file
     /// </summary>
     /// <param name="file"></param>
-    public void DumpToObjFile(string file)
+    public void DumpToObjFile(string file, List<PGLUmaterial> materials = null)
     {
         using var objWriter = new StreamWriter(Path.ChangeExtension(file, ".obj"));
         using var mtlWriter = new StreamWriter(Path.ChangeExtension(file, ".mtl"));
 
-        DumpToObj(objWriter, mtlWriter, 0, 0, 0);
+        DumpToObj(objWriter, mtlWriter, 0, 0, 0, 0, materials);
     }
 
     /// <summary>
@@ -245,14 +276,25 @@ public class PGLUshapeConverted
     /// <param name="texSetIndex"></param>
     /// <param name="faceIdxStart"></param>
     /// <param name="vtIdxStart"></param>
-    public void DumpToObj(StreamWriter objWriter, StreamWriter matWriter, int texSetIndex, int faceIdxStart, int vtIdxStart)
+    public void DumpToObj(StreamWriter objWriter, StreamWriter matWriter, int texSetIndex, int faceIdxStart, int vnIdxStart, int vtIdxStart, List<PGLUmaterial> materials)
     {
         for (int i = 0; i < Vertices.Count; i++)
-            objWriter.WriteLine($"v {Vertices[i].X} {Vertices[i].Y} {Vertices[i].Z}");
+        {
+            objWriter.Write($"v {Vertices[i].X} {Vertices[i].Y} {Vertices[i].Z}");
+            if (Colors.Count == Vertices.Count)
+            {
+                objWriter.Write($" {Colors[i][0] * (1.0f / 255.0f)} {Colors[i][1] * (1.0f / 255.0f)} {Colors[i][2] * (1.0f / 255.0f)}"); // Alpha not supported
+            }
+
+            objWriter.WriteLine();
+        }
         objWriter.WriteLine();
 
         for (int i = 0; i < UVs.Count; i++)
             objWriter.WriteLine($"vt {UVs[i].X} {UVs[i].Y}");
+
+        for (int i = 0; i < Normals.Count; i++)
+            objWriter.WriteLine($"vn {Normals[i].X} {Normals[i].Y} {Normals[i].Z}");
 
         objWriter.WriteLine();
 
@@ -266,11 +308,23 @@ public class PGLUshapeConverted
                 currentTexId = Faces[i].TexId;
 
                 objWriter.WriteLine($"usemtl Mat{currentMatId - 1}_Tex{currentTexId - 1}");
-
                 matWriter.WriteLine($"newmtl Mat{currentMatId - 1}_Tex{currentTexId - 1}");
 
-                if (Faces[i].TexId != 0 && Faces[i].TexId != 511) // External
+                if (currentMatId != 0 && materials is not null)
+                {
+                    var material = materials[currentMatId - 1];
+                    matWriter.WriteLine($"Ka {material.Ambient.R} {material.Ambient.G} {material.Ambient.B} {material.Ambient.A}");
+                    matWriter.WriteLine($"Kd {material.Diffuse.R} {material.Diffuse.G} {material.Diffuse.B} {material.Diffuse.A}");
+                    matWriter.WriteLine($"Ks {material.Specular.R} {material.Specular.G} {material.Specular.B} {material.Specular.A}");
+                    matWriter.WriteLine($"Ke {material.UnkColor.R} {material.UnkColor.G} {material.UnkColor.B} {material.UnkColor.A}");
+                }
+
+                if (Faces[i].TexId != 0 && Faces[i].TexId != 511) // Not External
+                {
                     matWriter.WriteLine($"map_Kd Textures/{texSetIndex}.{currentTexId - 1}.png");
+                    matWriter.WriteLine($"map_Ka Textures/{texSetIndex}.{currentTexId - 1}.png");
+                    matWriter.WriteLine($"map_Ks Textures/{texSetIndex}.{currentTexId - 1}.png");
+                }
 
                 matWriter.WriteLine();
             }
@@ -278,16 +332,34 @@ public class PGLUshapeConverted
             objWriter.Write($"f {faceIdxStart + Faces[i].A}");
             if (UVs.Count > 0)
                 objWriter.Write($"/{vtIdxStart + Faces[i].A}");
+            if (Normals.Count > 0)
+            {
+                if (UVs.Count == 0)
+                    objWriter.Write('/');
+                objWriter.Write($"/{vnIdxStart + Faces[i].A}");
+            }
             objWriter.Write(" ");
 
             objWriter.Write($"{faceIdxStart + Faces[i].B}");
             if (UVs.Count > 0)
                 objWriter.Write($"/{vtIdxStart + Faces[i].B}");
+            if (Normals.Count > 0)
+            {
+                if (UVs.Count == 0)
+                    objWriter.Write('/');
+                objWriter.Write($"/{vnIdxStart + Faces[i].B}");
+            }
             objWriter.Write(" ");
 
             objWriter.Write($"{faceIdxStart + Faces[i].C}");
             if (UVs.Count > 0)
                 objWriter.Write($"/{vtIdxStart + Faces[i].C}");
+            if (Normals.Count > 0)
+            {
+                if (UVs.Count == 0)
+                    objWriter.Write('/');
+                objWriter.Write($"/{vnIdxStart + Faces[i].C}");
+            }
             objWriter.WriteLine();
         }
     }
