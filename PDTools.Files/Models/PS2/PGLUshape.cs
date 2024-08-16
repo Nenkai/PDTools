@@ -16,6 +16,7 @@ public class PGLUshape
 {
     /* Valid values are 1-2-3-4-5, GT4 only supports 1 & 4. 
      * 2 uses a value from command 51 (gt3 only command). */
+    // 5 also works, although no idea what it does - vertex colors related? uses alpha? used in shadow shapes
     public byte Unk1 { get; set; }
     public byte Unk2 { get; set; }
     public byte Unk3 { get; set; }
@@ -104,6 +105,9 @@ public class PGLUshape
         int packetFaceStart = 1;
 
         PGLUshapeConverted shapeData = new();
+        shapeData.Unk1 = Unk1;
+        shapeData.Unk2 = Unk2;
+        shapeData.Unk3 = Unk3;
 
         for (var j = 0; j < VIFPackets.Count; j++)
         {
@@ -247,6 +251,10 @@ public class PGLUshapeConverted
     /// </summary>
     public int ShapeIndex { get; set; }
 
+    public byte Unk1 { get; set; }
+    public byte Unk2 { get; set; }
+    public byte Unk3 { get; set; }
+
     public bool UsesExternalTexture { get; set; }
     public int TextureSetIndex { get; set; }
     public List<Vector3> Vertices { get; set; } = [];
@@ -283,7 +291,7 @@ public class PGLUshapeConverted
             objWriter.Write($"v {Vertices[i].X} {Vertices[i].Y} {Vertices[i].Z}");
             if (Colors.Count == Vertices.Count)
             {
-                objWriter.Write($" {Colors[i][0] * (1.0f / 255.0f)} {Colors[i][1] * (1.0f / 255.0f)} {Colors[i][2] * (1.0f / 255.0f)}"); // Alpha not supported
+                objWriter.Write($" {Colors[i][0] * (1.0f / 255.0f)} {Colors[i][1] * (1.0f / 255.0f)} {Colors[i][2] * (1.0f / 255.0f)} {Colors[i][3] * (1.0f / 128.0f)}");
             }
 
             objWriter.WriteLine();

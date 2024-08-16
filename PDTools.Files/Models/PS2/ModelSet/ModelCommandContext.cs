@@ -17,8 +17,6 @@ public class ModelCommandShapeExtractor
     public RenderCommandContext RenderCommandContext { get; set; } = new();
 
     public string ModelName { get; set; }
-
-
     public string ExtraShapeName { get; set; }
 
     public int ModelIndex { get; set; }
@@ -32,6 +30,8 @@ public class ModelCommandShapeExtractor
 
     public ModelCallbackParameter? CurrentCallback { get; set; }
     public int CallbackBranchIndex { get; set; } = -1;
+
+    public List<ModelSetupPS2Command> CommandQueue { get; set; } = [];
 
     public void SetTexTable(int index)
     {
@@ -71,14 +71,15 @@ public class DumpedLOD
 
     public void Add(string name, PGLUshapeConverted shape)
     {
-        Shapes.Add(name, shape);
+        if (!Shapes.ContainsKey(name)) // sometimes a shape can be called again? it's weird, needs investigation (gt4: ac_0014, model index 0)
+            Shapes.Add(name, shape);
     }
 
     public void AddCallbackShape(ModelCallbackParameter parameter, int idx, string name, PGLUshapeConverted shape)
     {
         Callbacks.TryAdd(parameter, []);
 
-        if (Callbacks[parameter].Count <= idx)
+        while (Callbacks[parameter].Count <= idx)
             Callbacks[parameter].Add([]);
 
         Callbacks[parameter][idx].Add(name);

@@ -7,27 +7,31 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands
+namespace PDTools.Files.Models.PS2.Commands;
+
+public class Cmd_pgluTexTableFromExternalTexSetUShort : ModelSetupPS2Command
 {
-    public class Cmd_pgluTexTableFromExternalTexSetUShort : ModelSetupPS2Command
+    public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluTexTableFromExternalTexSetUShort;
+
+    public ushort ExternalTexSetIndex { get; set; }
+
+    public Cmd_pgluTexTableFromExternalTexSetUShort(ushort value)
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pgluTexTableFromExternalTexSetUShort;
+        ExternalTexSetIndex = value;
+    }
 
-        public ushort ExternalTexSetIndex { get; set; }
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
+    {
+        bs.WriteUInt16(ExternalTexSetIndex);
+    }
 
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
-            bs.WriteUInt16(ExternalTexSetIndex);
-        }
+    public override void Write(BinaryStream bs)
+    {
+        ExternalTexSetIndex = bs.ReadUInt16();
+    }
 
-        public override void Write(BinaryStream bs)
-        {
-            ExternalTexSetIndex = bs.ReadUInt16();
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Cmd_pgluTexTableFromExternalTexSetUShort)}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Cmd_pgluTexTableFromExternalTexSetUShort)}";
     }
 }

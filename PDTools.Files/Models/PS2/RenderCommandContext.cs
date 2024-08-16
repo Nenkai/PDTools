@@ -77,7 +77,8 @@ public class RenderCommandContext
     public uint? FogColor { get; set; }
     public bool FogColorWasSet { get; set; }
 
-    public int ExternalTexIndex { get; set; }
+    public const byte DEFAULT_EXTERNAL_TEX_INDEX = 0;
+    public byte ExternalTexIndex { get; set; } = DEFAULT_EXTERNAL_TEX_INDEX;
 
     public bool IsDefaultAlphaTest()
     {
@@ -148,11 +149,15 @@ public class RenderCommandContext
     }
 
     public bool IsDefaultExternalTexSetIndex()
-        => ExternalTexIndex != 0;
+        => ExternalTexIndex == DEFAULT_EXTERNAL_TEX_INDEX;
 
     public List<ModelSetupPS2Command> GetCurrentCommandsForContext()
     {
         var cmds = new List<ModelSetupPS2Command>();
+
+        if (!IsDefaultExternalTexSetIndex())
+            cmds.Add(new Cmd_pgluSetExternalTexIndex(ExternalTexIndex));
+
         if (!IsDefaultAlphaFail())
             cmds.Add(new Cmd_pglAlphaFail(AlphaFail));
 
@@ -359,10 +364,14 @@ public class RenderCommandContext
             case ModelSetupPS2Opcode.pglExternalTexIndex:
                 {
                     var cmd_ = cmd as Cmd_pgluSetExternalTexIndex;
-                    ExternalTexIndex = cmd_.TexSetIndex;
+                    if (cmd_.TexIndex != ExternalTexIndex)
+                        diff = true;
+
+                    ExternalTexIndex = cmd_.TexIndex;
                     break;
                 }
             default:
+                break;
                 throw new NotImplementedException();
         }
 

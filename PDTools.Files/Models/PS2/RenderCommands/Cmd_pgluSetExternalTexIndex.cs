@@ -13,28 +13,28 @@ namespace PDTools.Files.Models.PS2.Commands
     {
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglExternalTexIndex;
 
-        public byte TexSetIndex { get; set; }
+        public byte TexIndex { get; set; }
 
         public Cmd_pgluSetExternalTexIndex() { }
 
         public Cmd_pgluSetExternalTexIndex(byte index)
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, 16, "External tex set index must be below 0-15.");
-            TexSetIndex = index;
+            TexIndex = index;
         }
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            TexSetIndex = bs.Read1Byte();
+            TexIndex = bs.Read1Byte();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(TexSetIndex);
+            bs.WriteByte(TexIndex);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Cmd_pgluSetExternalTexIndex)} - TexSet: {TexSetIndex}";
+            return $"{nameof(Cmd_pgluSetExternalTexIndex)} - TexSet: {TexIndex}";
         }
     }
 }

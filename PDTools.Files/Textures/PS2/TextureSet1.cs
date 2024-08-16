@@ -56,7 +56,11 @@ namespace PDTools.Files.Textures.PS2;
  * 1. [PARTIALLY DONE] Textures, or palettes, can be inside the non-rendered area of other textures, to save on GS blocks
  *    ^ could use some more optis or algorithms to reorder the textures in a way that maximizes usage of unused blocks
  *    
- * 2. Texture data is sometimes reused when a different palette is used, to save on GS blocks
+ * 2. Texture data is sometimes reused with the same TBP when a different palette is used, to save on GS blocks
+ *    ^ This one is super weird. See: GT3's vw0020 (day) - Texture Set 0, Texture Index 30 and 31
+ *      - TBP E0 & CSA 4: 128x128 - SCE_GS_PSMT4 (SCE_GS_REGION_CLAMP, SCE_GS_REGION_CLAMP)
+ *      - TBP E0 & CSA 2: 256x128 - SCE_GS_PSMT4 (SCE_GS_REGION_CLAMP, SCE_GS_REGION_CLAMP)
+ *      
  * 3. [DONE] When a different palette is used for certain textures, the CSA register can be set, which presumably avoids using an extra block for a palette.
  *    Example: A free block (256 bytes) left by a texture that uses PSMT4 (8x2 palette, 64 bytes) essentially means that 4 palettes that can be stored there (csa 0, 2, 4, 6).
  * 

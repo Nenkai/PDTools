@@ -19,28 +19,6 @@ namespace PDTools.Files.Models.PS2.Commands
         public List<ModelSetupPS2Command> Default = new List<ModelSetupPS2Command>();
         public List<List<ModelSetupPS2Command>> CommandsPerBranch = new List<List<ModelSetupPS2Command>>();
 
-        /* CarCallback_GetTailLampActive = 0,
-         * 
-           CarCallback_SetWheelSpeed = 1,
-           // 2 same
-           // 3 same
-           // 4 same
-           
-           CarCallback_SetSteering = 5,
-           CarCallback_SetUnk = 6,
-           CarCallback_GetTimezone = 7,
-           CarCallback_RotateZ = 8,
-           
-           CarCallback_RenderTire = 15,
-           // 16 same
-           // 17 same
-           // 18 same
-           
-           CarCallback_RenderWheel = 36,
-           // 37 same
-           // 38 same
-           // 39 same
-        */
         public ModelCallbackParameter Parameter { get; set; }
         
         public override void Read(BinaryStream bs, int commandsBaseOffset)
@@ -174,28 +152,224 @@ namespace PDTools.Files.Models.PS2.Commands
         }
     }
 
+    // Handlers:
+    // - 0021FD10 (GT3 EU)
+    // - 002F3AC0 (GT4O US)
     public enum ModelCallbackParameter : ushort
     {
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
         IsTailLampActive = 0,
 
-        SetWheelSpeed_1 = 1,
-        SetWheelSpeed_2 = 2,
-        SetWheelSpeed_3 = 3,
-        SetWheelSpeed_4 = 4,
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
+        TweenShapeSpeedRandom_1 = 1,
 
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
+        TweenShapeSpeedRandom_2 = 2,
+
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
+        TweenShapeSpeedRandom_3 = 3,
+
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
+        TweenShapeSpeedRandom_4 = 4,
+
+        /// <summary>
+        /// Supported by >=GT3
+        /// </summary>
         SetSteering = 5,
-        SetUnk_6 = 6,
+
+        /// <summary>
+        /// Supported by >=GT4<br/>
+        /// <code>ModelSet2::setShapeTweenRatio(*(float *)&a1->CarModel->ActiveWing);</code>
+        /// </summary>
+        SetActiveWingShapeTweenRatio = 6,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// <code>result = a1->CarModel->TimeZone;</code>
+        /// </summary>
         GetTimeZone = 7,
+
+        /// <summary>
+        /// Supported by >=GT4 <br/>
+        /// <code>pglRotateZ(a1->CarModel->field_64 * 57.29578)</code>
+        /// </summary>
         RotateZ = 8,
 
+        /// <summary>
+        /// Supported by >=GT4 <br/>
+        /// <code>pglMultMatrix((__int64 *)&a1->CarModel->field_5A0)</code>
+        /// </summary>
+        Unk9 = 9,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkTire11 = 11,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkTire12 = 12,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkTire13_ = 13,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkTire14 = 14,
+
+        // Group of 4
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderTire_1 = 15,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderTire_2 = 16,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderTire_3 = 17,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderTire_4 = 18,
 
+        // Group from 20-30 - GT4 commands involving a matrix
+
+        // Group of 4
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderWheel_1 = 36,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderWheel_2 = 37,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderWheel_3 = 38,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
         RenderWheel_4 = 39,
+
+        // Group of 4
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio42 = 42,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio43 = 43,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio44 = 44,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio45 = 45,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkWheelRelated46 = 46,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkWingRelated46 = 47,
+
+        // Group of 4
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkBikeRelated48 = 48,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkBikeRelated49 = 49,
+
+        // Group of 2
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio52 = 52,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio53 = 53,
+
+        // Group of 2
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio56 = 56,
+
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio57 = 57,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio60 = 60,
+
+        // Group of 4
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio62 = 62,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio63 = 63,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio64 = 64,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// </summary>
+        UnkShapeTweenRatio65 = 65,
+
+        /// <summary>
+        /// Supported by >=GT4
+        /// <code>result = a1->CarModel->field_90</code>
+        /// </summary>
+        Unk66 = 66,
     }
 }
