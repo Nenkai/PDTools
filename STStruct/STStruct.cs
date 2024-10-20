@@ -40,13 +40,17 @@ namespace PDTools.STStruct
 
         public NodeBase GetField(string path)
         {
-            if (!(RootNode is STObject obj))
+            if (!(RootNode is STObject) && !(RootNode is STMap))
                 return null;
+
+            var rootNode = RootNode;
+            if (RootNode is STObject obj)
+                rootNode = obj.Child;
 
             string[] attributes = path.Split('.');
 
             int currentIndex = 0;
-            return Find(obj.Child, attributes, ref currentIndex);
+            return Find(rootNode, attributes, ref currentIndex);
         }
 
         private NodeBase Find(NodeBase currentNode, string[] attrs, ref int currentIndex)
@@ -107,9 +111,18 @@ namespace PDTools.STStruct
                     for (int i = 0; i < childCount; i++)
                     {
                         // Read String then Child = <string, elem>
-                        var key = ReadNode(ref sr, currentNode) as STString;
-                        var value = ReadNode(ref sr, currentNode);
-                        map.Elements.Add(key.Name, value);
+                        var node = ReadNode(ref sr, currentNode);
+                        if (node is STInt stIntNode) // GT5/GT6 saves have this odd KeyConfigNode
+                        {
+                            stIntNode.KeyConfigNode = ReadNode(ref sr, currentNode);
+                            map.Elements.Add(i.ToString(), stIntNode);
+                        }
+                        else // Normal flow
+                        {
+                            var key = node as STString;
+                            var value = ReadNode(ref sr, currentNode);
+                            map.Elements.Add(key.Name, value);
+                        }
                     }
                     break;
                 case NodeType.Array:
@@ -214,7 +227,10 @@ namespace PDTools.STStruct
                     bs.WriteInt32(map.Elements.Count);
                     foreach (var child in map.Elements)
                     {
-                        WriteNode(bs, new STString() { Name = child.Key }, ref keys);
+                        if (!(child.Value is STInt @int) || @int.KeyConfigNode == null)
+                        {
+                            WriteNode(bs, new STString { Name = child.Key, Type = NodeType.String }, ref keys);
+                        }
                         WriteNode(bs, child.Value, ref keys);
                     }
                     break;
