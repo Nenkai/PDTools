@@ -110,14 +110,14 @@ public class DBT_DatabaseTable
         return -1;
     }
 
-    public Span<byte> ExtractRow(ref SpanReader rowHuffmanCodeReader)
+    public Span<byte> ExtractRow(scoped ref SpanReader rowHuffmanCodeReader)
     {
         ExtractHuffmanPart(ref rowHuffmanCodeReader, out Span<byte> entryDataBuffer);
         return ExtractDiffDictPart(entryDataBuffer);
     }
 
 
-    Span<byte> ExtractDiffDictPart(Span<byte> entryData)
+    Span<byte> ExtractDiffDictPart(scoped Span<byte> entryData)
     {
         DebugPrint($"ExtractDiffDictPart: data: {{{string.Join(",", entryData.ToArray().Select(e => $"{e:X2}"))}}}");
 
@@ -135,7 +135,9 @@ public class DBT_DatabaseTable
         }
         else if (type == ExtractCompressionType.CompressedWithoutTemplateRow) // Row from raw entry data
         {
-            return rawEntryData.Slice(0, rowSize);
+            Span<byte> rowData = new byte[rowSize];
+            rawEntryData.Slice(0, rowSize).CopyTo(rowData);
+            return rowData;
         }
         else if (type == ExtractCompressionType.CompressedWithTemplateRowDifferences) // Get template row & alter it from bytes
         {
