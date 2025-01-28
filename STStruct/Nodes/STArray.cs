@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 
-namespace PDTools.STStruct.Nodes
+namespace PDTools.STStruct.Nodes;
+
+[DebuggerDisplay("Array[{Elements.Count}]")]
+public class STArray : NodeBase
 {
-    [DebuggerDisplay("Array[{Elements.Count}]")]
-    public class STArray : NodeBase
-    {
-        public List<NodeBase> Elements { get; set; }
-    }
+    public List<NodeBase> Elements { get; set; }
 }

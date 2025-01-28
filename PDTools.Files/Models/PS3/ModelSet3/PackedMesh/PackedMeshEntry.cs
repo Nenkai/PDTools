@@ -6,40 +6,39 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh
+namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
+
+public class PackedMeshEntry
 {
-    public class PackedMeshEntry
+    public short StructDeclarationID { get; set; }
+    public short ElementBitLayoutDefinitionID { get; set; }
+
+    public PackedMeshEntryData Data { get; set; }
+
+    public static PackedMeshEntry FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        public short StructDeclarationID { get; set; }
-        public short ElementBitLayoutDefinitionID { get; set; }
+        PackedMeshEntry entry = new();
 
-        public PackedMeshEntryData Data { get; set; }
+        entry.StructDeclarationID = bs.ReadInt16();
+        entry.ElementBitLayoutDefinitionID = bs.ReadInt16();
+        bs.ReadInt16();
 
-        public static PackedMeshEntry FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
-        {
-            PackedMeshEntry entry = new();
+        byte countOfUnk = bs.Read1Byte();
+        bs.ReadByte(); // 1
+        int unkOffset = bs.ReadInt32();
+        float unk = bs.ReadSingle();
+        int dataTocOffset = bs.ReadInt32();
+        bs.Position += 0x18;
 
-            entry.StructDeclarationID = bs.ReadInt16();
-            entry.ElementBitLayoutDefinitionID = bs.ReadInt16();
-            bs.ReadInt16();
+        // TODO read rest
+        bs.Position = mdlBasePos + dataTocOffset;
+        entry.Data = PackedMeshEntryData.FromStream(bs, mdlBasePos, mdl3VersionMajor);
 
-            byte countOfUnk = bs.Read1Byte();
-            bs.ReadByte(); // 1
-            int unkOffset = bs.ReadInt32();
-            float unk = bs.ReadSingle();
-            int dataTocOffset = bs.ReadInt32();
-            bs.Position += 0x18;
+        return entry;
+    }
 
-            // TODO read rest
-            bs.Position = mdlBasePos + dataTocOffset;
-            entry.Data = PackedMeshEntryData.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-
-            return entry;
-        }
-
-        public static int GetSize()
-        {
-            return 0x30;
-        }
+    public static int GetSize()
+    {
+        return 0x30;
     }
 }

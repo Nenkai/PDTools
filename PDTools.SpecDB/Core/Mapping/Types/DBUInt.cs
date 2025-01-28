@@ -7,35 +7,34 @@ using System.Diagnostics;
 using System.ComponentModel;
 using Syroot.BinaryData;
 
-namespace PDTools.SpecDB.Core.Mapping.Types
+namespace PDTools.SpecDB.Core.Mapping.Types;
+
+[DebuggerDisplay("UInt - {Value}")]
+public class DBUInt : IDBType, INotifyPropertyChanged
 {
-    [DebuggerDisplay("UInt - {Value}")]
-    public class DBUInt : IDBType, INotifyPropertyChanged
+    private uint _value;
+    public uint Value
     {
-        private uint _value;
-        public uint Value
+        get => _value;
+        set
         {
-            get => _value;
-            set
-            {
-                _value = value;
-                NotifyPropertyChanged("Value");
-            }
+            _value = value;
+            NotifyPropertyChanged(nameof(Value));
         }
-
-        private void NotifyPropertyChanged(string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void Serialize(BinaryStream bs)
-            => bs.WriteUInt32(Value);
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public DBUInt(uint value)
-            => Value = value;
-
-        public override string ToString()
-            => _value.ToString();
     }
+
+    private void NotifyPropertyChanged(string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public void Serialize(BinaryStream bs)
+        => bs.WriteUInt32(Value);
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    public DBUInt(uint value)
+        => Value = value;
+
+    public override string ToString()
+        => _value.ToString();
 }

@@ -121,7 +121,7 @@ public class DBT_DatabaseTable
     {
         DebugPrint($"ExtractDiffDictPart: data: {{{string.Join(",", entryData.ToArray().Select(e => $"{e:X2}"))}}}");
 
-        Span<byte> rawEntryData = entryData.Slice(1);
+        Span<byte> rawEntryData = entryData[1..];
         ExtractCompressionType type = (ExtractCompressionType)(entryData[0] >> 6);
         int rowSize = RowSize;
         int dataIndex = entryData[0] & 0b11_1111;
@@ -258,7 +258,7 @@ public class DBT_DatabaseTable
 
                 Span<byte> searchEntry = Buffer.AsSpan(codeListBlockAdr + mid * 8);
                 byte codeBitSize = searchEntry[0];
-                int code = ReadInt32(searchEntry.Slice(4), Endian);
+                int code = ReadInt32(searchEntry[4..], Endian);
                 if (code == targetCode && codeBitSize == bitIndex)
                 {
                     outEntryData[0] = searchEntry[1]; // Data
@@ -282,7 +282,7 @@ public class DBT_DatabaseTable
         return 0;
     }
 
-    public int ReadInt32(Span<byte> buffer, Endian endian)
+    public static int ReadInt32(Span<byte> buffer, Endian endian)
     {
         return endian == Endian.Big ?
                   BinaryPrimitives.ReadInt32BigEndian(buffer)

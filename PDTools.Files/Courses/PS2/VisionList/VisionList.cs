@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Courses.PS2.CourseSound;
+namespace PDTools.Files.Courses.PS2.VisionList;
 
 public class VisionList
 {

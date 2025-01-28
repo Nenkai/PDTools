@@ -13,154 +13,145 @@ using Syroot.BinaryData.Memory;
 
 using PDTools.Crypto.SimulationInterface;
 
-namespace PDTools.SimulatorInterface
+namespace PDTools.SimulatorInterface;
+
+/// <summary>
+/// Simulator Interface for GT7. (Disposable object).
+/// </summary>
+public class SimulatorInterfaceClient : IDisposable
 {
+    private ISimulationInterfaceCryptor _cryptor;
+    private readonly IPEndPoint _endpoint;
+    private UdpClient _udpClient;
+    private DateTime _lastSentHeartbeat;
+
+    public const int SendDelaySeconds = 10;
+
+    public const int ReceivePortDefault = 33339;
+    public const int BindPortDefault = 33340;
+
+    public const int ReceivePortGT7 = 33739;
+    public const int BindPortGT7 = 33740;
+
+    public int ReceivePort { get; }
+    public int BindPort { get; }
+
+    public delegate void SimulatorDelegate(SimulatorPacket packet);
+
     /// <summary>
-    /// Simulator Interface for GT7. (Disposable object).
+    /// Fired from a packet from the GT Engine Simulation is sent.
     /// </summary>
-    public class SimulatorInterfaceClient : IDisposable
+    public event SimulatorDelegate OnReceive;
+
+    public bool Started { get; private set; }
+    public SimulatorInterfaceGameType SimulatorGameType { get; private set; }
+
+    /// <summary>
+    /// Creates a new simulator interface.
+    /// </summary>
+    /// <param name="address">Target address.</param>
+    /// <exception cref="ArgumentException"></exception>
+    public SimulatorInterfaceClient(string address, SimulatorInterfaceGameType gameType)
     {
-        private ISimulationInterfaceCryptor _cryptor;
-        private IPEndPoint _endpoint;
-        private UdpClient _udpClient;
-        private DateTime _lastSentHeartbeat;
+        if (!IPAddress.TryParse(address, out IPAddress addr))
+            throw new ArgumentException("Could not parse IP Address.");
 
-        public const int SendDelaySeconds = 10;
-
-        public const int ReceivePortDefault = 33339;
-        public const int BindPortDefault = 33340;
-
-        public const int ReceivePortGT7 = 33739;
-        public const int BindPortGT7 = 33740;
-
-        public int ReceivePort { get; }
-        public int BindPort { get; }
-
-        public delegate void SimulatorDelegate(SimulatorPacket packet);
-
-        /// <summary>
-        /// Fired from a packet from the GT Engine Simulation is sent.
-        /// </summary>
-        public event SimulatorDelegate OnReceive;
-
-        public bool Started { get; private set; }
-        public SimulatorInterfaceGameType SimulatorGameType { get; private set; }
-
-        /// <summary>
-        /// Creates a new simulator interface.
-        /// </summary>
-        /// <param name="address">Target address.</param>
-        /// <exception cref="ArgumentException"></exception>
-        public SimulatorInterfaceClient(string address, SimulatorInterfaceGameType gameType)
+        switch (gameType)
         {
-            if (!IPAddress.TryParse(address, out IPAddress addr))
-                throw new ArgumentException("Could not parse IP Address.");
+            case SimulatorInterfaceGameType.GT7:
+                ReceivePort = ReceivePortGT7;
+                BindPort = BindPortGT7;
+                break;
 
-            switch (gameType)
-            {
-                case SimulatorInterfaceGameType.GT7:
-                    ReceivePort = ReceivePortGT7;
-                    BindPort = BindPortGT7;
-                    break;
+            case SimulatorInterfaceGameType.GT6:
+            case SimulatorInterfaceGameType.GTSport:
+                ReceivePort = ReceivePortDefault;
+                BindPort = BindPortDefault;
+                break;
 
-                case SimulatorInterfaceGameType.GT6:
-                case SimulatorInterfaceGameType.GTSport:
-                    ReceivePort = ReceivePortDefault;
-                    BindPort = BindPortDefault;
-                    break;
-
-                default:
-                    throw new ArgumentException("Invalid game type.");
-            }
-
-            _endpoint = new IPEndPoint(addr, ReceivePort);
-            InitCryptor(gameType);
-
-            SimulatorGameType = gameType;
+            default:
+                throw new ArgumentException("Invalid game type.");
         }
 
-        /// <summary>
-        /// Starts the simulator interface.
-        /// This can be started anytime - during the game's boot process or in a race.
-        /// </summary>
-        /// <param name="cts">Cancellation token to stop the interface.</param>
-        /// <returns></returns>
-        public async Task Start(CancellationToken token = default)
+        _endpoint = new IPEndPoint(addr, ReceivePort);
+        InitCryptor(gameType);
+
+        SimulatorGameType = gameType;
+    }
+
+    /// <summary>
+    /// Starts the simulator interface.
+    /// This can be started anytime - during the game's boot process or in a race.
+    /// </summary>
+    /// <param name="cts">Cancellation token to stop the interface.</param>
+    /// <returns></returns>
+    public async Task Start(CancellationToken token = default)
+    {
+        if (Started)
+            throw new InvalidOperationException("Simulator Interface already started.");
+
+        Started = true;
+
+        _lastSentHeartbeat = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
+        _udpClient = new UdpClient(BindPort);
+
+        // Will send a packet per tick - 60fps
+        while (true)
         {
-            if (Started)
-                throw new InvalidOperationException("Simulator Interface already started.");
+            if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
+                await SendHeartbeat(token);
 
-            Started = true;
+            UdpReceiveResult result = await _udpClient.ReceiveAsync(token);
 
-            _lastSentHeartbeat = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(1));
-            _udpClient = new UdpClient(BindPort);
+            if (result.Buffer.Length != 0x128)
+                throw new InvalidDataException($"Expected packet size to be 0x128. Was {result.Buffer.Length:X4} bytes.");
 
-            // Will send a packet per tick - 60fps
-            while (true)
-            {
-                if ((DateTime.UtcNow - _lastSentHeartbeat).TotalSeconds > SendDelaySeconds)
-                    await SendHeartbeat(token);
+            _cryptor.Decrypt(result.Buffer);
 
-#if NET6_0_OR_GREATER
-                UdpReceiveResult result = await _udpClient.ReceiveAsync(token);
-#else
-                UdpReceiveResult result = await _udpClient.ReceiveAsync().WithCancellation(token);
-#endif
+            SimulatorPacket packet = new SimulatorPacket();
+            packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
+            packet.Read(result.Buffer);
 
-                if (result.Buffer.Length != 0x128)
-                    throw new InvalidDataException($"Expected packet size to be 0x128. Was {result.Buffer.Length:X4} bytes.");
+            if (token.IsCancellationRequested)
+                token.ThrowIfCancellationRequested();
 
-                _cryptor.Decrypt(result.Buffer);
+            this.OnReceive(packet);
 
-                SimulatorPacket packet = new SimulatorPacket();
-                packet.SetPacketInfo(SimulatorGameType, result.RemoteEndPoint, DateTimeOffset.Now);
-                packet.Read(result.Buffer);
-
-                if (token.IsCancellationRequested)
-                    token.ThrowIfCancellationRequested();
-
-                this.OnReceive(packet);
-
-                if (token.IsCancellationRequested)
-                    token.ThrowIfCancellationRequested();
-            }
+            if (token.IsCancellationRequested)
+                token.ThrowIfCancellationRequested();
         }
+    }
 
-        private async Task SendHeartbeat(CancellationToken ct)
+    private async Task SendHeartbeat(CancellationToken ct)
+    {
+        await _udpClient.SendAsync("A"u8.ToArray(), _endpoint, ct);
+        _lastSentHeartbeat = DateTime.UtcNow;
+    }
+
+    private void InitCryptor(SimulatorInterfaceGameType gameType)
+    {
+        if (gameType == SimulatorInterfaceGameType.GT7)
         {
-#if NET6_0_OR_GREATER
-            await _udpClient.SendAsync(new byte[1] { (byte)'A' }, _endpoint, ct);
-#else
-            await _udpClient.SendAsync(new byte[1] { (byte)'A' }, 1, _endpoint).WithCancellation(ct);
-#endif
-            _lastSentHeartbeat = DateTime.UtcNow;
+            _cryptor = new SimulatorInterfaceCryptorGT7();
         }
-
-        private void InitCryptor(SimulatorInterfaceGameType gameType)
+        else if (gameType == SimulatorInterfaceGameType.GTSport)
         {
-            if (gameType == SimulatorInterfaceGameType.GT7)
-            {
-                _cryptor = new SimulatorInterfaceCryptorGT7();
-            }
-            else if (gameType == SimulatorInterfaceGameType.GTSport)
-            {
-                _cryptor = new SimulatorInterfaceCryptorGTSport();
-            }
-            else if (gameType == SimulatorInterfaceGameType.GT6)
-            {
-                _cryptor = new SimulatorInterfaceCryptorGT6();
-            }
-            else
-            {
-                throw new NotSupportedException($"'{gameType}' is not supported.");
-            }
+            _cryptor = new SimulatorInterfaceCryptorGTSport();
         }
-
-        public void Dispose()
+        else if (gameType == SimulatorInterfaceGameType.GT6)
         {
-            _udpClient?.Dispose();
-            _udpClient = null;
-            GC.SuppressFinalize(this);
+            _cryptor = new SimulatorInterfaceCryptorGT6();
         }
+        else
+        {
+            throw new NotSupportedException($"'{gameType}' is not supported.");
+        }
+    }
+
+    public void Dispose()
+    {
+        _udpClient?.Dispose();
+        _udpClient = null;
+        GC.SuppressFinalize(this);
     }
 }

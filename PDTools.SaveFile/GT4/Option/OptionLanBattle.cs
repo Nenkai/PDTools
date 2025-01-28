@@ -6,58 +6,57 @@ using Syroot.BinaryData.Memory;
 
 using PDTools.Utils;
 
-namespace PDTools.SaveFile.GT4.Option
+namespace PDTools.SaveFile.GT4.Option;
+
+public class OptionLANBattle : IGameSerializeBase<OptionLANBattle>
 {
-    public class OptionLANBattle : IGameSerializeBase<OptionLANBattle>
+    public int Unk { get; set; }
+    public string Name1 { get; set; }
+    public int Style { get; set; }
+    public string Name2 { get; set; }
+    public int Style2 { get; set; }
+
+    public byte[] Data { get; set; }
+
+    public void CopyTo(OptionLANBattle dest)
     {
-        public int Unk { get; set; }
-        public string Name1 { get; set; }
-        public int Style { get; set; }
-        public string Name2 { get; set; }
-        public int Style2 { get; set; }
+        dest.Unk = Unk;
+        dest.Name1 = Name1;
+        dest.Style = Style;
+        dest.Name2 = Name2;
+        dest.Style2 = Style2;
 
-        public byte[] Data { get; set; }
+        dest.Data = new byte[Data.Length];
+        Array.Copy(Data, dest.Data, Data.Length);
+    }
 
-        public void CopyTo(OptionLANBattle dest)
-        {
-            dest.Unk = Unk;
-            dest.Name1 = Name1;
-            dest.Style = Style;
-            dest.Name2 = Name2;
-            dest.Style2 = Style2;
+    public void Pack(GT4Save save, ref SpanWriter sw)
+    {
+        sw.WriteInt32(Unk);
 
-            dest.Data = new byte[Data.Length];
-            Array.Copy(Data, dest.Data, Data.Length);
-        }
+        sw.WriteStringFix(Name1, 0x40);
+        sw.WriteInt32(Style);
 
-        public void Pack(GT4Save save, ref SpanWriter sw)
-        {
-            sw.WriteInt32(Unk);
+        sw.WriteStringFix(Name2, 0x40);
+        sw.WriteInt32(Style2);
 
-            sw.WriteStringFix(Name1, 0x40);
-            sw.WriteInt32(Style);
+        sw.WriteBytes(Data);
 
-            sw.WriteStringFix(Name2, 0x40);
-            sw.WriteInt32(Style2);
+        // No align
+    }
 
-            sw.WriteBytes(Data);
+    public void Unpack(GT4Save save, ref SpanReader sr)
+    {
+        Unk = sr.ReadInt32();
 
-            // No align
-        }
+        Name1 = sr.ReadFixedString(0x40);
+        Style = sr.ReadInt32();
 
-        public void Unpack(GT4Save save, ref SpanReader sr)
-        {
-            Unk = sr.ReadInt32();
+        Name2 = sr.ReadFixedString(0x40);
+        Style2 = sr.ReadInt32();
 
-            Name1 = sr.ReadFixedString(0x40);
-            Style = sr.ReadInt32();
+        Data = sr.ReadBytes(0x24);
 
-            Name2 = sr.ReadFixedString(0x40);
-            Style2 = sr.ReadInt32();
-
-            Data = sr.ReadBytes(0x24);
-
-            // No align
-        }
+        // No align
     }
 }

@@ -7,7 +7,7 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands;
+namespace PDTools.Files.Models.PS2.RenderCommands;
 
 public class Cmd_RenderModel_UShort : ModelSetupPS2Command
 {

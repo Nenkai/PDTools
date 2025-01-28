@@ -7,21 +7,20 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
-{
-    public class Catalyst : TableMetadata
-    {
-        public override string LabelPrefix { get; } = "ca_";
+namespace PDTools.SpecDB.Core.Mapping.Tables;
 
-        public Catalyst(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("torquemodifier", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("torquemodifier2", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("torquemodifier3", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("shiftlimit", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("revlimit", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("rpmeffect", DBColumnType.Byte));
-        }
+public class Catalyst : TableMetadata
+{
+    public override string LabelPrefix { get; } = "ca_";
+
+    public Catalyst(SpecDBFolder folderType)
+    {
+        Columns.Add(new ColumnMetadata("torquemodifier", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("torquemodifier2", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("torquemodifier3", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("shiftlimit", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("revlimit", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("rpmeffect", DBColumnType.Byte));
     }
 }

@@ -86,26 +86,6 @@ public class UTextureSet : TextureSetPS2Base
         return GetImageData(texture);
     }
 
-    // Credits tiledggd
-    private static Rgba32[] MakeTiledPalette(Span<Rgba32> pal)
-    {
-        const int tileSizeW = 8;
-        const int tileSizeH = 2;
-
-        Rgba32[] outpal = new Rgba32[256];
-        int ntx = 16 / tileSizeW,
-            nty = 16 / tileSizeH;
-        int i = 0;
-
-        for (int ty = 0; ty < nty; ty++)
-            for (int tx = 0; tx < ntx; tx++)
-                for (int y = 0; y < tileSizeH; y++)
-                    for (int x = 0; x < tileSizeW; x++)
-                        outpal[(ty * tileSizeH + y) * 16 + (tx * tileSizeW + x)] = pal[i++];
-
-        return outpal;
-    }
-
     public override int GetHashCode()
     {
         unchecked

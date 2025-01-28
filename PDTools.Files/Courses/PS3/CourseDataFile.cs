@@ -20,7 +20,7 @@ public class CourseDataFile : IDisposable
     public const uint Magic_LE = 0x5041434C;
 
     public record CourseDataFileEntry(uint Type, uint Alignment, uint DataStart, uint DataLength);
-    public List<CourseDataFileEntry> Entries { get; set; } = new();
+    public List<CourseDataFileEntry> Entries { get; set; } = [];
 
     public ModelSet3 MainModelSet { get; set; }
     public Stream Stream { get; set; }

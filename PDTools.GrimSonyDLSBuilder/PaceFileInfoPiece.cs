@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.GrimSonyDLSBuilder
+namespace PDTools.GrimSonyDLSBuilder;
+
+public class PaceFileInfoPiece
 {
-    public class PaceFileInfoPiece
-    {
-        public byte[] Hash { get; set; }
-    }
+    public byte[] Hash { get; set; }
 }

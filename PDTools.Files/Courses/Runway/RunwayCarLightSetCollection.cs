@@ -6,56 +6,55 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Courses.Runway
+namespace PDTools.Files.Courses.Runway;
+
+public class RunwayCarLightSetCollection
 {
-    public class RunwayCarLightSetCollection
+    public List<RunwayCarLightSet> Sets { get; set; } = [];
+
+    public static RunwayCarLightSetCollection FromStream(BinaryStream bs, long count, ushort rwyVersionMajor, ushort rwyVersionMinor)
     {
-        public List<RunwayCarLightSet> Sets { get; set; } = new();
+        RunwayCarLightSetCollection collection = new RunwayCarLightSetCollection();
 
-        public static RunwayCarLightSetCollection FromStream(BinaryStream bs, long count, ushort rwyVersionMajor, ushort rwyVersionMinor)
+        long basePos = bs.Position;
+        for (int i = 0; i < count; i++)
         {
-            RunwayCarLightSetCollection collection = new RunwayCarLightSetCollection();
+            bs.Position = basePos + (i * sizeof(uint));
+            int offset = bs.ReadInt32();
+            if (offset == 0)
+                continue;
 
-            long basePos = bs.Position;
-            for (int i = 0; i < count; i++)
-            {
-                bs.Position = basePos + (i * sizeof(uint));
-                int offset = bs.ReadInt32();
-                if (offset == 0)
-                    continue;
-
-                bs.Position = offset;
-                RunwayCarLightSet lightSet = RunwayCarLightSet.FromStream(bs, rwyVersionMajor, rwyVersionMinor);
-                collection.Sets.Add(lightSet);
-            }
-
-            return collection;
+            bs.Position = offset;
+            RunwayCarLightSet lightSet = RunwayCarLightSet.FromStream(bs, rwyVersionMajor, rwyVersionMinor);
+            collection.Sets.Add(lightSet);
         }
 
-        public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
+        return collection;
+    }
+
+    public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
+    {
+        if (Sets.Count == 0)
+            return;
+
+        long basePos = bs.Position;
+        long lastDataPos = bs.Position + 
+                           sizeof(int) + (Sets.Count * sizeof(int)) // First 0 offset + entire offset list
+                           + 4; // first 4 byte of data is 0
+
+        bs.WriteUInt32(0);
+
+        for (int i = 0; i < Sets.Count; i++)
         {
-            if (Sets.Count == 0)
-                return;
+            RunwayCarLightSet lightSet = Sets[i];
 
-            long basePos = bs.Position;
-            long lastDataPos = bs.Position + 
-                               sizeof(int) + (Sets.Count * sizeof(int)) // First 0 offset + entire offset list
-                               + 4; // first 4 byte of data is 0
+            bs.Position = basePos + (i * sizeof(int)) + sizeof(int);
+            bs.WriteUInt32((uint)lastDataPos + 2);
 
-            bs.WriteUInt32(0);
+            bs.Position = lastDataPos;
+            lightSet.ToStream(bs, rwyVersionMajor, rwyVersionMinor);
 
-            for (int i = 0; i < Sets.Count; i++)
-            {
-                RunwayCarLightSet lightSet = Sets[i];
-
-                bs.Position = basePos + (i * sizeof(int)) + sizeof(int);
-                bs.WriteUInt32((uint)lastDataPos + 2);
-
-                bs.Position = lastDataPos;
-                lightSet.ToStream(bs, rwyVersionMajor, rwyVersionMinor);
-
-                lastDataPos = bs.Position;
-            }
+            lastDataPos = bs.Position;
         }
     }
 }

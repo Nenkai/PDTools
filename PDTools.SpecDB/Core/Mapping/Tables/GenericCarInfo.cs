@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
+namespace PDTools.SpecDB.Core.Mapping.Tables;
+
+public class GenericCarInfo : TableMetadata
 {
-    public class GenericCarInfo : TableMetadata
+    public GenericCarInfo(SpecDBFolder folderType)
     {
-        public GenericCarInfo(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-        }
+        Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
     }
 }

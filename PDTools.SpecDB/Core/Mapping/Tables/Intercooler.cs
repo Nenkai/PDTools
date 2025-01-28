@@ -7,22 +7,21 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
+namespace PDTools.SpecDB.Core.Mapping.Tables;
+
+public class Intercooler : TableMetadata
 {
-    public class Intercooler : TableMetadata
+    public override string LabelPrefix { get; } = "ic_";
+
+    public Intercooler(SpecDBFolder folderType)
     {
-        public override string LabelPrefix { get; } = "ic_";
+        Columns.Add(new ColumnMetadata("torquemodifier", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("torquemodifier2", DBColumnType.Short));
 
-        public Intercooler(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("torquemodifier", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("torquemodifier2", DBColumnType.Short));
+        if (folderType >= SpecDBFolder.GT5_JP3009)
+            Columns.Add(new ColumnMetadata("torquemodifier3", DBColumnType.Short));
 
-            if (folderType >= SpecDBFolder.GT5_JP3009)
-                Columns.Add(new ColumnMetadata("torquemodifier3", DBColumnType.Short));
-
-            Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-        }
+        Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
     }
 }

@@ -58,11 +58,11 @@ public class RunwayData
     public float StartVCoord { get; set; }
     public float GoalVCoord { get; set; }
 
-    public List<RunwayCheckpoint> Checkpoints { get; set; } = new();
-    public List<short> CheckpointLookupIndices { get; set; } = new();
-    public List<RunwayRoadVert> Vertices { get; set; } = new();
-    public List<RunwayRoadTri> Tris { get; set; } = new();
-    public List<RunwayCluster> Clusters { get; set; } = new();
+    public List<RunwayCheckpoint> Checkpoints { get; set; } = [];
+    public List<short> CheckpointLookupIndices { get; set; } = [];
+    public List<RunwayRoadVert> Vertices { get; set; } = [];
+    public List<RunwayRoadTri> Tris { get; set; } = [];
+    public List<RunwayCluster> Clusters { get; set; } = [];
 
     public byte TreeMaxDepth { get; set; }
     public Node Root { get; set; }
@@ -102,11 +102,11 @@ public class RunwayData
         rwy.StartVCoord = bs.ReadSingle();
         rwy.GoalVCoord = bs.ReadSingle();
 
-        rwy.Bounds = new Vector3[]
-        {
+        rwy.Bounds =
+        [
             new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle()),
             new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle())
-        };
+        ];
 
         short checkpointListCount = bs.ReadInt16();
         short unkCount = bs.ReadInt16();

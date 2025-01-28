@@ -6,23 +6,22 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.Wing
+namespace PDTools.Files.Models.PS3.ModelSet3.Wing;
+
+public class MDL3WingData
 {
-    public class MDL3WingData
+    public string Name { get; set; }
+
+    public static MDL3WingData FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        public string Name { get; set; }
-
-        public static MDL3WingData FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
-        {
-            MDL3WingData entry = new();
+        MDL3WingData entry = new();
 
 
-            return entry;
-        }
+        return entry;
+    }
 
-        public static int GetSize()
-        {
-            return 0x80;
-        }
+    public static int GetSize()
+    {
+        return 0x80;
     }
 }

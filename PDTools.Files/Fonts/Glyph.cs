@@ -13,128 +13,127 @@ using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.Fonts;
 
-namespace PDTools.Files.Fonts
+namespace PDTools.Files.Fonts;
+
+public class Glyph
 {
-    public class Glyph
+   public char Character { get; set; }
+
+    public ushort Flags { get; set; } = 0x8002;
+    public ushort HeightOffset { get; set; }
+    public ushort Width { get; set; }
+    public GlyphShapes Points { get; set; } = new();
+
+    public Glyph(char character)
     {
-       public char Character { get; set; }
+        Character = character;
+    }
 
-        public ushort Flags { get; set; } = 0x8002;
-        public ushort HeightOffset { get; set; }
-        public ushort Width { get; set; }
-        public GlyphShapes Points { get; set; } = new();
+    private Glyph()
+    {
 
-        public Glyph(char character)
+    }
+
+    public static Glyph Read(BinaryStream bs, int dataOffset)
+    {
+        var glyph = new Glyph();
+        glyph.Character = (char)bs.ReadInt16();
+        glyph.Flags = (ushort)bs.ReadInt16();
+        bs.ReadInt32();
+
+        int dataLength = bs.ReadInt32();
+        uint bits = bs.ReadUInt32();
+        glyph.Width = (ushort)(bits >> 20);
+        glyph.HeightOffset = (ushort)((bits >> 8) & 0b1111_11111111);
+        byte calculatedRenderStrideCount = (byte)(bits & 0xFF); // Check NVectorFont.WriteGlyphs for how this is calculated
+
+        int offsetWithinData = bs.ReadInt32();
+
+        bs.Position = dataOffset + offsetWithinData;
+
+        glyph.Points = GlyphShapes.Read(bs, dataLength);
+
+        return glyph;
+    }
+
+    public Image<Rgba32> GetAsImage()
+    {
+        var image = new Image<Rgba32>(2048, 2048);
+        image.Mutate(ctx =>
         {
-            Character = character;
-        }
+            float currentX = 0, currentY = 0;
 
-        private Glyph()
-        {
+            PathBuilder path = new PathBuilder();
 
-        }
-
-        public static Glyph Read(BinaryStream bs, int dataOffset)
-        {
-            var glyph = new Glyph();
-            glyph.Character = (char)bs.ReadInt16();
-            glyph.Flags = (ushort)bs.ReadInt16();
-            bs.ReadInt32();
-
-            int dataLength = bs.ReadInt32();
-            uint bits = bs.ReadUInt32();
-            glyph.Width = (ushort)(bits >> 20);
-            glyph.HeightOffset = (ushort)((bits >> 8) & 0b1111_11111111);
-            byte calculatedRenderStrideCount = (byte)(bits & 0xFF); // Check NVectorFont.WriteGlyphs for how this is calculated
-
-            int offsetWithinData = bs.ReadInt32();
-
-            bs.Position = dataOffset + offsetWithinData;
-
-            glyph.Points = GlyphShapes.Read(bs, dataLength);
-
-            return glyph;
-        }
-
-        public Image<Rgba32> GetAsImage()
-        {
-            var image = new Image<Rgba32>(2048, 2048);
-            image.Mutate(ctx =>
+            var pen = new SolidPen(new SolidBrush(Color.Black), 2);
+            for (int i1 = 0; i1 < Points.Data.Count; i1++)
             {
-                float currentX = 0, currentY = 0;
-
-                PathBuilder path = new PathBuilder();
-
-                var pen = new SolidPen(new SolidBrush(Color.Black), 2);
-                for (int i1 = 0; i1 < Points.Data.Count; i1++)
+                IGlyphShapeData i = Points.Data[i1];
+                if (i is GlyphStartPoint startPoint)
                 {
-                    IGlyphShapeData i = Points.Data[i1];
-                    if (i is GlyphStartPoint startPoint)
+                    currentX = startPoint.X + 1024;
+                    currentY = startPoint.Y + 1024;
+
+                    ctx.Draw(Color.Red, 2, path.Build());
+                    path.Clear();
+                    path.CloseAllFigures();
+
+                }
+                else if (i is GlyphPoint point)
+                {
+                    path.AddLine(new PointF(currentX, currentY), new PointF(currentX + point.X, currentY + point.Y));
+
+                    currentX += point.X;
+                    currentY += point.Y;
+                }
+                else if (i is GlyphLine line)
+                {
+                    if (line.Distance == 0)
                     {
-                        currentX = startPoint.X + 1024;
-                        currentY = startPoint.Y + 1024;
-
-                        ctx.Draw(Color.Red, 2, path.Build());
-                        path.Clear();
-                        path.CloseAllFigures();
-
-                    }
-                    else if (i is GlyphPoint point)
-                    {
-                        path.AddLine(new PointF(currentX, currentY), new PointF(currentX + point.X, currentY + point.Y));
-
-                        currentX += point.X;
-                        currentY += point.Y;
-                    }
-                    else if (i is GlyphLine line)
-                    {
-                        if (line.Distance == 0)
-                        {
-                            continue;
-                        }
-
-                        if (line.Axis == 0)
-                        {
-                            path.AddLine(new PointF(currentX, currentY), new PointF(currentX + line.Distance, currentY));
-
-                            currentX += line.Distance;
-                        }
-                        else if (line.Axis == GlyphAxis.Y)
-                        {
-                            path.AddLine(new PointF(currentX, currentY), new PointF(currentX, currentY + line.Distance));
-
-                            currentY += line.Distance;
-                        }
-                    }
-                    else if (i is GlyphQuadraticBezierCurve curve)
-                    {
-                        float controlX = currentX + curve.P1_DistX;
-                        float controlY = currentY + curve.P1_DistY;
-
-                        // Draw curve
-                        path.AddQuadraticBezier(new PointF(currentX, currentY),
-                            new PointF(controlX, controlY),
-                            new PointF(controlX + curve.P2_DistX, controlY + curve.P2_DistY));
-
-                        currentX = currentX + curve.P1_DistX + curve.P2_DistX;
-                        currentY = currentY + curve.P1_DistY + curve.P2_DistY;
+                        continue;
                     }
 
-                    ctx.Draw(Color.Red, 5, path.Build());
+                    if (line.Axis == 0)
+                    {
+                        path.AddLine(new PointF(currentX, currentY), new PointF(currentX + line.Distance, currentY));
+
+                        currentX += line.Distance;
+                    }
+                    else if (line.Axis == GlyphAxis.Y)
+                    {
+                        path.AddLine(new PointF(currentX, currentY), new PointF(currentX, currentY + line.Distance));
+
+                        currentY += line.Distance;
+                    }
+                }
+                else if (i is GlyphQuadraticBezierCurve curve)
+                {
+                    float controlX = currentX + curve.P1_DistX;
+                    float controlY = currentY + curve.P1_DistY;
+
+                    // Draw curve
+                    path.AddQuadraticBezier(new PointF(currentX, currentY),
+                        new PointF(controlX, controlY),
+                        new PointF(controlX + curve.P2_DistX, controlY + curve.P2_DistY));
+
+                    currentX = currentX + curve.P1_DistX + curve.P2_DistX;
+                    currentY = currentY + curve.P1_DistY + curve.P2_DistY;
                 }
 
-                ctx.DrawLine(Color.Red, 1f, new PointF[]
-                {
-                    new PointF(Points.XMin, Points.YMin),
-                });
-            });
+                ctx.Draw(Color.Red, 5, path.Build());
+            }
 
-            return image;
-        }
+            ctx.DrawLine(Color.Red, 1f,
+            [
+                new PointF(Points.XMin, Points.YMin),
+            ]);
+        });
 
-        public override string ToString()
-        {
-            return Character.ToString();
-        }
+        return image;
+    }
+
+    public override string ToString()
+    {
+        return Character.ToString();
     }
 }

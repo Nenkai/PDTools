@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Fonts
-{
-    public interface IGlyphShapeData
-    {
+namespace PDTools.Files.Fonts;
 
-    }
+public interface IGlyphShapeData
+{
+
 }

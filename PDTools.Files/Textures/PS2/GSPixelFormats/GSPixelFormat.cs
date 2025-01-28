@@ -35,13 +35,13 @@ public abstract class GSPixelFormat
 
     public abstract int[] BlockLayout { get; }
 
-    private static PSM_CT32 _psmct32 = new PSM_CT32();
+    private static readonly PSM_CT32 _psmct32 = new PSM_CT32();
     public static readonly PSM_CT32 PSM_CT32 = _psmct32;
 
-    private static PSMT4 _psmct4 = new PSMT4();
+    private static readonly PSMT4 _psmct4 = new PSMT4();
     public static readonly PSMT4 PSMT4 = _psmct4;
 
-    private static PSMT8 _psmct8 = new PSMT8();
+    private static readonly PSMT8 _psmct8 = new PSMT8();
     public static readonly PSMT8 PSMT8 = _psmct8;
 
     public static GSPixelFormat GetFormatFromPSMFormat(SCE_GS_PSM psm)

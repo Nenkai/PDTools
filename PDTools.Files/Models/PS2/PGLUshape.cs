@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-using PDTools.Files.Models.PS2.Commands;
+using PDTools.Files.Models.PS2.RenderCommands;
 
 using Syroot.BinaryData;
 
@@ -23,8 +23,8 @@ public class PGLUshape
     public ushort TotalStripVerts { get; set; }
     public ushort NumTriangles { get; set; }
 
-    public List<VIFDescriptor> VIFDescriptors { get; set; } = new();
-    public List<VIFPacket> VIFPackets { get; set; } = new();
+    public List<VIFDescriptor> VIFDescriptors { get; set; } = [];
+    public List<VIFPacket> VIFPackets { get; set; } = [];
 
     public void FromStream(BinaryStream bs)
     {

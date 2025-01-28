@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 
-namespace PDTools.STStruct.Nodes
+namespace PDTools.STStruct.Nodes;
+
+[DebuggerDisplay("Nil")]
+class STObjectNull : NodeBase
 {
-    [DebuggerDisplay("Nil")]
-    class STObjectNull : NodeBase
-    {
-    }
 }

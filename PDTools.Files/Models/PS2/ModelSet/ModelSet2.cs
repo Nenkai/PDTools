@@ -231,7 +231,7 @@ public class ModelSet2 : ModelSetPS2Base
             int entriesOffset = bs.ReadInt32();
 
             // One texture set per lod level
-            List<TextureSet1> list = new();
+            List<TextureSet1> list = [];
             for (int j = 0; j < textureLodLevels; j++)
             {
                 bs.Position = baseMdlPos + entriesOffset + j * sizeof(int);

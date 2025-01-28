@@ -24,7 +24,7 @@ public class JamProgChunk
     public byte FullRangeMin { get; set; }
     public byte FullRangeMax { get; set; }
 
-    public List<JamSplitChunk> SplitChunks { get; set; } = new List<JamSplitChunk>();
+    public List<JamSplitChunk> SplitChunks { get; set; } = [];
 
     public void Read(BinaryStream bs)
     {

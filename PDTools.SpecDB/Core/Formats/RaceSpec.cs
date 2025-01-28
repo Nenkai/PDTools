@@ -6,48 +6,45 @@ using System.Buffers.Binary;
 using Syroot.BinaryData;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Formats
+namespace PDTools.SpecDB.Core.Formats;
+
+public class RaceSpec
 {
-    public class RaceSpec
+    public const int HeaderSize = 0x08;
+    public const int EntrySize = 0x10;
+
+    public byte[] Buffer { get; set; }
+
+    public int EntryCount
     {
-        public const int HeaderSize = 0x08;
-        public const int EntrySize = 0x10;
+        get => BinaryPrimitives.ReadInt32LittleEndian(Buffer);
+    }
 
-        public byte[] Buffer { get; set; }
+    public RaceSpec(byte[] buffer)
+    {
+        Buffer = buffer;
+    }
 
-        public int EntryCount
-        {
-            get => BinaryPrimitives.ReadInt32LittleEndian(Buffer);
-        }
+    public int GetCarIdByIndex(int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(index, EntryCount, nameof(index));
 
-        public RaceSpec(byte[] buffer)
-        {
-            Buffer = buffer;
-        }
+        SpanReader sr = new SpanReader(Buffer);
+        sr.Position = HeaderSize + index * 0x10;
 
-        public int GetCarIdByIndex(int index)
-        {
-            if (index > EntryCount)
-                throw new ArgumentOutOfRangeException("Index is superior to the amount of entries.");
+        int id = sr.ReadInt32();
+        return id;
+    }
 
-            SpanReader sr = new SpanReader(Buffer);
-            sr.Position = HeaderSize + index * 0x10;
+    public int GetCarColorByIndex(int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(index, EntryCount, nameof(index));
 
-            int id = sr.ReadInt32();
-            return id;
-        }
+        SpanReader sr = new SpanReader(Buffer);
+        sr.Position = HeaderSize + index * 0x10;
+        sr.Position += 8;
 
-        public int GetCarColorByIndex(int index)
-        {
-            if (index > EntryCount)
-                throw new ArgumentOutOfRangeException("Index is superior to the amount of entries.");
-
-            SpanReader sr = new SpanReader(Buffer);
-            sr.Position = HeaderSize + index * 0x10;
-            sr.Position += 8;
-
-            int color = sr.ReadInt32();
-            return color;
-        }
+        int color = sr.ReadInt32();
+        return color;
     }
 }

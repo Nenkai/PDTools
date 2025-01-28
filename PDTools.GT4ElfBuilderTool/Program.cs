@@ -6,32 +6,31 @@ using System.Threading.Tasks;
 
 using System.IO;
 
-namespace PDTools.GT4ElfBuilderTool
+namespace PDTools.GT4ElfBuilderTool;
+
+public class Program
 {
-    public class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        if (args.Length < 2)
         {
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Input: <CORE.GT4> <output elf file>");
-                return;
-            }
-
-            if (!File.Exists(args[0]))
-            {
-                Console.WriteLine("Input file does not exist");
-                return;
-            }
-
-            var image = new GTImageLoader();
-            if (!image.Load(File.ReadAllBytes(args[0])))
-            {
-                Console.WriteLine("Failed to load CORE file");
-                return;
-            }
-
-            image.BuildELF(args[1]);
+            Console.WriteLine("Input: <CORE.GT4> <output elf file>");
+            return;
         }
+
+        if (!File.Exists(args[0]))
+        {
+            Console.WriteLine("Input file does not exist");
+            return;
+        }
+
+        var image = new GTImageLoader();
+        if (!image.Load(File.ReadAllBytes(args[0])))
+        {
+            Console.WriteLine("Failed to load CORE file");
+            return;
+        }
+
+        image.BuildELF(args[1]);
     }
 }

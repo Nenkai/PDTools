@@ -17,20 +17,19 @@ using SixLabors.ImageSharp.Formats;
 using Pfim;
 using Pfim.dds;
 
-namespace PDTools.Files.Textures
+namespace PDTools.Files.Textures;
+
+public abstract class Texture
 {
-    public abstract class Texture
-    {
-        public string Name { get; set; }
-        public long ImageOffset { get; set; }
-        public long ImageSize { get; set; }
+    public string Name { get; set; }
+    public long ImageOffset { get; set; }
+    public long ImageSize { get; set; }
 
-        public PGLUTextureInfo TextureRenderInfo { get; set; }
+    public PGLUTextureInfo TextureRenderInfo { get; set; }
 
-        public Memory<byte> ImageData { get; set; }
-        
-        public abstract void ConvertTextureToStandardFormat(string outputFile);
+    public Memory<byte> ImageData { get; set; }
+    
+    public abstract void ConvertTextureToStandardFormat(string outputFile);
 
-        public abstract void ReadTextureDetails(BinaryStream bs);
-    }
+    public abstract void ReadTextureDetails(BinaryStream bs);
 }

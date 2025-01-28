@@ -6,25 +6,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Models.VM.Instructions
+namespace PDTools.Files.Models.VM.Instructions;
+
+public class VMBinaryXor : VMInstruction
 {
-    public class VMBinaryXor : VMInstruction
+    public override VMInstructionOpcode Opcode => VMInstructionOpcode.BinaryXorOperator;
+
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.BinaryXorOperator;
 
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
+    }
 
-        }
+    public override void Write(BinaryStream bs)
+    {
 
-        public override void Write(BinaryStream bs)
-        {
+    }
 
-        }
-
-        public override string Disassemble(Dictionary<short, VMHostMethodEntry> values)
-        {
-            return $"XOR: ^";
-        }
+    public override string Disassemble(Dictionary<short, VMHostMethodEntry> values)
+    {
+        return $"XOR: ^";
     }
 }

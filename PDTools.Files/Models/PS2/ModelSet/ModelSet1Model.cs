@@ -6,41 +6,39 @@ using System.Threading.Tasks;
 using System.IO;
 
 using Syroot.BinaryData;
-
-using PDTools.Files.Models.PS2.Commands;
 using PDTools.Utils;
+using PDTools.Files.Models.PS2.RenderCommands;
 
-namespace PDTools.Files.Models.PS2.ModelSet
+namespace PDTools.Files.Models.PS2.ModelSet;
+
+/// <summary>
+/// Represents a model within a ModelSet1.
+/// </summary>
+public class ModelSet1Model : ModelPS2Base
 {
-    /// <summary>
-    /// Represents a model within a ModelSet1.
-    /// </summary>
-    public class ModelSet1Model : ModelPS2Base
+    public void FromStream(BinaryStream bs)
     {
-        public void FromStream(BinaryStream bs)
+        while (true)
         {
-            while (true)
-            {
-                ModelSetupPS2Opcode opcode = (ModelSetupPS2Opcode)bs.Read1Byte();
-                if (opcode == ModelSetupPS2Opcode.End)
-                    break;
+            ModelSetupPS2Opcode opcode = (ModelSetupPS2Opcode)bs.Read1Byte();
+            if (opcode == ModelSetupPS2Opcode.End)
+                break;
 
-                var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
+            var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
 
-                cmd.Read(bs, 0);
-                Commands.Add(cmd);
-            }
+            cmd.Read(bs, 0);
+            Commands.Add(cmd);
+        }
+    }
+
+    public void Write(BinaryStream bs)
+    {
+        foreach (var cmd in Commands)
+        {
+            bs.Write((byte)cmd.Opcode);
+            cmd.Write(bs);
         }
 
-        public void Write(BinaryStream bs)
-        {
-            foreach (var cmd in Commands)
-            {
-                bs.Write((byte)cmd.Opcode);
-                cmd.Write(bs);
-            }
-
-            bs.WriteByte(0); // End
-        }
+        bs.WriteByte(0); // End
     }
 }

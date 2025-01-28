@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PDTools.GT4ElfBuilderTool": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Modding_Research\\Gran_Turismo\\GT4PreProd\\CORE.GT4\" test.elf"
+    }
+  }
+}

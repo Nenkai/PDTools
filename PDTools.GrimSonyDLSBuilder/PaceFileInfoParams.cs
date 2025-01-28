@@ -7,36 +7,35 @@ using System.Threading.Tasks;
 using Syroot.BinaryData;
 using System.Security.Cryptography;
 
-namespace PDTools.GrimSonyDLSBuilder
+namespace PDTools.GrimSonyDLSBuilder;
+
+public class PaceFileInfoParams
 {
-    public class PaceFileInfoParams
+    public ulong Size { get; set; }
+
+    private string _name;
+    public string Name
     {
-        public ulong Size { get; set; }
-
-        private string _name;
-        public string Name
+        get => _name;
+        set
         {
-            get => _name;
-            set
-            {
-                if (value.Length > 63)
-                    throw new ArgumentException("Name too long (max 63 chars).");
+            if (value.Length > 63)
+                throw new ArgumentException("Name too long (max 63 chars).");
 
-                _name = value;
-            }
+            _name = value;
         }
+    }
 
-        private string _trackerUrl;
-        public string TrackerUrl
+    private string _trackerUrl;
+    public string TrackerUrl
+    {
+        get => _trackerUrl;
+        set
         {
-            get => _trackerUrl;
-            set
-            {
-                if (value.Length > 511)
-                    throw new ArgumentException("Tracker URL too long (max 511 chars).");
+            if (value.Length > 511)
+                throw new ArgumentException("Tracker URL too long (max 511 chars).");
 
-                _trackerUrl = value;
-            }
+            _trackerUrl = value;
         }
     }
 }

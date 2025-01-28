@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Diagnostics;
 
-using PDTools.SpecDB.Core.Mapping.Types;
+namespace PDTools.SpecDB.Core;
 
-namespace PDTools.SpecDB.Core
+public class RowKey
 {
-    public class RowKey
-    {
-        public int Id { get; set; }
-        public string Label { get; set; }
-    }
+    public int Id { get; set; }
+    public string Label { get; set; }
 }

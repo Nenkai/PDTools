@@ -5,10 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Syroot.BinaryData;
-namespace PDTools.SpecDB.Core.Mapping.Types
+
+namespace PDTools.SpecDB.Core.Mapping.Types;
+
+public interface IDBType
 {
-    public interface IDBType
-    {
-        void Serialize(BinaryStream bs);
-    }
+    void Serialize(BinaryStream bs);
 }

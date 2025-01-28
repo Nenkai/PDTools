@@ -6,36 +6,35 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.FVF
+namespace PDTools.Files.Models.PS3.ModelSet3.FVF;
+
+public class MDL3FVFFieldArrayDefinition
 {
-    public class MDL3FVFFieldArrayDefinition
+    public uint DataOffset { get; set; }
+    public uint ArrayLength { get; set; }
+    public uint ArrayElementSize { get; set; }
+    public byte VertexSize { get; set; }
+
+    /// <summary>
+    /// Not sure
+    /// </summary>
+    public byte VertexSizeDefault { get; set; }
+
+    public static MDL3FVFFieldArrayDefinition FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
     {
-        public uint DataOffset { get; set; }
-        public uint ArrayLength { get; set; }
-        public uint ArrayElementSize { get; set; }
-        public byte VertexSize { get; set; }
+        MDL3FVFFieldArrayDefinition def = new MDL3FVFFieldArrayDefinition();
+        def.DataOffset = bs.ReadUInt32();
+        def.ArrayLength = bs.ReadUInt32();
+        def.ArrayElementSize = bs.ReadUInt32();
+        def.VertexSize = bs.Read1Byte();
+        def.VertexSizeDefault = bs.Read1Byte();
+        // 2 bytes pad?
 
-        /// <summary>
-        /// Not sure
-        /// </summary>
-        public byte VertexSizeDefault { get; set; }
+        return def;
+    }
 
-        public static MDL3FVFFieldArrayDefinition FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
-        {
-            MDL3FVFFieldArrayDefinition def = new MDL3FVFFieldArrayDefinition();
-            def.DataOffset = bs.ReadUInt32();
-            def.ArrayLength = bs.ReadUInt32();
-            def.ArrayElementSize = bs.ReadUInt32();
-            def.VertexSize = bs.Read1Byte();
-            def.VertexSizeDefault = bs.Read1Byte();
-            // 2 bytes pad?
-
-            return def;
-        }
-
-        public static int GetSize()
-        {
-            return 0x10;
-        }
+    public static int GetSize()
+    {
+        return 0x10;
     }
 }

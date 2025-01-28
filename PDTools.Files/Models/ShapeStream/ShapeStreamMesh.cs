@@ -3,20 +3,19 @@ using Syroot.BinaryData.Memory;
 using System.IO;
 using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
 
-namespace PDTools.Files.Models.ShapeStream
+namespace PDTools.Files.Models.ShapeStream;
+
+public class ShapeStreamMesh
 {
-    public class ShapeStreamMesh
-    {
-        public const int HeaderSize = 0x80;
+    public const int HeaderSize = 0x80;
 
-        public ShapeStreamChunk ShapeStreamChunk { get; set; }
-        public MDL3ShapeStreamingInfoMeshEntry InfoMeshEntry { get; set; }
+    public ShapeStreamChunk ShapeStreamChunk { get; set; }
+    public MDL3ShapeStreamingInfoMeshEntry InfoMeshEntry { get; set; }
 
-        public Memory<byte> MeshData { get; set; }
-        public uint ChunkSize { get; set; }
-        public uint VerticesOffset { get; set; }
-        public uint TriOffset { get; set; }
-        public uint BBoxOffset { get; set; }
-        public uint Unk0x1COffset { get; set; }
-    }
+    public Memory<byte> MeshData { get; set; }
+    public uint ChunkSize { get; set; }
+    public uint VerticesOffset { get; set; }
+    public uint TriOffset { get; set; }
+    public uint BBoxOffset { get; set; }
+    public uint Unk0x1COffset { get; set; }
 }

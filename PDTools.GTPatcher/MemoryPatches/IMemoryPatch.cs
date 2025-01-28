@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 
 using libdebug;
 
-namespace PDTools.GTPatcher.MemoryPatches
+namespace PDTools.GTPatcher.MemoryPatches;
+
+public interface IMemoryPatch
 {
-    public interface IMemoryPatch
-    {
-        void Init(GTPatcher dbg);
+    void Init(GTPatcher dbg);
 
-        void OnAttach(GTPatcher dbg);
+    void OnAttach(GTPatcher dbg);
 
-        void Patch(GTPatcher dbg, GeneralRegisters regs);
-    }
+    void Patch(GTPatcher dbg, GeneralRegisters regs);
 }

@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
+namespace PDTools.SpecDB.Core.Mapping.Tables;
+
+public class IndepThrottle : TableMetadata
 {
-    public class IndepThrottle : TableMetadata
+    public IndepThrottle(SpecDBFolder folderType)
     {
-        public IndepThrottle(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-        }
+        Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
     }
 }

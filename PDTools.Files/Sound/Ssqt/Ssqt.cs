@@ -22,7 +22,7 @@ public class Ssqt
     /// </summary>
     public const uint MAGIC = 0x74717353;
 
-    public List<Sssq> Tracks { get; set; } = new List<Sssq>();
+    public List<Sssq> Tracks { get; set; } = [];
 
     public void Read(string fileName)
     {

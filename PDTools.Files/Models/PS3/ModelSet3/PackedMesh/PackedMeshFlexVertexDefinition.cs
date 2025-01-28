@@ -16,8 +16,8 @@ public class PackedMeshFlexVertexDefinition
     public byte NonPackedStride { get; set; }
     public int Unk { get; set; }
 
-    public Dictionary<string, PackedMeshFlexVertexElementDefinition> PackedElements { get; set; } = new();
-    public Dictionary<string, PackedMeshFlexVertexElementDefinition> Elements { get; set; } = new();
+    public Dictionary<string, PackedMeshFlexVertexElementDefinition> PackedElements { get; set; } = [];
+    public Dictionary<string, PackedMeshFlexVertexElementDefinition> Elements { get; set; } = [];
 
     public static PackedMeshFlexVertexDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {

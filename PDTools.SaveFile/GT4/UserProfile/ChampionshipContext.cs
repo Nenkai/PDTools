@@ -4,28 +4,27 @@ using System.Text;
 
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SaveFile.GT4.UserProfile
+namespace PDTools.SaveFile.GT4.UserProfile;
+
+public class ChampionshipContext : IGameSerializeBase<ChampionshipContext>
 {
-    public class ChampionshipContext : IGameSerializeBase<ChampionshipContext>
+    public byte[] Data { get; set; } = new byte[0x88];
+
+    public void CopyTo(ChampionshipContext dest)
     {
-        public byte[] Data { get; set; } = new byte[0x88];
+        Array.Copy(Data, dest.Data, Data.Length);
+    }
+    public void Pack(GT4Save save, ref SpanWriter sw)
+    {
+        sw.WriteBytes(Data);
 
-        public void CopyTo(ChampionshipContext dest)
-        {
-            Array.Copy(Data, dest.Data, Data.Length);
-        }
-        public void Pack(GT4Save save, ref SpanWriter sw)
-        {
-            sw.WriteBytes(Data);
+        sw.Align(GT4Save.ALIGNMENT);
+    }
 
-            sw.Align(GT4Save.ALIGNMENT);
-        }
+    public void Unpack(GT4Save save, ref SpanReader sr)
+    {
+        Data = sr.ReadBytes(0x88);
 
-        public void Unpack(GT4Save save, ref SpanReader sr)
-        {
-            Data = sr.ReadBytes(0x88);
-
-            sr.Align(GT4Save.ALIGNMENT);
-        }
+        sr.Align(GT4Save.ALIGNMENT);
     }
 }

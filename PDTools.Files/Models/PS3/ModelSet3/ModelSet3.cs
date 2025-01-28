@@ -37,27 +37,27 @@ public class ModelSet3
     public ushort Version { get; set; }
     public long BaseOffset { get; set; }
 
-    public List<ModelSet3Model> Models { get; set; } = new();
-    public List<MDL3ModelKey> ModelKeys { get; set; } = new();
+    public List<ModelSet3Model> Models { get; set; } = [];
+    public List<MDL3ModelKey> ModelKeys { get; set; } = [];
 
-    public List<MDL3Mesh> Meshes { get; set; } = new();
-    public List<MDL3MeshKey> MeshKeys { get; set; } = new();
-    public List<MDL3FlexibleVertexDefinition> FlexibleVertexFormats { get; set; } = new();
+    public List<MDL3Mesh> Meshes { get; set; } = [];
+    public List<MDL3MeshKey> MeshKeys { get; set; } = [];
+    public List<MDL3FlexibleVertexDefinition> FlexibleVertexFormats { get; set; } = [];
     public MDL3Materials Materials { get; set; } = new();
     public TextureSet3 TextureSet { get; set; }
     public ShadersHeader Shaders { get; set; }
-    public List<MDL3Bone> Bones { get; set; } = new();
+    public List<MDL3Bone> Bones { get; set; } = [];
     public ushort _0x68Size { get; set; }
     public ushort VMStackSize { get; set; }
     public VMBytecode VirtualMachine { get; set; } = new VMBytecode();
-    public Dictionary<ushort, RegisterInfo> VMHostMethodEntries { get; set; } = new();
-    public List<MDL3TextureKey> TextureKeys { get; set; } = new();
-    public List<MDL3WingData> WingData { get; set; } = new();
-    public List<MDL3WingKey> WingKeys { get; set; } = new();
-    public List<MDL3ModelVMUnk> UnkVMData { get; set; } = new();
+    public Dictionary<ushort, RegisterInfo> VMHostMethodEntries { get; set; } = [];
+    public List<MDL3TextureKey> TextureKeys { get; set; } = [];
+    public List<MDL3WingData> WingData { get; set; } = [];
+    public List<MDL3WingKey> WingKeys { get; set; } = [];
+    public List<MDL3ModelVMUnk> UnkVMData { get; set; } = [];
     public MDL3ModelVMUnk2 UnkVMData2 { get; set; }
     public MDL3ModelVMContext VMContext { get; set; }
-    public List<PackedMeshKey> PackedMeshKeys { get; set; } = new();
+    public List<PackedMeshKey> PackedMeshKeys { get; set; } = [];
     public PackedMeshHeader PackedMesh { get; set; } = new();
     public MDL3ShapeStreamingManager StreamingInfo { get; set; }
     public ShapeStreamData ShapeStream { get; set; }
@@ -581,7 +581,7 @@ public class ModelSet3
             if (!fvfDef.Elements.TryGetValue("map1", out var field) &&
                 !fvfDef.Elements.TryGetValue("map12", out field) &&
                 !fvfDef.Elements.TryGetValue("map12_2", out field))
-                return Array.Empty<Vector2>();
+                return [];
 
             arr = new Vector2[mesh.VertexCount];
             if (mesh.VerticesOffset != 0 && Stream.CanRead)
@@ -661,7 +661,7 @@ public class ModelSet3
         {
             MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
             if (!fvfDef.Elements.TryGetValue("normal", out var field))
-                return Array.Empty<(uint, uint, uint)>();
+                return [];
 
             if (mesh.VerticesOffset != 0 && Stream.CanRead)
             {
@@ -777,7 +777,7 @@ public class ModelSet3
         int rem = bitDef.TotalBitCount * vertIndex % 8;
 
         Span<byte> vertBuffer = new byte[(bitDef.TotalBitCount + 7) / 8 + 1];
-        Stream.Read(vertBuffer);
+        Stream.ReadExactly(vertBuffer);
 
         BitStream bs = new BitStream(BitStreamMode.Read, vertBuffer);
         bs.ReadBits(rem);
@@ -813,13 +813,13 @@ public class ModelSet3
         if (field.ArrayIndex == 0)
         {
             Stream.Position = BaseOffset + meshInfo.VerticesOffset + vertIndex * fvfDef.VertexSize;
-            Stream.Read(buffer);
+            Stream.ReadExactly(buffer);
         }
         else
         {
             Stream.Position = BaseOffset + meshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex;
             Stream.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
-            Stream.Read(buffer);
+            Stream.ReadExactly(buffer);
         }
     }
 
@@ -831,7 +831,7 @@ public class ModelSet3
     /// <param name="field"></param>
     /// <param name="vertIndex"></param>
     /// <param name="buffer"></param>
-    public void GetShapeStreamVerticesData(ShapeStreamMesh ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
+    public static void GetShapeStreamVerticesData(ShapeStreamMesh ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
     {
         SpanReader meshReader = new SpanReader(ssMeshInfo.MeshData.Span);
         if (field.ArrayIndex == 0)
@@ -850,10 +850,10 @@ public class ModelSet3
     public void GetPackedMeshRawElementBuffer(PackedMeshEntry entry, PackedMeshFlexVertexDefinition flexStruct, int vertIndex, Span<byte> buffer)
     {
         Stream.Position = BaseOffset + entry.Data.NonPackedFlexVertsOffset + vertIndex * flexStruct.NonPackedStride;
-        Stream.Read(buffer);
+        Stream.ReadExactly(buffer);
     }
 
-    private PackedMeshElementBitLayout GetPackedBitLayoutOfField(PackedMeshElementBitLayoutArray bitLayouts, PackedMeshFlexVertexDefinition flexStruct, string type)
+    private static PackedMeshElementBitLayout GetPackedBitLayoutOfField(PackedMeshElementBitLayoutArray bitLayouts, PackedMeshFlexVertexDefinition flexStruct, string type)
     {
         int currentLayoutIndex = 0;
         foreach (var elem in flexStruct.PackedElements)
@@ -880,7 +880,7 @@ public class ModelSet3
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="NotImplementedException"></exception>
-    public Vector3 GetFVFFieldVector3(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
+    public static Vector3 GetFVFFieldVector3(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
     {
         float v1, v2, v3;
 
@@ -935,7 +935,7 @@ public class ModelSet3
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="NotImplementedException"></exception>
-    public (uint, uint, uint) GetFVFFieldXYZ(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
+    public static (uint, uint, uint) GetFVFFieldXYZ(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
     {
         if (elementCount != 1)
             throw new InvalidOperationException("Expected 1 element");
@@ -964,7 +964,7 @@ public class ModelSet3
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="NotImplementedException"></exception>
-    public Vector2 GetFVFFieldVector2(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
+    public static Vector2 GetFVFFieldVector2(Span<byte> buffer, CELL_GCM_VERTEX_TYPE fieldType, int startOffset, int elementCount)
     {
         float v1 = 0, v2 = 0;
 

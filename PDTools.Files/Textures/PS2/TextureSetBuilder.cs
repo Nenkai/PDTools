@@ -26,25 +26,24 @@ public class TextureSetBuilder
     private readonly ILogger _logger;
 
     // Underlaying texture set
-    private TextureSet1 _texSet = new();
+    private readonly TextureSet1 _texSet = new();
 
     // List of all textures in the builder
-    private List<TextureTask> _textures = [];
-
+    private readonly List<TextureTask> _textures = [];
 
     /* Used to keep track of GS blocks without texture data allocated
      * So that we can put other textures's data in them */
-    private Dictionary<int, GSBlock> _unusedGsBlocksIndices = [];
+    private readonly Dictionary<int, GSBlock> _unusedGsBlocksIndices = [];
 
     /* Used to keep track of all GS blocks we've used up */
-    private List<ushort> _usedGsBlocksIndices = [];
+    private readonly List<ushort> _usedGsBlocksIndices = [];
 
     private int _lastFreeVerticalBlock = -1;
 
     private ushort _tbp_Textures = 0;
-    private GSMemory _gsMemory = new();
+    private readonly GSMemory _gsMemory = new();
 
-    private List<List<ClutPatchTask>> _clutPatchSets = [];
+    private readonly List<List<ClutPatchTask>> _clutPatchSets = [];
 
     public int TextureCount => _textures.Count;
     public IReadOnlyList<TextureTask> Textures => _textures;

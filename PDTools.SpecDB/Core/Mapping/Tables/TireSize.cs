@@ -7,16 +7,15 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
+namespace PDTools.SpecDB.Core.Mapping.Tables;
+
+public class TireSize : TableMetadata
 {
-    public class TireSize : TableMetadata
+    public TireSize(SpecDBFolder folderType)
     {
-        public TireSize(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("flatness", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("diameter", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("width", DBColumnType.Byte));
-        }
+        Columns.Add(new ColumnMetadata("flatness", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("diameter", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("width", DBColumnType.Byte));
     }
 }

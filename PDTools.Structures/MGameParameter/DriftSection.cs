@@ -8,47 +8,46 @@ using System.Xml;
 using PDTools.Utils;
 using PDTools.Enums;
 
-namespace PDTools.Structures.MGameParameter
+namespace PDTools.Structures.MGameParameter;
+
+/// <summary>
+/// GT6 Only
+/// </summary>
+public class DriftSection
 {
-    /// <summary>
-    /// GT6 Only
-    /// </summary>
-    public class DriftSection
+    public float StartV { get; set; }
+    public float FinishV { get; set; }
+
+    public void CopyTo(DriftSection other)
     {
-        public float StartV { get; set; }
-        public float FinishV { get; set; }
+        other.StartV = StartV;
+        other.FinishV = FinishV;
+    }
 
-        public void CopyTo(DriftSection other)
+    public void ParseFromXml(XmlNode node)
+    {
+        foreach (XmlNode secNode in node.ChildNodes)
         {
-            other.StartV = StartV;
-            other.FinishV = FinishV;
-        }
-
-        public void ParseFromXml(XmlNode node)
-        {
-            foreach (XmlNode secNode in node.ChildNodes)
+            switch (secNode.Name)
             {
-                switch (secNode.Name)
-                {
-                    case "start":
-                        StartV = secNode.ReadValueSingle(); break;
+                case "start":
+                    StartV = secNode.ReadValueSingle(); break;
 
-                    case "finish":
-                        FinishV = secNode.ReadValueSingle(); break;
-                }
+                case "finish":
+                    FinishV = secNode.ReadValueSingle(); break;
             }
         }
+    }
 
-        public void WriteToXml(XmlWriter xml)
-        {
-            xml.WriteElementFloat("start", StartV);
-            xml.WriteElementFloat("finish", FinishV);
-        }
+    public void WriteToXml(XmlWriter xml)
+    {
+        xml.WriteElementFloat("start", StartV);
+        xml.WriteElementFloat("finish", FinishV);
+    }
 
-        public void Serialize(ref BitStream bs)
-        {
-            bs.WriteSingle(StartV);
-            bs.WriteSingle(FinishV);
-        }
+    public void Serialize(ref BitStream bs)
+    {
+        bs.WriteSingle(StartV);
+        bs.WriteSingle(FinishV);
     }
 }

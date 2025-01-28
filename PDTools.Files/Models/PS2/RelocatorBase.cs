@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.PS2;
 /// </summary>
 public class RelocatorBase
 {
-    public List<RelocatableOffset> OffsetsToRelocate = new List<RelocatableOffset>();
+    public List<RelocatableOffset> OffsetsToRelocate = [];
 
     public static RelocatorBase FromStream(BinaryStream bs, long mdlBasePos)
     {
@@ -139,7 +139,7 @@ public class RelocatorBase
     // Could be improved by using fixed distance arrays
     public List<RelocationTypeGroup> MakeRelocatableGroups()
     {
-        List<RelocationTypeGroup> typeGroups = new List<RelocationTypeGroup>();
+        List<RelocationTypeGroup> typeGroups = [];
 
         RelocationTypeGroup currentTypeGroup = null;
         RelocationOffsetGroup offsetGroup = null;
@@ -232,7 +232,7 @@ public class RelocatorBase
 
 public class RelocationOffsetGroup
 {
-    public List<RelocatableOffset> Offsets = new List<RelocatableOffset>();
+    public List<RelocatableOffset> Offsets = [];
     public RelocationMethod Method { get; set; }
 }
 
@@ -240,7 +240,7 @@ public class RelocationTypeGroup
 {
     public RelocatePointerType Type { get; set; }
     public RelocatableOffset Start { get; set; }
-    public List<RelocationOffsetGroup> OffsetGroups { get; set; } = new List<RelocationOffsetGroup>();
+    public List<RelocationOffsetGroup> OffsetGroups { get; set; } = [];
 
     public RelocationTypeGroup(RelocatePointerType type)
     {

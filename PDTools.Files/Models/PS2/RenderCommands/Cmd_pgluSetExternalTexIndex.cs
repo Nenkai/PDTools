@@ -7,34 +7,33 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands
+namespace PDTools.Files.Models.PS2.RenderCommands;
+
+public class Cmd_pgluSetExternalTexIndex : ModelSetupPS2Command
 {
-    public class Cmd_pgluSetExternalTexIndex : ModelSetupPS2Command
+    public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglExternalTexIndex;
+
+    public byte TexIndex { get; set; }
+
+    public Cmd_pgluSetExternalTexIndex() { }
+
+    public Cmd_pgluSetExternalTexIndex(byte index)
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglExternalTexIndex;
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, 16, "External tex set index must be below 0-15.");
+        TexIndex = index;
+    }
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
+    {
+        TexIndex = bs.Read1Byte();
+    }
 
-        public byte TexIndex { get; set; }
+    public override void Write(BinaryStream bs)
+    {
+        bs.WriteByte(TexIndex);
+    }
 
-        public Cmd_pgluSetExternalTexIndex() { }
-
-        public Cmd_pgluSetExternalTexIndex(byte index)
-        {
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, 16, "External tex set index must be below 0-15.");
-            TexIndex = index;
-        }
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
-            TexIndex = bs.Read1Byte();
-        }
-
-        public override void Write(BinaryStream bs)
-        {
-            bs.WriteByte(TexIndex);
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Cmd_pgluSetExternalTexIndex)} - TexSet: {TexIndex}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Cmd_pgluSetExternalTexIndex)} - TexSet: {TexIndex}";
     }
 }

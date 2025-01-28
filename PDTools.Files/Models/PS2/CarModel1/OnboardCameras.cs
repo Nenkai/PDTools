@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.PS2.CarModel1;
 public class OnboardCameras
 {
     [JsonIgnore]
-    public List<OnboardCameraData> Cameras { get; set; } = new List<OnboardCameraData>();
+    public List<OnboardCameraData> Cameras { get; set; } = [];
 
     public OnboardCameraData DEFAULT
     {

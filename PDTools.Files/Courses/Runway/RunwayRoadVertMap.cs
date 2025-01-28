@@ -12,90 +12,89 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Diagnostics;
 
-namespace PDTools.Files.Courses.Runway
+namespace PDTools.Files.Courses.Runway;
+
+public class RunwayRoadVertMap
 {
-    public class RunwayRoadVertMap
+    public List<RunwayRoadVert> Vertices { get; set; } = [];
+
+    public static RunwayRoadVertMap FromStream(BinaryStream bs, long count, RunwayFile rwy)
     {
-        public List<RunwayRoadVert> Vertices { get; set; } = new();
+        var map = new RunwayRoadVertMap();
 
-        public static RunwayRoadVertMap FromStream(BinaryStream bs, long count, RunwayFile rwy)
+        long basePos = bs.Position;
+        for (int i = 0; i < count; i++)
         {
-            var map = new RunwayRoadVertMap();
+            var vert = new RunwayRoadVert();
 
-            long basePos = bs.Position;
-            for (int i = 0; i < count; i++)
+            if (rwy.VersionMajor >= 6)
             {
-                var vert = new RunwayRoadVert();
+                bs.Position = basePos + (i * 0x0C);
 
-                if (rwy.VersionMajor >= 6)
+                if (rwy.BBoxAndRoadVertScaleX > 0 || rwy.BBoxAndRoadVertScaleY > 0 || rwy.BBoxAndRoadVertScaleZ > 0)
                 {
-                    bs.Position = basePos + (i * 0x0C);
-
-                    if (rwy.BBoxAndRoadVertScaleX > 0 || rwy.BBoxAndRoadVertScaleY > 0 || rwy.BBoxAndRoadVertScaleZ > 0)
-                    {
-                        // Encoded
-                        float X = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleX);
-                        float Y = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleY);
-                        float Z = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleZ);
-                        vert.Vertex = new Vector3(X, Y, Z);
-                    }
-                    else
-                    {
-                        vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
-                    }
+                    // Encoded
+                    float X = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleX);
+                    float Y = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleY);
+                    float Z = (float)RunwayFile.DecodeAVXFloat(bs.ReadInt32(), rwy.BBoxAndRoadVertScaleZ);
+                    vert.Vertex = new Vector3(X, Y, Z);
                 }
-                else if (rwy.VersionMajor >= 4) 
+                else
                 {
-                    bs.Position = basePos + (i * 0x0C);
                     vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
-
-                    bs.Position = basePos + (count * 0x0C) + (i * sizeof(ushort));
-                    vert.Unk1 = bs.ReadUInt16();
                 }
-                else // V2 Confirmed
-                {
-                    bs.Position = basePos + (i * 0x10);
-                    vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
-                    vert.Unk1 = bs.ReadUInt16();
-                    vert.Unk2 = bs.ReadUInt16();
-                }
+            }
+            else if (rwy.VersionMajor >= 4) 
+            {
+                bs.Position = basePos + (i * 0x0C);
+                vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
 
-                map.Vertices.Add(vert);
+                bs.Position = basePos + (count * 0x0C) + (i * sizeof(ushort));
+                vert.Unk1 = bs.ReadUInt16();
+            }
+            else // V2 Confirmed
+            {
+                bs.Position = basePos + (i * 0x10);
+                vert.Vertex = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+                vert.Unk1 = bs.ReadUInt16();
+                vert.Unk2 = bs.ReadUInt16();
             }
 
-            return map;
+            map.Vertices.Add(vert);
         }
 
-        public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
-        {
-            if (rwyVersionMajor >= 6)
-            {
-                throw new NotImplementedException("Implement RunwayRoadVert serializing for version >= 6");
-            }
-            else if (rwyVersionMajor >= 4)
-            {
-                for (int i = 0; i < Vertices.Count; i++)
-                {
-                    bs.WriteSingle(Vertices[i].Vertex.X);
-                    bs.WriteSingle(Vertices[i].Vertex.Y);
-                    bs.WriteSingle(Vertices[i].Vertex.Z);
-                }
+        return map;
+    }
 
-                for (int i = 0; i < Vertices.Count; i++)
-                {
-                    bs.WriteUInt16(Vertices[i].Unk1);
-                }
-            }
-            else
+    public void ToStream(BinaryStream bs, ushort rwyVersionMajor, ushort rwyVersionMinor)
+    {
+        if (rwyVersionMajor >= 6)
+        {
+            throw new NotImplementedException("Implement RunwayRoadVert serializing for version >= 6");
+        }
+        else if (rwyVersionMajor >= 4)
+        {
+            for (int i = 0; i < Vertices.Count; i++)
             {
-                for (int i = 0; i < Vertices.Count; i++)
-                {
-                    bs.WriteSingle(Vertices[i].Vertex.X);
-                    bs.WriteSingle(Vertices[i].Vertex.Y);
-                    bs.WriteSingle(Vertices[i].Vertex.Z);
-                    bs.WriteUInt16(Vertices[i].Unk1);
-                    bs.WriteUInt16(Vertices[i].Unk2);
-                }
+                bs.WriteSingle(Vertices[i].Vertex.X);
+                bs.WriteSingle(Vertices[i].Vertex.Y);
+                bs.WriteSingle(Vertices[i].Vertex.Z);
+            }
+
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                bs.WriteUInt16(Vertices[i].Unk1);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                bs.WriteSingle(Vertices[i].Vertex.X);
+                bs.WriteSingle(Vertices[i].Vertex.Y);
+                bs.WriteSingle(Vertices[i].Vertex.Z);
+                bs.WriteUInt16(Vertices[i].Unk1);
+                bs.WriteUInt16(Vertices[i].Unk2);
             }
         }
     }

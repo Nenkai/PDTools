@@ -8,35 +8,34 @@ using System.ComponentModel;
 
 using Syroot.BinaryData;
 
-namespace PDTools.SpecDB.Core.Mapping.Types
+namespace PDTools.SpecDB.Core.Mapping.Types;
+
+[DebuggerDisplay("UShort - {Value}")]
+public class DBUShort : IDBType, INotifyPropertyChanged
 {
-    [DebuggerDisplay("UShort - {Value}")]
-    public class DBUShort : IDBType, INotifyPropertyChanged
+    private ushort _value;
+    public ushort Value
     {
-        private ushort _value;
-        public ushort Value
+        get => _value;
+        set
         {
-            get => _value;
-            set
-            {
-                _value = value;
-                NotifyPropertyChanged("Value");
-            }
+            _value = value;
+            NotifyPropertyChanged(nameof(Value));
         }
-
-        private void NotifyPropertyChanged(string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void Serialize(BinaryStream bs)
-            => bs.WriteUInt16(Value);
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public DBUShort(ushort value)
-            => Value = value;
-
-        public override string ToString()
-            => _value.ToString();
     }
+
+    private void NotifyPropertyChanged(string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public void Serialize(BinaryStream bs)
+        => bs.WriteUInt16(Value);
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    public DBUShort(ushort value)
+        => Value = value;
+
+    public override string ToString()
+        => _value.ToString();
 }

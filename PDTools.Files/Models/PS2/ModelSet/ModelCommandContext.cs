@@ -1,6 +1,4 @@
-﻿using GTPS2ModelTool.Core;
-
-using PDTools.Files.Models.PS2.Commands;
+﻿using PDTools.Files.Models.PS2.RenderCommands;
 
 using System;
 using System.Collections.Generic;
@@ -71,8 +69,8 @@ public class DumpedLOD
 
     public void Add(string name, PGLUshapeConverted shape)
     {
-        if (!Shapes.ContainsKey(name)) // sometimes a shape can be called again? it's weird, needs investigation (gt4: ac_0014, model index 0)
-            Shapes.Add(name, shape);
+        // sometimes a shape can be called again? it's weird, needs investigation (gt4: ac_0014, model index 0)
+        Shapes.TryAdd(name, shape);
     }
 
     public void AddCallbackShape(ModelCallbackParameter parameter, int idx, string name, PGLUshapeConverted shape)

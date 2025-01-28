@@ -2,7 +2,7 @@
   "profiles": {
     "PS4Dbg": {
       "commandName": "Project",
-      "commandLineArgs": "-i 192.168.137.11 -a fsroot=/@/data/gtsport_fsroot/ online_save=0 -b debug -l"
+      "commandLineArgs": "-i 192.168.137.148 -a demo_preset_car=ambulance_himedic_21,gr_corolla_morizo_22,corvette_c1_58 --build debug"
     }
   }
 }

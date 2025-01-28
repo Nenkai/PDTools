@@ -9,7 +9,7 @@ namespace PDTools.Files.Sound.PS2.MusicInf;
 public class Playlist
 {
     public string Name { get; set; }
-    public List<Track> Tracks { get; set; } = new List<Track>();
+    public List<Track> Tracks { get; set; } = [];
     public string TrackIndexesNames
     {
         get

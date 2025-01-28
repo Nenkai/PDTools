@@ -177,7 +177,6 @@ namespace PDTools.Files.Models.VM
                             codePtr = (unsigned __int8 *)stackFrame[1]
                             *(_QWORD *)&v7_frame = *v7_frame;
                             */
-                            break;
                         }
                         break;
 

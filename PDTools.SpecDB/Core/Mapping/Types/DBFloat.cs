@@ -7,35 +7,34 @@ using System.Diagnostics;
 using System.ComponentModel;
 using Syroot.BinaryData;
 
-namespace PDTools.SpecDB.Core.Mapping.Types
+namespace PDTools.SpecDB.Core.Mapping.Types;
+
+[DebuggerDisplay("Float - {Value}")]
+public class DBFloat : IDBType, INotifyPropertyChanged
 {
-    [DebuggerDisplay("Float - {Value}")]
-    public class DBFloat : IDBType, INotifyPropertyChanged
+    private float _value;
+    public float Value
     {
-        private float _value;
-        public float Value
+        get => _value;
+        set
         {
-            get => _value;
-            set
-            {
-                _value = value;
-                NotifyPropertyChanged("Value");
-            }
+            _value = value;
+            NotifyPropertyChanged(nameof(Value));
         }
-
-        private void NotifyPropertyChanged(string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void Serialize(BinaryStream bs)
-            => bs.WriteSingle(_value);
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public DBFloat(float value)
-            => Value = value;
-
-        public override string ToString()
-            => _value.ToString();
     }
+
+    private void NotifyPropertyChanged(string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public void Serialize(BinaryStream bs)
+        => bs.WriteSingle(_value);
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    public DBFloat(float value)
+        => Value = value;
+
+    public override string ToString()
+        => _value.ToString();
 }

@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
+namespace PDTools.SpecDB.Core.Mapping.Tables;
+
+public class Maker : TableMetadata
 {
-    public class Maker : TableMetadata
+    public Maker(SpecDBFolder folderType)
     {
-        public Maker(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("Maker", DBColumnType.String, "UnistrDB.sdb"));
-        }
+        Columns.Add(new ColumnMetadata("Maker", DBColumnType.String, "UnistrDB.sdb"));
     }
 }

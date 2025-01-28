@@ -9,50 +9,49 @@ using Syroot.BinaryData;
 
 using System.IO;
 
-namespace PDTools.Files.Models.PS3.ModelSet3
+namespace PDTools.Files.Models.PS3.ModelSet3;
+
+public class MDL3ModelVMUnk_0x04
 {
-    public class MDL3ModelVMUnk_0x04
+    public string Name { get; set; }
+    public short StackStorage2Index { get; set; }
+    public List<MDL3ModelVMUnk_0x04_Data> Data { get; set; } = [];
+
+    public static MDL3ModelVMUnk_0x04 FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        public string Name { get; set; }
-        public short StackStorage2Index { get; set; }
-        public List<MDL3ModelVMUnk_0x04_Data> Data { get; set; } = new();
+        MDL3ModelVMUnk_0x04 unk = new();
 
-        public static MDL3ModelVMUnk_0x04 FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+        int nameOffset = bs.ReadInt32();
+        unk.StackStorage2Index = bs.ReadInt16();
+        int materialRefCount = bs.ReadInt16();
+
+        int dataOffset = bs.ReadInt32();
+        float emptyUntilRuntime = bs.ReadInt32();
+
+        bs.Position = mdlBasePos + nameOffset;
+        unk.Name = bs.ReadString(StringCoding.ZeroTerminated);
+
+        for (var i = 0; i < materialRefCount; i++)
         {
-            MDL3ModelVMUnk_0x04 unk = new();
+            bs.Position = dataOffset + materialRefCount * 0x10;
+            // short material data index
+            // short material data 0x0c index
+            // 0xb8 indices
 
-            int nameOffset = bs.ReadInt32();
-            unk.StackStorage2Index = bs.ReadInt16();
-            int materialRefCount = bs.ReadInt16();
-
-            int dataOffset = bs.ReadInt32();
-            float emptyUntilRuntime = bs.ReadInt32();
-
-            bs.Position = mdlBasePos + nameOffset;
-            unk.Name = bs.ReadString(StringCoding.ZeroTerminated);
-
-            for (var i = 0; i < materialRefCount; i++)
-            {
-                bs.Position = dataOffset + materialRefCount * 0x10;
-                // short material data index
-                // short material data 0x0c index
-                // 0xb8 indices
-
-                var data = MDL3ModelVMUnk_0x04_Data.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-                unk.Data.Add(data);
-            }
-
-            return unk;
+            var data = MDL3ModelVMUnk_0x04_Data.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            unk.Data.Add(data);
         }
 
-        public static int GetSize()
-        {
-            return 0x10;
-        }
+        return unk;
+    }
 
-        public override string ToString()
-        {
-            return Name;
-        }
+    public static int GetSize()
+    {
+        return 0x10;
+    }
+
+    public override string ToString()
+    {
+        return Name;
     }
 }

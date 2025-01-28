@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.SpecDB
-{
-    public class SpecDBQueryResult
-    {
+namespace PDTools.SpecDB;
 
-    }
+public class SpecDBQueryResult
+{
+
 }

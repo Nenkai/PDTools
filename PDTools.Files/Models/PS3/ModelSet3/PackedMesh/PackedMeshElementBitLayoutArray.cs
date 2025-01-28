@@ -6,32 +6,31 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh
+namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
+
+public class PackedMeshElementBitLayoutArray
 {
-    public class PackedMeshElementBitLayoutArray
+    public List<PackedMeshElementBitLayout> Layouts { get; set; } = [];
+
+    public static PackedMeshElementBitLayoutArray FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        public List<PackedMeshElementBitLayout> Layouts { get; set; } = new();
+        var arr = new PackedMeshElementBitLayoutArray();
+        int count = bs.ReadInt32();
+        int entriesOffset = bs.ReadInt32();
+        bs.Position = entriesOffset;
 
-        public static PackedMeshElementBitLayoutArray FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+        for (var i = 0; i < count; i++)
         {
-            var arr = new PackedMeshElementBitLayoutArray();
-            int count = bs.ReadInt32();
-            int entriesOffset = bs.ReadInt32();
-            bs.Position = entriesOffset;
-
-            for (var i = 0; i < count; i++)
-            {
-                bs.Position = mdlBasePos + entriesOffset + i * PackedMeshElementBitLayout.GetSize();
-                var def = PackedMeshElementBitLayout.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-                arr.Layouts.Add(def);
-            }
-
-            return arr;
+            bs.Position = mdlBasePos + entriesOffset + i * PackedMeshElementBitLayout.GetSize();
+            var def = PackedMeshElementBitLayout.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            arr.Layouts.Add(def);
         }
 
-        public static int GetSize()
-        {
-            return 0x08;
-        }
+        return arr;
+    }
+
+    public static int GetSize()
+    {
+        return 0x08;
     }
 }

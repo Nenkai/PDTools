@@ -9,28 +9,27 @@ using System.IO;
 using Syroot.BinaryData;
 using Syroot.BinaryData.Core;
 
-namespace PDTools.Files.Courses.AutoDrive
+namespace PDTools.Files.Courses.AutoDrive;
+
+public class AutoDriveInfo
 {
-    public class AutoDriveInfo
+    public List<AttackInfo> AttackInfos { get; set; } = [];
+
+    public static AutoDriveInfo FromStream(BinaryStream bs)
     {
-        public List<AttackInfo> AttackInfos { get; set; } = new();
+        AutoDriveInfo adInfo = new AutoDriveInfo();
 
-        public static AutoDriveInfo FromStream(BinaryStream bs)
+        long basePos = bs.Position;
+        int attackInfoCount = bs.ReadInt32();
+
+        long dataOffset = basePos + 0x40;
+        for (int i = 0; i < attackInfoCount; i++)
         {
-            AutoDriveInfo adInfo = new AutoDriveInfo();
-
-            long basePos = bs.Position;
-            int attackInfoCount = bs.ReadInt32();
-
-            long dataOffset = basePos + 0x40;
-            for (int i = 0; i < attackInfoCount; i++)
-            {
-                bs.Position = dataOffset + (i * 0x40);
-                AttackInfo attackInfo = AttackInfo.FromStream(bs);
-                adInfo.AttackInfos.Add(attackInfo);
-            }
-
-            return adInfo;
+            bs.Position = dataOffset + (i * 0x40);
+            AttackInfo attackInfo = AttackInfo.FromStream(bs);
+            adInfo.AttackInfos.Add(attackInfo);
         }
+
+        return adInfo;
     }
 }

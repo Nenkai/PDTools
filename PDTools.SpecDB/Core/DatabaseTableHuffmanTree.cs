@@ -11,10 +11,10 @@ namespace PDTools.SpecDB.Core;
 
 public class DatabaseTableHuffmanTree
 {
-    private Dictionary<byte, int> _freqTable = new Dictionary<byte, int>();
+    private Dictionary<byte, int> _freqTable = [];
     private Node _root;
 
-    public Dictionary<byte, Node> Leaves { get; private set; } = new();
+    public Dictionary<byte, Node> Leaves { get; private set; } = [];
     public LookupEntry[] LookupTable { get; set; } = new LookupEntry[0x100];
 
     public DatabaseTableHuffmanTree()
@@ -93,31 +93,20 @@ public class DatabaseTableHuffmanTree
         _root = root;
     }
 
-    public void IncrementFrequencyOfByte(byte value)
+    public void IncrementFrequencyOfByte(byte byteVal)
     {
-        if (!_freqTable.ContainsKey(value))
-        {
-            _freqTable.Add(value, 1);
-        }
+        if (!_freqTable.TryGetValue(byteVal, out int value))
+            _freqTable.Add(byteVal, 1);
         else
-        {
-            _freqTable[value]++;
-        }
+            _freqTable[byteVal] = ++value;
     }
 
     public void IncrementFrequencyOfBytes(byte[] values)
     {
         for (var i = 0; i < values.Length; i++)
         {
-            var value = values[i];
-            if (!_freqTable.ContainsKey(value))
-            {
-                _freqTable.Add(value, 1);
-            }
-            else
-            {
-                _freqTable[value]++;
-            }
+            var byteValue = values[i];
+            IncrementFrequencyOfByte(byteValue);
         }
     }
 
@@ -162,7 +151,7 @@ public class DatabaseTableHuffmanTree
         bs.WriteBits(node.Code, node.BitSizeCode);
     }
 
-    public uint GetCodeCountForRow(byte[] row)
+    public static uint GetCodeCountForRow(byte[] row)
     {
         uint res = 0;
         for (var i = 0; i < row.Length; i++)
@@ -209,7 +198,7 @@ public class Node
         return str;
     }
 
-    public int Compare(Node x, Node y)
+    public static int Compare(Node x, Node y)
     {
         return x.Weight - y.Weight;
     }

@@ -10,7 +10,7 @@ using Syroot.BinaryData;
 using PDTools.Files.Models.PS2.ModelSet;
 using PDTools.Files.Textures.PS2;
 
-namespace PDTools.Files.Models.PS2.CarModel1;
+namespace PDTools.Files.Models.PS2.CarModel0;
 
 public class CarModel0
 {

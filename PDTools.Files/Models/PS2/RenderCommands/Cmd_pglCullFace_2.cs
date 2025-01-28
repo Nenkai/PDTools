@@ -7,7 +7,7 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands;
+namespace PDTools.Files.Models.PS2.RenderCommands;
 
 /// <summary>
 /// GT4 and above. Calls pglCullFace(2) 

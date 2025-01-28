@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
 
-using PDTools.Files.Sound.Ssqt;
 using PDTools.Files.Sound.Ssqt.Meta;
 
 using Syroot.BinaryData;
+
+namespace PDTools.Files.Sound.Ssqt;
 
 // Spu stream sequence?
 public class Sssq
@@ -15,7 +16,7 @@ public class Sssq
     public const uint SssqHeaderChunk_MAGIC = 0x71737353;
 
     public uint TicksPerBeat { get; set; }
-    public List<SqMessage> Messages { get; set; } = new();
+    public List<SqMessage> Messages { get; set; } = [];
 
     public void Read(BinaryStream bs)
     {
@@ -56,7 +57,7 @@ public class SqMessage
     {
         // SDDRV::SqSequencer::statusEventCaller (GT4O US: 0x535238) 
         // (yes i'm reading the delta first here)
-        Delta = (uint)SqMessage.readVariable(bs);
+        Delta = (uint)readVariable(bs);
         byte status = bs.Read1Byte();
         if ((status & 0x80) != 0)
             Status = status;
@@ -68,7 +69,6 @@ public class SqMessage
 
         // This is all that's supported by the SqSequencer
         // Note that SeSequencer may support more events/meta (not implemented for now, it's used by sfx - midi is bundled inside the ins header in that case)
-        ISqEvent @event;
         if ((Status & 0xF0) == 0x80) // SDDRV::SqSequencer::ev_8x (GT4O US: 0x535350)
         {
             Event = new SqNoteOffEvent();

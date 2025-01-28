@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Models.PS2.Commands
+namespace PDTools.Files.Models.PS2.RenderCommands
 {
     public enum ModelSetupPS2Opcode : byte
     {

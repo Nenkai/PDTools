@@ -7,21 +7,20 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
-{
-    public class NOS : TableMetadata
-    {
-        public override string LabelPrefix { get; } = "no_";
+namespace PDTools.SpecDB.Core.Mapping.Tables;
 
-        public NOS(SpecDBFolder folderType)
-        {
-            Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Capacity", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
-            Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("TorqueVolume", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("TorqueVolumeMin", DBColumnType.Byte));
-            Columns.Add(new ColumnMetadata("TorqueVolumeMax", DBColumnType.Byte));
-        }
+public class NOS : TableMetadata
+{
+    public override string LabelPrefix { get; } = "no_";
+
+    public NOS(SpecDBFolder folderType)
+    {
+        Columns.Add(new ColumnMetadata("?", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("Capacity", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
+        Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("TorqueVolume", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("TorqueVolumeMin", DBColumnType.Byte));
+        Columns.Add(new ColumnMetadata("TorqueVolumeMax", DBColumnType.Byte));
     }
 }

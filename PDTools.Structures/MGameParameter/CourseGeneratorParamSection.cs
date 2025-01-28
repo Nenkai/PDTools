@@ -8,58 +8,57 @@ using PDTools.Enums;
 using PDTools.Utils;
 using Syroot.BinaryData;
 
-namespace PDTools.Structures.MGameParameter
+namespace PDTools.Structures.MGameParameter;
+
+/// <summary>
+/// For GT5
+/// </summary>
+public class CourseGeneratorParamSection
 {
-    /// <summary>
-    /// For GT5
-    /// </summary>
-    public class CourseGeneratorParamSection
+    public float Width { get; set; }
+    public float Curvy { get; set; }
+    public float Sharpness { get; set; }
+    public float BankAngularity { get; set; }
+
+    public void CopyTo(CourseGeneratorParamSection other)
     {
-        public float Width { get; set; }
-        public float Curvy { get; set; }
-        public float Sharpness { get; set; }
-        public float BankAngularity { get; set; }
+        other.Width = Width;
+        other.Curvy = Curvy;
+        other.Sharpness = Sharpness;
+        other.BankAngularity = BankAngularity;
+    }
 
-        public void CopyTo(CourseGeneratorParamSection other)
+    public void ReadCourseGeneratorSectionNode(XmlNode node)
+    {
+        foreach (XmlNode childNode in node)
         {
-            other.Width = Width;
-            other.Curvy = Curvy;
-            other.Sharpness = Sharpness;
-            other.BankAngularity = BankAngularity;
-        }
-
-        public void ReadCourseGeneratorSectionNode(XmlNode node)
-        {
-            foreach (XmlNode childNode in node)
+            switch (childNode.Name)
             {
-                switch (childNode.Name)
-                {
-                    case "width":
-                        Width = childNode.ReadValueSingle(); break;
+                case "width":
+                    Width = childNode.ReadValueSingle(); break;
 
-                    case "curvy":
-                        Curvy = childNode.ReadValueSingle(); break;
+                case "curvy":
+                    Curvy = childNode.ReadValueSingle(); break;
 
-                    case "sharpness":
-                        Sharpness = childNode.ReadValueSingle(); break;
+                case "sharpness":
+                    Sharpness = childNode.ReadValueSingle(); break;
 
-                    case "bank_angularity":
-                        BankAngularity = childNode.ReadValueSingle(); break;
+                case "bank_angularity":
+                    BankAngularity = childNode.ReadValueSingle(); break;
 
-                }
             }
         }
+    }
 
-        public void WriteToXml(XmlWriter xml)
+    public void WriteToXml(XmlWriter xml)
+    {
+        xml.WriteStartElement("section");
         {
-            xml.WriteStartElement("section");
-            {
-                xml.WriteElementFloat("width", Width);
-                xml.WriteElementFloat("curvy", Curvy);
-                xml.WriteElementFloat("sharpness", Sharpness);
-                xml.WriteElementFloat("bank_angularity", BankAngularity);
-            }
-            xml.WriteEndElement();
+            xml.WriteElementFloat("width", Width);
+            xml.WriteElementFloat("curvy", Curvy);
+            xml.WriteElementFloat("sharpness", Sharpness);
+            xml.WriteElementFloat("bank_angularity", BankAngularity);
         }
+        xml.WriteEndElement();
     }
 }

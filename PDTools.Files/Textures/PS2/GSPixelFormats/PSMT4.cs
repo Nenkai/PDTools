@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using PDTools.Files.Textures.PS2.GSPixelFormats;
 
-namespace PDTools.Files.Textures.PS2.GSFormats;
+namespace PDTools.Files.Textures.PS2.GSPixelFormats;
 
 // PSMT4
 // - Page: 128x128 pixels
@@ -41,8 +40,8 @@ public class PSMT4 : GSPixelFormat
     /// <summary>
     /// GS Block layout in a page for <see cref="SCE_GS_PSM.SCE_GS_PSMT4"/>
     /// </summary>
-    public override int[] BlockLayout => new int[32]
-    {
+    public override int[] BlockLayout => /* new int[32] */
+    [
          0,  2,  8, 10,
          1,  3,  9, 11,
          4,  6, 12, 14,
@@ -51,38 +50,36 @@ public class PSMT4 : GSPixelFormat
         17, 19, 25, 27,
         20, 22, 28, 30,
         21, 23, 29, 31
-    };
+    ];
 
-    public int[][] columnWord4 = new int[2][/*128*/]
-    {
-        new int[128]
-        {
+    public int[][] columnWord4 = /* new int[2][128] */
+    [
+        [ // new int[128]
              0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,
              2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15,
 
              8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,
             10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7
 
-        },
-        new int[128]
-        {
+        ],
+        [ // new int[128]
             8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,   8,  9, 12, 13,  0,  1,  4,  5,
             10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7,  10, 11, 14, 15,  2,  3,  6,  7,
 
              0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,   0,  1,  4,  5,  8,  9, 12, 13,
              2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15,   2,  3,  6,  7, 10, 11, 14, 15
 
-        }
-    };
+        ]
+    ];
 
-    public int[] columnByte4 = new int[128]
-    {
+    public int[] columnByte4 = /* new int[128] */
+    [
          0, 0, 0, 0, 0, 0, 0, 0,  2, 2, 2, 2, 2, 2, 2, 2,  4, 4, 4, 4, 4, 4, 4, 4,  6, 6, 6, 6, 6, 6, 6, 6,
          0, 0, 0, 0, 0, 0, 0, 0,  2, 2, 2, 2, 2, 2, 2, 2,  4, 4, 4, 4, 4, 4, 4, 4,  6, 6, 6, 6, 6, 6, 6, 6,
 
          1, 1, 1, 1, 1, 1, 1, 1,  3, 3, 3, 3, 3, 3, 3, 3,  5, 5, 5, 5, 5, 5, 5, 5,  7, 7, 7, 7, 7, 7, 7, 7,
          1, 1, 1, 1, 1, 1, 1, 1,  3, 3, 3, 3, 3, 3, 3, 3,  5, 5, 5, 5, 5, 5, 5, 5,  7, 7, 7, 7, 7, 7, 7, 7
-    };
+    ];
 
     public override (int Width, int Height) GetPaletteDimensions()
     {

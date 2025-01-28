@@ -1,32 +1,31 @@
-﻿using Syroot.BinaryData;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.Files.Models.VM.Instructions
+using Syroot.BinaryData;
+
+namespace PDTools.Files.Models.VM.Instructions;
+
+public class VMReturn : VMInstruction
 {
-    public class VMReturn : VMInstruction
+    public override VMInstructionOpcode Opcode => VMInstructionOpcode.Return;
+
+    public byte RetOffset { get; set; }
+
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        public override VMInstructionOpcode Opcode => VMInstructionOpcode.Return;
+        RetOffset = bs.Read1Byte();
+    }
 
-        public byte Offset { get; set; }
+    public override void Write(BinaryStream bs)
+    {
+        bs.WriteByte(RetOffset);
+    }
 
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
-            Offset = bs.Read1Byte();
-        }
-
-        public override void Write(BinaryStream bs)
-        {
-            bs.WriteByte(Offset);
-        }
-
-        public override string Disassemble(Dictionary<short, VMHostMethodEntry> values)
-        {
-            return $"{nameof(VMReturn)}: {Offset}";
-        }
+    public override string Disassemble(Dictionary<short, VMHostMethodEntry> values)
+    {
+        return $"{nameof(VMReturn)}: {RetOffset}";
     }
 }

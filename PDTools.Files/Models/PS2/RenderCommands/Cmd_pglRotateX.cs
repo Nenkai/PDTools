@@ -7,33 +7,32 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands
+namespace PDTools.Files.Models.PS2.RenderCommands;
+
+/// <summary>
+/// Calls pglRotateX, same as glRotate except on the X axis.
+/// </summary>
+public class Cmd_pglRotateX : ModelSetupPS2Command
 {
+    public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglRotateX;
+
     /// <summary>
-    /// Calls pglRotateX, same as glRotate except on the X axis.
+    /// Rotate value.
     /// </summary>
-    public class Cmd_pglRotateX : ModelSetupPS2Command
+    public float RotateValue { get; set; }
+
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglRotateX;
+        RotateValue = bs.ReadSingle();
+    }
 
-        /// <summary>
-        /// Rotate value.
-        /// </summary>
-        public float RotateValue { get; set; }
+    public override void Write(BinaryStream bs)
+    {
+        bs.WriteSingle(RotateValue);
+    }
 
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
-            RotateValue = bs.ReadSingle();
-        }
-
-        public override void Write(BinaryStream bs)
-        {
-            bs.WriteSingle(RotateValue);
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Cmd_pglRotateX)}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Cmd_pglRotateX)}";
     }
 }

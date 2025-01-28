@@ -59,14 +59,14 @@ namespace PDTools.Files.Models.PS3.PGLCommands
 
         public override void Write(BinaryStream bs)
         {
-            throw new NotImplementedException("Finish this");
-
             bs.WriteSingle(Unk1);
             bs.WriteSingle(Unk2);
             bs.WriteSingle(Unk3);
             bs.WriteSingle(Unk4);
             bs.WriteByte(Flag);
 
+            // TODO
+            throw new NotImplementedException("Command_8_Unk write unimplemented/partially implemented");
         }
 
         public override string ToString()

@@ -8,40 +8,39 @@ using System.Diagnostics;
 
 using PDTools.SpecDB.Core.Mapping.Types;
 
-namespace PDTools.SpecDB.Core
+namespace PDTools.SpecDB.Core;
+
+[DebuggerDisplay("{ColumnData.Count} columns")]
+public class RowData : INotifyPropertyChanged
 {
-    [DebuggerDisplay("{ColumnData.Count} columns")]
-    public class RowData : INotifyPropertyChanged
+    private int _id;
+    public int ID
     {
-        private int _id;
-        public int ID
+        get => _id;
+        set
         {
-            get => _id;
-            set
-            {
-                _id = value;
-                NotifyPropertyChanged("ID");
-            }
+            _id = value;
+            NotifyPropertyChanged(nameof(ID));
         }
+    }
 
 
-        private string _label;
-        public string Label
+    private string _label;
+    public string Label
+    {
+        get => _label;
+        set
         {
-            get => _label;
-            set
-            {
-                _label = value;
-                NotifyPropertyChanged("Label");
-            }
+            _label = value;
+            NotifyPropertyChanged(nameof(Label));
         }
+    }
 
-        public List<IDBType> ColumnData { get; set; } = new List<IDBType>();
+    public List<IDBType> ColumnData { get; set; } = [];
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void NotifyPropertyChanged(string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+    public event PropertyChangedEventHandler PropertyChanged;
+    private void NotifyPropertyChanged(string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

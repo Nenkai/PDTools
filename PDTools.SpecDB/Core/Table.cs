@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Buffers.Binary;
 using System.Collections.ObjectModel;
-
-using PDTools.SpecDB.Core;
 using PDTools.SpecDB.Core.Formats;
 using PDTools.SpecDB.Core.Mapping;
 using PDTools.SpecDB.Core.Mapping.Tables;
@@ -32,7 +30,7 @@ public class Table
     public int LastID { get; set; }
     public List<RowKey> Keys { get; set; } // Could be a dictionary, but sometimes tables such as VARIATION or WHEEL have multiple rows for one key
     public TableMetadata TableMetadata { get; set; }
-    public ObservableCollection<RowData> Rows { get; set; } = new ObservableCollection<RowData>();
+    public ObservableCollection<RowData> Rows { get; set; } = [];
 
     public int TableID { get; set; }
     public bool BigEndian { get; set; }
@@ -252,7 +250,7 @@ public class Table
     {
         // Make a list of all the keys the IDI contains. IDI sometimes have keys without data.
         SpanReader idiReader = new SpanReader(LabelInformation.Buffer, BigEndian ? Endian.Big : Endian.Little);
-        SortedList<int, string> idsToLabels = new SortedList<int, string>();
+        SortedList<int, string> idsToLabels = [];
 
         int idiKeyCount = LabelInformation.IDCount;
         for (int i = 0; i < idiKeyCount; i++)
@@ -270,7 +268,7 @@ public class Table
 
         // Register all our keys that actually have data now.
         SpanReader dbtReader = new SpanReader(DatabaseTable.Buffer, BigEndian ? Endian.Big : Endian.Little);
-        Keys = new List<RowKey>();
+        Keys = [];
 
         uint keyCount = DatabaseTable.RowCount;
         for (int i = 0; i < keyCount; i++)
@@ -280,7 +278,7 @@ public class Table
             Keys.Add(new RowKey() { Id = id, Label = idsToLabels[id] });
         }
 
-        LastID = Keys.Any() ? Keys.Last().Id : 0;
+        LastID = Keys.Count != 0 ? Keys.Last().Id : 0;
     }
 
     public int DumpTable(string path)
@@ -353,54 +351,50 @@ public class Table
         maxColumnLengths[0] = maxIDLen;
         maxColumnLengths[1] = maxLabelLen;
 
-        using (var sw = new StreamWriter(path))
+        using var sw = new StreamWriter(path);
+        sw.Write($"{"ID".PadRight(maxIDLen)} | {"Label".PadRight(maxLabelLen)} |");
+        for (int i = 0; i < maxColumnLengths.Length - 2; i++)
         {
-            sw.Write($"{"ID".PadRight(maxIDLen)} | {"Label".PadRight(maxLabelLen)} |");
+            int len = Math.Max(maxColumnLengths[i + 2], TableMetadata.Columns[i].ColumnName.Length);
+            sw.Write($"{TableMetadata.Columns[i].ColumnName.PadRight(len)} |");
+        }
+        sw.WriteLine();
+
+        foreach (var row in Rows)
+        {
+            sw.Write($"{row.ID.ToString().PadRight(maxIDLen)} | {row.Label.PadRight(maxLabelLen)} |");
             for (int i = 0; i < maxColumnLengths.Length - 2; i++)
             {
+                var val = row.ColumnData[i].ToString();
                 int len = Math.Max(maxColumnLengths[i + 2], TableMetadata.Columns[i].ColumnName.Length);
-                sw.Write($"{TableMetadata.Columns[i].ColumnName.PadRight(len)} |");
+                sw.Write($"{val.PadRight(len)} |");
             }
             sw.WriteLine();
-
-            foreach (var row in Rows)
-            {
-                sw.Write($"{row.ID.ToString().PadRight(maxIDLen)} | {row.Label.PadRight(maxLabelLen)} |");
-                for (int i = 0; i < maxColumnLengths.Length - 2; i++)
-                {
-                    var val = row.ColumnData[i].ToString();
-                    int len = Math.Max(maxColumnLengths[i + 2], TableMetadata.Columns[i].ColumnName.Length);
-                    sw.Write($"{val.PadRight(len)} |");
-                }
-                sw.WriteLine();
-            }
         }
     }
 
     public void ExportTableCSV(string path)
     {
-        using (var sw = new StreamWriter(path))
+        using var sw = new StreamWriter(path);
+        sw.Write("ID,Label,");
+        for (int i = 0; i < TableMetadata.Columns.Count; i++)
         {
-            sw.Write("ID,Label,");
-            for (int i = 0; i < TableMetadata.Columns.Count; i++)
+            sw.Write($"{TableMetadata.Columns[i].ColumnName}");
+            if (i != TableMetadata.Columns.Count - 1)
+                sw.Write(",");
+        }
+        sw.WriteLine();
+
+        foreach (var row in Rows)
+        {
+            sw.Write($"{row.ID},{row.Label},");
+            for (int i = 0; i < row.ColumnData.Count; i++)
             {
-                sw.Write($"{TableMetadata.Columns[i].ColumnName}");
+                sw.Write($"{row.ColumnData[i].ToString()}");
                 if (i != TableMetadata.Columns.Count - 1)
                     sw.Write(",");
             }
             sw.WriteLine();
-
-            foreach (var row in Rows)
-            {
-                sw.Write($"{row.ID},{row.Label},");
-                for (int i = 0; i < row.ColumnData.Count; i++)
-                {
-                    sw.Write($"{row.ColumnData[i].ToString()}");
-                    if (i != TableMetadata.Columns.Count - 1)
-                        sw.Write(",");
-                }
-                sw.WriteLine();
-            }
         }
 
     }
@@ -440,7 +434,7 @@ public class Table
             string locale = "UnistrDB.sdb";
             if (TableName.Length > 9)
             {
-                locale = TableName.Substring(9);
+                locale = TableName[9..];
                 if (!locale.Equals("ALPHABET") && !locale.Equals("JAPAN"))
                     locale += "_StrDB.sdb";
             }
@@ -591,7 +585,7 @@ public class Table
     /// </summary>
     private void LoadAllRowData()
     {
-        Rows = new ObservableCollection<RowData>();
+        Rows = [];
 
         for (int i = 0; i < Keys.Count; i++)
         {
@@ -673,76 +667,72 @@ public class Table
 
     private void SaveIDTable(string outputPath)
     {
-        using (var fs = new FileStream(outputPath, FileMode.Create))
-        using (var bs = new BinaryStream(fs, BigEndian ? ByteConverter.Big : ByteConverter.Little))
+        using var fs = new FileStream(outputPath, FileMode.Create);
+        using var bs = new BinaryStream(fs, BigEndian ? ByteConverter.Big : ByteConverter.Little);
+        bs.WriteString("GTID", StringCoding.Raw);
+
+        var orderedRows = Rows
+            .GroupBy(p => p.Label).Select(g => g.First()) // Distinct() - Some rows have the same ID and Label so we only want those.
+            .OrderBy(o => o.Label, RowLabelComparer.Default) // Mandatory sort for game bsearch
+            .ToList();
+
+        bs.WriteInt32(orderedRows.Count);
+        bs.WriteInt32(0);
+        bs.WriteInt32(TableID);
+
+        var strTable = GetLabelTable(orderedRows);
+
+        // Write strings
+        bs.Position = IDI_LabelInformation.HeaderSize + orderedRows.Count * IDI_LabelInformation.EntrySize;
+        strTable.SaveStream(bs);
+        bs.Position = IDI_LabelInformation.HeaderSize;
+
+        foreach (var row in orderedRows)
         {
-            bs.WriteString("GTID", StringCoding.Raw);
-
-            var orderedRows = Rows
-                .GroupBy(p => p.Label).Select(g => g.First()) // Distinct() - Some rows have the same ID and Label so we only want those.
-                .OrderBy(o => o.Label, RowLabelComparer.Default) // Mandatory sort for game bsearch
-                .ToList();
-
-            bs.WriteInt32(orderedRows.Count);
-            bs.WriteInt32(0);
-            bs.WriteInt32(TableID);
-
-            var strTable = GetLabelTable(orderedRows);
-
-            // Write strings
-            bs.Position = IDI_LabelInformation.HeaderSize + orderedRows.Count * IDI_LabelInformation.EntrySize;
-            strTable.SaveStream(bs);
-            bs.Position = IDI_LabelInformation.HeaderSize;
-
-            foreach (var row in orderedRows)
-            {
-                bs.WriteInt32(strTable.GetStringOffset(row.Label));
-                bs.WriteInt32(row.ID);
-            }
+            bs.WriteInt32(strTable.GetStringOffset(row.Label));
+            bs.WriteInt32(row.ID);
         }
     }
 
     private void SaveDBTableUncompressed(string outputPath)
     {
-        List<byte[]> rData = new List<byte[]>();
+        List<byte[]> rData = [];
 
-        using (var fs = new FileStream(outputPath, FileMode.Create))
-        using (var bs = new BinaryStream(fs, BigEndian ? ByteConverter.Big : ByteConverter.Little))
+        using var fs = new FileStream(outputPath, FileMode.Create);
+        using var bs = new BinaryStream(fs, BigEndian ? ByteConverter.Big : ByteConverter.Little);
+        bs.WriteString("GTDB", StringCoding.Raw);
+        bs.WriteInt16(8);
+        bs.WriteInt16(8);
+        bs.WriteInt32(Rows.Count);
+
+        int columnSize = TableMetadata.GetColumnSize();
+        bs.WriteInt32(columnSize);
+
+        int rowDataOffset = DBT_DatabaseTable.HeaderSize + Rows.Count * 8;
+        for (int i = 0; i < Rows.Count; i++)
         {
-            bs.WriteString("GTDB", StringCoding.Raw);
-            bs.WriteInt16(8);
-            bs.WriteInt16(8);
-            bs.WriteInt32(Rows.Count);
+            bs.Position = DBT_DatabaseTable.HeaderSize + i * 8;
+            RowData row = Rows[i];
+            bs.WriteInt32(row.ID);
 
-            int columnSize = TableMetadata.GetColumnSize();
-            bs.WriteInt32(columnSize);
+            int rowRelativeOffset = i * columnSize;
+            bs.WriteInt32(rowRelativeOffset);
+            bs.Position = rowDataOffset + rowRelativeOffset;
 
-            int rowDataOffset = DBT_DatabaseTable.HeaderSize + Rows.Count * 8;
-            for (int i = 0; i < Rows.Count; i++)
+            using (var ms = new MemoryStream())
+            using (var mbs = new BinaryStream(ms, BigEndian ? ByteConverter.Big : ByteConverter.Little))
             {
-                bs.Position = DBT_DatabaseTable.HeaderSize + i * 8;
-                RowData row = Rows[i];
-                bs.WriteInt32(row.ID);
-
-                int rowRelativeOffset = i * columnSize;
-                bs.WriteInt32(rowRelativeOffset);
-                bs.Position = rowDataOffset + rowRelativeOffset;
-
-                using (var ms = new MemoryStream())
-                using (var mbs = new BinaryStream(ms, BigEndian ? ByteConverter.Big : ByteConverter.Little))
+                foreach (var data in row.ColumnData)
                 {
-                    foreach (var data in row.ColumnData)
-                    {
-                        data.Serialize(mbs);
-                        data.Serialize(bs);
-                    }
-
-                    mbs.Flush();
-                    rData.Add(ms.ToArray());
+                    data.Serialize(mbs);
+                    data.Serialize(bs);
                 }
 
-
+                mbs.Flush();
+                rData.Add(ms.ToArray());
             }
+
+
         }
     }
 
@@ -768,7 +758,7 @@ public class Table
         }
     }
 
-    private OptimizedStringTable GetLabelTable(List<RowData> rows)
+    private static OptimizedStringTable GetLabelTable(List<RowData> rows)
     {
         var optimizedStringTable = new OptimizedStringTable();
         optimizedStringTable.StringCoding = StringCoding.Int16CharCount;
@@ -782,7 +772,7 @@ public class Table
         return optimizedStringTable;
     }
 
-    private OptimizedStringTable GetStringDbTable(IEnumerable<string> strings)
+    private static OptimizedStringTable GetStringDbTable(IEnumerable<string> strings)
     {
         var optimizedStringTable = new OptimizedStringTable();
         optimizedStringTable.StringCoding = StringCoding.Int16CharCount;

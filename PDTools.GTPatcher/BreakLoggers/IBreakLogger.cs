@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 
 using libdebug;
 
-namespace PDTools.GTPatcher.BreakLoggers
+namespace PDTools.GTPatcher.BreakLoggers;
+
+public interface IBreakLogger
 {
-    public interface IBreakLogger
-    {
-        void Init(GTPatcher PS4);
+    void Init(GTPatcher PS4);
 
-        bool CheckHit(GTPatcher dbg, GeneralRegisters registers);
+    bool CheckHit(GTPatcher dbg, GeneralRegisters registers);
 
-        void OnBreak(GTPatcher dbg, GeneralRegisters registers);
-    }
+    void OnBreak(GTPatcher dbg, GeneralRegisters registers);
 }

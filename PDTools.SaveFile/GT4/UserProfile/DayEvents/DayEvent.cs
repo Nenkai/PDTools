@@ -7,10 +7,9 @@ using PDTools.Enums.PS2;
 
 using PDTools.Structures;
 
-namespace PDTools.SaveFile.GT4.UserProfile.DayEvents
+namespace PDTools.SaveFile.GT4.UserProfile.DayEvents;
+
+public interface IDayEvent : IGameSerializeBase<IDayEvent>
 {
-    public interface IDayEvent : IGameSerializeBase<IDayEvent>
-    {
-        DayEventType EventType { get; }
-    }
+    DayEventType EventType { get; }
 }

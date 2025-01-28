@@ -14,7 +14,7 @@ namespace PDTools.Files.Sound.Se;
 // Very very few events supported here, 4 bit channel number not used either
 public class SeSeq
 {
-    public List<SeMessage> Messages { get; set; } = new();
+    public List<SeMessage> Messages { get; set; } = [];
 
     public void Read(BinaryStream bs)
     {
@@ -72,8 +72,6 @@ public class SeMessage
         // This is all that's supported by the SqSequencer
         // Note that SeSequencer may support more events/meta (not implemented for now, it's used by sfx - midi is bundled inside the ins header in that case)
         // NOTE: Channel (lower 4 bits) is never used!
-        ISeEvent @event;
-
         if ((Status & 0xF0) == 0xA0)
         {
             Event = new SeNotePressureEvent();

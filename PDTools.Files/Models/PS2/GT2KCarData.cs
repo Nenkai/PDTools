@@ -1,19 +1,17 @@
-﻿using PDTools.Files.Models.PS2.CarModel1;
-using PDTools.Files.Models.PS2.ModelSet;
-using Syroot.BinaryData;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Syroot.BinaryData;
+
 namespace PDTools.Files.Models.PS2;
 
 public class GT2KCarData
 {
-    public List<CarModel0> CarModels { get; set; } = [];
+    public List<CarModel0.CarModel0> CarModels { get; set; } = [];
 
     public void FromStream(Stream stream)
     {
@@ -30,7 +28,7 @@ public class GT2KCarData
         for (int i = 0; i < carModel0Offsets.Length; i++)
         {
             bs.Position = basePos + (int)carModel0Offsets[i];
-            var carModel0 = new CarModel0();
+            var carModel0 = new CarModel0.CarModel0();
             carModel0.FromStream(bs);
             CarModels.Add(carModel0);
         }

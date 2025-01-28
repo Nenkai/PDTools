@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 using PDTools.Files.Models.PS2.Commands;
+using PDTools.Files.Models.PS2.RenderCommands;
 
-namespace GTPS2ModelTool.Core;
+namespace PDTools.Files.Models.PS2;
 
 public class RenderCommandContext
 {
@@ -162,7 +163,7 @@ public class RenderCommandContext
             cmds.Add(new Cmd_pglAlphaFail(AlphaFail));
 
         if (!IsDefaultAlphaTestFunc())
-            cmds.Add(new Cmd_pglAlphaFunc(this.AlphaTestFunc, this.AlphaTestRef));
+            cmds.Add(new Cmd_pglAlphaFunc(AlphaTestFunc, AlphaTestRef));
 
         if (!IsDefaultAlphaTest())
             cmds.Add(new Cmd_pglDisableAlphaTest());

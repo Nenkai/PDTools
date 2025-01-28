@@ -7,28 +7,27 @@ using System.Numerics;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.Commands
+namespace PDTools.Files.Models.PS2.RenderCommands;
+
+/// <summary>
+/// Pushes the current matrix stack down by one, duplicating the current matrix. Similar to glPushMatrix
+/// </summary>
+public class Cmd_pglPushMatrix : ModelSetupPS2Command
 {
-    /// <summary>
-    /// Pushes the current matrix stack down by one, duplicating the current matrix. Similar to glPushMatrix
-    /// </summary>
-    public class Cmd_pglPushMatrix : ModelSetupPS2Command
+    public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglPushMatrix;
+
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglPushMatrix;
+        
+    }
 
-        public override void Read(BinaryStream bs, int commandsBaseOffset)
-        {
-            
-        }
+    public override void Write(BinaryStream bs)
+    {
+        
+    }
 
-        public override void Write(BinaryStream bs)
-        {
-            
-        }
-
-        public override string ToString()
-        {
-            return $"{nameof(Cmd_pglPushMatrix)}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Cmd_pglPushMatrix)}";
     }
 }

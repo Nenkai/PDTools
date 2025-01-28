@@ -7,16 +7,15 @@ using System.Threading.Tasks;
 using Syroot.BinaryData.Core;
 using Syroot.BinaryData.Memory;
 
-namespace PDTools.SpecDB.Core.Mapping.Tables
-{
-    public class CarVariation : TableMetadata
-    {
-        public override string LabelPrefix { get; } = "";
+namespace PDTools.SpecDB.Core.Mapping.Tables;
 
-        public CarVariation(SpecDBFolder folderType, string localeName)
-        {
-            Columns.Add(new ColumnMetadata("VariationID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Var_Tbl_Index", DBColumnType.Int));
-        }
+public class CarVariation : TableMetadata
+{
+    public override string LabelPrefix { get; } = "";
+
+    public CarVariation(SpecDBFolder folderType, string localeName)
+    {
+        Columns.Add(new ColumnMetadata("VariationID", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("Var_Tbl_Index", DBColumnType.Int));
     }
 }

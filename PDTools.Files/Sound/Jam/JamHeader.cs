@@ -30,19 +30,19 @@ public class JamHeader
     /// Program chunks for SqSequencer (sqt files)
     /// </summary>
     // SDDRV::Jam::getProgChunk (GT4O US: 0x533878)
-    public List<JamProgChunk> ProgramChunks { get; set; } = new List<JamProgChunk>();
+    public List<JamProgChunk> ProgramChunks { get; set; } = [];
 
     /// <summary>
     /// Sound effect midi sequences, handled by SeSequencer
     /// </summary>
     // SDDRV::Jam::getSeSeq (GT4O US: 0x533760)
-    public List<SeSeq> SeSequences { get; set; } = new List<SeSeq>();
+    public List<SeSeq> SeSequences { get; set; } = [];
 
     /// <summary>
     /// Program chunks for SeSequencer
     /// </summary>
     // SDDRV::Jam::getSeProgChunk (GT4O US: 0x533678)
-    public List<JamProgChunk> SeProgramChunks { get; set; } = new List<JamProgChunk>();
+    public List<JamProgChunk> SeProgramChunks { get; set; } = [];
 
     // SDDRV::Jam::getLfoTable (GT4O US: 0x5337F0)
     // SDDRV::Jam::getVelocity (GT4O US: 0x533760)
@@ -92,7 +92,7 @@ public class JamHeader
             short chunkCount = bs.ReadInt16();
             short[] chunkOffsets = bs.ReadInt16s(chunkCount + 1);
 
-            List<(short, short Offset)> entries = new List<(short, short)>();
+            List<(short, short Offset)> entries = [];
             for (int i = 0; i < chunkCount + 1; i++)
             {
                 bs.Position = baseChunkPos + chunkOffsets[i];

@@ -25,11 +25,11 @@ public class CarInfo
     ];
 
     public uint DefaultTireIndex { get; set; }
-    public List<Light> FrontLights { get; set; } = new();
-    public List<Light> NightBrakeLights { get; set; } = new();
-    public List<Light> NightBrakeLightFlares { get; set; } = new();
-    public List<CollisionParticle> CollisionParticles { get; set; } = new();
-    public List<ExhaustData> Exhausts { get; set; } = new List<ExhaustData>();
+    public List<Light> FrontLights { get; set; } = [];
+    public List<Light> NightBrakeLights { get; set; } = [];
+    public List<Light> NightBrakeLightFlares { get; set; } = [];
+    public List<CollisionParticle> CollisionParticles { get; set; } = [];
+    public List<ExhaustData> Exhausts { get; set; } = [];
     public OnboardCameras OnboardCameras { get; set; } = new();
     public TireIndices Tires { get; set; } = new TireIndices();
 
@@ -186,14 +186,15 @@ public class CarInfo
         bs.Position = lastPos;
     }
 
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { WriteIndented = true, IncludeFields = true };
     public string AsJson()
     {
-        return JsonSerializer.Serialize(this, typeof(CarInfo), new JsonSerializerOptions() { WriteIndented = true, IncludeFields = true });
+        return JsonSerializer.Serialize(this, _jsonSerializerOptions);
     }
 
     public static CarInfo FromJson(string json)
     {
-        return JsonSerializer.Deserialize<CarInfo>(json, new JsonSerializerOptions() { WriteIndented = true, IncludeFields = true });
+        return JsonSerializer.Deserialize<CarInfo>(json, _jsonSerializerOptions);
     }
 }
 

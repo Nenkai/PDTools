@@ -6,70 +6,69 @@ using System.Threading.Tasks;
 
 using libdebug;
 
-namespace PDTools.GTPatcher.MemoryPatches
+namespace PDTools.GTPatcher.MemoryPatches;
+
+public class VersionBranchPatcher : IMemoryPatch
 {
-    public class VersionBranchPatcher : IMemoryPatch
+    public const int ImageBase = 0x400000;
+
+    public const ulong GT7_V100_VersionBranch_Offset = 0x6129890;
+    public const ulong GT7_V125_VersionBranch_Offset = 0x5169990;
+    public const ulong GT7_V129_VersionBranch_Offset = 0x4FA2DE0;
+    public const ulong GT7_V136_VersionBranch_Offset = 0x52BBAE0;
+
+    public ulong Offset { get; set; }
+
+    private string _branch;
+
+    public VersionBranchPatcher(string branch)
     {
-        public const int ImageBase = 0x400000;
+        _branch = branch;
+    }
 
-        public const ulong GT7_V100_VersionBranch_Offset = 0x6129890;
-        public const ulong GT7_V125_VersionBranch_Offset = 0x5169990;
-        public const ulong GT7_V129_VersionBranch_Offset = 0x4FA2DE0;
-        public const ulong GT7_V136_VersionBranch_Offset = 0x52BBAE0;
-
-        public ulong Offset { get; set; }
-
-        private string _branch;
-
-        public VersionBranchPatcher(string branch)
+    public void Init(GTPatcher dbg)
+    {
+        switch (dbg.GameType)
         {
-            _branch = branch;
-        }
+            case GameType.GTS_V168:
+                break;
 
-        public void Init(GTPatcher dbg)
-        {
-            switch (dbg.GameType)
-            {
-                case GameType.GTS_V168:
-                    break;
+            case GameType.GT7_V100:
+                Offset = GT7_V100_VersionBranch_Offset;
+                break;
 
-                case GameType.GT7_V100:
-                    Offset = GT7_V100_VersionBranch_Offset;
-                    break;
+            case GameType.GT7_V125:
+                Offset = GT7_V125_VersionBranch_Offset;
+                break;
 
-                case GameType.GT7_V125:
-                    Offset = GT7_V125_VersionBranch_Offset;
-                    break;
+            case GameType.GT7_V129:
+                Offset = GT7_V129_VersionBranch_Offset;
+                break;
 
-                case GameType.GT7_V129:
-                    Offset = GT7_V129_VersionBranch_Offset;
-                    break;
-
-                case GameType.GT7_V136:
-                    Offset = GT7_V136_VersionBranch_Offset;
-                    break;
-
-            }
-        }
-
-        public void OnAttach(GTPatcher dbg)
-        {
+            case GameType.GT7_V136:
+                Offset = GT7_V136_VersionBranch_Offset;
+                break;
 
         }
+    }
 
-        public void Patch(GTPatcher dbg, GeneralRegisters regs)
-        {
-            SetVersionBranch(dbg, _branch);
-        }
-
-        public void SetVersionBranch(GTPatcher dbg, string branch)
-        {
-            string oldBranch = dbg.ReadMemory<string>(Offset);
-            dbg.WriteMemory<string>(Offset, branch);
-
-            dbg.Notify($"Branch: {oldBranch} -> {branch}");
-        }
-
+    public void OnAttach(GTPatcher dbg)
+    {
 
     }
+
+    public void Patch(GTPatcher dbg, GeneralRegisters regs)
+    {
+        SetVersionBranch(dbg, _branch);
+    }
+
+    public void SetVersionBranch(GTPatcher dbg, string branch)
+    {
+        string oldBranch = dbg.ReadMemory<string>(Offset);
+        dbg.WriteMemory<string>(Offset, branch);
+
+        dbg.Notify($"Branch: {oldBranch} -> {branch}");
+    }
+
+
 }

@@ -61,24 +61,24 @@ public class RunwayFile
     /// </summary>
     public float TrackV { get; set; }
 
-    public List<RunwaySector> SectorInfos { get; set; } = new();
+    public List<RunwaySector> SectorInfos { get; set; } = [];
 
     /// <summary>
     /// List of starts from the grid, as X Y Z angle.
     /// </summary>
-    public List<RunwayStartingGridPosition> StartingGrid { get; set; } = new();
+    public List<RunwayStartingGridPosition> StartingGrid { get; set; } = [];
 
     /// <summary>
     /// List of checkpoints.
     /// </summary>
-    public List<RunwayCheckpoint> Checkpoints { get; set; } = new();
+    public List<RunwayCheckpoint> Checkpoints { get; set; } = [];
 
-    public List<ushort> CheckpointList = new();
+    public List<ushort> CheckpointList = [];
 
     /// <summary>
     /// List of defined lights for the runway. (GT6)
     /// </summary>
-    public List<RunwayLightDefinition> LightDefs { get; set; } = new();
+    public List<RunwayLightDefinition> LightDefs { get; set; } = [];
 
     /// <summary>
     /// List of defined light sets for the runway. (GT6)
@@ -88,7 +88,7 @@ public class RunwayFile
     /// <summary>
     /// Old gadgets for the runway, GT5 and 6 does not support it in the RWY file.
     /// </summary>
-    public List<RunwayGadgetOld> Gadgets { get; set; } = new();
+    public List<RunwayGadgetOld> Gadgets { get; set; } = [];
 
     /// <summary>
     /// Road vertices for this runway.
@@ -98,7 +98,7 @@ public class RunwayFile
     /// <summary>
     /// Road tris for tris for this runway.
     /// </summary>
-    public List<RunwayRoadTri> RoadTris = new();
+    public List<RunwayRoadTri> RoadTris = [];
 
     /// <summary>
     /// For GT7
@@ -133,24 +133,24 @@ public class RunwayFile
     /// </summary>
     public byte BoundaryVertScaleZ { get; set; }
 
-    public List<RunwayBoundaryVert> BoundaryVerts { get; set; } = new();
+    public List<RunwayBoundaryVert> BoundaryVerts { get; set; } = [];
 
-    public List<ushort> BoundaryFaces = new();
+    public List<ushort> BoundaryFaces = [];
 
     /// <summary>
     /// Positions of all pit stops in the runway.
     /// </summary>
-    public List<Vec3R> PitStops = new();
+    public List<Vec3R> PitStops = [];
 
     /// <summary>
     /// Positions of all adjacent pit stops in the runway.
     /// </summary>
-    public List<Vec3R> PitStopAdjacents = new();
+    public List<Vec3R> PitStopAdjacents = [];
 
     /// <summary>
     /// GT6 Only
     /// </summary>
-    public List<RunwayLightVFX> LightParticles = new();
+    public List<RunwayLightVFX> LightParticles = [];
 
     public const int RNW4_BE = 0x524E5734;
     public const int RNW4_LE = 0x34574E52;

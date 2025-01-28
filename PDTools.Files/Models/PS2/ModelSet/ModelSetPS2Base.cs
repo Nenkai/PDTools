@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using PDTools.Files.Models.PS2.Commands;
+using PDTools.Files.Models.PS2.RenderCommands;
 using PDTools.Files.Textures.PS2;
 
 namespace PDTools.Files.Models.PS2.ModelSet;

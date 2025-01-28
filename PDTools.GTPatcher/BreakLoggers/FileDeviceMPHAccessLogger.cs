@@ -6,66 +6,65 @@ using System.Threading.Tasks;
 
 using libdebug;
 
-namespace PDTools.GTPatcher.BreakLoggers
+namespace PDTools.GTPatcher.BreakLoggers;
+
+public class FileDeviceMPHAccessLogger : IBreakLogger
 {
-    public class FileDeviceMPHAccessLogger : IBreakLogger
+    public const ulong GT7_V100_FileOpen_Offset = 0x3A21740;
+    public const ulong GT7_V125_FileOpen_Offset = 0x312F240;
+    public const ulong GT7_V129_FileOpen_Offset = 0x2D62577;
+
+    public ulong Offset { get; set; }
+    public Breakpoint Breakpoint { get; set; }
+
+    public bool LogOnlyOnMiss { get; set; }
+
+    public FileDeviceMPHAccessLogger(bool logOnlyOnMiss = false)
     {
-        public const ulong GT7_V100_FileOpen_Offset = 0x3A21740;
-        public const ulong GT7_V125_FileOpen_Offset = 0x312F240;
-        public const ulong GT7_V129_FileOpen_Offset = 0x2D62577;
+        LogOnlyOnMiss = logOnlyOnMiss;
+    }
 
-        public ulong Offset { get; set; }
-        public Breakpoint Breakpoint { get; set; }
-
-        public bool LogOnlyOnMiss { get; set; }
-
-        public FileDeviceMPHAccessLogger(bool logOnlyOnMiss = false)
+    public void Init(GTPatcher dbg)
+    {
+        switch (dbg.GameType)
         {
-            LogOnlyOnMiss = logOnlyOnMiss;
+            case GameType.GT7_V100:
+                Offset = GT7_V100_FileOpen_Offset;
+                break;
+
+            case GameType.GT7_V125:
+                Offset = GT7_V125_FileOpen_Offset;
+                break;
+
+            case GameType.GT7_V129:
+                Offset = GT7_V129_FileOpen_Offset;
+                break;
         }
 
-        public void Init(GTPatcher dbg)
+        Breakpoint = dbg.SetBreakpoint(dbg.ImageBase + Offset);
+    }
+
+    public bool CheckHit(GTPatcher dbg, GeneralRegisters registers)
+    {
+        if (registers.rip == dbg.ImageBase + Offset)
+            return true;
+
+        return false;
+    }
+
+    public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
+    {
+        if (!LogOnlyOnMiss)
         {
-            switch (dbg.GameType)
-            {
-                case GameType.GT7_V100:
-                    Offset = GT7_V100_FileOpen_Offset;
-                    break;
-
-                case GameType.GT7_V125:
-                    Offset = GT7_V125_FileOpen_Offset;
-                    break;
-
-                case GameType.GT7_V129:
-                    Offset = GT7_V129_FileOpen_Offset;
-                    break;
-            }
-
-            Breakpoint = dbg.SetBreakpoint(dbg.ImageBase + Offset);
+            string fileName = dbg.ReadMemoryAbsolute<string>(registers.rsi);
+            Console.WriteLine($"{fileName}");
         }
-
-        public bool CheckHit(GTPatcher dbg, GeneralRegisters registers)
+        else
         {
-            if (registers.rip == dbg.ImageBase + Offset)
-                return true;
-
-            return false;
-        }
-
-        public void OnBreak(GTPatcher dbg, GeneralRegisters registers)
-        {
-            if (!LogOnlyOnMiss)
+            if (registers.rax != 0)
             {
                 string fileName = dbg.ReadMemoryAbsolute<string>(registers.rsi);
-                Console.WriteLine($"{fileName}");
-            }
-            else
-            {
-                if (registers.rax != 0)
-                {
-                    string fileName = dbg.ReadMemoryAbsolute<string>(registers.rsi);
-                    Console.WriteLine($"Missing: {fileName} (err: 0x{registers.rax:X8})");
-                }
+                Console.WriteLine($"Missing: {fileName} (err: 0x{registers.rax:X8})");
             }
         }
     }

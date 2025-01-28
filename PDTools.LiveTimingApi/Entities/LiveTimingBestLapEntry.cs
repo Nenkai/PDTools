@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PDTools.LiveTimingApi.Entities
+namespace PDTools.LiveTimingApi.Entities;
+
+public class LiveTimingBestLapEntry
 {
-    public class LiveTimingBestLapEntry
-    {
-        public LiveTimingEntry BestlapEntry { get; set; }
-    }
+    public LiveTimingEntry BestlapEntry { get; set; }
 }
