@@ -206,10 +206,10 @@ namespace PDTools.GT4ElfBuilderTool
             { 66001, "GT3 (US)" },
             { 67001, "GT3 (EU)" },
 
-            { 69001, "GT Concept 2001 (JP)" },
-            { 71003, "GT Concept 2002 Tokyo-Geneva (EU)" },
-            { 72001, "GT Concept 2002 Tokyo-Geneva (EU)" }, // Also Tokyo-Seoul (Korea)
-            { 75001, "GT Concept 2002 Tokyo-Geneva (Asia)"},
+            { 69001, "GTC: 2001 (JP)" },
+            { 71003, "GTC: 2002 Tokyo-Geneva (EU)" },
+            { 72001, "GTC: 2002 Tokyo-Geneva (EU)" }, // Also Tokyo-Seoul (Korea)
+            { 75001, "GTC: 2002 Tokyo-Geneva (Asia) / GTC: Subaru Driving Simulator"},
 
             { 77001, "GT4P (JP)" },
             { 78001, "GT4P (AS)" },

@@ -120,7 +120,7 @@ namespace PDTools.GT4ElfBuilderTool
             }
 
             // Added this, seems important
-            // 06/10/2023 comment from later on - this might still break on i.e some GT4P region
+            // 06/10/2023 comment from later on - this might still break on i.e some GT4P region, and GT4 EU (Preprod)
             // Should it be "if (leftFactor < 0)" ?
             leftFactor = leftFactor + u;
 
