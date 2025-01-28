@@ -22,7 +22,7 @@ public class VisionList
     /// <param name="stream"></param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException"></exception>
-    public static VisionList FromStream(Stream stream)
+    public VisionList FromStream(Stream stream)
     {
         BinaryStream bs = new BinaryStream(stream);
         long basePos = bs.Position;

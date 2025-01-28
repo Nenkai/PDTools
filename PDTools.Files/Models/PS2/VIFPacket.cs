@@ -12,7 +12,7 @@ namespace PDTools.Files.Models.PS2
     {
         public List<VIFCommand> Commands = new List<VIFCommand>();
 
-        public static VIFPacket FromStream(BinaryStream bs, int quadwordSize, long mdlBasePos)
+        public static VIFPacket FromStream(BinaryStream bs, int quadwordSize)
         {
             VIFPacket packet = new VIFPacket();
             long basePos = bs.Position;
@@ -20,11 +20,7 @@ namespace PDTools.Files.Models.PS2
             while (bs.Position < basePos + quadwordSize * 0x10)
             {
                 var cmd = new VIFCommand();
-                cmd.FromStream(bs, mdlBasePos);
-
-                if (cmd.CommandOpcode == VIFCommandOpcode.NOP)
-                    break;
-
+                cmd.FromStream(bs);
                 packet.Commands.Add(cmd);
             }
 

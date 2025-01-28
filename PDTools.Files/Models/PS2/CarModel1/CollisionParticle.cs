@@ -7,27 +7,26 @@ using System.Threading.Tasks;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS2.CarModel1
+namespace PDTools.Files.Models.PS2.CarModel1;
+
+public class CollisionParticle
 {
-    public class CollisionParticle
+    public Vector3 Position { get; set; }
+
+    public void FromStream(BinaryStream bs)
     {
-        public Vector3 Position { get; set; }
+        Position = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
+        bs.Position += 0x4; // Empty
+    }
 
-        public void FromStream(BinaryStream bs)
-        {
-            Position = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
-            bs.Position += 0x4; // Empty
-        }
+    public void Write(BinaryStream bs)
+    {
+        bs.WriteSingle(Position.X); bs.WriteSingle(Position.Y); bs.WriteSingle(Position.Z);
+        bs.Position += 0x4;
+    }
 
-        public void Write(BinaryStream bs)
-        {
-            bs.WriteSingle(Position.X); bs.WriteSingle(Position.Y); bs.WriteSingle(Position.Z);
-            bs.Position += 0x4;
-        }
-
-        public static uint GetSize()
-        {
-            return 0x10;
-        }
+    public static uint GetSize()
+    {
+        return 0x10;
     }
 }

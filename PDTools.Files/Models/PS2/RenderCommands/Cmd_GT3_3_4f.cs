@@ -10,7 +10,7 @@ using Syroot.BinaryData;
 namespace PDTools.Files.Models.PS2.Commands
 {
     /// <summary>
-    /// Same as command 50 but sets all 4 values to specified.
+    /// Same as command 54 but sets all 4 values to specified.
     /// </summary>
     public class Cmd_GT3_3_4f : ModelSetupPS2Command
     {
@@ -30,10 +30,7 @@ namespace PDTools.Files.Models.PS2.Commands
 
         public Cmd_GT3_3_4f(float r, float g, float b, float a)
         {
-            R = r;
-            G = g;
-            B = b;
-            A = a;
+
         }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)

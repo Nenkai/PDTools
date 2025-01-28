@@ -35,7 +35,6 @@ namespace PDTools.Files.Models.PS2.Commands
                 if (opcode == ModelSetupPS2Opcode.End)
                     break;
 
- 
                 var cmd = ModelSetupPS2Command.GetByOpcode(opcode);
 
                 cmd.Read(bs, 0);

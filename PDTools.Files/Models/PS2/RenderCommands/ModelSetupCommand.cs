@@ -29,7 +29,10 @@ namespace PDTools.Files.Models.PS2.Commands
         {
             ModelSetupPS2Command cmd = opcode switch
             {
+                ModelSetupPS2Opcode.RenderModel_Byte => new Cmd_RenderModel_Byte(),
+                ModelSetupPS2Opcode.RenderModel_UShort => new Cmd_RenderModel_UShort(),
                 ModelSetupPS2Opcode.pgluCallShape_Byte => new Cmd_pgluCallShapeByte(),
+                ModelSetupPS2Opcode.pgluCallShape_UShort => new Cmd_pgluCallShape_UShort(),
                 ModelSetupPS2Opcode.CallModelCallback => new Cmd_CallModelCallback(),
                 ModelSetupPS2Opcode.LODSelect => new Cmd_LODSelect(),
                 ModelSetupPS2Opcode.Jump_Byte => new Cmd_JumpByte(),
@@ -71,18 +74,26 @@ namespace PDTools.Files.Models.PS2.Commands
                 ModelSetupPS2Opcode.pglEnableCullFace => new Cmd_pglEnableCullFace(),
                 ModelSetupPS2Opcode.pglDisableCullFace => new Cmd_pglDisableCullFace(),
                 ModelSetupPS2Opcode.pglAlphaFail => new Cmd_pglAlphaFail(),
-                ModelSetupPS2Opcode.pglGT3_3_1ui => new Cmd_GT3_3_1ui(),
-                ModelSetupPS2Opcode.pglGT3_3_4f => new Cmd_GT3_3_4f(),
+                ModelSetupPS2Opcode.pglGT3_2_1ui => new Cmd_GT3_2_1ui(),
+                ModelSetupPS2Opcode.pglGT3_2_4f => new Cmd_GT3_2_4f(),
                 ModelSetupPS2Opcode.pgl_53 => new Cmd_Unk53(),
                 ModelSetupPS2Opcode.CallVM => new Cmd_CallVM(),
                 ModelSetupPS2Opcode.VM_pglRotate => new Cmd_VM_pglRotate(),
                 ModelSetupPS2Opcode.VM_pgluShapeTweenRatio => new Cmd_VM_pgluShapeTweenRatio(),
                 ModelSetupPS2Opcode.VM_Branch => new Cmd_VM_Branch(),
-                ModelSetupPS2Opcode.pglDisable19_14 => new Cmd_pglEnable19_14(),
+                ModelSetupPS2Opcode.pglCullFace_2 => new Cmd_pglCullFace_2(),
+                ModelSetupPS2Opcode.pglCullFace_1 => new Cmd_pglCullFace_1(),
                 ModelSetupPS2Opcode.pgluTexTableFromExternalTexSetByte => new Cmd_pgluTexTableFromExternalTexSetByte(),
+                ModelSetupPS2Opcode.pglVariableColorScale => new Cmd_pglVariableColorScale(),
+                ModelSetupPS2Opcode.pglVariableColorOffset => new Cmd_pglVariableColorOffset(),
+                ModelSetupPS2Opcode.VM_pglVariableColorScale => new Cmd_VM_pglVariableColorScale(),
+                ModelSetupPS2Opcode.VM_pglVariableColorOffset => new Cmd_VM_pglVariableColorOffset(),
+                ModelSetupPS2Opcode.pglDisable19_14 => new Cmd_pglEnable19_14(),
+                ModelSetupPS2Opcode.pglTexGenf_WithCurrentFacingParameters => new Cmd_pglTexGenf_WithCurrentFacingParameters(),
+                ModelSetupPS2Opcode.pglTexGenf_Default => new Cmd_pglTexGenf_Default(),
                 ModelSetupPS2Opcode.VMCallback_Byte => new Cmd_VMCallbackByte(),
                 ModelSetupPS2Opcode.VMCallback_UShort => new Cmd_VMCallbackByte(),
-
+                
                 _ => throw new Exception($"Unexpected opcode {opcode}")
             };
 

@@ -24,7 +24,7 @@ public class DCourseEffect
     /// <param name="stream"></param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException"></exception>
-    public static DCourseEffect FromStream(Stream stream)
+    public DCourseEffect FromStream(Stream stream)
     {
         BinaryStream bs = new BinaryStream(stream);
         long basePos = bs.Position;

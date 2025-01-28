@@ -5,6 +5,7 @@ using System.IO;
 
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PDTools.Utils
 {
@@ -29,7 +30,7 @@ namespace PDTools.Utils
 
         public Span<byte> SourceBuffer { get; set; }
 
-        private Span<byte> _currentBuffer { get; set; }
+        private Span<byte> _currentBuffer;
 
         /// <summary>
         /// If Writing: Bits written for the current byte
@@ -44,6 +45,9 @@ namespace PDTools.Utils
         public bool IsEndOfStream { get; set; }
 
         private bool _needsFlush;
+
+        // Used when the input buffer is provided (when writing).
+        private readonly bool _noExpand;
 
         /// <summary>
         /// Returns the byte position of the CURRENT bit. Make sure to align to the next byte if you want to use this for offsets!
@@ -104,6 +108,7 @@ namespace PDTools.Utils
             _length = buffer.Length;
 
             _needsFlush = false;
+            _noExpand = mode == BitStreamMode.Write; // Buffer is provided, do not expand it. Throw.
 #if DEBUG
             _sw = null;
 #endif
@@ -129,7 +134,7 @@ namespace PDTools.Utils
             IsEndOfStream = false;
             _length = 1;
             _needsFlush = false;
-
+            _noExpand = false;
 #if DEBUG
             _sw = null;
 #endif
@@ -262,20 +267,13 @@ namespace PDTools.Utils
                 // Flush current byte
                 AlignToNextByte();
 
-                if (byteOffset >= _length)
+                if (!_noExpand && byteOffset >= _length)
                     _length = byteOffset;
 
                 if (_length > SourceBuffer.Length)
                     EnsureCapacity(_length * Byte_Bits);
 
                 _currentBuffer = SourceBuffer.Slice(byteOffset);
-
-                if (_currentBuffer.IsEmpty)
-                    CurrentByte = 0;
-                else
-                    CurrentByte = _currentBuffer[0];
-
-                BitCounter = 0;
             }
             else if (seekOrigin == SeekOrigin.Current)
             {
@@ -286,20 +284,25 @@ namespace PDTools.Utils
                 // Flush current byte
                 AlignToNextByte();
 
-                if (newPos >= _length)
+                if (!_noExpand && newPos >= _length)
                     _length = newPos + 1;
 
                 if (_length >= SourceBuffer.Length)
                     EnsureCapacity(_length * Byte_Bits);
 
                 _currentBuffer = _currentBuffer.Slice(byteOffset);
-                CurrentByte = _currentBuffer[0];
-                BitCounter = 0;
             }
             else
             {
                 throw new NotImplementedException("Unimplemented seek origin type");
             }
+
+            if (_currentBuffer.IsEmpty)
+                CurrentByte = 0;
+            else
+                CurrentByte = _currentBuffer[0];
+
+            BitCounter = 0;
         }
 
         /// <summary>
@@ -357,12 +360,13 @@ namespace PDTools.Utils
 
         private void EnsureCapacity(long bitCount)
         {
-            bitCount += Byte_Bits; // Since we may slice to the next byte, better to be safe
-
             uint bitsLeftThisByte = Byte_Bits - BitCounter;
-            long totalFreeBits = (_currentBuffer.Length * Byte_Bits) + bitsLeftThisByte;
+            long totalFreeBits = ((_currentBuffer.Length - 1) * Byte_Bits) + bitsLeftThisByte;
 
-            if (bitCount >= totalFreeBits)
+            if (_noExpand && totalFreeBits < bitCount)
+                throw new ArgumentOutOfRangeException("Position is beyond end of stream.");
+
+            if (bitCount > totalFreeBits)
             {
                 int cPos = Position < 0 ? SourceBuffer.Length : Position;
 
@@ -1056,33 +1060,65 @@ namespace PDTools.Utils
         }
         #endregion
 
-        private void Test()
+        public static void Test()
         {
             byte[] test = new byte[] { 0, 1, 2, 3, 4 };
             BitStream testRead = new BitStream(BitStreamMode.Read, test);
+
             testRead.ReadBits(1);
-            int p = testRead.Position;
+            Debug.Assert(testRead.Position == 0);
+
             testRead.ReadBits(7);
-            p = testRead.Position;
+            Debug.Assert(testRead.Position == 1);
+
             testRead.ReadBits(1);
+            Debug.Assert(testRead.Position == 1);
+
             testRead.AlignToNextByte();
+            Debug.Assert(testRead.Position == 2);
+
             testRead.Position = 3;
-            testRead.ReadBits(8);
+            Debug.Assert(testRead.Position == 3);
+
+            var val = testRead.ReadBits(8);
+            Debug.Assert(val == 3);
 
             BitStream testWrite = new BitStream(BitStreamMode.Write, new byte[5]);
             testWrite.WriteBits(1, 1);
-            p = testWrite.Position;
-            testWrite.WriteBits(1, 1);
-            testWrite.AlignToNextByte();
-            testWrite.WriteBits(1, 1);
+            Debug.Assert(testWrite.Position == 0);
 
+            testWrite.WriteBits(1, 1);
+            Debug.Assert(testWrite.BitCounter == 2);
+
+            testWrite.AlignToNextByte();
+            Debug.Assert(testWrite.Position == 1);
+
+            try
+            {
+                testWrite.Position = 5;
+                testWrite.WriteBits(1, 1);
+            }
+            catch (Exception ex)
+            {
+                Debug.Assert(ex is IOException iOException && iOException.Message.Contains("Out of range"));
+            }
+
+            testWrite.Position = 0;
+            testWrite.WriteByteData(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
+            Debug.Assert(testWrite.GetBuffer().ToArray().All(e => e == 0xFF));
+            Debug.Assert(testWrite.GetSpanToCurrentPosition().Length == 5);
+
+            int offset = 1024;
             BitStream testDynamicStream = new BitStream(BitStreamMode.Write);
-            testDynamicStream.SeekToByte(1024);
-            testDynamicStream.SeekToBit(8192);
+            testDynamicStream.SeekToByte(offset);
+            testDynamicStream.SeekToBit(offset * Byte_Bits);
+            Debug.Assert(testDynamicStream.Position == offset);
+
             testDynamicStream.WriteBoolBit(true);
+            Debug.Assert(testDynamicStream.Length == offset + 1);
 
             Span<byte> span = testDynamicStream.GetSpanFromCurrentPosition();
-            int pos = testRead.Position;
+            Debug.Assert(span.Length == offset); // Source buffer should have been doubled, therefore we get a span of the same length.
         }
     }
 

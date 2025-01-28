@@ -23,7 +23,7 @@ public class CourseSound
     /// <param name="stream"></param>
     /// <returns></returns>
     /// <exception cref="InvalidDataException"></exception>
-    public static CourseSound FromStream(Stream stream)
+    public CourseSound FromStream(Stream stream)
     {
         BinaryStream bs = new BinaryStream(stream);
         long basePos = bs.Position;

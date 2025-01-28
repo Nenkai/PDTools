@@ -2,10 +2,14 @@
 // Engine
 ///////////////////////////////
 
-// [mount_point]@[physical_path] - "/" will allow standard game file reading to use the path to the game files
+// [mount_point]@[physical_paths] - "/" will allow standard game file reading to use the path to the game files
 // Otherwise it's "/APP_DATA", "/APP_DATA_RAW" etc, normally so that adhoc can refer to these mount points
 // NOTE - kinda related: It appears that /appcount mounts both "/" and "/APP_CONT", so an external mod folder using dlc might work aswell
-fsroot=/@/data/gtsport_fsroot/
+// examples of valid inputs:
+// - fsroot=/@/data/gtsport_fsroot/ => Adds and maps a fsroot device to the game's '/' to the os's /data/gtsport_fsroot/
+// - fsroot=/@{/data,/data2} => Adds and maps two fsroot devices to the game's '/' to the os's /data AND /data2
+// - vol=/@{/app0/gt_2.idx,/app0/gt_3.idx} => Adds and maps two GTFS volume devices the game's '/' pointing to their respective index files
+// it is possible to use mutliple arguments (i.e fsroot AND vol).
 
 ////////////////////////////////
 // PROJECT SCRIPTS

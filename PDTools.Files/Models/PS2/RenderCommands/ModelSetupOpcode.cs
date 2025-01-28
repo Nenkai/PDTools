@@ -244,12 +244,12 @@ namespace PDTools.Files.Models.PS2.Commands
 
         // Does something with 4 floats. Not used above GT3. Other games's code skips 4 floats.
         // Refer to 0x2505E8 with param 3 (GT3 EU)
-        pglGT3_3_1ui = 50,
+        pglGT3_2_1ui = 50,
 
         // Does something with 1 float. Not used above GT3. Other games's code skips 1 float.
         // Operates similarly to command 51.
         // Refer to 0x250688 with param 3 (GT3 EU)
-        pglGT3_3_4f = 51,
+        pglGT3_2_4f = 51,
 
         // GT4 and above. Calls ModelSet2::setShapeTweenRatio
         ModelSet_setShapeTweenRatio = 52,
@@ -262,12 +262,12 @@ namespace PDTools.Files.Models.PS2.Commands
         // Does something with 1 float. Not used above GT3. Other games's code skips 1 float.
         // Operates similarly to command 51.
         // Refer to 0x250688 with param 2 (GT3 EU)
-        pgl_GT3_2_1ui = 54,
+        pglGT3_3_1ui = 54,
 
         // Does something with 1 float. Not used above GT3. Other games's code skips 1 float.
         // Operates similarly to command 54.
         // Refer to 0x2505E8 with param 2 (GT3 EU)
-        pglGT3_2_4f = 55,
+        pglGT3_3_4f = 55,
 
         /// <summary>
         /// GT4 and above. Calls pglGetCullFace, and pglCullFace

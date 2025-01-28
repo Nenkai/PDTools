@@ -29,7 +29,7 @@ namespace PDTools.Files.Models.PS2
         /// </summary>
         public ushort pgluMaterialIndex { get; set; }
 
-        public static VIFDescriptor FromStream(BinaryStream bs, long mdlBasePos)
+        public static VIFDescriptor FromStream(BinaryStream bs)
         {
             VIFDescriptor VIFDescriptor = new VIFDescriptor();
             VIFDescriptor.VIFDataOffset = bs.ReadUInt32();

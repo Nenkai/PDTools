@@ -17,7 +17,7 @@ namespace PDTools.Files.Models.PS2.Commands
         public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.pglSetFogColor;
 
         /// <summary>
-        /// Color. RGB only, A is ignored
+        /// GS FOGCOL value. RGB only, A is ignored
         /// </summary>
         public uint Color { get; set; }
 

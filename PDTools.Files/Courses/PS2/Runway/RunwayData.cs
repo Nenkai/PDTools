@@ -79,7 +79,7 @@ public class RunwayData
 
     public uint Magic { get; set; }
 
-    public static RunwayData FromStream(Stream stream)
+    public RunwayData FromStream(Stream stream)
     {
         BinaryStream bs = new BinaryStream(stream);
         long basePos = bs.Position;
