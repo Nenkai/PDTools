@@ -14,8 +14,12 @@ namespace PDTools.SpecDB.Core.Mapping.Tables
         public Course(SpecDBFolder folderType)
         {
             Columns.Add(new ColumnMetadata("ModelName", DBColumnType.String, "UnistrDB.sdb"));
-            Columns.Add(new ColumnMetadata("NameJpn", DBColumnType.String, "UnistrDB.sdb"));
-            Columns.Add(new ColumnMetadata("NameEng", DBColumnType.String, "UnistrDB.sdb"));
+
+            if (folderType >= SpecDBFolder.GT5_TRIAL2007_2730)
+            {
+                Columns.Add(new ColumnMetadata("NameJpn", DBColumnType.String, "UnistrDB.sdb"));
+                Columns.Add(new ColumnMetadata("NameEng", DBColumnType.String, "UnistrDB.sdb"));
+            }
 
             if (folderType >= SpecDBFolder.GT5_JP3009)
                 Columns.Add(new ColumnMetadata("PitCrew", DBColumnType.Int));
