@@ -1,8 +1,18 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Pfim;
+
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+
+using SixLabors.ImageSharp.PixelFormats;
 
 using Syroot.BinaryData;
 
@@ -87,6 +97,11 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
     public uint ImageId { get; set; }
     public string Name { get; set; }
 
+    public PGLUCellTextureInfo()
+    {
+        BufferInfo = new CellTextureBuffer();
+    }
+
     public override void Write(BinaryStream bs)
     {
         bs.WriteInt32(6656); // head0
@@ -94,8 +109,8 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
 
         // CELL_GCM_METHOD_DATA_TEXTURE_BORDER_FORMAT
         int bits = 0;
-        bits |= (byte)((MipmapLevelLast & 0b_11111111) << 16);
-        bits |= (byte)(((byte)FormatBits & 0b_11111111) << 8);
+        bits |= (MipmapLevelLast & 0b_11111111) << 16;
+        bits |= ((byte)FormatBits & 0b_11111111) << 8;
         bits |= (byte)(((byte)Dimension & 0b_1111) << 4);
         bits |= (byte)(((byte)Border & 1) << 3);
         bits |= (byte)(((byte)CubeMap & 1) << 2);
@@ -170,7 +185,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         bs.WriteInt32(0); // Img name offset to write later if exists
     }
 
-    public override void Read(BinaryStream bs)
+    public override void Read(BinaryStream bs, long basePos)
     {
         Head0 = bs.ReadUInt32();
         Offset = bs.ReadUInt32();
@@ -234,7 +249,227 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         ImageId = bs.ReadUInt32();
         bs.ReadUInt32();
         uint imageNameOffset = bs.ReadUInt32();
-        bs.Position = imageNameOffset;
+        bs.Position = imageNameOffset - basePos;
         Name = bs.ReadString(StringCoding.ZeroTerminated);
     }
+
+    internal void CreateDDSData(byte[] imageData, Stream outStream)
+    {
+        var header = new DdsHeader();
+        header.Height = Height;
+        header.Width = Width;
+
+        // https://gist.github.com/Scobalula/d9474f3fcf3d5a2ca596fceb64e16c98#file-directxtexutil-cs-L355
+
+        CELL_GCM_TEXTURE_FORMAT format = FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
+
+        switch (format)   // dwPitchOrLinearSize
+        {
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
+                header.PitchOrLinearSize = Height * Width / 2;
+                break;
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
+                header.PitchOrLinearSize = Height * Width;
+                break;
+            default:
+                // 32bpp
+                header.PitchOrLinearSize = (Width * 32 + 7) / 8;
+                //bs.WriteInt32(0);
+                break;
+        }
+
+
+        header.LastMipmapLevel = MipmapLevelLast;
+
+        switch (format)
+        {
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1:
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23:
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
+                header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
+
+                // FourCC
+                if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
+                    header.FourCCName = "DXT1";
+                else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
+                    header.FourCCName = "DXT3";
+                else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
+                    header.FourCCName = "DXT5";
+                break;
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8:
+            case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8:
+                header.FormatFlags = DDSPixelFormatFlags.DDPF_RGB | DDSPixelFormatFlags.DDPF_ALPHAPIXELS | DDSPixelFormatFlags.DDPF_FOURCC;
+                header.FourCCName = "DX10";
+                header.RGBBitCount = 32;
+
+                header.RBitMask = 0x000000FF;  // RBitMask 
+                header.GBitMask = 0x0000FF00;  // GBitMask
+                header.BBitMask = 0x00FF0000;  // BBitMask
+                header.ABitMask = 0xFF000000;  // ABitMask
+
+                header.DxgiFormat = DDS_DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM;
+                break;
+        }
+
+        // Unswizzle
+
+        if ((format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+            && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
+        {
+            int byteCount = Width * Height * 4;
+            byte[] newImageData = new byte[byteCount];
+
+            Syroot.BinaryData.Memory.SpanReader sr = new Syroot.BinaryData.Memory.SpanReader(imageData);
+            Syroot.BinaryData.Memory.SpanWriter sw = new Syroot.BinaryData.Memory.SpanWriter(newImageData);
+
+            Span<byte> pixBuffer;
+            for (int i = 0; i < Width * Height; i++)
+            {
+                int pixIndex = Swizzler.MortonReorder(i, Width, Height);
+                pixBuffer = sr.ReadBytes(4);
+                int destIndex = 4 * pixIndex;
+                sw.Position = destIndex;
+                sw.WriteBytes(pixBuffer);
+            }
+
+            imageData = newImageData;
+        }
+
+        // Swap channels for DDS
+        if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+        {
+            var sp = MemoryMarshal.Cast<byte, uint>(imageData);
+            for (var i = 0; i < Width * Height * 4; i += 4)
+            {
+                // Swap endian first
+                sp[i / 4] = BinaryPrimitives.ReverseEndianness(sp[i / 4]);
+
+                // Remap channels
+                byte r = imageData[i + (byte)InR];
+                byte g = imageData[i + (byte)InG];
+                byte b = imageData[i + (byte)InB];
+                byte a = imageData[i + (byte)InA];
+
+                imageData[i + 0] = r;
+                imageData[i + 1] = g;
+                imageData[i + 2] = b;
+                imageData[i + 3] = a;
+            }
+        }
+
+        header.ImageData = imageData;
+        header.Write(outStream);
+    }
+
+    public void InitFromDDSImage(IImage image, CELL_GCM_TEXTURE_FORMAT format)
+    {
+        FormatBits = format;
+        Width = (ushort)image.Width;
+        Height = (ushort)image.Height;
+        Pitch = Width * 4;
+        MipmapLevelLast = (byte)image.MipMaps.Length;
+
+        var cellBufferInfo = BufferInfo as CellTextureBuffer;
+        cellBufferInfo.Width = (ushort)image.Width;
+        cellBufferInfo.Height = (ushort)image.Height;
+        cellBufferInfo.LastMipmapLevel = (byte)image.MipMaps.Length;
+        cellBufferInfo.FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
+    }
+
+    public bool FromStandardImage(string path, CELL_GCM_TEXTURE_FORMAT format)
+    {
+        IImageFormat i = Image.DetectFormat(path);
+        if (i is null)
+        {
+            Console.WriteLine($"This file is not a regular image file. {path}");
+            return false;
+        }
+
+        ConvertFileToDDS(path, format);
+
+        string ddsFileName = Path.ChangeExtension(path, ".dds");
+        if (!File.Exists(ddsFileName))
+            return false;
+
+        var dds = Pfimage.FromFile(ddsFileName);
+        InitFromDDSImage(dds, format);
+
+        Memory<byte> ddsData = File.ReadAllBytes(ddsFileName).AsMemory(0x80);
+
+        // Convert B8G8R8A8_UNORM (from conversion to dds) to A8R8G8B8 since TexConv does not support it
+        if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
+        {
+            var pixels = MemoryMarshal.Cast<byte, uint>(ddsData.Span);
+            for (int j = 0; j < Width * Height; j++)
+                pixels[j] = BinaryPrimitives.ReverseEndianness(pixels[j]);
+        }
+
+        BufferInfo.ImageData = ddsData;
+        Name = Path.GetFileNameWithoutExtension(path);
+
+        File.Delete(ddsFileName);
+        return true;
+    }
+
+    public byte[] GetDDS()
+    {
+        using var ms = new MemoryStream();
+        CreateDDSData(BufferInfo.ImageData.ToArray(), ms); // Change format for DXT10 if we're doing a direct extract to dds
+        ms.Position = 0;
+
+        return ms.ToArray();
+    }
+
+    public override Image GetAsImage()
+    {
+        // TODO: don't make a dds first. decode straight away.
+        using var ms = new MemoryStream();
+        CreateDDSData(BufferInfo.ImageData.ToArray(), ms); // Change format for DXT10 if we're doing a direct extract to dds
+        ms.Position = 0;
+
+        var dds = Pfimage.FromStream(ms);
+        if (dds.Format == ImageFormat.Rgb24)
+        {
+            var i = Image.LoadPixelData<Bgr24>(dds.Data, dds.Width, dds.Height);
+            return i;
+        }
+        else if (dds.Format == ImageFormat.Rgba32)
+        {
+            // Without the alignment, for some reason pfim's data becomes weird
+            var i = Image.LoadPixelData<Bgra32>(dds.Data, (int)Utils.MiscUtils.AlignValue((uint)dds.Width, 4), dds.Height); 
+            return i;
+        }
+        else
+        {
+            Console.WriteLine($"Invalid format to save..? {dds.Format}");
+            return null;
+        }
+
+    }
+
+    private static void ConvertFileToDDS(string fileName, CELL_GCM_TEXTURE_FORMAT imgFormat)
+    {
+        string arguments = $"\"{fileName}\"";
+        if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
+            arguments += " -f DXT1";
+        else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
+            arguments += " -f DXT3";
+        else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45)
+            arguments += " -f DXT5";
+        else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+            arguments += " -f B8G8R8X8_UNORM";
+        else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8)
+            arguments += " -f B8G8R8A8_UNORM"; // We'll reverse it later, TexConv does not support A8R8G8B8
+
+        arguments += " -y"      // Overwrite if it exists
+                  + " -m 1"     // Don't care about extra mipmaps
+                  + " -nologo"  // No copyright logo
+                  + " -srgb"   // Auto correct gamma
+                  + $" -o {Path.GetDirectoryName(fileName)}"; // Set directory to file input's directory
+
+        Process converter = Process.Start(Path.Combine(Directory.GetCurrentDirectory(), "texconv.exe"), arguments);
+        converter.WaitForExit();
+    }
+
 }

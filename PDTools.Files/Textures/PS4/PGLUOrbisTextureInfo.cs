@@ -1,8 +1,19 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+
+using BCnEncoder.Decoder;
+using BCnEncoder.Shared;
+
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp;
 
 using Syroot.BinaryData;
 
@@ -32,7 +43,7 @@ public class PGLUOrbisTextureInfo : PGLUTextureInfo
     public int Pitch { get; set; }
     public int ImageSize { get; set; }
 
-    public override void Read(BinaryStream bs)
+    public override void Read(BinaryStream bs, long basePos)
     {
         bs.ReadInt32(); // Nothing
         int bits = bs.ReadInt32();
@@ -63,10 +74,99 @@ public class PGLUOrbisTextureInfo : PGLUTextureInfo
         bs.Position += 8;
 
         ImageSize = bs.ReadInt32();
+
+        uint field_0x20 = bs.ReadUInt32();
+        uint field_0x24 = bs.ReadUInt32();
+        uint field_0x28 = bs.ReadUInt32();
+        uint field_0x2C = bs.ReadUInt32();
+        uint field_0x30 = bs.ReadUInt32();
+        uint field_0x34 = bs.ReadUInt16();
+        BufferId = bs.ReadUInt16();
+        uint field_0x38 = bs.ReadUInt32();
+        uint field_0x3C = bs.ReadUInt32();
+        uint fileNameOffset = bs.ReadUInt32();
+        uint field_0x44 = bs.ReadUInt32();
+
+        bs.Position = fileNameOffset - basePos;
+        Name = bs.ReadString(StringCoding.ZeroTerminated);
     }
 
     public override void Write(BinaryStream bs)
     {
         throw new NotImplementedException();
+    }
+
+    public byte[] GetDDS()
+    {
+        byte[] unswizzled = ArrayPool<byte>.Shared.Rent(BufferInfo.ImageData.Length);
+
+        int rawWidth = Pitch;
+        int paddedHeight = IsPaddedToPow2 ? (int)BitOperations.RoundUpToPowerOf2((uint)Height) : Height;
+
+        Swizzler.DoSwizzle(BufferInfo.ImageData.Span, unswizzled, rawWidth, paddedHeight, 16);
+
+        var header = new DdsHeader();
+        header.Height = Height;
+        header.Width = Width;
+        header.PitchOrLinearSize = Height * Width;
+        header.LastMipmapLevel = 1;
+        header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
+        header.FourCCName = "DX10";
+
+        var dxgiFormat = this.SurfaceFormat switch
+        {
+            GNFSurfaceFormat.kSurfaceFormatBc1 => DDS_DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM,
+            GNFSurfaceFormat.kSurfaceFormatBc2 => DDS_DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM,
+            GNFSurfaceFormat.kSurfaceFormatBc3 => DDS_DXGI_FORMAT.DXGI_FORMAT_BC3_UNORM,
+            GNFSurfaceFormat.kSurfaceFormatBc5 => DDS_DXGI_FORMAT.DXGI_FORMAT_BC5_UNORM,
+            GNFSurfaceFormat.kSurfaceFormatBc7 => DDS_DXGI_FORMAT.DXGI_FORMAT_BC7_UNORM,
+            _ => throw new NotImplementedException($"Orbis texture surface format {this.SurfaceFormat} is not yet supported")
+        };
+
+        header.DxgiFormat = dxgiFormat;
+        header.ImageData = unswizzled;
+
+        using var ms = new MemoryStream();
+        header.Write(ms);
+        ms.Position = 0;
+
+        ArrayPool<byte>.Shared.Return(unswizzled);
+
+        return ms.ToArray();
+    }
+
+    public override Image GetAsImage()
+    {
+        byte[] unswizzled = ArrayPool<byte>.Shared.Rent(BufferInfo.ImageData.Length);
+
+        int rawWidth = Pitch;
+        int paddedHeight = IsPaddedToPow2 ? (int)BitOperations.RoundUpToPowerOf2((uint)Height) : Height;
+
+        Swizzler.DoSwizzle(BufferInfo.ImageData.Span, unswizzled, rawWidth, paddedHeight, 16);
+
+        var bcType = this.SurfaceFormat switch
+        {
+            GNFSurfaceFormat.kSurfaceFormatBc1 => CompressionFormat.Bc1,
+            GNFSurfaceFormat.kSurfaceFormatBc2 => CompressionFormat.Bc2,
+            GNFSurfaceFormat.kSurfaceFormatBc3 => CompressionFormat.Bc3,
+            GNFSurfaceFormat.kSurfaceFormatBc5 => CompressionFormat.Bc5,
+            GNFSurfaceFormat.kSurfaceFormatBc7 => CompressionFormat.Bc7,
+            _ => throw new NotImplementedException($"Orbis texture surface format {this.SurfaceFormat} is not yet supported")
+        };
+
+        BcDecoder decoder = new BcDecoder();
+        ColorRgba32[] colors = decoder.DecodeRaw(unswizzled, rawWidth, paddedHeight, bcType);
+
+        ReadOnlySpan<Rgba32> rgba32 = MemoryMarshal.Cast<ColorRgba32, Rgba32>(colors);
+        Image<Rgba32> image = Image.LoadPixelData(rgba32, rawWidth, paddedHeight);
+
+        if (rawWidth != Width)
+        {
+            image.Mutate(e => e.Crop(Width, Height));
+        }
+
+        ArrayPool<byte>.Shared.Return(unswizzled);
+
+        return image;
     }
 }

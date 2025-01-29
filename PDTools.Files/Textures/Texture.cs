@@ -19,17 +19,14 @@ using Pfim.dds;
 
 namespace PDTools.Files.Textures;
 
-public abstract class Texture
+public abstract class TextureSet3Buffer
 {
-    public string Name { get; set; }
+    public ushort Width { get; set; }
+    public ushort Height { get; set; }
     public long ImageOffset { get; set; }
     public long ImageSize { get; set; }
 
-    public PGLUTextureInfo TextureRenderInfo { get; set; }
-
     public Memory<byte> ImageData { get; set; }
     
-    public abstract void ConvertTextureToStandardFormat(string outputFile);
-
-    public abstract void ReadTextureDetails(BinaryStream bs);
+    public abstract void Read(BinaryStream bs);
 }

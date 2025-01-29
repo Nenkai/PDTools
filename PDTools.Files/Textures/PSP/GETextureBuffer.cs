@@ -19,22 +19,20 @@ using Pfim.dds;
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using PDTools.Files.Textures.PS3;
 
-namespace PDTools.Files.Textures.PS3;
+namespace PDTools.Files.Textures.PSP;
 
-public class CellTextureBuffer : TextureSet3Buffer
+public class GETextureBuffer : TextureSet3Buffer
 {
     public int LastMipmapLevel { get; set; }
-    public CELL_GCM_TEXTURE_FORMAT FormatBits { get; set; }
-
-    public ushort Width { get; set; }
-    public ushort Height { get; set; }
+    public eSCE_GE_TPF FormatBits { get; set; }
 
     public short Depth { get; set; } = 1;
 
-    public CellTextureBuffer()
+    public GETextureBuffer()
     {
-        
+
     }
 
     public override void Read(BinaryStream bs)
@@ -42,7 +40,7 @@ public class CellTextureBuffer : TextureSet3Buffer
         ImageOffset = bs.ReadUInt32();
         ImageSize = bs.ReadUInt32();
         bs.ReadByte(); // 2
-        FormatBits = (CELL_GCM_TEXTURE_FORMAT)bs.ReadByte();
+        FormatBits = (eSCE_GE_TPF)bs.ReadByte();
         LastMipmapLevel = bs.ReadByte();
         bs.ReadByte();
 
@@ -50,7 +48,7 @@ public class CellTextureBuffer : TextureSet3Buffer
         Height = bs.ReadUInt16();
         bs.ReadUInt16();
         bs.ReadUInt16();
-        bs.ReadInt32(); // Stream Set Offset
-        bs.ReadInt32(); // Pad
+        bs.ReadInt32();
+        bs.ReadInt32(); // Unk offset
     }
 }

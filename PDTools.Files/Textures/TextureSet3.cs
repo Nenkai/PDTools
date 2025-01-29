@@ -18,6 +18,8 @@ using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS3;
 using PDTools.Files.Textures.PS4;
+using PDTools.Files.Textures.PSP;
+using SixLabors.Fonts;
 
 namespace PDTools.Files.Textures;
 
@@ -26,8 +28,9 @@ public class TextureSet3
     public const string MAGIC = "TXS3";
     public const string MAGIC_LE = "3SXT";
 
-    public List<Texture> Textures { get; set; } = [];
+    public List<TextureSet3Buffer> Buffers { get; set; } = [];
     public List<PGLUTextureInfo> TextureInfos { get; set; } = [];
+    public List<TextureSet3ClutInfoBase> ClutInfos { get; set; } = [];
 
     public bool WriteNames { get; set; }
 
@@ -48,6 +51,205 @@ public class TextureSet3
 
     }
 
+    public void FromStream(Stream stream, TextureConsoleType consoleType)
+    {
+        BaseTextureSetPosition = stream.Position;
+
+        BinaryStream bs = new BinaryStream(stream);
+        string magic = bs.ReadString(4);
+        if (magic == "TXS3")
+            bs.ByteConverter = ByteConverter.Big;
+        else if (magic == "3SXT")
+            bs.ByteConverter = ByteConverter.Little;
+        else
+            throw new InvalidDataException("Could not parse TXS3 from stream, not a valid TXS3 image file.");
+
+        int fileSize = bs.ReadInt32();
+
+        if (consoleType == TextureConsoleType.PS4) // 64 bit
+        {
+            ReadPS4Header(bs);
+        }
+        else if (consoleType == TextureConsoleType.PS3)
+        {
+            ReadPS3Header(bs);
+        }
+        else if (consoleType == TextureConsoleType.PSP)
+        {
+            ReadPSPHeader(bs);
+        }
+        else
+            throw new NotSupportedException($"Console type {consoleType} not supported");
+    }
+
+    private void ReadPSPHeader(BinaryStream bs)
+    {
+        // Total Header size is 0x40
+
+        RelocPtr = bs.ReadUInt32(); // Original Position, if bundled
+        bs.Position += 4;
+        bs.Position += 4; // Sometimes 1
+
+        short pgluTexturesCount = bs.ReadInt16();
+        short bufferInfoCount = bs.ReadInt16();
+        int pgluTexturesOffset = bs.ReadInt32();
+        int bufferInfosOffset = bs.ReadInt32();
+        uint relocSize = bs.ReadUInt32();
+        ushort unkCount_0x24 = bs.ReadUInt16();
+        ushort clutMapEntryCount = bs.ReadUInt16();
+        uint unkOffset_0x28 = bs.ReadUInt32();
+        uint clutMapOffset = bs.ReadUInt32();
+        uint unkOffset_0x30 = bs.ReadUInt32();
+        ushort unkCount_0x34 = bs.ReadUInt16();
+        bs.ReadUInt16();
+        uint unkOffset_0x38 = bs.ReadUInt32();
+
+        if (bufferInfoCount > 0)
+        {
+            for (int i = 0; i < bufferInfoCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (bufferInfosOffset - RelocPtr) + (i * 0x20);
+
+                TextureSet3Buffer bufferInfo = new GETextureBuffer();
+                bufferInfo.Read(bs);
+                Buffers.Add(bufferInfo);
+
+                bs.Position = BaseTextureSetPosition + (bufferInfo.ImageOffset - RelocPtr);
+                bufferInfo.ImageData = new byte[bufferInfo.ImageSize];
+                bs.ReadExactly(bufferInfo.ImageData.Span);
+            }
+        }
+
+        if (clutMapEntryCount > 0)
+        {
+            for (int i = 0; i < clutMapEntryCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (clutMapOffset - RelocPtr) + (i * 0x0C);
+
+                GEClutBufferInfo clutInfo = new GEClutBufferInfo();
+                clutInfo.Read(bs);
+                ClutInfos.Add(clutInfo);
+
+                bs.Position = BaseTextureSetPosition + (clutInfo.ClutBufferOffset - RelocPtr);
+                clutInfo.ClutData = new byte[GEUtils.BitsPerPixel((eSCE_GE_TPF)clutInfo.ClutType) / 8 * clutInfo.NumColors];
+                bs.ReadExactly(clutInfo.ClutData);
+            }
+        }
+
+        if (pgluTexturesCount > 0)
+        {
+            for (int i = 0; i < pgluTexturesCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x98);
+
+                PGLUGETextureInfo textureInfo = new PGLUGETextureInfo();
+                textureInfo.Read(bs, BaseTextureSetPosition);
+                TextureInfos.Add(textureInfo);
+
+                textureInfo.BufferInfo = (GETextureBuffer)Buffers[(int)textureInfo.BufferId];
+
+                if (textureInfo.ClutMapEntryIndex != -1)
+                    textureInfo.ClutBufferInfo = (GEClutBufferInfo)ClutInfos[textureInfo.ClutMapEntryIndex];
+            }
+        }
+    }
+
+    private void ReadPS3Header(BinaryStream bs)
+    {
+        RelocPtr = bs.ReadUInt32(); // Original Position, if bundled
+        bs.Position += 4;
+        bs.Position += 4; // Sometimes 1
+
+        // TODO: Implement proper image count reading - right now we only care about the real present images
+        short pgluTexturesCount = bs.ReadInt16();
+        short bufferInfoCount = bs.ReadInt16();
+        int pgluTexturesOffset = bs.ReadInt32();
+        int bufferInfosOffset = bs.ReadInt32();
+        DataPointer = bs.ReadUInt32();
+
+        if (bufferInfoCount > 0)
+        {
+            for (int i = 0; i < bufferInfoCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (bufferInfosOffset - RelocPtr) + (i * 0x20);
+
+                TextureSet3Buffer bufferInfo = new CellTextureBuffer();
+                bufferInfo.Read(bs);
+                Buffers.Add(bufferInfo);
+            }
+        }
+
+        if (pgluTexturesCount > 0)
+        {
+            for (int i = 0; i < pgluTexturesCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x44);
+
+                TextureSet3Buffer texture = Buffers[i];
+
+                PGLUTextureInfo textureInfo = new PGLUCellTextureInfo();
+                textureInfo.Read(bs, BaseTextureSetPosition);
+                TextureInfos.Add(textureInfo);
+                textureInfo.BufferInfo = Buffers[(int)textureInfo.BufferId];
+
+                bs.Position = BaseTextureSetPosition + texture.ImageOffset;
+                texture.ImageData = new byte[texture.ImageSize];
+                bs.ReadExactly(texture.ImageData.Span);
+            }
+        }
+    }
+
+    private void ReadPS4Header(BinaryStream bs)
+    {
+        long relocPtr = bs.ReadInt64();
+        long relocPtr2 = bs.ReadInt64();
+        int unk = bs.ReadInt32(); // Unknown, 2
+
+        short pgluTexturesCount = bs.ReadInt16();
+        short bufferInfoCount = bs.ReadInt16();
+        long pgluTexturesOffset = bs.ReadInt64();
+        long bufferInfosOffset = bs.ReadInt64();
+        DataPointer = bs.ReadInt64();
+
+        // TODO
+        bs.ReadInt64();
+        bs.ReadInt64();
+        bs.ReadInt64();
+        bs.ReadInt16();
+        bs.Position += 14;
+        bs.ReadInt64();
+        bs.Position += 8;
+
+        if (bufferInfoCount > 0)
+        {
+            for (int i = 0; i < bufferInfoCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (bufferInfosOffset - RelocPtr) + (i * 0x30);
+
+                TextureSet3Buffer bufferInfo = new OrbisTextureBuffer();
+                bufferInfo.Read(bs);
+                Buffers.Add(bufferInfo);
+
+                bs.Position = BaseTextureSetPosition + bufferInfo.ImageOffset;
+                bufferInfo.ImageData = new byte[bufferInfo.ImageSize];
+                bs.ReadExactly(bufferInfo.ImageData.Span);
+            }
+        }
+
+        if (pgluTexturesCount > 0)
+        {
+            for (int i = 0; i < pgluTexturesCount; i++)
+            {
+                bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x48);
+
+                PGLUTextureInfo textureInfo = new PGLUOrbisTextureInfo();
+                textureInfo.Read(bs, BaseTextureSetPosition);
+                TextureInfos.Add(textureInfo);
+                textureInfo.BufferInfo = Buffers[(int)textureInfo.BufferId];
+            }
+        }
+    }
+
     public void BuildTextureSetFile(string outputName)
     {
         using var ms = new FileStream(outputName, FileMode.Create);
@@ -65,22 +267,43 @@ public class TextureSet3
     /// <param name="outputName"></param>
     public void ConvertToStandardFormat(string outputName)
     {
-        for (int i = 0; i < Textures.Count; i++)
+        Console.WriteLine($"Processing {outputName} with {TextureInfos.Count} texture(s)...");
+
+        for (int i = 0; i < TextureInfos.Count; i++)
         {
-            Texture texture = Textures[i];
-            texture.ConvertTextureToStandardFormat(outputName);
+            PGLUTextureInfo texture = TextureInfos[i];
+            string texturePath = outputName;
+
+            string actualName = !string.IsNullOrEmpty(texture.Name) ? texture.Name : 
+                TextureInfos.Count > 1 ? $"{i}.png" :
+                $"{Path.GetFileNameWithoutExtension(outputName)}.png";
+
+            if (TextureInfos.Count > 1)
+                texturePath = Path.Combine(Path.GetDirectoryName(outputName), Path.GetFileNameWithoutExtension(outputName), actualName);
+            else
+                texturePath = Path.Combine(Path.GetDirectoryName(texturePath), actualName);
+
+            Console.WriteLine($"- Converting '{texturePath}'...");
+
+            using var img = texture.GetAsImage();
+
+            texturePath = Path.ChangeExtension(texturePath, ".png"); // Incase texture.Name doesn't have an extension, or we are outputting to dds.
+
+            Directory.CreateDirectory(Path.GetDirectoryName(texturePath));
+            img.Save(texturePath);
         }
     }
 
-    public void AddTexture(Texture texture)
+    public void AddTexture(PGLUTextureInfo texture)
     {
-        Textures.Add(texture);
+        ArgumentNullException.ThrowIfNull(texture, nameof(texture));
+        ArgumentNullException.ThrowIfNull(texture.BufferInfo, nameof(texture.BufferInfo));
 
-        if (texture is CellTexture)
-        {
-            var pglu = texture.TextureRenderInfo as PGLUCellTextureInfo;
-            pglu.ImageId = (uint)Textures.Count - 1;
-        }
+        TextureInfos.Add(texture);
+        Buffers.Add(texture.BufferInfo);
+
+        texture.BufferId = (uint)Buffers.Count - 1;
+        
     }
 
     /// <summary>
@@ -104,7 +327,7 @@ public class TextureSet3
             bs.WriteString(MAGIC_LE);
 
         bs.Position = txsBasePos + 0x14;
-        bs.WriteInt16((short)Textures.Count); // Image Params Count;
+        bs.WriteInt16((short)Buffers.Count); // Image Params Count;
         bs.WriteInt16((short)TextureInfos.Count); // Image Info Count;
         bs.WriteInt32(txsBasePos + 0x40); // PGLTexture Offset (render params)
 
@@ -121,15 +344,15 @@ public class TextureSet3
             textureInfo.Write(bs);
 
         // Skip the texture info for now
-        bs.Position = imageInfoOffset + (Textures.Count * 0x20);
+        bs.Position = imageInfoOffset + (Buffers.Count * 0x20);
 
         int mainHeaderSize = (int)bs.Position;
 
         // Write texture names
         int lastNamePos = (int)bs.Position;
-        for (int i = 0; i < Textures.Count; i++)
+        for (int i = 0; i < TextureInfos.Count; i++)
         {
-            Texture texture = Textures[i];
+            PGLUTextureInfo texture = TextureInfos[i];
             if (WriteNames && !string.IsNullOrEmpty(texture.Name))
             {
                 bs.WriteString(texture.Name, StringCoding.ZeroTerminated);
@@ -151,19 +374,19 @@ public class TextureSet3
         }
 
         // Actually write the textures now and their linked information
-        for (int i = 0; i < Textures.Count; i++)
+        for (int i = 0; i < TextureInfos.Count; i++)
         {
             int imageOffset = 0, endImageOffset = 0;
             if (writeImageData)
             {
                 imageOffset = (int)bs.Position;
-                bs.Write(Textures[i].ImageData.Span);
+                bs.Write(Buffers[i].ImageData.Span);
                 endImageOffset = (int)bs.Position;
             }
 
             bs.Position = txsBasePos + imageInfoOffset + (i * 0x20);
 
-            var textureInfo = Textures[i].TextureRenderInfo as PGLUCellTextureInfo;
+            var textureInfo = TextureInfos[i] as PGLUCellTextureInfo;
             bs.WriteInt32(imageOffset);
             bs.WriteInt32(endImageOffset - imageOffset); // Size
             bs.WriteByte(2);
@@ -195,120 +418,13 @@ public class TextureSet3
         bs.Position = endPos;
     }
 
-    public void FromStream(Stream stream, TextureConsoleType consoleType)
+    public byte[] GetExternalImageDataOfTexture(Stream stream, PGLUTextureInfo texture, long basePos = 0)
     {
-        BaseTextureSetPosition = stream.Position;
+        stream.Position = basePos + (texture.BufferInfo.ImageOffset - DataPointer);
 
-        BinaryStream bs = new BinaryStream(stream);
-        string magic = bs.ReadString(4);
-        if (magic == "TXS3")
-            bs.ByteConverter = ByteConverter.Big;
-        else if (magic == "3SXT")
-            bs.ByteConverter = ByteConverter.Little;
-        else
-            throw new InvalidDataException("Could not parse TXS3 from stream, not a valid TXS3 image file.");
-
-
-        int fileSize = bs.ReadInt32();
-
-        short imageInfoCount, pgluTexturesCount;
-        long pgluTexturesOffset, imageInfoOffset;
-
-        if (consoleType == TextureConsoleType.PS4) // 64 bit
-        {
-            long relocPtr = bs.ReadInt64();
-            long relocPtr2 = bs.ReadInt64();
-            int unk = bs.ReadInt32(); // Unknown, 2
-
-            pgluTexturesCount = bs.ReadInt16();
-            imageInfoCount = bs.ReadInt16();
-            pgluTexturesOffset = bs.ReadInt64();
-            imageInfoOffset = bs.ReadInt64();
-            DataPointer = bs.ReadInt64();
-
-            bs.ReadInt64();
-            bs.ReadInt64();
-            bs.ReadInt64();
-            bs.ReadInt16();
-            bs.Position += 14;
-            bs.ReadInt64();
-            bs.Position += 8;
-        }
-        else
-        {
-            RelocPtr = bs.ReadUInt32(); // Original Position, if bundled
-            bs.Position += 4;
-            bs.Position += 4; // Sometimes 1
-
-            // TODO: Implement proper image count reading - right now we only care about the real present images
-            pgluTexturesCount = bs.ReadInt16();
-            imageInfoCount = bs.ReadInt16();
-            pgluTexturesOffset = bs.ReadInt32();
-            imageInfoOffset = bs.ReadInt32();
-            DataPointer = bs.ReadUInt32();
-        }
-
-        if (imageInfoCount > 0)
-        {
-            for (int i = 0; i < imageInfoCount; i++)
-            {
-                bs.Position = BaseTextureSetPosition + (imageInfoOffset - RelocPtr) + (i * 0x20);
-
-                Texture texture = consoleType switch
-                {
-                    TextureConsoleType.PS3 => new CellTexture(),
-                    TextureConsoleType.PS4 => new OrbisTexture(),
-                    _ => throw new NotImplementedException("Unimplemented console texture type")
-                };
-
-                texture.ReadTextureDetails(bs);
-
-                Textures.Add(texture);
-            }
-        }
-
-        if (pgluTexturesCount > 0)
-        {
-            for (int i = 0; i < pgluTexturesCount; i++)
-            {
-                bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x44);
-
-                Texture texture = Textures[i];
-
-                PGLUTextureInfo textureInfo = consoleType switch
-                {
-                    TextureConsoleType.PS3 => new PGLUCellTextureInfo(),
-                    TextureConsoleType.PS4 => new PGLUOrbisTextureInfo(),
-                    _ => throw new NotImplementedException("Unimplemented console texture type")
-                };
-
-                textureInfo.Read(bs);
-                TextureInfos.Add(textureInfo);
-
-                bs.Position = BaseTextureSetPosition + texture.ImageOffset;
-                texture.ImageData = new byte[texture.ImageSize];
-                bs.ReadExactly(texture.ImageData.Span);
-
-                /*
-                bs.Position += 0x40;
-                int imageNameOffset = bs.ReadInt32();
-                if (imageNameOffset != 0)
-                {
-                    bs.Position = imageNameOffset;
-                    texture.Name = bs.ReadString(StringCoding.ZeroTerminated);
-                }
-                */
-            }
-        }
-    }
-
-    public byte[] GetExternalImageDataOfTexture(Stream stream, Texture texture, long basePos = 0)
-    {
-        stream.Position = basePos + (texture.ImageOffset - DataPointer);
-
-        var bytes = stream.ReadBytes((int)texture.ImageSize);
+        var bytes = stream.ReadBytes((int)texture.BufferInfo.ImageSize);
         var ms = new MemoryStream();
-        (texture as CellTexture).CreateDDSData(bytes, ms);
+        (texture as PGLUCellTextureInfo).CreateDDSData(bytes, ms);
 
         return ms.ToArray();
     }
