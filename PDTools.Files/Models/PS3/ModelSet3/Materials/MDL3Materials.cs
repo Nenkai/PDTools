@@ -56,7 +56,7 @@ public class MDL3Materials
             bs.Position = mdlBasePos + textureInfoParamOffset + i * 0x44;
 
             var info = new PGLUCellTextureInfo();
-            info.Read(bs);
+            info.Read(bs, mdlBasePos);
             materialMap.TextureInfos.Add(info);
         }
 
