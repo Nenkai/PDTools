@@ -42,14 +42,9 @@ public class SimulatorPacket
     public Vector3 Velocity { get; set; }
 
     /// <summary>
-    /// Rotation (Pitch/Yaw/Roll) from -1 to 1.
+    /// Rotation as a quaternion.
     /// </summary>
-    public Vector3 Rotation { get; set; }
-
-    /// <summary>
-    /// Orientation to North. 1.0 is north, 0.0 is south.
-    /// </summary>
-    public float RelativeOrientationToNorth { get; set; }
+    public Quaternion Rotation { get; set; }
 
     /// <summary>
     /// How fast the car turns around axes. (In radians/second, -1 to 1).
@@ -62,7 +57,7 @@ public class SimulatorPacket
     public float BodyHeight { get; set; }
 
     /// <summary>
-    /// Engine revolutions per minute
+    /// Engine revolutions per minute.
     /// </summary>
     public float EngineRPM { get; set; }
 
@@ -320,8 +315,7 @@ public class SimulatorPacket
 
         Position = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
         Velocity = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
-        Rotation = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
-        RelativeOrientationToNorth = sr.ReadSingle();
+        Rotation = new Quaternion(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
         AngularVelocity = new Vector3(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
         BodyHeight = sr.ReadSingle();
         EngineRPM = sr.ReadSingle();
@@ -392,6 +386,7 @@ public class SimulatorPacket
 
         CarCode = sr.ReadInt32();
     }
+
 
     public void SetPacketInfo(SimulatorInterfaceGameType gameType, IPEndPoint remoteEndPoint, DateTimeOffset dateReceived)
     {
@@ -467,7 +462,6 @@ public class SimulatorPacket
         {
             Console.WriteLine();
             Console.WriteLine("[Unknowns]");
-            Console.WriteLine($"0x48 (Float): {GasCapacity:F2}   ");
             Console.WriteLine($"0x93 (byte): {Empty_0x93:F2}   ");
 
         }
