@@ -1,6 +1,4 @@
-﻿using ExifLibrary;
-
-using Syroot.BinaryData;
+﻿using Syroot.BinaryData;
 
 using System;
 using System.Collections.Generic;
