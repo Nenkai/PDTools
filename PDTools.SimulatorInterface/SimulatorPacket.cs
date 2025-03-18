@@ -302,6 +302,39 @@ public class SimulatorPacket
     /// </summary>
     public int CarCode { get; set; }
 
+    /// <summary>
+    /// In radians. GT7 and Heartbeat 'B' or '~' only.
+    /// </summary>
+    public float? WheelRotation { get; set; }
+
+    /// <summary>
+    /// GT7 and Heartbeat 'B' or '~' only.
+    /// </summary>
+    public float? FillerFloatFB { get; set; }
+
+    /// <summary>
+    /// GT7 and Heartbeat 'B' or '~' only.
+    /// </summary>
+    public float? Sway { get; set; }
+
+    /// <summary>
+    /// GT7 and Heartbeat 'B' or '~' only.
+    /// </summary>
+    public float? Heave { get; set; }
+
+    /// <summary>
+    /// GT7 and Heartbeat 'B' or '~' only.
+    /// </summary>
+    public float? Surge { get; set; }
+
+    public byte? Unk1 { get; set; }
+    public byte? Unk2 { get; set; }
+    public byte? Unk3 { get; set; } // 4 = electric
+    public byte? NoGasConsumption { get; set; }
+    public Vector4? Unk5 { get; set; }
+    public float? EnergyRecovery { get; set; }
+    public float? Unk7 { get; set; }
+
     public void Read(Span<byte> data)
     {
         SpanReader sr = new SpanReader(data);
@@ -385,6 +418,26 @@ public class SimulatorPacket
         float empty_or_gearRatio8 = sr.ReadSingle();
 
         CarCode = sr.ReadInt32();
+
+        if (data.Length >= 0x13C)
+        {
+            WheelRotation = sr.ReadSingle();
+            FillerFloatFB = sr.ReadSingle();
+            Sway = sr.ReadSingle();
+            Heave = sr.ReadSingle();
+            Surge = sr.ReadSingle();
+        }
+
+        if (data.Length >= 0x158)
+        {
+            Unk1 = sr.ReadByte();
+            Unk2 = sr.ReadByte();
+            Unk3 = sr.ReadByte();
+            NoGasConsumption = sr.ReadByte();
+            Unk5 = new Vector4(sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle(), sr.ReadSingle());
+            EnergyRecovery = sr.ReadSingle();
+            Unk7 = sr.ReadSingle();
+        }
     }
 
 
@@ -458,12 +511,29 @@ public class SimulatorPacket
         Console.WriteLine($"- Angular Velocity: {AngularVelocity:F2}   ");
         Console.WriteLine($"- Road Plane: {RoadPlane:F2}   ");
 
+        if (Surge is not null)
+        {
+            Console.WriteLine($"- WheelRotationRadians: {WheelRotation:F3}     ");
+            Console.WriteLine($"- FillerFloatFB: {FillerFloatFB:F3}    ");
+            Console.WriteLine($"- Sway: {Sway:F3} / Heave: {Heave:F3} / Surge: {Surge:F3}    ");
+        }
+
         if (debug)
         {
             Console.WriteLine();
             Console.WriteLine("[Unknowns]");
             Console.WriteLine($"0x93 (byte): {Empty_0x93:F2}   ");
 
+            if (Unk1 is not null)
+            {
+                Console.WriteLine($"- ThottleFiltered: {Unk1}  ");
+                Console.WriteLine($"- BrakeFiltered: {Unk2}  ");
+                Console.WriteLine($"- CarType (?):{Unk3}");
+                Console.WriteLine($"- Unk4: {NoGasConsumption}  ");
+                Console.WriteLine($"- Unk5: {Unk5:F2}  ");
+                Console.WriteLine($"- EnergyRecovery: {EnergyRecovery:F2}   ");
+                Console.WriteLine($"- Unk7: {Unk7:F2}   ");
+            }
         }
     }
 }

@@ -36,6 +36,8 @@ public class SimulatorInterfaceClient : IDisposable
     public int ReceivePort { get; }
     public int BindPort { get; }
 
+    public SimInterfaceVersionRequest VersionRequest { get; set; } = SimInterfaceVersionRequest.Version3;
+
     public delegate void SimulatorDelegate(SimulatorPacket packet);
 
     /// <summary>
@@ -45,6 +47,7 @@ public class SimulatorInterfaceClient : IDisposable
 
     public bool Started { get; private set; }
     public SimulatorInterfaceGameType SimulatorGameType { get; private set; }
+    private ReadOnlyMemory<byte> _heartbeatBytes;
 
     /// <summary>
     /// Creates a new simulator interface.
@@ -72,6 +75,14 @@ public class SimulatorInterfaceClient : IDisposable
             default:
                 throw new ArgumentException("Invalid game type.");
         }
+
+        _heartbeatBytes = (VersionRequest switch
+        {
+            SimInterfaceVersionRequest.Version1 => "A"u8,
+            SimInterfaceVersionRequest.Version2 => "B"u8,
+            SimInterfaceVersionRequest.Version3 => "~"u8,
+            _ => "A"u8, // We should default to "~".
+        }).ToArray();
 
         _endpoint = new IPEndPoint(addr, ReceivePort);
         InitCryptor(gameType);
@@ -103,8 +114,8 @@ public class SimulatorInterfaceClient : IDisposable
 
             UdpReceiveResult result = await _udpClient.ReceiveAsync(token);
 
-            if (result.Buffer.Length != 0x128)
-                throw new InvalidDataException($"Expected packet size to be 0x128. Was {result.Buffer.Length:X4} bytes.");
+            if (result.Buffer.Length != GetExpectedPacketSize())
+                throw new InvalidDataException($"Expected packet size to be 0x{GetExpectedPacketSize():X} bytes. Was {result.Buffer.Length:X4} bytes.");
 
             _cryptor.Decrypt(result.Buffer);
 
@@ -124,7 +135,7 @@ public class SimulatorInterfaceClient : IDisposable
 
     private async Task SendHeartbeat(CancellationToken ct)
     {
-        await _udpClient.SendAsync("A"u8.ToArray(), _endpoint, ct);
+        await _udpClient.SendAsync(_heartbeatBytes, _endpoint, ct);
         _lastSentHeartbeat = DateTime.UtcNow;
     }
 
@@ -132,7 +143,19 @@ public class SimulatorInterfaceClient : IDisposable
     {
         if (gameType == SimulatorInterfaceGameType.GT7)
         {
-            _cryptor = new SimulatorInterfaceCryptorGT7();
+            var cryptor = new SimulatorInterfaceCryptorGT7();
+            switch (VersionRequest)
+            {
+                case SimInterfaceVersionRequest.Version2:
+                    cryptor.XorKey = 0xDEADBEEF;
+                    break;
+
+                case SimInterfaceVersionRequest.Version3:
+                    cryptor.XorKey = 0x55FABB4F;
+                    break;
+            }
+
+            _cryptor = cryptor;
         }
         else if (gameType == SimulatorInterfaceGameType.GTSport)
         {
@@ -148,10 +171,38 @@ public class SimulatorInterfaceClient : IDisposable
         }
     }
 
+    public uint GetExpectedPacketSize()
+    {
+        // TODO: Game might send a packet of 0x94 if not using 'A' type heartbeat?
+        // Might need checking. Might also be exclusive to GT7 >= 1.42
+
+        return VersionRequest switch
+        {
+            SimInterfaceVersionRequest.Version1 => 0x128,
+            SimInterfaceVersionRequest.Version2 => 0x13C,
+            SimInterfaceVersionRequest.Version3 => 0x158,
+            _ => 0x128,
+        };
+    }
     public void Dispose()
     {
         _udpClient?.Dispose();
         _udpClient = null;
         GC.SuppressFinalize(this);
+    }
+
+    public enum SimInterfaceVersionRequest
+    {
+        Version1,
+
+        /// <summary>
+        /// GT7 >= 1.42
+        /// </summary>
+        Version2,
+
+        /// <summary>
+        /// GT7 >= 1.42
+        /// </summary>
+        Version3
     }
 }
