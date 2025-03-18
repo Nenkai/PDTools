@@ -18,7 +18,7 @@ A collection of utilities for working around certain Gran Turismo games. More in
 * [PDTools.LiveTimingApiTestTool](PDTools.LiveTimingApiTestTool) - Client for fetching GT7's live timing API
 * [PDTools.RText](PDTools.RText) - RText/Text Localization files reader classes
 * [PDTools.SaveFile](PDTools.SaveFile) - Save file reader (mainly for GT4)
-* [PDTools.ScapesDataHelper] - Extracts and decrypts scapes setups from certain JPEG XL (.jxl) files (GT7).
+* [PDTools.ScapesDataHelper](PDTools.ScapesDataHelper) - Extracts and decrypts scapes setups from certain JPEG XL (.jxl) files (GT7).
 * [PDTools.SimulatorInterface](PDTools.SimulatorInterface) - SimulatorInterface handler classes, for GT6/GTS/GT7
 * [PDTools.SimulatorInterfaceTestTool](PDTools.SimulatorInterfaceTestTool) - SimulatorInterface Client
 * [PDTools.SpecDB](PDTools.SpecDB) - SpecDB reader/writer, mainly for GT4/5/PSP
