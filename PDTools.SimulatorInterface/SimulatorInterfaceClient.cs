@@ -36,7 +36,7 @@ public class SimulatorInterfaceClient : IDisposable
     public int ReceivePort { get; }
     public int BindPort { get; }
 
-    public SimInterfaceVersionRequest VersionRequest { get; set; } = SimInterfaceVersionRequest.Version3;
+    public SimInterfacePacketType PacketType { get; set; } = SimInterfacePacketType.PacketType3;
 
     public delegate void SimulatorDelegate(SimulatorPacket packet);
 
@@ -76,11 +76,11 @@ public class SimulatorInterfaceClient : IDisposable
                 throw new ArgumentException("Invalid game type.");
         }
 
-        _heartbeatBytes = (VersionRequest switch
+        _heartbeatBytes = (PacketType switch
         {
-            SimInterfaceVersionRequest.Version1 => "A"u8,
-            SimInterfaceVersionRequest.Version2 => "B"u8,
-            SimInterfaceVersionRequest.Version3 => "~"u8,
+            SimInterfacePacketType.PacketType1 => "A"u8,
+            SimInterfacePacketType.PacketType2 => "B"u8,
+            SimInterfacePacketType.PacketType3 => "~"u8,
             _ => "A"u8, // We should default to "~".
         }).ToArray();
 
@@ -144,13 +144,13 @@ public class SimulatorInterfaceClient : IDisposable
         if (gameType == SimulatorInterfaceGameType.GT7)
         {
             var cryptor = new SimulatorInterfaceCryptorGT7();
-            switch (VersionRequest)
+            switch (PacketType)
             {
-                case SimInterfaceVersionRequest.Version2:
+                case SimInterfacePacketType.PacketType2:
                     cryptor.XorKey = 0xDEADBEEF;
                     break;
 
-                case SimInterfaceVersionRequest.Version3:
+                case SimInterfacePacketType.PacketType3:
                     cryptor.XorKey = 0x55FABB4F;
                     break;
             }
@@ -176,11 +176,11 @@ public class SimulatorInterfaceClient : IDisposable
         // TODO: Game might send a packet of 0x94 if not using 'A' type heartbeat?
         // Might need checking. Might also be exclusive to GT7 >= 1.42
 
-        return VersionRequest switch
+        return PacketType switch
         {
-            SimInterfaceVersionRequest.Version1 => 0x128,
-            SimInterfaceVersionRequest.Version2 => 0x13C,
-            SimInterfaceVersionRequest.Version3 => 0x158,
+            SimInterfacePacketType.PacketType1 => 0x128,
+            SimInterfacePacketType.PacketType2 => 0x13C,
+            SimInterfacePacketType.PacketType3 => 0x158,
             _ => 0x128,
         };
     }
@@ -191,18 +191,22 @@ public class SimulatorInterfaceClient : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public enum SimInterfaceVersionRequest
+    public enum SimInterfacePacketType
     {
-        Version1,
+        PacketType1,
+
+        // Both of these were added in GT7 1.42.
+        // Initial signs of expansions can be seen in 1.40 (possibly earlier even?) - 3 switch cases (+ default)
+        // can already be seen, all using 'A' and the same amount of bytes.
 
         /// <summary>
         /// GT7 >= 1.42
         /// </summary>
-        Version2,
+        PacketType2,
 
         /// <summary>
         /// GT7 >= 1.42
         /// </summary>
-        Version3
+        PacketType3
     }
 }
