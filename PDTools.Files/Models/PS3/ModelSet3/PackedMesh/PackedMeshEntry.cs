@@ -21,18 +21,20 @@ public class PackedMeshEntry
 
         entry.StructDeclarationID = bs.ReadInt16();
         entry.ElementBitLayoutDefinitionID = bs.ReadInt16();
-        bs.ReadInt16();
-
+        short unk_0x04 = bs.ReadInt16();
         byte countOfUnk = bs.Read1Byte();
-        bs.ReadByte(); // 1
-        int unkOffset = bs.ReadInt32();
-        float unk = bs.ReadSingle();
+        byte unk_0x07 = bs.Read1Byte();
+        int unkOffset_0x08 = bs.ReadInt32();
+        float unk_0x0C = bs.ReadSingle();
         int dataTocOffset = bs.ReadInt32();
+        // TODO read rest
         bs.Position += 0x18;
 
-        // TODO read rest
-        bs.Position = mdlBasePos + dataTocOffset;
-        entry.Data = PackedMeshEntryData.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+        if (dataTocOffset != 0)
+        {
+            bs.Position = mdlBasePos + dataTocOffset;
+            entry.Data = PackedMeshEntryData.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+        }
 
         return entry;
     }

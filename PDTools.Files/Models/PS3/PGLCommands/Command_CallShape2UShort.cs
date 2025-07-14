@@ -8,23 +8,26 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.PGLCommands
 {
-    public class Command_4_LoadMeshUShortIndex : ModelSetupCommand
+    public class Command_CallShape2UShort : ModelSetupCommand
     {
-        public short MeshIndex;
+        public short Unk { get; set; }
+        public short Unk2 { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            MeshIndex = bs.ReadInt16();
+            Unk = bs.ReadInt16();
+            Unk2 = bs.ReadInt16();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteInt16(MeshIndex);
+            bs.WriteInt16(Unk);
+            bs.WriteInt16(Unk2);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_4_LoadMeshUShortIndex)}: {MeshIndex}";
+            return $"{nameof(Command_CallShape2UShort)} - {Unk} {Unk2}";
         }
     }
 }

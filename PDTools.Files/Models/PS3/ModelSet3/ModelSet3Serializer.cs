@@ -1032,7 +1032,7 @@ public class ModelSet3Serializer
             int entryOffset = (int)bs.Position;
 
             bs.WriteInt32(@ref.UnkData != null ? 1 : 0);
-            bs.WriteInt32(@ref.Unk);
+            bs.WriteInt32(@ref.Field_0x04);
             bs.WriteInt32(entryOffset + 0x20);
 
             int off0x2C = FindProgOffset2(@ref.ShaderProgram2);
@@ -1043,8 +1043,8 @@ public class ModelSet3Serializer
             Debug.Assert(off0x20 != -1);
             bs.WriteInt32(off0x20);
 
-            bs.WriteInt32(@ref.Unk2);
-            bs.WriteInt16(@ref.Unk3);
+            bs.WriteInt32(@ref.Field_0x14);
+            bs.WriteInt16(@ref.Field_0x18);
             bs.WriteInt16(0);
             bs.WriteInt32(0);
 

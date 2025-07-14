@@ -30,7 +30,7 @@ namespace PDTools.Files.Models.PS3.PGLCommands
 
             if ((Flag & 0x80) == 0)
             {
-
+                
             }
             else
             {
@@ -48,13 +48,14 @@ namespace PDTools.Files.Models.PS3.PGLCommands
                 {
                     Unk9 = bs.Read1Byte();
                 }
+
+                int count = Flag & 0b1111;
+                var singles = bs.ReadSingles(count);
+
+                byte unk = bs.Read1Byte();
             }
 
-            int count = Flag & 0b1111;
-            var singles = bs.ReadSingles(count);
-
-            byte count2 = bs.Read1Byte();
-            bs.ReadInt16s(count2);
+            bs.ReadInt16s(Flag & 0x0F);
         }
 
         public override void Write(BinaryStream bs)

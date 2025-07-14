@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,23 +8,26 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.PGLCommands
 {
-    public class Command_3_LoadMeshByteIndex : ModelSetupCommand
+    public class Command_CallShape2Byte : ModelSetupCommand
     {
-        public byte MeshIndex;
+        public byte MeshID { get; set; }
+        public byte Unk { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            MeshIndex = bs.Read1Byte();
+            MeshID = bs.Read1Byte();
+            Unk = bs.Read1Byte();
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteByte(MeshIndex);
+            bs.WriteByte(MeshID);
+            bs.WriteByte(Unk);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_3_LoadMeshByteIndex)}: {MeshIndex}";
+            return $"{nameof(Command_CallShape2Byte)}: {MeshID} {Unk}";
         }
     }
 }

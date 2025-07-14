@@ -8,30 +8,30 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.PGLCommands
 {
-    public class Command_10_JumpToShort : ModelSetupCommand
+    public class Command_JumpByte : ModelSetupCommand
     {
-        public ushort RelativeJumpOffset { get; set; }
-        public int AbsoluteJumpOffset { get; set; }
+        public byte RelativeJumpToOffset { get; set; }
+        public int AbsoluteJumpToOffset;
 
         public int JumpToIndex { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
-            RelativeJumpOffset = bs.ReadUInt16();
+            RelativeJumpToOffset = bs.Read1Byte();
 
             // Translate relative to absolute
             long currentOffset = bs.Position - commandsBaseOffset;
-            AbsoluteJumpOffset = RelativeJumpOffset + (int)currentOffset;
+            AbsoluteJumpToOffset = RelativeJumpToOffset + (int)currentOffset;
         }
 
         public override void Write(BinaryStream bs)
         {
-            bs.WriteUInt16(RelativeJumpOffset);
+            bs.WriteByte(RelativeJumpToOffset);
         }
 
         public override string ToString()
         {
-            return $"{nameof(Command_10_JumpToShort)}: {AbsoluteJumpOffset:X2}";
+            return $"{nameof(Command_JumpByte)}: {AbsoluteJumpToOffset.ToString("X2")}";
         }
     }
 }

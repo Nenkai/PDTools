@@ -65,8 +65,9 @@ public class ModelSet3
     public CourseDataFile ParentCourseData { get; set; }
     public BinaryStream Stream { get; set; }
 
-    public static ModelSet3 FromStream(BinaryStream bs, int txsPos = 0)
+    public static ModelSet3 FromStream(Stream stream, int txsPos = 0)
     {
+        var bs = new BinaryStream(stream);
         long basePos = bs.Position;
 
         string magic = bs.ReadString(4);
@@ -90,7 +91,7 @@ public class ModelSet3
         ushort modelKeyCount = bs.ReadUInt16();
         ushort meshesCount = bs.ReadUInt16();
         ushort meshKeysCount = bs.ReadUInt16();
-        ushort flexibleVerticesCount = bs.ReadUInt16();
+        ushort flexibleVertexDefinitionCount = bs.ReadUInt16();
         ushort bonesCount = bs.ReadUInt16();
         modelSet._0x68Size = bs.ReadUInt16();
         ushort registerValCount = bs.ReadUInt16();
@@ -159,7 +160,7 @@ public class ModelSet3
         modelSet.ReadMeshes(bs, basePos, meshesOffset, meshesCount);
         modelSet.ReadMeshKeys(bs, basePos, meshKeysOffset, meshKeysCount);
 
-        modelSet.ReadFlexibleVertices(bs, basePos, flexibleVerticesOffset, flexibleVerticesCount);
+        modelSet.ReadFlexibleVertices(bs, basePos, flexibleVerticesOffset, flexibleVertexDefinitionCount);
 
         modelSet.ReadMaterials(bs, basePos, materialsOffset, 1);
 

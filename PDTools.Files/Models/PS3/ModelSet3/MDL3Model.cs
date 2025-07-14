@@ -111,7 +111,7 @@ public class ModelSet3Model
                     break;
 
                 case ModelSetupOpcode.Command_9_JumpToByte:
-                    var jumpCmd = setupCommand as Command_9_JumpToByte;
+                    var jumpCmd = setupCommand as Command_JumpByte;
                     int byteOffset = jumpCmd.AbsoluteJumpToOffset;
                     for (var j = i; j < Commands.Count; j++)
                     {
@@ -123,7 +123,7 @@ public class ModelSet3Model
                     break;
 
                 case ModelSetupOpcode.Command_10_JumpToShort:
-                    var shortJumpCmd = setupCommand as Command_10_JumpToShort;
+                    var shortJumpCmd = setupCommand as Command_JumpShort;
                     int shortOffset = shortJumpCmd.AbsoluteJumpOffset;
                     for (var j = i; j < Commands.Count; j++)
                     {

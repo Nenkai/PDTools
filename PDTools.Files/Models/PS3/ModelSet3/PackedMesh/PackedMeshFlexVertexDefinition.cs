@@ -17,7 +17,9 @@ public class PackedMeshFlexVertexDefinition
     public int Unk { get; set; }
 
     public Dictionary<string, PackedMeshFlexVertexElementDefinition> PackedElements { get; set; } = [];
-    public Dictionary<string, PackedMeshFlexVertexElementDefinition> Elements { get; set; } = [];
+
+    // May have elements with the same name.
+    public List<PackedMeshFlexVertexElementDefinition> Elements { get; set; } = [];
 
     public static PackedMeshFlexVertexDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
@@ -67,7 +69,7 @@ public class PackedMeshFlexVertexDefinition
             bs.Position = mdlBasePos + nameOffset;
             string name = bs.ReadString(StringCoding.ZeroTerminated);
             elemList[i].Name = name;
-            declaration.Elements.Add(name, elemList[i]);
+            declaration.Elements.Add(elemList[i]);
         }
 
         return declaration;
@@ -78,10 +80,9 @@ public class PackedMeshFlexVertexDefinition
         if (PackedElements.TryGetValue(name, out PackedMeshFlexVertexElementDefinition elem))
             return elem;
 
-        if (Elements.TryGetValue(name, out elem))
-            return elem;
-
-        return null;
+        // TODO: Elements can have multiple elements with the same name.
+        // Fetch by index on elements with the same list?
+        return Elements.FirstOrDefault(e => e.Name == name);
     }
 
     public static int GetSize()

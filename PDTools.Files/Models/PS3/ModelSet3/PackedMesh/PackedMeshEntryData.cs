@@ -74,10 +74,10 @@ public class PackedMeshEntryData
         int currentLayoutIndex = 0;
         foreach (var elem in vertDefinition.Elements)
         {
-            if (elem.Key == "colorSet1")
+            if (elem.Name == "colorSet1")
                 continue;
 
-            if (elem.Key == type)
+            if (elem.Name == type)
                 return 4 * PackedFlexVertCount;
 
             currentLayoutIndex++;
