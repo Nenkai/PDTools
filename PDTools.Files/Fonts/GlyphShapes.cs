@@ -120,7 +120,7 @@ public class GlyphShapes
 
     public byte[] Write(BinaryStream bs)
     {
-        BitStream bitStream = new BitStream(BitStreamMode.Write);
+        BitStream bitStream = new BitStream();
         bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(XMin, 12), 12);
         bitStream.WriteBits((ulong)MiscUtils.PackFloatToBitRange(YMin, 12), 12);
 
