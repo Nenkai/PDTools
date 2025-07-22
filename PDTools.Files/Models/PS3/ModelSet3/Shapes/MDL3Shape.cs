@@ -7,9 +7,9 @@ using PDTools.Files.Models.PS3.ModelSet3.Materials;
 using Syroot.BinaryData;
 
 
-namespace PDTools.Files.Models.PS3.ModelSet3.Meshes;
+namespace PDTools.Files.Models.PS3.ModelSet3.Shapes;
 
-public class MDL3Mesh
+public class MDL3Shape
 {
     public string Name { get; set; }
 
@@ -56,13 +56,13 @@ public class MDL3Mesh
 
     public MDL3FlexibleVertexDefinition FVF { get; set; }
     public MDL3Material Material { get; set; }
-    public MDL3MeshPackedMeshRef PackedMeshRef { get; set; }
+    public MDL3ShapePackedMeshRef PackedMeshRef { get; set; }
 
-    public static MDL3Mesh FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static MDL3Shape FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
         long meshBasePos = bs.Position;
 
-        MDL3Mesh mesh = new();
+        MDL3Shape mesh = new();
 
         mesh.Flags = bs.ReadUInt16();
         mesh.FVFIndex = bs.ReadInt16();
@@ -87,7 +87,7 @@ public class MDL3Mesh
         bs.ReadInt16();
         mesh.TriCount = bs.ReadUInt16();
         int bboxOffset = bs.ReadInt32();
-        int pmshEntryRefOffset = bs.ReadInt32();
+        int packedMeshRefOffset = bs.ReadInt32();
 
         if (bboxOffset != 0)
         {
@@ -97,10 +97,10 @@ public class MDL3Mesh
                 mesh.BBox[i] = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
         }
 
-        if (pmshEntryRefOffset != 0)
+        if (packedMeshRefOffset != 0)
         {
-            bs.Position = mdlBasePos + pmshEntryRefOffset;
-            mesh.PackedMeshRef = MDL3MeshPackedMeshRef.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            bs.Position = mdlBasePos + packedMeshRefOffset;
+            mesh.PackedMeshRef = MDL3ShapePackedMeshRef.FromStream(bs, mdlBasePos, mdl3VersionMajor);
         }
 
         return mesh;

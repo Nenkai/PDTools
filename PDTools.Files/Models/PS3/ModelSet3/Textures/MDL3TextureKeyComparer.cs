@@ -4,17 +4,17 @@ using System.Linq;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.Meshes;
+namespace PDTools.Files.Models.PS3.ModelSet3.Textures;
 
-public class MDL3MeshKeyComparer : IComparer<MDL3MeshKey>
+public class MDL3TextureKeyComparer : IComparer<MDL3TextureKey>
 {
-    private static readonly MDL3MeshKeyComparer _default = new MDL3MeshKeyComparer();
-    public static MDL3MeshKeyComparer Default => _default;
+    private static readonly MDL3TextureKeyComparer _default = new MDL3TextureKeyComparer();
+    public static MDL3TextureKeyComparer Default => _default;
 
-    public int Compare(MDL3MeshKey value1, MDL3MeshKey value2)
+    public int Compare(MDL3TextureKey value1, MDL3TextureKey value2)
     {
-        MDL3MeshKey v1 = value1;
-        MDL3MeshKey v2 = value2;
+        MDL3TextureKey v1 = value1;
+        MDL3TextureKey v2 = value2;
 
         int min = v1.Name.Length > v2.Name.Length ? v2.Name.Length : v1.Name.Length;
         for (int i = 0; i < min; i++)
@@ -30,9 +30,9 @@ public class MDL3MeshKeyComparer : IComparer<MDL3MeshKey>
         else if (v1.Name.Length > v2.Name.Length)
             return 1;
 
-        if (v1.MeshID < v2.MeshID)
+        if (v1.TextureID < v2.TextureID)
             return -1;
-        else if (v1.MeshID > v2.MeshID)
+        else if (v1.TextureID > v2.TextureID)
             return 1;
 
         return 0;

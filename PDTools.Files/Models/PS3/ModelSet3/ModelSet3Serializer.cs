@@ -12,8 +12,10 @@ using Syroot.BinaryData;
 using System.Diagnostics;
 using PDTools.Files.Models.PS3.ModelSet3.FVF;
 using PDTools.Files.Models.PS3.ModelSet3.Materials;
-using PDTools.Files.Models.PS3.ModelSet3.Meshes;
+using PDTools.Files.Models.PS3.ModelSet3.Shapes;
 using PDTools.Files.Models.PS3.ModelSet3.Wing;
+using PDTools.Files.Models.PS3.ModelSet3.Textures;
+using PDTools.Files.Models.PS3.ModelSet3.Models;
 
 namespace PDTools.Files.Models.PS3.ModelSet3;
 
@@ -27,7 +29,7 @@ public class ModelSet3Serializer
     private readonly Dictionary<ShadersProgram_0x2C, int> _shaderProgram0x2COffsets = [];
 
     public List<MDL3ModelKey> _modelKeys { get; set; } = [];
-    public List<MDL3MeshKey> _meshKeys { get; set; } = [];
+    public List<MDL3ShapeKey> _shapeKeys { get; set; } = [];
     public List<MDL3WingKey> _wingKeys { get; set; } = [];
 
     public ModelSet3Serializer(ModelSet3 modelSet)
@@ -235,11 +237,11 @@ public class ModelSet3Serializer
         bs.Align(0x10, grow: true); // Start is aligned to 0x10
 
         long baseMdlPos = bs.Position;
-        for (int i = 0; i < ModelSet.Meshes.Count; i++)
+        for (int i = 0; i < ModelSet.Shapes.Count; i++)
         {
             bs.Position = baseMdlPos + i * 0x30;
 
-            MDL3Mesh mesh = ModelSet.Meshes[i];
+            MDL3Shape mesh = ModelSet.Shapes[i];
             bs.WriteUInt16(mesh.Flags);
             bs.WriteInt16(mesh.FVFIndex);
             bs.WriteInt16(mesh.MaterialIndex);
@@ -256,12 +258,12 @@ public class ModelSet3Serializer
         }
 
         // Write bboxes & pmsh ref
-        bs.Position = baseMdlPos + ModelSet.Meshes.Count * 0x30;
+        bs.Position = baseMdlPos + ModelSet.Shapes.Count * 0x30;
         long lastOffset = bs.Position;
-        for (int i = 0; i < ModelSet.Meshes.Count; i++)
+        for (int i = 0; i < ModelSet.Shapes.Count; i++)
         {
             bs.Position = lastOffset;
-            MDL3Mesh mesh = ModelSet.Meshes[i];
+            MDL3Shape mesh = ModelSet.Shapes[i];
 
             // Write BBox - (NOTE: BBox starts aligned on 0x10)
             bs.Align(0x10, grow: true);
@@ -305,7 +307,7 @@ public class ModelSet3Serializer
         }
 
         bs.Position = baseModelSetOffset + 0x14;
-        bs.WriteInt16((short)ModelSet.Meshes.Count);
+        bs.WriteInt16((short)ModelSet.Shapes.Count);
 
         bs.Position = baseModelSetOffset + 0x38;
         bs.WriteInt32((int)baseMdlPos);
@@ -315,29 +317,29 @@ public class ModelSet3Serializer
 
     private void WriteMeshKeys(BinaryStream bs, long baseModelSetOffset)
     {
-        for (int i = 0; i < ModelSet.Meshes.Count; i++)
+        for (int i = 0; i < ModelSet.Shapes.Count; i++)
         {
-            MDL3Mesh mesh = ModelSet.Meshes[i];
-            var key = new MDL3MeshKey();
+            MDL3Shape mesh = ModelSet.Shapes[i];
+            var key = new MDL3ShapeKey();
             key.Name = mesh.Name;
-            key.MeshID = (uint)i;
-            _meshKeys.Add(key);
+            key.ShapeID = (uint)i;
+            _shapeKeys.Add(key);
         }
 
-        _meshKeys.Sort(MDL3MeshKeyComparer.Default);
+        _shapeKeys.Sort(MDL3ShapeKeyComparer.Default);
 
         int keysOffset = (int)bs.Position;
         long lastOffset = bs.Position;
-        for (int i = 0; i < _meshKeys.Count; i++)
+        for (int i = 0; i < _shapeKeys.Count; i++)
         {
             bs.WriteInt32(0); // Name offset, write later
-            bs.WriteInt32((int)_meshKeys[i].MeshID);
+            bs.WriteInt32((int)_shapeKeys[i].ShapeID);
 
             lastOffset = bs.Position;
         }
 
         bs.Position = baseModelSetOffset + 0x16;
-        bs.WriteInt16((short)_meshKeys.Count);
+        bs.WriteInt16((short)_shapeKeys.Count);
 
         bs.Position = baseModelSetOffset + 0x3C;
         bs.WriteInt32(keysOffset);

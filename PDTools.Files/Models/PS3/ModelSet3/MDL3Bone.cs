@@ -40,7 +40,7 @@ public class MDL3Bone
 
     public override string ToString()
     {
-        return $"{Name} (Unk: {ParentID}, ID: {ID})";
+        return $"{Name} (Parent: {ParentID}, ID: {ID})";
     }
 
     public static int GetSize()

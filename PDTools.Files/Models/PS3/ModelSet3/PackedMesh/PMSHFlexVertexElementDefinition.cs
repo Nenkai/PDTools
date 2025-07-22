@@ -10,7 +10,7 @@ using PDTools.Files.Models.PS3.ModelSet3.FVF;
 
 namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 
-public class PackedMeshFlexVertexElementDefinition
+public class PMSHFlexVertexElementDefinition
 {
     public string Name { get; set; }
     public byte NameID { get; set; }
@@ -20,9 +20,9 @@ public class PackedMeshFlexVertexElementDefinition
 
     public bool IsPacked { get; set; }
 
-    public static PackedMeshFlexVertexElementDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static PMSHFlexVertexElementDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        PackedMeshFlexVertexElementDefinition declaration = new();
+        PMSHFlexVertexElementDefinition declaration = new();
 
         declaration.NameID = bs.Read1Byte();
         declaration.OutputFlexOffset = bs.Read1Byte();

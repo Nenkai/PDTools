@@ -10,9 +10,10 @@ namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 
 public class PackedMeshHeader
 {
-    public List<PackedMeshEntry> Entries { get; set; } = [];
-    public List<PackedMeshElementBitLayoutArray> BitLayoutDefinitionArray { get; set; } = [];
-    public List<PackedMeshFlexVertexDefinition> StructDeclarations { get; set; } = [];
+    public List<PMSHMesh> Meshes { get; set; } = [];
+    public List<PMSHMeshUnk0x1C> Unk0X1Cs { get; set; } = [];
+    public List<PMSHElementBitLayoutArray> BitLayoutDefinitionArray { get; set; } = [];
+    public List<PMSHFlexVertexDefinition> StructDeclarations { get; set; } = [];
 
     public static PackedMeshHeader FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
@@ -24,7 +25,7 @@ public class PackedMeshHeader
         int unk = bs.ReadInt32();
         int relocSize = bs.ReadInt32();
         bs.ReadInt32(); // Reloc ptr
-        short formatCount = bs.ReadInt16();
+        short meshCount = bs.ReadInt16();
         short unkCount0x1C = bs.ReadInt16();
         short elementBitLayoutDefinitionCount = bs.ReadInt16();
         short structDeclarationCount = bs.ReadInt16();
@@ -37,24 +38,32 @@ public class PackedMeshHeader
         bs.ReadInt32();
         int unkOffset0x30 = bs.ReadInt32();
 
-        for (var i = 0; i < formatCount; i++)
+        for (var i = 0; i < meshCount; i++)
         {
-            bs.Position = mdlBasePos + formatsOffset + i * PackedMeshEntry.GetSize();
-            var format = PackedMeshEntry.FromStream(bs, mdlBasePos, mdl3VersionMajor);
-            packedMesh.Entries.Add(format);
+            bs.Position = mdlBasePos + formatsOffset + i * PMSHMesh.GetSize();
+            var format = PMSHMesh.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            packedMesh.Meshes.Add(format);
         }
+
+        for (var i = 0; i < unkCount0x1C; i++)
+        {
+            bs.Position = mdlBasePos + unkOffset0x1C + i * PMSHMeshUnk0x1C.GetSize();
+            var mesh = PMSHMeshUnk0x1C.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            packedMesh.Unk0X1Cs.Add(mesh);
+        }
+
 
         for (var i = 0; i < elementBitLayoutDefinitionCount; i++)
         {
-            bs.Position = mdlBasePos + elementBitLayoutDefinitionsOffset + i * PackedMeshElementBitLayoutArray.GetSize();
-            var arr = PackedMeshElementBitLayoutArray.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            bs.Position = mdlBasePos + elementBitLayoutDefinitionsOffset + i * PMSHElementBitLayoutArray.GetSize();
+            var arr = PMSHElementBitLayoutArray.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             packedMesh.BitLayoutDefinitionArray.Add(arr);
         }
 
         for (var i = 0; i < structDeclarationCount; i++)
         {
-            bs.Position = mdlBasePos + structDeclarationsOffset + i * PackedMeshFlexVertexDefinition.GetSize();
-            var decl = PackedMeshFlexVertexDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            bs.Position = mdlBasePos + structDeclarationsOffset + i * PMSHFlexVertexDefinition.GetSize();
+            var decl = PMSHFlexVertexDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             packedMesh.StructDeclarations.Add(decl);
         }
 

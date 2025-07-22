@@ -23,7 +23,7 @@ public class ShapeStreamChunk
     /// </summary>
     public const int MaxCompressedChunkSize = 0x10000;
 
-    public Dictionary<ushort, ShapeStreamMesh> Meshes { get; set; } = [];
+    public Dictionary<ushort, ShapeStreamShape> Meshes { get; set; } = [];
 
     public static ShapeStreamChunk FromStream(Stream stream, MDL3ShapeStreamingChunkInfo shapeStreamInfo)
     {
@@ -47,7 +47,7 @@ public class ShapeStreamChunk
         {
             meshReader.Position = (int)entry.OffsetInChunk;
 
-            ShapeStreamMesh mesh = new();
+            ShapeStreamShape mesh = new();
             mesh.ShapeStreamChunk = chunk;
             mesh.InfoMeshEntry = entry;
 

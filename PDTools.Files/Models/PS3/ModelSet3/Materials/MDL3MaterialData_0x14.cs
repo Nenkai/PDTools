@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using PDTools.Files.Models.PS3.ModelSet3;
+
+using PDTools.Files.Models.PS3.ModelSet3.Textures;
 
 using Syroot.BinaryData;
 

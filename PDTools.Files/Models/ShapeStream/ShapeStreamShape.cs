@@ -5,7 +5,7 @@ using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
 
 namespace PDTools.Files.Models.ShapeStream;
 
-public class ShapeStreamMesh
+public class ShapeStreamShape
 {
     public const int HeaderSize = 0x80;
 

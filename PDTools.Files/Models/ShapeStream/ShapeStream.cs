@@ -27,11 +27,11 @@ public class ShapeStream
         return ss;
     }
 
-    public ShapeStreamMesh GetMeshByIndex(ushort meshIndex)
+    public ShapeStreamShape GetShapeByIndex(ushort meshIndex)
     {
         foreach (var chunk in Chunks)
         {
-            if (chunk.Meshes.TryGetValue(meshIndex, out ShapeStreamMesh mesh))
+            if (chunk.Meshes.TryGetValue(meshIndex, out ShapeStreamShape mesh))
                 return mesh;
         }
 

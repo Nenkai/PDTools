@@ -9,7 +9,7 @@ using Syroot.BinaryData;
 using System.IO;
 using PDTools.Files.Models.PS3.PGLCommands;
 
-namespace PDTools.Files.Models.PS3.ModelSet3;
+namespace PDTools.Files.Models.PS3.ModelSet3.Models;
 
 public class ModelSet3Model
 {

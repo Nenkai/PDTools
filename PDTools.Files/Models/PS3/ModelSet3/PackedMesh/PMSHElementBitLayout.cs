@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 
-public class PackedMeshElementBitLayout
+public class PMSHElementBitLayout
 {
     public int TotalBitCount { get; set; }
     public byte XBitCount { get; set; }
@@ -31,9 +31,9 @@ public class PackedMeshElementBitLayout
     public float OffsetW { get; set; }
 
 
-    public static PackedMeshElementBitLayout FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static PMSHElementBitLayout FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        PackedMeshElementBitLayout def = new();
+        PMSHElementBitLayout def = new();
 
         def.TotalBitCount = bs.ReadInt32();
         def.XBitCount = bs.Read1Byte();

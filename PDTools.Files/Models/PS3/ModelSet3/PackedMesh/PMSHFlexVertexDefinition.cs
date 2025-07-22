@@ -8,7 +8,7 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 
-public class PackedMeshFlexVertexDefinition
+public class PMSHFlexVertexDefinition
 {
     public byte PackedElementCount { get; set; }
     public byte RawElementCount { get; set; }
@@ -16,14 +16,14 @@ public class PackedMeshFlexVertexDefinition
     public byte NonPackedStride { get; set; }
     public int Unk { get; set; }
 
-    public Dictionary<string, PackedMeshFlexVertexElementDefinition> PackedElements { get; set; } = [];
+    public Dictionary<string, PMSHFlexVertexElementDefinition> PackedElements { get; set; } = [];
 
     // May have elements with the same name.
-    public List<PackedMeshFlexVertexElementDefinition> Elements { get; set; } = [];
+    public List<PMSHFlexVertexElementDefinition> Elements { get; set; } = [];
 
-    public static PackedMeshFlexVertexDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static PMSHFlexVertexDefinition FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        PackedMeshFlexVertexDefinition declaration = new();
+        PMSHFlexVertexDefinition declaration = new();
 
         declaration.PackedElementCount = bs.Read1Byte();
         declaration.RawElementCount = bs.Read1Byte();
@@ -34,21 +34,21 @@ public class PackedMeshFlexVertexDefinition
         int elementDefsOffset = bs.ReadInt32();
         int elementNamesOffst = bs.ReadInt32();
 
-        var packedElemList = new List<PackedMeshFlexVertexElementDefinition>();
-        var elemList = new List<PackedMeshFlexVertexElementDefinition>();
+        var packedElemList = new List<PMSHFlexVertexElementDefinition>();
+        var elemList = new List<PMSHFlexVertexElementDefinition>();
 
         for (var i = 0; i < declaration.PackedElementCount; i++)
         {
-            bs.Position = mdlBasePos + elementDefsOffset + i * PackedMeshFlexVertexElementDefinition.GetSize();
-            var elem = PackedMeshFlexVertexElementDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            bs.Position = mdlBasePos + elementDefsOffset + i * PMSHFlexVertexElementDefinition.GetSize();
+            var elem = PMSHFlexVertexElementDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             elem.IsPacked = true;
             packedElemList.Add(elem);
         }
 
         for (var i = 0; i < declaration.RawElementCount; i++)
         {
-            bs.Position = mdlBasePos + elementDefsOffset + declaration.PackedElementCount * PackedMeshFlexVertexElementDefinition.GetSize() + i * PackedMeshFlexVertexElementDefinition.GetSize();
-            var elem = PackedMeshFlexVertexElementDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            bs.Position = mdlBasePos + elementDefsOffset + declaration.PackedElementCount * PMSHFlexVertexElementDefinition.GetSize() + i * PMSHFlexVertexElementDefinition.GetSize();
+            var elem = PMSHFlexVertexElementDefinition.FromStream(bs, mdlBasePos, mdl3VersionMajor);
             elemList.Add(elem);
         }
 
@@ -75,9 +75,9 @@ public class PackedMeshFlexVertexDefinition
         return declaration;
     }
 
-    public PackedMeshFlexVertexElementDefinition GetElement(string name)
+    public PMSHFlexVertexElementDefinition GetElement(string name)
     {
-        if (PackedElements.TryGetValue(name, out PackedMeshFlexVertexElementDefinition elem))
+        if (PackedElements.TryGetValue(name, out PMSHFlexVertexElementDefinition elem))
             return elem;
 
         // TODO: Elements can have multiple elements with the same name.

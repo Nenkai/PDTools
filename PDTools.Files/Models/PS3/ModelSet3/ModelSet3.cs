@@ -19,11 +19,13 @@ using ShapeStreamData = PDTools.Files.Models.ShapeStream.ShapeStream;
 
 using PDTools.Files.Models.PS3.ModelSet3.FVF;
 using PDTools.Files.Models.PS3.ModelSet3.Materials;
-using PDTools.Files.Models.PS3.ModelSet3.Meshes;
+using PDTools.Files.Models.PS3.ModelSet3.Shapes;
 using PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
 using PDTools.Files.Models.PS3.ModelSet3.Wing;
 using PDTools.Files.Courses.PS3;
+using PDTools.Files.Models.PS3.ModelSet3.Textures;
+using PDTools.Files.Models.PS3.ModelSet3.Models;
 
 namespace PDTools.Files.Models.PS3.ModelSet3;
 
@@ -40,8 +42,8 @@ public class ModelSet3
     public List<ModelSet3Model> Models { get; set; } = [];
     public List<MDL3ModelKey> ModelKeys { get; set; } = [];
 
-    public List<MDL3Mesh> Meshes { get; set; } = [];
-    public List<MDL3MeshKey> MeshKeys { get; set; } = [];
+    public List<MDL3Shape> Shapes { get; set; } = [];
+    public List<MDL3ShapeKey> ShapeKeys { get; set; } = [];
     public List<MDL3FlexibleVertexDefinition> FlexibleVertexFormats { get; set; } = [];
     public MDL3Materials Materials { get; set; } = new();
     public TextureSet3 TextureSet { get; set; }
@@ -89,8 +91,8 @@ public class ModelSet3
         bs.ReadUInt16(); // Runtime Flags
         ushort modelCount = bs.ReadUInt16();
         ushort modelKeyCount = bs.ReadUInt16();
-        ushort meshesCount = bs.ReadUInt16();
-        ushort meshKeysCount = bs.ReadUInt16();
+        ushort shapeCount = bs.ReadUInt16();
+        ushort shapeKeyCount = bs.ReadUInt16();
         ushort flexibleVertexDefinitionCount = bs.ReadUInt16();
         ushort bonesCount = bs.ReadUInt16();
         modelSet._0x68Size = bs.ReadUInt16();
@@ -107,8 +109,8 @@ public class ModelSet3
         // Offsets
         uint modelsOffset = bs.ReadUInt32();
         uint modelKeysOffset = bs.ReadUInt32();
-        uint meshesOffset = bs.ReadUInt32();
-        uint meshKeysOffset = bs.ReadUInt32();
+        uint shapesOffset = bs.ReadUInt32();
+        uint shapeKeysOffset = bs.ReadUInt32();
         uint flexibleVerticesOffset = bs.ReadUInt32();
         uint materialsOffset = bs.ReadUInt32();
         uint textureSetOffset = bs.ReadUInt32();
@@ -157,8 +159,8 @@ public class ModelSet3
         modelSet.ReadModels(bs, basePos, modelsOffset, modelCount);
         modelSet.ReadModelKeys(bs, basePos, modelKeysOffset, modelKeyCount);
 
-        modelSet.ReadMeshes(bs, basePos, meshesOffset, meshesCount);
-        modelSet.ReadMeshKeys(bs, basePos, meshKeysOffset, meshKeysCount);
+        modelSet.ReadShapes(bs, basePos, shapesOffset, shapeCount);
+        modelSet.ReadShapeKeys(bs, basePos, shapeKeysOffset, shapeKeyCount);
 
         modelSet.ReadFlexibleVertices(bs, basePos, flexibleVerticesOffset, flexibleVertexDefinitionCount);
 
@@ -190,22 +192,22 @@ public class ModelSet3
 
     private void LinkAll()
     {
-        foreach (var modelKey in ModelKeys)
+        foreach (MDL3ModelKey modelKey in ModelKeys)
             Models[(ushort)modelKey.ModelID].Name = modelKey.Name;
 
-        foreach (var meshKey in MeshKeys)
-            Meshes[(ushort)meshKey.MeshID].Name = meshKey.Name;
+        foreach (MDL3ShapeKey shapeKey in ShapeKeys)
+            Shapes[(ushort)shapeKey.ShapeID].Name = shapeKey.Name;
 
-        foreach (var wingKey in WingKeys)
+        foreach (MDL3WingKey wingKey in WingKeys)
             WingData[(ushort)wingKey.WingDataID].Name = wingKey.Name;
 
-        foreach (var mesh in Meshes)
+        foreach (var shape in Shapes)
         {
-            if (mesh.FVFIndex != -1)
-                mesh.FVF = FlexibleVertexFormats[mesh.FVFIndex];
+            if (shape.FVFIndex != -1)
+                shape.FVF = FlexibleVertexFormats[shape.FVFIndex];
 
-            if (mesh.MaterialIndex != -1)
-                mesh.Material = Materials.Definitions[mesh.MaterialIndex];
+            if (shape.MaterialIndex != -1)
+                shape.Material = Materials.Definitions[shape.MaterialIndex];
         }
     }
 
@@ -229,25 +231,25 @@ public class ModelSet3
         }
     }
 
-    private void ReadMeshes(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+    private void ReadShapes(BinaryStream bs, long baseMdlPos, uint offset, uint count)
     {
         for (ushort i = 0; i < count; i++)
         {
-            bs.Position = baseMdlPos + offset + i * MDL3Mesh.GetSize();
-            Meshes.Add(MDL3Mesh.FromStream(bs, baseMdlPos, Version));
+            bs.Position = baseMdlPos + offset + i * MDL3Shape.GetSize();
+            Shapes.Add(MDL3Shape.FromStream(bs, baseMdlPos, Version));
         }
     }
 
-    private void ReadMeshKeys(BinaryStream bs, long baseMdlPos, uint offset, uint count)
+    private void ReadShapeKeys(BinaryStream bs, long baseMdlPos, uint offset, uint count)
     {
         for (ushort i = 0; i < count; i++)
         {
-            bs.Position = baseMdlPos + offset + i * MDL3MeshKey.GetSize();
+            bs.Position = baseMdlPos + offset + i * MDL3ShapeKey.GetSize();
 
-            var key = MDL3MeshKey.FromStream(bs, baseMdlPos, Version);
-            MeshKeys.Add(key);
+            var key = MDL3ShapeKey.FromStream(bs, baseMdlPos, Version);
+            ShapeKeys.Add(key);
 
-            Meshes[(ushort)key.MeshID].Name = key.Name;
+            Shapes[(ushort)key.ShapeID].Name = key.Name;
         }
     }
 
@@ -394,22 +396,22 @@ public class ModelSet3
     }
 
     /// <summary>
-    /// Gets all the vertices for a specified mesh.
+    /// Gets all the vertices for a specified shape.
     /// </summary>
-    /// <param name="meshIndex"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="NotSupportedException"></exception>
-    public Vector3[] GetVerticesOfMesh(ushort meshIndex)
+    public Vector3[] GetVerticesOfShape(ushort shapeIndex)
     {
-        if ((short)meshIndex == -1)
-            throw new InvalidOperationException("Mesh Index was -1.");
+        if ((short)shapeIndex == -1)
+            throw new InvalidOperationException("Shape Index was -1.");
 
-        var mesh = Meshes[meshIndex];
+        var shape = Shapes[shapeIndex];
 
-        if (mesh.FVFIndex != -1)
+        if (shape.FVFIndex != -1)
         {
-            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
+            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[shape.FVFIndex];
             if (!fvfDef.Elements.TryGetValue("position", out var field)
                 && !fvfDef.Elements.TryGetValue("position_1", out field)
                 && !fvfDef.Elements.TryGetValue("position_2", out field))
@@ -418,25 +420,25 @@ public class ModelSet3
             if (field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_F && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_S1 && field.FieldType != CELL_GCM_VERTEX_TYPE.CELL_GCM_VERTEX_SF)
                 throw new NotSupportedException("Expected vector 3 with CELL_GCM_VERTEX_F or CELL_GCM_VERTEX_S1");
 
-            var arr = new Vector3[mesh.VertexCount];
-            if (mesh.VerticesOffset != 0 && Stream.CanRead)
+            var arr = new Vector3[shape.VertexCount];
+            if (shape.VerticesOffset != 0 && Stream.CanRead)
             {
                 Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
-                    GetVerticesData(mesh, fvfDef, field, i, vertBuffer);
+                    GetVerticesData(shape, fvfDef, field, i, vertBuffer);
                     arr[i] = GetFVFFieldVector3(vertBuffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
             }
             else if (ShapeStream != null)
             {
                 // Try shapestream
-                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
                 if (ssMesh is null)
                     return arr;
 
                 Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
                     GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, vertBuffer);
                     arr[i] = GetFVFFieldVector3(vertBuffer, field.FieldType, field.StartOffset, field.ElementCount);
@@ -445,22 +447,22 @@ public class ModelSet3
 
             return arr;
         }
-        else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
+        else if (Version >= 9 && PackedMesh != null && shape.PackedMeshRef != null)
         {
-            PackedMeshEntry entry = PackedMesh.Entries[mesh.PackedMeshRef.PackedMeshEntryIndex];
-            PackedMeshFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.StructDeclarationID];
-            PackedMeshFlexVertexElementDefinition element = flexDef.GetElement("position");
+            PMSHMesh entry = PackedMesh.Meshes[shape.PackedMeshRef.PackedMeshEntryIndex];
+            PMSHFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.FlexVertexDeclarationID];
+            PMSHFlexVertexElementDefinition element = flexDef.GetElement("position");
 
             if (element is null)
                 return null;
 
             if (element.IsPacked)
             {
-                PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
-                var arr = new Vector3[entry.Data.PackedFlexVertCount];
+                PMSHElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
+                var arr = new Vector3[entry.DataList[0].PackedFlexVertCount];
 
-                PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
-                for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                PMSHElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
+                for (int i = 0; i < entry.DataList[0].PackedFlexVertCount; i++)
                 {
                     var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
                     arr[i] = new Vector3(v4.X, v4.Y, v4.Z);
@@ -471,9 +473,9 @@ public class ModelSet3
             else
             {
                 Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
-                var arr = new Vector3[entry.Data.PackedFlexVertCount];
+                var arr = new Vector3[entry.DataList[0].PackedFlexVertCount];
 
-                for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                for (int i = 0; i < entry.DataList[0].PackedFlexVertCount; i++)
                 {
                     GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
                     arr[i] = GetFVFFieldVector3(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
@@ -491,7 +493,7 @@ public class ModelSet3
     /// <returns></returns>
     public List<Tri> GetTrisOfMesh(ushort meshIndex)
     {
-        MDL3Mesh mesh = Meshes[meshIndex];
+        MDL3Shape mesh = Shapes[meshIndex];
         var list = new List<Tri>();
 
         if (mesh.TriOffset != 0 && Stream.CanRead)
@@ -515,7 +517,7 @@ public class ModelSet3
         else if (ShapeStream != null)
         {
             // Try shapestream
-            var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+            var ssMesh = ShapeStream.GetShapeByIndex(meshIndex);
             if (ssMesh is null)
                 return null;
 
@@ -547,7 +549,7 @@ public class ModelSet3
     * Sometimes the scale is off, it's been a rabbit hole figuring out why
     * Turns out it's handled by shader programs (yes).
     * Order of fetching is:
-    * 1. Mesh -> Material ID -> Material Entry
+    * 1. Shape -> Material ID -> Material Entry
     * 2. Material Entry -> Material Data ID -> Material Data Entry
     * 3. Material Data Entry -> 0x14 Entry -> Shader Entry Index -> Shader Entry 0x3C or Shader Def Entry
     * 4. Shader Def Entry -> Shader Program ID -> Shader Program Entry
@@ -556,16 +558,16 @@ public class ModelSet3
     * UV stuff is handling there, not sure how that's done yet. The floats don't seem to be directly it - didn't seem to work with GT6 midfield
     * */
     /// <summary>
-    /// Gets all the UVs for a specified mesh. Read comment above this function as there are some issues
+    /// Gets all the UVs for a specified shape. Read comment above this function as there are some issues
     /// </summary>
-    /// <param name="meshIndex"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public Vector2[] GetUVsOfMesh(ushort meshIndex)
+    public Vector2[] GetUVsOfMesh(ushort shapeIndex)
     {
-        var mesh = Meshes[meshIndex];
+        var shape = Shapes[shapeIndex];
         Vector2[] arr;
 
-        var mat = Materials.Definitions[mesh.MaterialIndex];
+        var mat = Materials.Definitions[shape.MaterialIndex];
         MDL3MaterialData matData = Materials.MaterialDatas[mat.MaterialDataID];
         ShaderDefinition shader = Shaders.Definitions[matData._0x14.ShaderID];
         var prog = Shaders.Programs0x20[shader.ProgramID];
@@ -576,55 +578,55 @@ public class ModelSet3
         float scaleZ = BinaryPrimitives.ReadSingleBigEndian(prog.Program.AsSpan(0x28));
         */
 
-        if (mesh.FVFIndex != -1)
+        if (shape.FVFIndex != -1)
         {
-            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
+            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[shape.FVFIndex];
             if (!fvfDef.Elements.TryGetValue("map1", out var field) &&
                 !fvfDef.Elements.TryGetValue("map12", out field) &&
                 !fvfDef.Elements.TryGetValue("map12_2", out field))
                 return [];
 
-            arr = new Vector2[mesh.VertexCount];
-            if (mesh.VerticesOffset != 0 && Stream.CanRead)
+            arr = new Vector2[shape.VertexCount];
+            if (shape.VerticesOffset != 0 && Stream.CanRead)
             {
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
-                    GetVerticesData(mesh, fvfDef, field, i, buffer);
+                    GetVerticesData(shape, fvfDef, field, i, buffer);
                     arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
             }
             else if (ShapeStream != null)
             {
                 // Try shapestream
-                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
                 if (ssMesh is null)
                     return arr;
 
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
                     GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
                     arr[i] = GetFVFFieldVector2(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
             }
         }
-        else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
+        else if (Version >= 9 && PackedMesh != null && shape.PackedMeshRef != null)
         {
-            PackedMeshEntry entry = PackedMesh.Entries[mesh.PackedMeshRef.PackedMeshEntryIndex];
-            PackedMeshFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.StructDeclarationID];
-            PackedMeshFlexVertexElementDefinition element = flexDef.GetElement("map12");
+            PMSHMesh entry = PackedMesh.Meshes[shape.PackedMeshRef.PackedMeshEntryIndex];
+            PMSHFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.FlexVertexDeclarationID];
+            PMSHFlexVertexElementDefinition element = flexDef.GetElement("map12");
 
             if (element is null)
                 return null;
 
             if (element.IsPacked)
             {
-                PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
-                arr = new Vector2[entry.Data.PackedFlexVertCount];
+                PMSHElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
+                arr = new Vector2[entry.DataList[0].PackedFlexVertCount];
 
-                PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
-                for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                PMSHElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
+                for (int i = 0; i < entry.DataList[0].PackedFlexVertCount; i++)
                 {
                     var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
                     arr[i] = new Vector2(v4.X, v4.Y);
@@ -633,9 +635,9 @@ public class ModelSet3
             else
             {
                 Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
-                arr = new Vector2[entry.Data.PackedFlexVertCount];
+                arr = new Vector2[entry.DataList[0].PackedFlexVertCount];
 
-                for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                for (int i = 0; i < entry.DataList[0].PackedFlexVertCount; i++)
                 {
                     GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
                     arr[i] = GetFVFFieldVector2(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
@@ -653,24 +655,24 @@ public class ModelSet3
     /// <summary>
     /// Gets all the normals for a specified mesh.
     /// </summary>
-    /// <param name="meshIndex"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public (uint, uint, uint)[] GetNormalsOfMesh(ushort meshIndex)
+    public (uint, uint, uint)[] GetNormalsOfShape(ushort shapeIndex)
     {
-        var mesh = Meshes[meshIndex];
-        if (mesh.FVFIndex != -1)
+        var shape = Shapes[shapeIndex];
+        if (shape.FVFIndex != -1)
         {
-            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[mesh.FVFIndex];
+            MDL3FlexibleVertexDefinition fvfDef = FlexibleVertexFormats[shape.FVFIndex];
             if (!fvfDef.Elements.TryGetValue("normal", out var field))
                 return [];
 
-            if (mesh.VerticesOffset != 0 && Stream.CanRead)
+            if (shape.VerticesOffset != 0 && Stream.CanRead)
             {
-                var arr = new (uint, uint, uint)[mesh.VertexCount];
+                var arr = new (uint, uint, uint)[shape.VertexCount];
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
-                    GetVerticesData(mesh, fvfDef, field, i, buffer);
+                    GetVerticesData(shape, fvfDef, field, i, buffer);
                     arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
 
@@ -678,15 +680,15 @@ public class ModelSet3
             }
             else if (ShapeStream != null)
             {
-                var arr = new (uint, uint, uint)[mesh.VertexCount];
+                var arr = new (uint, uint, uint)[shape.VertexCount];
 
                 // Try shapestream
-                var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+                var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
                 if (ssMesh is null)
                     return arr;
 
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
-                for (int i = 0; i < mesh.VertexCount; i++)
+                for (int i = 0; i < shape.VertexCount; i++)
                 {
                     GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
                     arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
@@ -696,23 +698,23 @@ public class ModelSet3
             }
 
         }
-        else if (Version >= 9 && PackedMesh != null && mesh.PackedMeshRef != null)
+        else if (Version >= 9 && PackedMesh != null && shape.PackedMeshRef != null)
         {
-            PackedMeshEntry entry = PackedMesh.Entries[mesh.PackedMeshRef.PackedMeshEntryIndex];
-            PackedMeshFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.StructDeclarationID];
-            PackedMeshFlexVertexElementDefinition element = flexDef.GetElement("normal");
+            PMSHMesh entry = PackedMesh.Meshes[shape.PackedMeshRef.PackedMeshEntryIndex];
+            PMSHFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.FlexVertexDeclarationID];
+            PMSHFlexVertexElementDefinition element = flexDef.GetElement("normal");
 
             if (element is null)
                 return null;
 
             if (element.IsPacked)
             {
-                var arr = new (uint, uint, uint)[entry.Data.PackedFlexVertCount];
+                var arr = new (uint, uint, uint)[entry.DataList[0].PackedFlexVertCount];
 
-                PackedMeshElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
-                PackedMeshElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
+                PMSHElementBitLayoutArray bitLayouts = PackedMesh.BitLayoutDefinitionArray[entry.ElementBitLayoutDefinitionID];
+                PMSHElementBitLayout bitDef = GetPackedBitLayoutOfField(bitLayouts, flexDef, element.Name);
 
-                for (int i = 0; i < entry.Data.PackedFlexVertCount; i++)
+                for (int i = 0; i < entry.DataList[0].PackedFlexVertCount; i++)
                 {
                     var v4 = ReadPackedElement(entry, flexDef, bitLayouts, bitDef, element, i);
                     arr[i] = ((uint)v4.X, (uint)v4.Y, (uint)v4.Z);
@@ -722,10 +724,10 @@ public class ModelSet3
             }
             else
             {
-                var arr = new (uint, uint, uint)[entry.Data.NonPackedFlexVertCount];
+                var arr = new (uint, uint, uint)[entry.DataList[0].NonPackedFlexVertCount];
                 Span<byte> vertBuffer = new byte[flexDef.NonPackedStride];
 
-                for (int i = 0; i < entry.Data.NonPackedFlexVertCount; i++)
+                for (int i = 0; i < entry.DataList[0].NonPackedFlexVertCount; i++)
                 {
                     GetPackedMeshRawElementBuffer(entry, flexDef, i, vertBuffer);
                     arr[i] = GetFVFFieldXYZ(vertBuffer, element.Type, element.OutputFlexOffset, element.ElementCount);
@@ -739,41 +741,41 @@ public class ModelSet3
     }
 
     /// <summary>
-    /// Gets the BBox of a mesh.
+    /// Gets the BBox of a shape.
     /// </summary>
-    /// <param name="meshIndex"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public Vector3[] GetBBoxOfMesh(ushort meshIndex)
+    public Vector3[] GetBBoxOfShape(ushort shapeIndex)
     {
-        var mesh = Meshes[meshIndex];
+        var shape = Shapes[shapeIndex];
 
-        if (mesh.BBox == null && ShapeStream != null)
+        if (shape.BBox == null && ShapeStream != null)
         {
             // Try shapestream
-            var ssMesh = ShapeStream.GetMeshByIndex(meshIndex);
+            var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
             if (ssMesh is null)
                 return null;
 
             SpanReader meshReader = new SpanReader(ssMesh.MeshData.Span, Endian.Big);
 
             meshReader.Position = (int)ssMesh.BBoxOffset;
-            mesh.BBox = new Vector3[8];
+            shape.BBox = new Vector3[8];
             for (var i = 0; i < 8; i++)
-                mesh.BBox[i] = new Vector3(meshReader.ReadSingle(), meshReader.ReadSingle(), meshReader.ReadSingle());
+                shape.BBox[i] = new Vector3(meshReader.ReadSingle(), meshReader.ReadSingle(), meshReader.ReadSingle());
         }
 
-        return mesh.BBox;
+        return shape.BBox;
     }
 
-    private Vector4 ReadPackedElement(PackedMeshEntry entry,
-        PackedMeshFlexVertexDefinition flexDef,
-        PackedMeshElementBitLayoutArray bitLayouts,
-        PackedMeshElementBitLayout bitDef,
-        PackedMeshFlexVertexElementDefinition element,
+    private Vector4 ReadPackedElement(PMSHMesh entry,
+        PMSHFlexVertexDefinition flexDef,
+        PMSHElementBitLayoutArray bitLayouts,
+        PMSHElementBitLayout bitDef,
+        PMSHFlexVertexElementDefinition element,
         int vertIndex)
     {
 
-        Stream.Position = entry.Data.PackedFlexVertsOffset + entry.Data.GetOffsetOfPackedElement(bitLayouts, flexDef, element.Name);
+        Stream.Position = entry.DataList[0].PackedFlexVertCount + entry.DataList[0].GetOffsetOfPackedElement(bitLayouts, flexDef, element.Name);
         Stream.Position += bitDef.TotalBitCount * vertIndex / 8;
         int rem = bitDef.TotalBitCount * vertIndex % 8;
 
@@ -804,21 +806,21 @@ public class ModelSet3
     /// <summary>
     /// Gets a flex vertex
     /// </summary>
-    /// <param name="meshInfo"></param>
+    /// <param name="shape"></param>
     /// <param name="fvfDef"></param>
     /// <param name="field"></param>
     /// <param name="vertIndex"></param>
     /// <param name="buffer"></param>
-    public void GetVerticesData(MDL3Mesh meshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
+    public void GetVerticesData(MDL3Shape shape, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
     {
         if (field.ArrayIndex == 0)
         {
-            Stream.Position = BaseOffset + meshInfo.VerticesOffset + vertIndex * fvfDef.VertexSize;
+            Stream.Position = BaseOffset + shape.VerticesOffset + vertIndex * fvfDef.VertexSize;
             Stream.ReadExactly(buffer);
         }
         else
         {
-            Stream.Position = BaseOffset + meshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex;
+            Stream.Position = BaseOffset + shape.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex;
             Stream.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
             Stream.ReadExactly(buffer);
         }
@@ -832,7 +834,7 @@ public class ModelSet3
     /// <param name="field"></param>
     /// <param name="vertIndex"></param>
     /// <param name="buffer"></param>
-    public static void GetShapeStreamVerticesData(ShapeStreamMesh ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
+    public static void GetShapeStreamVerticesData(ShapeStreamShape ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
     {
         SpanReader meshReader = new SpanReader(ssMeshInfo.MeshData.Span);
         if (field.ArrayIndex == 0)
@@ -848,13 +850,14 @@ public class ModelSet3
         }
     }
 
-    public void GetPackedMeshRawElementBuffer(PackedMeshEntry entry, PackedMeshFlexVertexDefinition flexStruct, int vertIndex, Span<byte> buffer)
+    public void GetPackedMeshRawElementBuffer(PMSHMesh entry, PMSHFlexVertexDefinition flexStruct, int vertIndex, Span<byte> buffer)
     {
-        Stream.Position = BaseOffset + entry.Data.NonPackedFlexVertsOffset + vertIndex * flexStruct.NonPackedStride;
+        // TODO: Don't use [0]!
+        Stream.Position = BaseOffset + entry.DataList[0].NonPackedFlexVertCount + vertIndex * flexStruct.NonPackedStride;
         Stream.ReadExactly(buffer);
     }
 
-    private static PackedMeshElementBitLayout GetPackedBitLayoutOfField(PackedMeshElementBitLayoutArray bitLayouts, PackedMeshFlexVertexDefinition flexStruct, string type)
+    private static PMSHElementBitLayout GetPackedBitLayoutOfField(PMSHElementBitLayoutArray bitLayouts, PMSHFlexVertexDefinition flexStruct, string type)
     {
         int currentLayoutIndex = 0;
         foreach (var elem in flexStruct.PackedElements)

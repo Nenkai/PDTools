@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3;
+namespace PDTools.Files.Models.PS3.ModelSet3.Textures;
 
-public class MDL3ModelKey
+public class MDL3TextureKey
 {
-    public uint ModelID { get; set; }
+    public uint TextureID { get; set; }
     public string Name { get; set; }
 
-    public static MDL3ModelKey FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static MDL3TextureKey FromStream(BinaryStream bs, long mdlBasePos)
     {
-        MDL3ModelKey modelKey = new();
+        MDL3TextureKey modelKey = new();
         int strOffset = bs.ReadInt32();
-        modelKey.ModelID = bs.ReadUInt32();
+        modelKey.TextureID = bs.ReadUInt32();
 
         bs.Position = mdlBasePos + strOffset;
 
@@ -31,6 +32,6 @@ public class MDL3ModelKey
 
     public override string ToString()
     {
-        return $"{Name} (ModelID: {ModelID})";
+        return $"{Name} (TextureID: {TextureID})";
     }
 }

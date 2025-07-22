@@ -5,18 +5,18 @@ using System.Reflection.Metadata.Ecma335;
 
 using Syroot.BinaryData;
 
-namespace PDTools.Files.Models.PS3.ModelSet3.Meshes;
+namespace PDTools.Files.Models.PS3.ModelSet3.Shapes;
 
-public class MDL3MeshKey
+public class MDL3ShapeKey
 {
-    public uint MeshID;
+    public uint ShapeID;
     public string Name;
 
-    public static MDL3MeshKey FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public static MDL3ShapeKey FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        MDL3MeshKey meshInfo = new();
+        MDL3ShapeKey meshInfo = new();
         int strOffset = bs.ReadInt32();
-        meshInfo.MeshID = bs.ReadUInt32();
+        meshInfo.ShapeID = bs.ReadUInt32();
 
         bs.Position = mdlBasePos + strOffset;
 
@@ -33,6 +33,6 @@ public class MDL3MeshKey
 
     public override string ToString()
     {
-        return $"{Name} (MeshID: {MeshID})";
+        return $"{Name} (ShapeID: {ShapeID})";
     }
 }
