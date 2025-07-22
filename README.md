@@ -16,6 +16,7 @@ A collection of utilities for working around certain Gran Turismo games. More in
 * [PDTools.Hashing](PDTools.Hashing) - Set of classes for handling various hashing operations.
 * [PDTools.LiveTimingApi](PDTools.LiveTimingApi) - Core library for dealing with GT7's live timing API (access required, or TinyWeb server enabled through mods)
 * [PDTools.LiveTimingApiTestTool](PDTools.LiveTimingApiTestTool) - Client for fetching GT7's live timing API
+* [PDTools.PDIWheelCryptor](PDTools.PDIWheelCryptor) - Handles GT7's `pdiWheel.prx` (disguised param.sfo)
 * [PDTools.RText](PDTools.RText) - RText/Text Localization files reader classes
 * [PDTools.SaveFile](PDTools.SaveFile) - Save file reader (mainly for GT4)
 * [PDTools.ScapesDataHelper](PDTools.ScapesDataHelper) - Extracts and decrypts scapes setups from certain JPEG XL (.jxl) files (GT7).
