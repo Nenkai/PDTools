@@ -10,7 +10,7 @@ public class ShapeStreamShape
     public const int HeaderSize = 0x80;
 
     public ShapeStreamChunk ShapeStreamChunk { get; set; }
-    public MDL3ShapeStreamingInfoMeshEntry InfoMeshEntry { get; set; }
+    public MDL3ShapeStreamingInfoShapeEntry InfoMeshEntry { get; set; }
 
     public Memory<byte> MeshData { get; set; }
     public uint ChunkSize { get; set; }

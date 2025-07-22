@@ -8,17 +8,17 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
 
-public class MDL3ShapeStreamingInfoMeshEntry
+public class MDL3ShapeStreamingInfoShapeEntry
 {
     public uint OffsetInChunk { get; set; }
-    public ushort MeshIndex { get; set; }
+    public ushort ShapeIndex { get; set; }
     public ushort Unk { get; set; }
 
-    public static MDL3ShapeStreamingInfoMeshEntry FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
+    public static MDL3ShapeStreamingInfoShapeEntry FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
     {
-        MDL3ShapeStreamingInfoMeshEntry entry = new MDL3ShapeStreamingInfoMeshEntry();
+        MDL3ShapeStreamingInfoShapeEntry entry = new MDL3ShapeStreamingInfoShapeEntry();
         entry.OffsetInChunk = bs.ReadUInt32();
-        entry.MeshIndex = bs.ReadUInt16();
+        entry.ShapeIndex = bs.ReadUInt16();
         entry.Unk = bs.ReadUInt16();
 
         return entry;

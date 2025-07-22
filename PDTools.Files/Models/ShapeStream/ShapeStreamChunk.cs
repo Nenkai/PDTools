@@ -43,7 +43,7 @@ public class ShapeStreamChunk
         inflater.Inflate(inflatedBuffer);
 
         var meshReader = new SpanReader(inflatedBuffer, Endian.Big);
-        foreach (MDL3ShapeStreamingInfoMeshEntry entry in shapeStreamInfo.Entries.Values)
+        foreach (MDL3ShapeStreamingInfoShapeEntry entry in shapeStreamInfo.Entries.Values)
         {
             meshReader.Position = (int)entry.OffsetInChunk;
 
@@ -61,7 +61,7 @@ public class ShapeStreamChunk
             mesh.BBoxOffset = meshReader.ReadUInt32();
             mesh.Unk0x1COffset = meshReader.ReadUInt32();
 
-            chunk.Meshes.Add(entry.MeshIndex, mesh);
+            chunk.Meshes.Add(entry.ShapeIndex, mesh);
         }
 
         ArrayPool<byte>.Shared.Return(deflatedChunk);

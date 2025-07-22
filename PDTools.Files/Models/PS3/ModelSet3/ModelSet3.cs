@@ -433,14 +433,14 @@ public class ModelSet3
             else if (ShapeStream != null)
             {
                 // Try shapestream
-                var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
-                if (ssMesh is null)
+                var ssShape = ShapeStream.GetShapeByIndex(shapeIndex);
+                if (ssShape is null)
                     return arr;
 
                 Span<byte> vertBuffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < shape.VertexCount; i++)
                 {
-                    GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, vertBuffer);
+                    GetShapeStreamVerticesData(ssShape, fvfDef, field, i, vertBuffer);
                     arr[i] = GetFVFFieldVector3(vertBuffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
             }
@@ -517,18 +517,18 @@ public class ModelSet3
         else if (ShapeStream != null)
         {
             // Try shapestream
-            var ssMesh = ShapeStream.GetShapeByIndex(meshIndex);
-            if (ssMesh is null)
+            var ssShape = ShapeStream.GetShapeByIndex(meshIndex);
+            if (ssShape is null)
                 return null;
 
-            SpanReader meshReader = new SpanReader(ssMesh.MeshData.Span, Endian.Big);
-            meshReader.Position = (int)ssMesh.TriOffset;
+            SpanReader shapeReader = new SpanReader(ssShape.MeshData.Span, Endian.Big);
+            shapeReader.Position = (int)ssShape.TriOffset;
 
             for (int i = 0; i < mesh.TriCount; i++)
             {
-                ushort a = meshReader.ReadUInt16();
-                ushort b = meshReader.ReadUInt16();
-                ushort c = meshReader.ReadUInt16();
+                ushort a = shapeReader.ReadUInt16();
+                ushort b = shapeReader.ReadUInt16();
+                ushort c = shapeReader.ReadUInt16();
                 if (a < mesh.VertexCount && b < mesh.VertexCount && c < mesh.VertexCount)
                 {
                     list.Add(new(a, b, c));
@@ -683,14 +683,14 @@ public class ModelSet3
                 var arr = new (uint, uint, uint)[shape.VertexCount];
 
                 // Try shapestream
-                var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
-                if (ssMesh is null)
+                var ssShape = ShapeStream.GetShapeByIndex(shapeIndex);
+                if (ssShape is null)
                     return arr;
 
                 Span<byte> buffer = new byte[field.ArrayIndex == 0 ? fvfDef.VertexSize : fvfDef.ArrayDefinition.VertexSize];
                 for (int i = 0; i < shape.VertexCount; i++)
                 {
-                    GetShapeStreamVerticesData(ssMesh, fvfDef, field, i, buffer);
+                    GetShapeStreamVerticesData(ssShape, fvfDef, field, i, buffer);
                     arr[i] = GetFVFFieldXYZ(buffer, field.FieldType, field.StartOffset, field.ElementCount);
                 }
 
@@ -752,16 +752,16 @@ public class ModelSet3
         if (shape.BBox == null && ShapeStream != null)
         {
             // Try shapestream
-            var ssMesh = ShapeStream.GetShapeByIndex(shapeIndex);
-            if (ssMesh is null)
+            var ssShape = ShapeStream.GetShapeByIndex(shapeIndex);
+            if (ssShape is null)
                 return null;
 
-            SpanReader meshReader = new SpanReader(ssMesh.MeshData.Span, Endian.Big);
+            SpanReader shapeReader = new SpanReader(ssShape.MeshData.Span, Endian.Big);
 
-            meshReader.Position = (int)ssMesh.BBoxOffset;
+            shapeReader.Position = (int)ssShape.BBoxOffset;
             shape.BBox = new Vector3[8];
             for (var i = 0; i < 8; i++)
-                shape.BBox[i] = new Vector3(meshReader.ReadSingle(), meshReader.ReadSingle(), meshReader.ReadSingle());
+                shape.BBox[i] = new Vector3(shapeReader.ReadSingle(), shapeReader.ReadSingle(), shapeReader.ReadSingle());
         }
 
         return shape.BBox;
@@ -829,24 +829,24 @@ public class ModelSet3
     /// <summary>
     /// Gets a flex vertex stride from a shapestream
     /// </summary>
-    /// <param name="ssMeshInfo"></param>
+    /// <param name="ssShapeInfo"></param>
     /// <param name="fvfDef"></param>
     /// <param name="field"></param>
     /// <param name="vertIndex"></param>
     /// <param name="buffer"></param>
-    public static void GetShapeStreamVerticesData(ShapeStreamShape ssMeshInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
+    public static void GetShapeStreamVerticesData(ShapeStreamShape ssShapeInfo, MDL3FlexibleVertexDefinition fvfDef, MDL3FVFElementDefinition field, int vertIndex, Span<byte> buffer)
     {
-        SpanReader meshReader = new SpanReader(ssMeshInfo.MeshData.Span);
+        SpanReader shapeReader = new SpanReader(ssShapeInfo.MeshData.Span);
         if (field.ArrayIndex == 0)
         {
-            meshReader.Position = (int)(ssMeshInfo.VerticesOffset + vertIndex * fvfDef.VertexSize);
-            meshReader.Span.Slice(meshReader.Position, fvfDef.VertexSize).CopyTo(buffer);
+            shapeReader.Position = (int)(ssShapeInfo.VerticesOffset + vertIndex * fvfDef.VertexSize);
+            shapeReader.Span.Slice(shapeReader.Position, fvfDef.VertexSize).CopyTo(buffer);
         }
         else
         {
-            meshReader.Position = (int)(ssMeshInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex);
-            meshReader.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
-            meshReader.Span.Slice(meshReader.Position, fvfDef.ArrayDefinition.VertexSize).CopyTo(buffer);
+            shapeReader.Position = (int)(ssShapeInfo.VerticesOffset + fvfDef.ArrayDefinition.DataOffset + fvfDef.ArrayDefinition.ArrayElementSize * field.ArrayIndex);
+            shapeReader.Position += vertIndex * fvfDef.ArrayDefinition.VertexSize;
+            shapeReader.Span.Slice(shapeReader.Position, fvfDef.ArrayDefinition.VertexSize).CopyTo(buffer);
         }
     }
 
