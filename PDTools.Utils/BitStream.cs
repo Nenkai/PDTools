@@ -1,16 +1,17 @@
-﻿using System;
-using System.Text;
-using System.Diagnostics;
-using System.IO;
+﻿using Syroot.BinaryData.Core;
 
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace PDTools.Utils;
 
 /// <summary>
-/// Bit stream reverse engineered & modified with extra features. Big Endian only.
+/// Bit stream reverse engineered & modified with extra features.
 /// </summary>
 [DebuggerDisplay("Position = {Position}")]
 public ref struct BitStream
@@ -20,7 +21,7 @@ public ref struct BitStream
     public const int Int_Bits = 32;
     public const int Long_Bits = 64;
 
-    public BitStreamMode Mode { get; }
+    public BitStreamMode Mode { get; private set; }
 
     /// <summary>
     /// Bit order of the stream. This affects how values larger than a byte are read.
@@ -42,12 +43,20 @@ public ref struct BitStream
 
     // Not original implementation
     public int BufferByteSize { get; set; }
-    public bool IsEndOfStream { get; set; }
+    public bool IsEndOfStream { get; set; } // TODO: remove this property
 
+    /// <summary>
+    /// Current length of the stream.
+    /// </summary>
+    // Non original
+    private int _length;
+    public readonly int Length => _length;
+
+    private bool _needFeedNextByte;
     private bool _needsFlush;
 
     // Used when the input buffer is provided (when writing).
-    private readonly bool _noExpand;
+    private bool _noExpand;
 
     /// <summary>
     /// Returns the byte position of the CURRENT bit. Make sure to align to the next byte if you want to use this for offsets!
@@ -63,8 +72,11 @@ public ref struct BitStream
             fixed (byte* current = _currentBuffer,
                    start = SourceBuffer)
             {
-                if (Mode == BitStreamMode.Read && BitCounter > 0)
+                // Wack...
+                if (Mode == BitStreamMode.Read && BitCounter > 0 && (BitCounter != 8 && !_needFeedNextByte))
                     return (int)(current - start) - 1;
+                else if (Mode == BitStreamMode.Write && _needFeedNextByte)
+                    return (int)(current - start) + 1;
                 else
                     return (int)(current - start);
             }
@@ -75,28 +87,34 @@ public ref struct BitStream
         }
     }
 
-    /// <summary>
-    /// Current length of the stream.
-    /// </summary>
-    // Non original
-    private int _length;
-    public readonly int Length => _length;
-
 #if DEBUG
     private StreamWriter _sw;
 #endif
-    // TODO: Enum to mark stream as write or read only
+
+    /// <summary>
+    /// Inits a bit stream in Write mode, Order = <see cref="BitStreamSignificantBitOrder.LSB"/>, with a new buffer and pre-determined initial capacity.
+    /// </summary>
+    public BitStream()
+    {
+        InitWriteMode(1024, BitStreamSignificantBitOrder.LSB);
+    }
 
     /// <summary>
     /// Creates a new bit stream based on an existing buffer.
     /// </summary>
-    /// <param name="buffer"></param>
+    /// <param name="mode">Read or Write mode.</param>
+    /// <param name="buffer">Buffer to read from or write to.</param>
+    /// <param name="order">Bit order. Defaults to LSB, which is suitable for big-endian streams.</param>
     public BitStream(BitStreamMode mode, Span<byte> buffer, BitStreamSignificantBitOrder order = BitStreamSignificantBitOrder.LSB)
     {
         Mode = mode;
         Order = order;
 
-        BitCounter = 0;
+        if (mode == BitStreamMode.Read)
+            BitCounter = 8;
+        else
+            BitCounter = 0;
+
         CurrentByte = 0;
 
         SourceBuffer = buffer;
@@ -109,6 +127,7 @@ public ref struct BitStream
 
         _needsFlush = false;
         _noExpand = mode == BitStreamMode.Write; // Buffer is provided, do not expand it. Throw.
+        _needFeedNextByte = mode == BitStreamMode.Read;
 #if DEBUG
         _sw = null;
 #endif
@@ -116,11 +135,16 @@ public ref struct BitStream
 
 
     /// <summary>
-    /// Creates a new bit stream with a new buffer.
+    /// Creates a new bit stream in write mode with a new buffer.
     /// </summary>
-    public BitStream(BitStreamMode mode, int capacity = 1024, BitStreamSignificantBitOrder endian = BitStreamSignificantBitOrder.LSB)
+    public BitStream(int capacity = 1024, BitStreamSignificantBitOrder endian = BitStreamSignificantBitOrder.LSB)
     {
-        Mode = mode;
+        InitWriteMode(capacity, endian);
+    }
+
+    private void InitWriteMode(int capacity, BitStreamSignificantBitOrder endian)
+    {
+        Mode = BitStreamMode.Write;
         Order = endian;
 
         BitCounter = 0;
@@ -135,9 +159,25 @@ public ref struct BitStream
         _length = 1;
         _needsFlush = false;
         _noExpand = false;
+
 #if DEBUG
         _sw = null;
 #endif
+    }
+
+    /// <summary>
+    /// Gets the total bit position of the stream.
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public long GetBitPosition()
+    {
+        if (Mode == BitStreamMode.Read)
+            return (Position * Byte_Bits) + (8 - BitCounter);
+        else if (Mode == BitStreamMode.Write)
+            return (Position * Byte_Bits) + BitCounter;
+        else
+            throw new ArgumentException("Unexpected stream mode");
     }
 
     public static int GetSizeOfVariablePrefixString(string str)
@@ -228,22 +268,35 @@ public ref struct BitStream
         uint bitPos = (uint)bitOffset % Byte_Bits;
 
         if (Mode == BitStreamMode.Read && bytePos > Length)
-            throw new ArgumentOutOfRangeException(nameof(bitOffset), "Bit position is beyond end of stream.");
+            throw new IndexOutOfRangeException("Bit position is beyond end of stream.");
 
-        // Update stream length if needed
-        if (bytePos > _length)
-            _length = bytePos;
+        SeekToByte(bytePos);
 
-        if (bytePos > SourceBuffer.Length)
-            EnsureCapacity((SourceBuffer.Length - bytePos) * Byte_Bits + Byte_Bits);
+        if (Mode == BitStreamMode.Read)
+        {
+            BitCounter = Byte_Bits - bitPos;
+        }
+        else if (Mode == BitStreamMode.Write)
+        {
+            BitCounter = bitPos;
+        }
 
-        _currentBuffer = SourceBuffer.Slice(bytePos);
-        if (_currentBuffer.IsEmpty)
-            CurrentByte = 0;
+        if (bitPos == 0)
+        {
+            _needFeedNextByte = true;
+        }
         else
-            CurrentByte = _currentBuffer[0];
+        {
+            _needFeedNextByte = false;
+            _currentBuffer = SourceBuffer[(bytePos + 1)..];
 
-        BitCounter = bitPos;
+            if (Order == BitStreamSignificantBitOrder.MSB)
+                CurrentByte >>= (int)bitPos;
+            else if (Order == BitStreamSignificantBitOrder.LSB)
+                CurrentByte <<= (int)bitPos;
+
+            
+        }
 
     }
 
@@ -256,7 +309,7 @@ public ref struct BitStream
         if (seekOrigin == SeekOrigin.Begin)
         {
             if (Mode == BitStreamMode.Read && byteOffset > Length)
-                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Position is beyond end of stream.");
+                throw new IndexOutOfRangeException("Position is beyond end of stream.");
 
             // Flush current byte
             AlignToNextByte();
@@ -267,13 +320,13 @@ public ref struct BitStream
             if (_length > SourceBuffer.Length)
                 EnsureCapacity(_length * Byte_Bits);
 
-            _currentBuffer = SourceBuffer.Slice(byteOffset);
+            _currentBuffer = SourceBuffer[byteOffset..];
         }
         else if (seekOrigin == SeekOrigin.Current)
         {
             int newPos = byteOffset + Position;
             if (Mode == BitStreamMode.Read && newPos > Length)
-                throw new IOException("Position is beyond end of stream.");
+                throw new IndexOutOfRangeException("Position is beyond end of stream.");
 
             // Flush current byte
             AlignToNextByte();
@@ -284,7 +337,7 @@ public ref struct BitStream
             if (_length >= SourceBuffer.Length)
                 EnsureCapacity(_length * Byte_Bits);
 
-            _currentBuffer = _currentBuffer.Slice(byteOffset);
+            _currentBuffer = _currentBuffer[byteOffset..];
         }
         else
         {
@@ -296,7 +349,10 @@ public ref struct BitStream
         else
             CurrentByte = _currentBuffer[0];
 
-        BitCounter = 0;
+        if (Mode == BitStreamMode.Read)
+            BitCounter = Byte_Bits;
+        else
+            BitCounter = 0;
     }
 
     /// <summary>
@@ -315,16 +371,16 @@ public ref struct BitStream
             if (Position >= SourceBuffer.Length)
                 EnsureCapacity(Position + Byte_Bits);
 
-            CurrentByte = _currentBuffer[0];
-            _currentBuffer = _currentBuffer.Slice(1);
-
             if (Mode == BitStreamMode.Read)
             {
                 BitCounter = Byte_Bits;
+                _needFeedNextByte = true;
             }
             else
             {
                 BitCounter = 0;
+                _currentBuffer[0] = CurrentByte;
+                _currentBuffer = _currentBuffer.Slice(1);
             }
         }
     }
@@ -358,7 +414,7 @@ public ref struct BitStream
         long totalFreeBits = ((_currentBuffer.Length - 1) * Byte_Bits) + bitsLeftThisByte;
 
         if (_noExpand && totalFreeBits < bitCount)
-            throw new IOException("Position is beyond end of stream.");
+            throw new IndexOutOfRangeException("Position is beyond end of stream.");
 
         if (bitCount > totalFreeBits)
         {
@@ -555,7 +611,7 @@ public ref struct BitStream
             do
             {
                 // Are we starting a new byte?
-                if (bitsLeftForThisByte == 0)
+                if (_needFeedNextByte || bitsLeftForThisByte == 0)
                 {
                     // This is our working byte
                     currentByte = buf[0];
@@ -563,6 +619,7 @@ public ref struct BitStream
 
                     // Buffer gets advanced by one while we work on our current byte
                     buf = buf[1..];
+                    _needFeedNextByte = false;
                 }
 
                 ulong bitsRead = bitsLeftForThisByte;
@@ -594,6 +651,13 @@ public ref struct BitStream
         BitCounter = (uint)bitsLeftForThisByte;
         _currentBuffer = buf;
         CurrentByte = (byte)currentByte;
+
+        if (BitCounter == 0)
+        {
+            BitCounter = Byte_Bits;
+            _needFeedNextByte = true;
+        }
+
         return result;
     }
 
@@ -774,15 +838,13 @@ public ref struct BitStream
         if (BitCounter != 0)
             _currentBuffer[0] = CurrentByte;
 
-        if (Position >= _length)
-        {
-            if (BitCounter == 0)
-                _length = Position;
-            else
-                _length = Position + 1;
-        }
+        if (Position > _length)
+            _length = Position;
+        else if (Position >= _length && BitCounter > 0)
+            _length = Position + 1;
 
-        _needsFlush = BitCounter > 0;
+         _needsFlush = BitCounter > 0;
+        _needFeedNextByte = false;
 #if DEBUG
         _sw?.WriteLine($"[{Position} - {BitCounter}/8] Wrote {value} ({bitCount} bits)");
 #endif
@@ -1050,67 +1112,6 @@ public ref struct BitStream
 #endif
     }
     #endregion
-
-    public static void Test()
-    {
-        byte[] test = [0, 1, 2, 3, 4];
-        BitStream testRead = new BitStream(BitStreamMode.Read, test);
-
-        testRead.ReadBits(1);
-        Debug.Assert(testRead.Position == 0);
-
-        testRead.ReadBits(7);
-        Debug.Assert(testRead.Position == 1);
-
-        testRead.ReadBits(1);
-        Debug.Assert(testRead.Position == 1);
-
-        testRead.AlignToNextByte();
-        Debug.Assert(testRead.Position == 2);
-
-        testRead.Position = 3;
-        Debug.Assert(testRead.Position == 3);
-
-        var val = testRead.ReadBits(8);
-        Debug.Assert(val == 3);
-
-        BitStream testWrite = new BitStream(BitStreamMode.Write, new byte[5]);
-        testWrite.WriteBits(1, 1);
-        Debug.Assert(testWrite.Position == 0);
-
-        testWrite.WriteBits(1, 1);
-        Debug.Assert(testWrite.BitCounter == 2);
-
-        testWrite.AlignToNextByte();
-        Debug.Assert(testWrite.Position == 1);
-
-        try
-        {
-            testWrite.Position = 5;
-            testWrite.WriteBits(1, 1);
-        }
-        catch (Exception ex)
-        {
-            Debug.Assert(ex is IOException iOException && iOException.Message.Contains("Out of range"));
-        }
-
-        testWrite.Position = 0;
-        testWrite.WriteByteData([0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
-        Debug.Assert(testWrite.GetBuffer().ToArray().All(e => e == 0xFF));
-        Debug.Assert(testWrite.GetSpanToCurrentPosition().Length == 5);
-
-        int offset = 1024;
-        BitStream testDynamicStream = new BitStream(BitStreamMode.Write);
-        testDynamicStream.SeekToByte(offset);
-        testDynamicStream.SeekToBit(offset * Byte_Bits);
-        Debug.Assert(testDynamicStream.Position == offset);
-
-        testDynamicStream.WriteBoolBit(true);
-        Debug.Assert(testDynamicStream.Length == offset + 1);
-
-        Span<byte> span = testDynamicStream.GetSpanFromCurrentPosition();
-        Debug.Assert(span.Length == offset); // Source buffer should have been doubled, therefore we get a span of the same length.
-    }
 }
 
 public enum BitStreamSignificantBitOrder
