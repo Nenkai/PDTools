@@ -57,7 +57,7 @@ public class ImageFileDirectory // IFD
         for (int i = 0; i < numTags; i++)
         {
             var prop = ExifProperty.FromStream(bs, baseExifOffset);
-            if (prop.Tag == 0x8769)
+            if ((ExifTag)prop.Tag == ExifTag.ExifOffset)
             {
                 bs.Position = baseExifOffset + (uint)prop.Value;
                 prop.Value = ImageFileDirectory.FromStream(bs, baseExifOffset);
@@ -82,14 +82,14 @@ public class ExifProperty
         prop.Format = bs.ReadUInt16();
         uint numComponents = bs.ReadUInt32();
 
-        switch (prop.Tag)
+        switch ((ExifTag)prop.Tag)
         {
-            case 0x8769:
+            case ExifTag.ExifOffset:
                 prop.Value = bs.ReadUInt32();
                 break;
-            case 0xD00B:
+            case ExifTag.PDIDate:
                 prop.Value = bs.ReadUInt32(); break;
-            case 0xD00C:
+            case ExifTag.PDIExif:
                 {
                     uint offset = bs.ReadUInt32();
                     bs.Position = baseExifOffset + offset;
