@@ -35,6 +35,7 @@ public class Program
         var cha = new ChaCha20(key, nonce, 0);
         cha.DecryptBytes(file, file.Length);
 
+        File.WriteAllBytes(args[0], file);
         Console.WriteLine("Crypted file.");
     }
 }
