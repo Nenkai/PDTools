@@ -180,8 +180,8 @@ public ref struct BitStream
             throw new ArgumentException("Unexpected stream mode");
     }
 
-    public static int GetSizeOfVariablePrefixString(string str)
-        => GetSizeOfVarInt(str.Length) + str.Length;
+    public static uint GetSizeOfVariablePrefixString(string str)
+        => GetSizeOfVarInt((uint)str.Length) + (uint)str.Length;
 
     /// <summary>
     /// For GTPSP Volumes
@@ -218,7 +218,7 @@ public ref struct BitStream
         return outputSize;
     }
 
-    public static int GetSizeOfVarInt(int val)
+    public static uint GetSizeOfVarInt(uint val)
     {
         if (val < 0x80)
             return 1;
@@ -674,7 +674,7 @@ public ref struct BitStream
     // The original function (GT6 1.22 EU - FUN_00d42b94 takes an extra argument to go through two paths,
     // seemingly does the exact same so probably compiler macro)
     // Original Impl
-    public void ReadIntoByteArray(int arraySize, byte[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoByteArray(int arraySize, Span<byte> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -716,7 +716,7 @@ public ref struct BitStream
     /// <param name="arraySize">Size of the array.</param>
     /// <param name="dest">Bytes destination.</param>
     /// <param name="elemBitSize">Bits to read per element. Note that each element will still go within each byte in the destination.</param>
-    public void ReadIntoByteArray(int arraySize, sbyte[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoByteArray(int arraySize, Span<sbyte> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -746,7 +746,7 @@ public ref struct BitStream
     // The original function (GT6 1.22 EU - FUN_00e2de14 takes an extra argument to go through two paths,
     // seemingly does the exact same so probably compiler macro)
     // Original Impl
-    public void ReadIntoShortArray(int arraySize, short[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoShortArray(int arraySize, Span<short> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -974,7 +974,7 @@ public ref struct BitStream
     /// <summary>
     /// Writes a buffer to the bit stream. This WILL align to the nearest byte.
     /// </summary>
-    public void WriteByteData(scoped Span<byte> data, bool withPrefixLength = false)
+    public void WriteByteData(ReadOnlySpan<byte> data, bool withPrefixLength = false)
     {
         EnsureCapacity(((withPrefixLength ? 4 : 0) + data.Length) * Byte_Bits);
         AlignToNextByte();
