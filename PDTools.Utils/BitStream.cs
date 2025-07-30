@@ -188,32 +188,32 @@ public ref struct BitStream
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static int GetSizeOfVariablePrefixStringAlt(string str)
-        => GetSizeOfVarIntAlt((uint)str.Length) + str.Length;
+    public static uint GetSizeOfVariablePrefixStringAlt(string str)
+        => (uint)GetSizeOfVarIntAlt((uint)str.Length) + (uint)str.Length;
 
     /// <summary>
     /// For GTPSP Volumes
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static int GetSizeOfVarIntAlt(uint value)
+    public static uint GetSizeOfVarIntAlt(uint value)
     {
         Span<byte> output = stackalloc byte[0x05];
-        int outputSize = 0;
+        uint outputSize = 0;
 
         while (value > 0x7F)
         {
-            output[outputSize] = (byte)(value & 0x7F);
+            output[(int)outputSize] = (byte)(value & 0x7F);
             if (outputSize != 0)
-                output[outputSize] |= 0x80;
+                output[(int)outputSize] |= 0x80;
 
             value >>= 7;
             value--;
             outputSize++;
         }
-        output[outputSize++] = (byte)(value & 0x7F);
+        output[(int)outputSize++] = (byte)(value & 0x7F);
         if (outputSize > 1)
-            output[outputSize - 1] |= 0x80;
+            output[(int)outputSize - 1] |= 0x80;
 
         return outputSize;
     }
