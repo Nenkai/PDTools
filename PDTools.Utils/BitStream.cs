@@ -184,6 +184,12 @@ public ref struct BitStream
             throw new ArgumentException("Unexpected stream mode");
     }
 
+    /// <summary>
+    /// Gets the size of a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="str">String to get the size of.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
     public static uint GetSizeOfVariablePrefixString(string str, Encoding encoding = default)
     {
         uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
@@ -191,9 +197,10 @@ public ref struct BitStream
     }
 
     /// <summary>
-    /// For GTPSP Volumes
+    /// Gets the size of a string prefixed by a variable length integer (GTPSP Volumes version)
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="str">String to get the size of.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
     public static uint GetSizeOfVariablePrefixStringAlt(string str, Encoding encoding = default)
     {
@@ -533,6 +540,11 @@ public ref struct BitStream
         return (ulong)value;
     }
 
+    /// <summary>
+    /// Reads a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
     public string ReadVarPrefixString(Encoding encoding = default)
     {
         int strLen = (int)ReadVarInt();
@@ -545,9 +557,9 @@ public ref struct BitStream
     }
 
     /// <summary>
-    /// For GTPSP Volumes
+    /// Reads a string prefixed by a variable length integer. (GTPSP Volumes version)
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
     public string ReadVarPrefixStringAlt(Encoding encoding = default)
     {
@@ -560,13 +572,24 @@ public ref struct BitStream
         return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
-    public string ReadStringRaw(int length, Encoding encoding = default)
+    /// <summary>
+    /// Reads a raw string by the specified byte count.
+    /// </summary>
+    /// <param name="byteCount">Byte count.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadStringRaw(int byteCount, Encoding encoding = default)
     {
-        byte[] bytes = new byte[length];
-        ReadIntoByteArray(length, bytes, Byte_Bits);
+        byte[] bytes = new byte[byteCount];
+        ReadIntoByteArray(byteCount, bytes, Byte_Bits);
         return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
+    /// <summary>
+    /// Reads a null-terminated string.
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
     public string ReadNullTerminatedString(Encoding encoding = default)
     {
         List<byte> bytes = [];
@@ -581,6 +604,11 @@ public ref struct BitStream
         return (encoding is not null ? encoding : Encoding.UTF8).GetString(bytes.ToArray());
     }
 
+    /// <summary>
+    /// Reads a string prefixed by a 4-byte integer (length).
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
     public string ReadString4(Encoding encoding = default)
     {
         int strLen = ReadInt32();
@@ -589,7 +617,13 @@ public ref struct BitStream
         return (encoding is not null ? encoding : Encoding.UTF8).GetString(chars);
     }
 
-    public string ReadString4Aligned(Encoding encoding = default)
+    /// <summary>
+    /// Reads a string prefixed by a 4-byte integer (length), and aligned with the specified alignment.
+    /// </summary>
+    /// <param name="align">Alignment.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadString4Aligned(int align, Encoding encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
@@ -597,9 +631,7 @@ public ref struct BitStream
         string str = (encoding is not null ? encoding : Encoding.UTF8).GetString(chars).TrimEnd('\0');
 
         // Align
-        const int alignment = 0x04;
-
-        var alignOffset = (-Position % alignment + alignment) % alignment;
+        var alignOffset = (-Position % align + align) % align;
         SeekToByte(Position + alignOffset);
         return str;
     }
@@ -962,6 +994,11 @@ public ref struct BitStream
             WriteByte(output[i]);
     }
 
+    /// <summary>
+    /// Writes a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="str">String to write.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     public void WriteVarPrefixString(string str, Encoding encoding = default)
     {
         WriteVarInt((uint)str.Length);
@@ -970,10 +1007,10 @@ public ref struct BitStream
     }
 
     /// <summary>
-    /// For GTPSP Volumes
+    /// Writes a string prefixed by a variable length integer. (GTPSP Volumes version)
     /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
+    /// <param name="str">String to write.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     public void WriteVarPrefixStringAlt(string str, Encoding encoding = default)
     {
         WriteVarIntAlt((uint)str.Length);
