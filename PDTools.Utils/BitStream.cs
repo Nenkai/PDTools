@@ -21,6 +21,9 @@ public ref struct BitStream
     public const int Int_Bits = 32;
     public const int Long_Bits = 64;
 
+    /// <summary>
+    /// Current mode of the stream. (read or write)
+    /// </summary>
     public BitStreamMode Mode { get; private set; }
 
     /// <summary>
@@ -30,8 +33,9 @@ public ref struct BitStream
     public BitStreamSignificantBitOrder Order { get; set; }
 
     public Span<byte> SourceBuffer { get; set; }
-
     private Span<byte> _currentBuffer;
+
+    // Note: we do not have an encoding field, we try to ensure not to hold any reference type into this ref struct
 
     /// <summary>
     /// If Writing: Bits written for the current byte
@@ -180,16 +184,22 @@ public ref struct BitStream
             throw new ArgumentException("Unexpected stream mode");
     }
 
-    public static uint GetSizeOfVariablePrefixString(string str)
-        => GetSizeOfVarInt((uint)str.Length) + (uint)str.Length;
+    public static uint GetSizeOfVariablePrefixString(string str, Encoding encoding = default)
+    {
+        uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
+        return GetSizeOfVarInt(byteCount) + byteCount;
+    }
 
     /// <summary>
     /// For GTPSP Volumes
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static uint GetSizeOfVariablePrefixStringAlt(string str)
-        => (uint)GetSizeOfVarIntAlt((uint)str.Length) + (uint)str.Length;
+    public static uint GetSizeOfVariablePrefixStringAlt(string str, Encoding encoding = default)
+    {
+        uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
+        return GetSizeOfVarIntAlt(byteCount) + byteCount;
+    }
 
     /// <summary>
     /// For GTPSP Volumes
@@ -523,7 +533,7 @@ public ref struct BitStream
         return (ulong)value;
     }
 
-    public string ReadVarPrefixString()
+    public string ReadVarPrefixString(Encoding encoding = default)
     {
         int strLen = (int)ReadVarInt();
         if (strLen < 0)
@@ -531,7 +541,7 @@ public ref struct BitStream
 
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        return encoding is not null ? encoding.GetString(chars) : Encoding.UTF8.GetString(chars);
     }
 
     /// <summary>
@@ -539,25 +549,25 @@ public ref struct BitStream
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public string ReadVarPrefixStringAlt()
+    public string ReadVarPrefixStringAlt(Encoding encoding = default)
     {
         int strLen = (int)ReadVarIntAlt();
         if (strLen < 0)
             throw new Exception($"Attempted to read string length of {strLen}.");
 
-        byte[] chars = new byte[strLen];
-        ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        byte[] bytes = new byte[strLen];
+        ReadIntoByteArray(strLen, bytes, Byte_Bits);
+        return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
-    public string ReadStringRaw(int length)
+    public string ReadStringRaw(int length, Encoding encoding = default)
     {
-        byte[] chars = new byte[length];
-        ReadIntoByteArray(length, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        byte[] bytes = new byte[length];
+        ReadIntoByteArray(length, bytes, Byte_Bits);
+        return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
-    public string ReadNullTerminatedString()
+    public string ReadNullTerminatedString(Encoding encoding = default)
     {
         List<byte> bytes = [];
 
@@ -568,23 +578,23 @@ public ref struct BitStream
             b = ReadByte();
         }
 
-        return Encoding.UTF8.GetString(bytes.ToArray());
+        return (encoding is not null ? encoding : Encoding.UTF8).GetString(bytes.ToArray());
     }
 
-    public string ReadString4()
+    public string ReadString4(Encoding encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        return (encoding is not null ? encoding : Encoding.UTF8).GetString(chars);
     }
 
-    public string ReadString4Aligned()
+    public string ReadString4Aligned(Encoding encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        string str = Encoding.UTF8.GetString(chars).TrimEnd('\0');
+        string str = (encoding is not null ? encoding : Encoding.UTF8).GetString(chars).TrimEnd('\0');
 
         // Align
         const int alignment = 0x04;
@@ -850,7 +860,7 @@ public ref struct BitStream
 #endif
     }
 
-    public void WriteNullStringAligned4(string value)
+    public void WriteNullStringAligned4(string value, Encoding encoding = default)
     {
         // Require to seek to the next round byte incase we're currently in the middle of a byte's bits
         if (BitCounter != 0)
@@ -862,7 +872,7 @@ public ref struct BitStream
             return;
         }
 
-        var bytes = Encoding.UTF8.GetBytes(value);
+        var bytes = (encoding is not null ? encoding : Encoding.UTF8).GetBytes(value);
         var bytesSize = bytes.Length;
         EnsureCapacity(((bytesSize + 1) + 4) * Byte_Bits); // Account for string bytes length + null termination + pad
 
@@ -952,11 +962,11 @@ public ref struct BitStream
             WriteByte(output[i]);
     }
 
-    public void WriteVarPrefixString(string str)
+    public void WriteVarPrefixString(string str, Encoding encoding = default)
     {
         WriteVarInt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))
-            WriteByteData(Encoding.UTF8.GetBytes(str));
+            WriteByteData((encoding is not null ? encoding : Encoding.UTF8).GetBytes(str));
     }
 
     /// <summary>
@@ -964,11 +974,11 @@ public ref struct BitStream
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public void WriteVarPrefixStringAlt(string str)
+    public void WriteVarPrefixStringAlt(string str, Encoding encoding = default)
     {
         WriteVarIntAlt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))
-            WriteByteData(Encoding.UTF8.GetBytes(str));
+            WriteByteData((encoding is not null ? encoding : Encoding.UTF8).GetBytes(str));
     }
 
     /// <summary>
