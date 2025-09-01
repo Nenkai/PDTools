@@ -398,6 +398,9 @@ public ref struct BitStream
                 BitCounter = 0;
                 _currentBuffer[0] = CurrentByte;
                 _currentBuffer = _currentBuffer.Slice(1);
+
+                if (Position < _length)
+                    CurrentByte = _currentBuffer[0];
             }
         }
     }

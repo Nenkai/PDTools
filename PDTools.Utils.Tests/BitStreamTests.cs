@@ -189,6 +189,7 @@ public sealed class BitStreamTests
         testWrite.WriteBits(1, 1);
         testWrite.AlignToNextByte();
         Assert.AreEqual(3, testWrite.Position);
+        Assert.AreEqual(0, testWrite.CurrentByte);
 
         // LSB
         Assert.AreEqual(0x40, buf[2]);
@@ -216,6 +217,7 @@ public sealed class BitStreamTests
         // Byte 0
         testWrite.WriteBits(1, 4);
         testWrite.Position = 4;
+        testWrite.WriteBits(4, 4);
         Assert.AreEqual(1, buf[0]);
 
         // Byte 1
@@ -235,6 +237,14 @@ public sealed class BitStreamTests
         testWrite.WriteBits(3, 4);
         testWrite.SeekToBit((3 * BitStream.Byte_Bits) + 3); // Seek to same position
         Assert.AreEqual(3, buf[2]);
+
+        testWrite.Position = 5;
+        testWrite.AlignToNextByte();
+
+        testWrite.Position = 0;
+        Assert.AreEqual(1, testWrite.CurrentByte);
+
+       
     }
 
     [TestMethod]
