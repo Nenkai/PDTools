@@ -31,7 +31,7 @@ public class GT4ReplayData
     public List<CameraGT4> Cameras { get; set; } = [];
 
     /// <summary>
-    /// Unfinished, not to be used (doesn't read past version)
+    /// Note: Unfinished, doesn't read past cameras
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
