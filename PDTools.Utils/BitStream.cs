@@ -312,7 +312,7 @@ public ref struct BitStream
             else if (Order == BitStreamSignificantBitOrder.LSB)
                 CurrentByte <<= (int)bitPos;
 
-            
+
         }
 
     }
@@ -401,6 +401,8 @@ public ref struct BitStream
 
                 if (Position < _length)
                     CurrentByte = _currentBuffer[0];
+                else
+                    CurrentByte = 0;
             }
         }
     }
@@ -888,7 +890,7 @@ public ref struct BitStream
         else if (Position >= _length && BitCounter > 0)
             _length = Position + 1;
 
-         _needsFlush = BitCounter > 0;
+        _needsFlush = BitCounter > 0;
         _needFeedNextByte = false;
 #if DEBUG
         _sw?.WriteLine($"[{Position} - {BitCounter}/8] Wrote {value} ({bitCount} bits)");
