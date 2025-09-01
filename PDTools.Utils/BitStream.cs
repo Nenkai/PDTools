@@ -21,6 +21,9 @@ public ref struct BitStream
     public const int Int_Bits = 32;
     public const int Long_Bits = 64;
 
+    /// <summary>
+    /// Current mode of the stream. (read or write)
+    /// </summary>
     public BitStreamMode Mode { get; private set; }
 
     /// <summary>
@@ -30,8 +33,9 @@ public ref struct BitStream
     public BitStreamSignificantBitOrder Order { get; set; }
 
     public Span<byte> SourceBuffer { get; set; }
-
     private Span<byte> _currentBuffer;
+
+    // Note: we do not have an encoding field, we try to ensure not to hold any reference type into this ref struct
 
     /// <summary>
     /// If Writing: Bits written for the current byte
@@ -180,45 +184,58 @@ public ref struct BitStream
             throw new ArgumentException("Unexpected stream mode");
     }
 
-    public static int GetSizeOfVariablePrefixString(string str)
-        => GetSizeOfVarInt(str.Length) + str.Length;
+    /// <summary>
+    /// Gets the size of a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="str">String to get the size of.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public static uint GetSizeOfVariablePrefixString(string str, Encoding encoding = default)
+    {
+        uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
+        return GetSizeOfVarInt(byteCount) + byteCount;
+    }
+
+    /// <summary>
+    /// Gets the size of a string prefixed by a variable length integer (GTPSP Volumes version)
+    /// </summary>
+    /// <param name="str">String to get the size of.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public static uint GetSizeOfVariablePrefixStringAlt(string str, Encoding encoding = default)
+    {
+        uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
+        return GetSizeOfVarIntAlt(byteCount) + byteCount;
+    }
 
     /// <summary>
     /// For GTPSP Volumes
     /// </summary>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static int GetSizeOfVariablePrefixStringAlt(string str)
-        => GetSizeOfVarIntAlt((uint)str.Length) + str.Length;
-
-    /// <summary>
-    /// For GTPSP Volumes
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    public static int GetSizeOfVarIntAlt(uint value)
+    public static uint GetSizeOfVarIntAlt(uint value)
     {
         Span<byte> output = stackalloc byte[0x05];
-        int outputSize = 0;
+        uint outputSize = 0;
 
         while (value > 0x7F)
         {
-            output[outputSize] = (byte)(value & 0x7F);
+            output[(int)outputSize] = (byte)(value & 0x7F);
             if (outputSize != 0)
-                output[outputSize] |= 0x80;
+                output[(int)outputSize] |= 0x80;
 
             value >>= 7;
             value--;
             outputSize++;
         }
-        output[outputSize++] = (byte)(value & 0x7F);
+        output[(int)outputSize++] = (byte)(value & 0x7F);
         if (outputSize > 1)
-            output[outputSize - 1] |= 0x80;
+            output[(int)outputSize - 1] |= 0x80;
 
         return outputSize;
     }
 
-    public static int GetSizeOfVarInt(int val)
+    public static uint GetSizeOfVarInt(uint val)
     {
         if (val < 0x80)
             return 1;
@@ -523,7 +540,12 @@ public ref struct BitStream
         return (ulong)value;
     }
 
-    public string ReadVarPrefixString()
+    /// <summary>
+    /// Reads a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadVarPrefixString(Encoding encoding = default)
     {
         int strLen = (int)ReadVarInt();
         if (strLen < 0)
@@ -531,33 +553,44 @@ public ref struct BitStream
 
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        return encoding is not null ? encoding.GetString(chars) : Encoding.UTF8.GetString(chars);
     }
 
     /// <summary>
-    /// For GTPSP Volumes
+    /// Reads a string prefixed by a variable length integer. (GTPSP Volumes version)
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadVarPrefixStringAlt()
+    public string ReadVarPrefixStringAlt(Encoding encoding = default)
     {
         int strLen = (int)ReadVarIntAlt();
         if (strLen < 0)
             throw new Exception($"Attempted to read string length of {strLen}.");
 
-        byte[] chars = new byte[strLen];
-        ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        byte[] bytes = new byte[strLen];
+        ReadIntoByteArray(strLen, bytes, Byte_Bits);
+        return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
-    public string ReadStringRaw(int length)
+    /// <summary>
+    /// Reads a raw string by the specified byte count.
+    /// </summary>
+    /// <param name="byteCount">Byte count.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadStringRaw(int byteCount, Encoding encoding = default)
     {
-        byte[] chars = new byte[length];
-        ReadIntoByteArray(length, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        byte[] bytes = new byte[byteCount];
+        ReadIntoByteArray(byteCount, bytes, Byte_Bits);
+        return encoding is not null ? encoding.GetString(bytes) : Encoding.UTF8.GetString(bytes);
     }
 
-    public string ReadNullTerminatedString()
+    /// <summary>
+    /// Reads a null-terminated string.
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadNullTerminatedString(Encoding encoding = default)
     {
         List<byte> bytes = [];
 
@@ -568,28 +601,37 @@ public ref struct BitStream
             b = ReadByte();
         }
 
-        return Encoding.UTF8.GetString(bytes.ToArray());
+        return (encoding is not null ? encoding : Encoding.UTF8).GetString(bytes.ToArray());
     }
 
-    public string ReadString4()
+    /// <summary>
+    /// Reads a string prefixed by a 4-byte integer (length).
+    /// </summary>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadString4(Encoding encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        return Encoding.ASCII.GetString(chars);
+        return (encoding is not null ? encoding : Encoding.UTF8).GetString(chars);
     }
 
-    public string ReadString4Aligned()
+    /// <summary>
+    /// Reads a string prefixed by a 4-byte integer (length), and aligned with the specified alignment.
+    /// </summary>
+    /// <param name="align">Alignment.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    /// <returns></returns>
+    public string ReadString4Aligned(int align, Encoding encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
         ReadIntoByteArray(strLen, chars, Byte_Bits);
-        string str = Encoding.UTF8.GetString(chars).TrimEnd('\0');
+        string str = (encoding is not null ? encoding : Encoding.UTF8).GetString(chars).TrimEnd('\0');
 
         // Align
-        const int alignment = 0x04;
-
-        var alignOffset = (-Position % alignment + alignment) % alignment;
+        var alignOffset = (-Position % align + align) % align;
         SeekToByte(Position + alignOffset);
         return str;
     }
@@ -674,7 +716,7 @@ public ref struct BitStream
     // The original function (GT6 1.22 EU - FUN_00d42b94 takes an extra argument to go through two paths,
     // seemingly does the exact same so probably compiler macro)
     // Original Impl
-    public void ReadIntoByteArray(int arraySize, byte[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoByteArray(int arraySize, Span<byte> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -716,7 +758,7 @@ public ref struct BitStream
     /// <param name="arraySize">Size of the array.</param>
     /// <param name="dest">Bytes destination.</param>
     /// <param name="elemBitSize">Bits to read per element. Note that each element will still go within each byte in the destination.</param>
-    public void ReadIntoByteArray(int arraySize, sbyte[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoByteArray(int arraySize, Span<sbyte> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -746,7 +788,7 @@ public ref struct BitStream
     // The original function (GT6 1.22 EU - FUN_00e2de14 takes an extra argument to go through two paths,
     // seemingly does the exact same so probably compiler macro)
     // Original Impl
-    public void ReadIntoShortArray(int arraySize, short[] dest, int elemBitSize /*, bool debugMaybe */)
+    public void ReadIntoShortArray(int arraySize, Span<short> dest, int elemBitSize /*, bool debugMaybe */)
     {
         if (dest.Length != 0 && arraySize != 0) // if (dest != destEndPos)
         {
@@ -850,7 +892,7 @@ public ref struct BitStream
 #endif
     }
 
-    public void WriteNullStringAligned4(string value)
+    public void WriteNullStringAligned4(string value, Encoding encoding = default)
     {
         // Require to seek to the next round byte incase we're currently in the middle of a byte's bits
         if (BitCounter != 0)
@@ -862,7 +904,7 @@ public ref struct BitStream
             return;
         }
 
-        var bytes = Encoding.UTF8.GetBytes(value);
+        var bytes = (encoding is not null ? encoding : Encoding.UTF8).GetBytes(value);
         var bytesSize = bytes.Length;
         EnsureCapacity(((bytesSize + 1) + 4) * Byte_Bits); // Account for string bytes length + null termination + pad
 
@@ -952,29 +994,34 @@ public ref struct BitStream
             WriteByte(output[i]);
     }
 
-    public void WriteVarPrefixString(string str)
+    /// <summary>
+    /// Writes a string prefixed by a variable length integer.
+    /// </summary>
+    /// <param name="str">String to write.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    public void WriteVarPrefixString(string str, Encoding encoding = default)
     {
         WriteVarInt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))
-            WriteByteData(Encoding.UTF8.GetBytes(str));
+            WriteByteData((encoding is not null ? encoding : Encoding.UTF8).GetBytes(str));
     }
 
     /// <summary>
-    /// For GTPSP Volumes
+    /// Writes a string prefixed by a variable length integer. (GTPSP Volumes version)
     /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    public void WriteVarPrefixStringAlt(string str)
+    /// <param name="str">String to write.</param>
+    /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
+    public void WriteVarPrefixStringAlt(string str, Encoding encoding = default)
     {
         WriteVarIntAlt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))
-            WriteByteData(Encoding.UTF8.GetBytes(str));
+            WriteByteData((encoding is not null ? encoding : Encoding.UTF8).GetBytes(str));
     }
 
     /// <summary>
     /// Writes a buffer to the bit stream. This WILL align to the nearest byte.
     /// </summary>
-    public void WriteByteData(scoped Span<byte> data, bool withPrefixLength = false)
+    public void WriteByteData(ReadOnlySpan<byte> data, bool withPrefixLength = false)
     {
         EnsureCapacity(((withPrefixLength ? 4 : 0) + data.Length) * Byte_Bits);
         AlignToNextByte();
