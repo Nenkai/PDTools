@@ -26,95 +26,54 @@ public class DefaultParts : TableMetadata
         }
         else
         {*/
-        Columns.Add(new ColumnMetadata("Brake", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("BrakeCtrl", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Susp", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ASCC", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("TCSC", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Chassis", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("R_Modify", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("LWeight", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Steer", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("DrvTrain", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Gear", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Engine", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("NA", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Turbo", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Displ", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Computer", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Intercooler", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Muffler", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("Brake", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("BrakeCtrl", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Suspension", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("ASCC", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("TCSC", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Chassis", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("RacingModify", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Lightweight", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Steer", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("DriveTrain", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Gear", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Engine", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("NATune", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Turbo", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Displacement", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Computer", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Intercooler", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Muffler", DBColumnType.Key));
 
-        Columns.Add(new ColumnMetadata("Clutch", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Flywheel", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Propel", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("LSD", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("Clutch", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("Flywheel", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("PropellerShaft", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("LSD", DBColumnType.Key));
 
-        Columns.Add(new ColumnMetadata("F_Tire", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("R_Tire", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("F_Tire_G", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("R_Tire_G", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("FrontTire", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("RearTire", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("F_Tire_G", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("R_Tire_G", DBColumnType.Key));
 
         if (folderType >= SpecDBFolder.GT5_JP3009)
         {
-            Columns.Add(new ColumnMetadata("NOS", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("NOS", DBColumnType.Key));
 
-            Columns.Add(new ColumnMetadata("Wing", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Aero", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("FlatFloor", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Freedom", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("LWeight Window", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Bonnet", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("IntakeManifold", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ExhaustManifold", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Catalyst", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("AirCleaner", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("BoostControl", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("IndepThrottle", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Supercharger", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("ID", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("Wing", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("Aero", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("FlatFloor", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("Freedom", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("LWeightWindow", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("Bonnet", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("IntakeManifold", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("ExhaustManifold", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("Catalyst", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("AirCleaner", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("BoostControl", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("IndepThrottle", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("Supercharger", DBColumnType.Key));
 
             Columns.Add(new ColumnMetadata("?", DBColumnType.Short));
-
         }
     }
 }

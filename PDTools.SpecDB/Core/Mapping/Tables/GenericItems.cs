@@ -13,12 +13,9 @@ public class GenericItems : TableMetadata
 {
     public GenericItems(SpecDBFolder folderType)
     {
-        Columns.Add(new ColumnMetadata("FT_TableID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("FrontTireLabel", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("RT_TableID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("RearTireLabel", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("CarCodeTblIndex", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Generic_TableID", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("FrontTireLabel", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("RearTireLabel", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("GenericCar", DBColumnType.Key));
         Columns.Add(new ColumnMetadata("ItemCategory", DBColumnType.Int));
         Columns.Add(new ColumnMetadata("ItemType", DBColumnType.Int));
         Columns.Add(new ColumnMetadata("EngineRpmOffset", DBColumnType.Int));

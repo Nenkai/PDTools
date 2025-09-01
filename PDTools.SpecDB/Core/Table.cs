@@ -189,14 +189,13 @@ public class Table
         sr.Position = 4;
         DatabaseTable.TableAttribute = sr.ReadUInt16();
         DatabaseTable.AlignedBytes = sr.ReadUInt16();
-        DatabaseTable.RowCount = sr.ReadUInt16();
-        DatabaseTable.RowSize = sr.ReadUInt16();
-        uint entryCount = sr.ReadUInt32();
+        DatabaseTable.RowCount = sr.ReadUInt32();
+        DatabaseTable.RowSize = sr.ReadInt32();
 
         if (sr.Length <= 32)
             return;
 
-        sr.Position = (int)(DBT_DatabaseTable.HeaderSize + entryCount * 8);
+        sr.Position = (int)(DBT_DatabaseTable.HeaderSize + DatabaseTable.RowCount * 8);
         DatabaseTable.codeBookInfoBlockAdr = sr.Position;
         if ((DatabaseTable.TableAttribute & 1) != 0)
         {

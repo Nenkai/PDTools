@@ -15,7 +15,6 @@ public class CarVariation : TableMetadata
 
     public CarVariation(SpecDBFolder folderType, string localeName)
     {
-        Columns.Add(new ColumnMetadata("VariationID", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Var_Tbl_Index", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("VariationID", DBColumnType.Key));
     }
 }

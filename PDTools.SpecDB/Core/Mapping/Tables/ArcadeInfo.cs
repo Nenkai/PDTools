@@ -15,25 +15,16 @@ public class ArcadeInfo : TableMetadata
 
     public ArcadeInfo(SpecDBFolder folderType)
     {
-        Columns.Add(new ColumnMetadata("NormalRace0", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID0", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("NormalRace1", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID1", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("NormalRace2", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID2", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("NormalRace0", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("NormalRace1", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("NormalRace2", DBColumnType.Key));
 
-        Columns.Add(new ColumnMetadata("DirtRace0", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID3", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("DirtRace1", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID4", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("DirtRace2", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Race_TblID5", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("DirtRace0", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("DirtRace1", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("DirtRace2", DBColumnType.Key));
 
-        Columns.Add(new ColumnMetadata("DirtTunedCarCode", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("EnemyCar_TblID", DBColumnType.Int));
-
-        Columns.Add(new ColumnMetadata("SnowTunedCarCode", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("EnemyCar_TblID2", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("DirtTunedCarCode", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("SnowTunedCarCode", DBColumnType.Key));
 
         Columns.Add(new ColumnMetadata("TireSelect", DBColumnType.Bool));
     }
