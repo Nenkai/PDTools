@@ -98,7 +98,6 @@ public class GTImageLoader
         Console.WriteLine();
         Console.WriteLine("# Step 3: Attempt optional authentication by computing RSA numbers to a SHA-512 hash");
 
-
         // Values are reversed
         // Doesn't always work i.e GT4P, refer to Egcd add operation comment, and the minus on -Egcd
         // Removing the minus on -Egcd or removing the add in egcd sometimes fixes it for some exponents, but ugh
@@ -198,7 +197,7 @@ public class GTImageLoader
         return inflatedData;
     }
 
-    public static Dictionary<int, string> KnownExponents = new Dictionary<int, string>
+    public static Dictionary<int, string> KnownExponents = new()
     {
         { 65537, "GT3 (JP)" },
         { 66001, "GT3 (US)" },
@@ -231,20 +230,20 @@ public class GTImageLoader
         { 90401, "Tourist Trophy (EU)" },
     };
 
-    private static int AuthenticateELFBody(byte[] modulus, byte[] encHash, byte[] hash)
+    private static int AuthenticateELFBody(byte[] modulus, byte[] signature, byte[] computedFileHash)
     {
-        Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(hash)}");
+        Console.WriteLine($"Expected SHA-512 hash is {Convert.ToHexString(computedFileHash)}");
         foreach (var exponent in KnownExponents)
         {
             var rsaCtx = new RSAContext();
-            rsaCtx.Init_0x1030428(modulus, encHash);
+            rsaCtx.Init_0x1030428(modulus, signature);
             var expectedNumber = rsaCtx.MontModPow_1030FE8(exponent.Key);
 
-            // Reverse it
+            // Reverse it (is this hash + PKCS#1 v1.5 padding?)
             var expectedHash = expectedNumber.ToByteArray().AsSpan(0, 0x40);
             expectedHash.Reverse();
 
-            if (hash.AsSpan().SequenceEqual(expectedHash))
+            if (computedFileHash.AsSpan().SequenceEqual(expectedHash))
             {
                 return exponent.Key;
             }

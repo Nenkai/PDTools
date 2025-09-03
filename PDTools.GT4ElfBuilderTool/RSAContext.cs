@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+using static PDTools.GT4ElfBuilderTool.ElfEnums;
+
 namespace PDTools.GT4ElfBuilderTool;
 
 internal class RSAContext
@@ -26,16 +28,16 @@ internal class RSAContext
     //public BigInteger field_0x28; not needed
 
     // Other stuff, don't think that's part of the original struct
-    private BigInteger EncHash;
+    private BigInteger Signature;
     private BigInteger Mask;
     public int ReducerBits;
     private BigInteger Reducer;
 
     // Part 1 - 0x1030428 (Init RSA?)
-    public void Init_0x1030428(byte[] modulus, byte[] encHash)
+    public void Init_0x1030428(byte[] modulus, byte[] signature)
     {
         this.Modulus = new BigInteger(modulus, isUnsigned: true);
-        this.EncHash = new BigInteger(encHash, isUnsigned: true);
+        this.Signature = new BigInteger(signature, isUnsigned: true);
 
         this.ReducerBits = modulus.Length * 8;
         this.Reducer = new BigInteger(1) << ReducerBits;
@@ -51,7 +53,7 @@ internal class RSAContext
         BigInteger one = new BigInteger(1) << 0x400;
         BigInteger u = exponent;
 
-        var t = (one * this.EncHash) % this.Modulus;
+        var t = (one * this.Signature) % this.Modulus;
         var s = one - this.Modulus;
 
         // Looks an awful lot like modPow here, refer to java source
@@ -84,7 +86,7 @@ internal class RSAContext
         T += X;
         T >>= ReducerBits;
 
-        if (this.Modulus.CompareTo(T) <= 0)
+        if (T >= this.Modulus)
             T -= this.Modulus;
 
         return T;
@@ -94,6 +96,8 @@ internal class RSAContext
         BigInteger RightFactor,
         BigInteger Gcd) Egcd(BigInteger left, BigInteger right)
     {
+        var ogRight = right;
+
         BigInteger leftFactor = 0;
         BigInteger rightFactor = 1;
 
@@ -122,20 +126,25 @@ internal class RSAContext
         // Added this, seems important
         // 06/10/2023 comment from later on - this might still break on i.e some GT4P region, and GT4 EU (Preprod)
         // Should it be "if (leftFactor < 0)" ?
-        leftFactor = leftFactor + u;
+        if (leftFactor.Sign < 0)
+            leftFactor += ogRight;
 
         return (LeftFactor: leftFactor,
                 RightFactor: rightFactor,
                 Gcd: gcd);
     }
 
-    public static BigInteger truncate(BigInteger big, int bit_size)
+    public static BigInteger truncate(BigInteger value, int bits)
     {
+        /*
         if (big.GetBitLength() <= bit_size)
             return big;
 
         var arr = big.ToByteArray(isUnsigned: big.Sign >= 0).AsSpan(0, bit_size / 8);
         return new BigInteger(arr, big.Sign >= 0);
+        */
+
+        return value & ((BigInteger.One << bits) - 1);
     }
 }
 
