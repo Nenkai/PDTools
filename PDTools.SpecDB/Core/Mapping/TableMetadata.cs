@@ -48,6 +48,24 @@ public abstract class TableMetadata
                     row.ColumnData.Add(new DBLong(sr.ReadInt64())); break;
                 case DBColumnType.Float:
                     row.ColumnData.Add(new DBFloat(sr.ReadSingle())); break;
+                case DBColumnType.Key:
+                    {
+                        int key, tableId;
+                        if (endian == Endian.Little)
+                        {
+                            key = sr.ReadInt32();
+                            tableId = sr.ReadInt32();
+                           
+                        }
+                        else
+                        {
+                            tableId = sr.ReadInt32();
+                            key = sr.ReadInt32();
+                            
+                        }
+
+                        row.ColumnData.Add(new DBKey(tableId, key)); break;
+                    }
                 case DBColumnType.String:
                     row.ColumnData.Add(new DBString(sr.ReadInt32(), columnMeta.StringFileName)); break;
                 default:

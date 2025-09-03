@@ -15,21 +15,13 @@ public class FrontTire : TableMetadata
 
     public FrontTire(SpecDBFolder folderType)
     {
-        Columns.Add(new ColumnMetadata("TS_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tiresize", DBColumnType.Int));
-
-        Columns.Add(new ColumnMetadata("Cmp_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tirecompound0", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Cmp_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tirecompound1", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("Cmp_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tirecompound2", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("TF_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tireforcevol0", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("TF_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tireforcevol1", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("TF_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("tireforcevol2", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("tiresize", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tirecompound0", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tirecompound1", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tirecompound2", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tireforcevol0", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tireforcevol1", DBColumnType.Key));
+        Columns.Add(new ColumnMetadata("tireforcevol2", DBColumnType.Key));
 
         Columns.Add(new ColumnMetadata("Price", DBColumnType.Short));
         Columns.Add(new ColumnMetadata("category", DBColumnType.Byte));

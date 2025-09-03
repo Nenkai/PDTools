@@ -15,10 +15,8 @@ public class Race : TableMetadata
     {
         if (folderType <= SpecDBFolder.GT5_TRIAL_JP2704)
         {
-            Columns.Add(new ColumnMetadata("CourseID", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("Crs_Tbl_Index", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("AllowEntry", DBColumnType.Int));
-            Columns.Add(new ColumnMetadata("AlEnt_Tbl_Index", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("CourseID", DBColumnType.Key));
+            Columns.Add(new ColumnMetadata("AllowEntry", DBColumnType.Key));
 
             // 0x10
             Columns.Add(new ColumnMetadata("?", DBColumnType.Int));

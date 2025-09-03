@@ -26,8 +26,7 @@ public class GenericCar : TableMetadata
     // 26 = category
     public GenericCar(SpecDBFolder folderType)
     {
-        Columns.Add(new ColumnMetadata("Df_Tbl_Index", DBColumnType.Int));
-        Columns.Add(new ColumnMetadata("DefaultParts", DBColumnType.Int));
+        Columns.Add(new ColumnMetadata("DefaultParts", DBColumnType.Key));
         Columns.Add(new ColumnMetadata("Price", DBColumnType.Int));
 
         if (folderType >= SpecDBFolder.GT5_JP3009)

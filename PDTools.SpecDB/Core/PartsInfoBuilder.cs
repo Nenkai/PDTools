@@ -114,6 +114,7 @@ public class PartsInfoBuilder
                 foreach (RowData partRow in partTable.Rows)
                 {
                     // PD's messups
+                    // TODO: Use category instead of doing all this string crap?
                     if (car.Label.Equals("mazda6_tmv_01") && partRow.Label.Contains("_azda6_tmv_01")
                             || car.Label.Equals("mazda6_sport_23z_03") && partRow.Label.StartsWith("fw-")
                             || car.Label.Equals("gs300_vertex_us_00") && partRow.Label.Contains("_s300_vertex_us")
@@ -202,27 +203,24 @@ public class PartsInfoBuilder
 
             progress.Report((i, $"{car.Label} - {fileName}"));
 
-            var carDfID = car.ColumnData[0] as DBInt;
-            var df = defaultParts.Rows.FirstOrDefault(e => e.ID == carDfID.Value);
-
-            if (df is null)
-                throw new Exception($"Car ({car.Label}/{car.ID}) has a missing default parts row.");
+            var carDfID = car.ColumnData[0] as DBKey;
+            var df = defaultParts.Rows.FirstOrDefault(e => e.ID == carDfID._id) 
+                ?? throw new Exception($"Car ({car.Label}/{car.ID}) has a missing default parts row.");
 
             int lastTableID = 0;
-            for (int j = 0; j < df.ColumnData.Count + 1; j += 2)
+            for (int j = 0; j < df.ColumnData.Count; j++)
             {
                 // Skip Rear Tire to NOS
-                int tableID = j / 2 == 26 ? 27 : (df.ColumnData[j + 1] as DBInt).Value;
-                int partRowID = j / 2 == 26 ? -1 : (df.ColumnData[j] as DBInt).Value;
+                int tableID = j == 26 ? 27 : (df.ColumnData[j] as DBKey)._tableIndex;
+                int partRowID = j == 26 ? -1 : (df.ColumnData[j] as DBKey)._id;
 
                 if (tableID == -1)
                     tableID = lastTableID + 1;
                 lastTableID = tableID;
 
                 // Get our table by said ID
-                Table partTable = db.Tables.Values.FirstOrDefault(table => table.TableID == tableID);
-                if (partTable is null)
-                    throw new Exception($"Table ID {tableID} is missing from the SpecDB. Ensure that your SpecDB is complete.");
+                Table partTable = db.Tables.Values.FirstOrDefault(table => table.TableID == tableID) 
+                    ?? throw new Exception($"Table ID {tableID} is missing from the SpecDB. Ensure that your SpecDB is complete.");
 
                 if (!partTable.IsLoaded)
                     partTable.LoadAllRows(db);

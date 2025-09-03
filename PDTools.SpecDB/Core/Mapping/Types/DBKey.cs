@@ -6,21 +6,22 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.ComponentModel;
 using Syroot.BinaryData;
+using System.IO;
 
 namespace PDTools.SpecDB.Core.Mapping.Types;
 
 [DebuggerDisplay("Key - {Value}")]
 public class DBKey : IDBType, INotifyPropertyChanged
 {
-    private uint _id;
-    public uint _tableIndex;
+    public int _id;
+    public int _tableIndex;
 
-    public uint Value
+    public string Value
     {
-        get => _id;
+        get => ToString();
         set
         {
-            _id = value;
+            ParseKeyFromString(value);
             NotifyPropertyChanged(nameof(Value));
         }
     }
@@ -30,27 +31,55 @@ public class DBKey : IDBType, INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    public void Serialize(BinaryStream bs)
+    public event PropertyChangedEventHandler PropertyChanged;
+    public DBKey(string keyStr)
     {
-        if (bs.ByteConverter == Syroot.BinaryData.ByteConverter.Big)
-        {
-            bs.WriteUInt32(_id);
-            bs.WriteUInt32(_tableIndex);
-        }
-        else
-        {
-            bs.WriteUInt32(_tableIndex);
-            bs.WriteUInt32(_id);
-        }
+        ParseKeyFromString(keyStr);
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
-    public DBKey(uint tableIndex, uint id)
+    public DBKey(int tableIndex, int id)
     {
         _tableIndex = tableIndex;
         _id = id;
     }
 
+    public DBKey(DBKey key)
+    {
+        _tableIndex = key._tableIndex;
+        _id = key._id;
+    }
+
+    private void ParseKeyFromString(string value)
+    {
+        string[] spl = value.Split(":");
+        if (spl.Length < 2)
+            throw new ArgumentException("Invalid db key string");
+
+        string tableId = spl[0];
+        string id = spl[1];
+        if (spl[0].StartsWith("Table"))
+        {
+            tableId = spl[0]["Table".Length..];
+        }
+
+        _tableIndex = int.Parse(tableId);
+        _id = int.Parse(id);
+    }
+
+    public void Serialize(BinaryStream bs)
+    {
+        if (bs.ByteConverter == Syroot.BinaryData.ByteConverter.Big)
+        {
+            bs.WriteInt32(_tableIndex);
+            bs.WriteInt32(_id);
+        }
+        else
+        {
+            bs.WriteInt32(_id);
+            bs.WriteInt32(_tableIndex);
+        }
+    }
+
     public override string ToString()
-        => _id.ToString();
+        => $"Table{_tableIndex}:{_id}";
 }

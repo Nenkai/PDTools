@@ -28,7 +28,7 @@ public class CompressedTableWriter
         // Create a dummy if there's no rows
         if (Table.Rows.Count == 0)
         {
-            BitStream hdrStream = new BitStream(BitStreamMode.Write, endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
+            BitStream hdrStream = new BitStream(endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
             hdrStream.WriteByteData(Encoding.UTF8.GetBytes("GTDB"));
             hdrStream.WriteInt16(0x01);
             hdrStream.WriteInt16(0x08);
@@ -170,7 +170,7 @@ public class CompressedTableWriter
         huff.BuildTreeAndLookupTable();
 
         /* Step 4: Start writing the GT Database Table header */
-        BitStream bs = new BitStream(BitStreamMode.Write, endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
+        BitStream bs = new BitStream(endian: Table.BigEndian ? BitStreamSignificantBitOrder.LSB : BitStreamSignificantBitOrder.MSB);
         bs.WriteByteData(Encoding.UTF8.GetBytes("GTDB"));
         bs.WriteInt16(0x01); // Attributes
         bs.WriteInt16(0x08); // AlignedBytes
@@ -181,7 +181,7 @@ public class CompressedTableWriter
         int entriesOffset = bs.Position;
 
         /* Step 5: Write row data type + codes and entries (id + offset to codes) */
-        BitStream huffmanCodesWritter = new BitStream(BitStreamMode.Write, 1024, BitStreamSignificantBitOrder.MSB); // Always MSB
+        BitStream huffmanCodesWritter = new BitStream(1024, BitStreamSignificantBitOrder.MSB); // Always MSB
 
         for (var i = 0; i < rowCompressInfo.Count; i++)
         {
@@ -263,9 +263,6 @@ public class CompressedTableWriter
         /* Step 9: Write row codes at the beginning of the file */
         bs.WriteByteData(huffmanCodesWritter.GetBuffer());
 
-        bs.Align(0x10);
-        bs.WriteByteData("Built w/ Nenkai's PDTools.SpecDB".Select(e => (byte)e).ToArray());
-
         /* Step 10: Done! */
         File.WriteAllBytes(outputPath, bs.GetBuffer().ToArray());
     }
@@ -313,7 +310,7 @@ public class CompressedTableWriter
         if (baseRowToUse != -1)
         {
             // Build type 2 (differences) header where every bit tells whether to skip a row byte
-            BitStream bitStream = new BitStream(BitStreamMode.Write, 0x100, endian:  BitStreamSignificantBitOrder.MSB); // Always MSB
+            BitStream bitStream = new BitStream(0x100, endian: BitStreamSignificantBitOrder.MSB); // Always MSB
             var baseRow = uncompressedRows[baseRowToUse];
             for (var x = 0; x < baseRow.Length; x++)
                 bitStream.WriteBoolBit(baseRow[x] != current[x]); // Patch byte
