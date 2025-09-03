@@ -187,7 +187,7 @@ public class PS2ZIP
 
         deflatedData = new byte[(int)outSize];
         var inflater = new ICSharpCode.SharpZipLib.Zip.Compression.Inflater(noHeader: true);
-        inflater.SetInput(d.ToArray(), 8, d.Length - 8);
+        inflater.SetInput(d, 8, d.Length - 8);
         inflater.Inflate(deflatedData);
         
 
