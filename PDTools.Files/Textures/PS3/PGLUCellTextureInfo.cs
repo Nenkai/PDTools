@@ -95,7 +95,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
     public int Pitch { get; set; }
 
     public uint ImageId { get; set; }
-    public string Name { get; set; }
+    public string SourceFileName { get; set; }
 
     public PGLUCellTextureInfo()
     {
@@ -250,7 +250,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         bs.ReadUInt32();
         uint imageNameOffset = bs.ReadUInt32();
         bs.Position = imageNameOffset - basePos;
-        Name = bs.ReadString(StringCoding.ZeroTerminated);
+        SourceFileName = bs.ReadString(StringCoding.ZeroTerminated);
     }
 
     internal void CreateDDSData(byte[] imageData, Stream outStream)
@@ -406,7 +406,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         }
 
         BufferInfo.ImageData = ddsData;
-        Name = Path.GetFileNameWithoutExtension(path);
+        SourceFileName = Path.GetFileNameWithoutExtension(path);
 
         File.Delete(ddsFileName);
         return true;

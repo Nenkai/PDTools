@@ -18,9 +18,6 @@ public class OrbisTextureBuffer : TextureSet3Buffer
 {
     public int Mipmap { get; set; }
 
-    public ushort Width { get; set; }
-    public ushort Height { get; set; }
-
     public OrbisTextureBuffer()
     {
 

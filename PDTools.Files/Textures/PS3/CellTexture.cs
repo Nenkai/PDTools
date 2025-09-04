@@ -27,9 +27,6 @@ public class CellTextureBuffer : TextureSet3Buffer
     public int LastMipmapLevel { get; set; }
     public CELL_GCM_TEXTURE_FORMAT FormatBits { get; set; }
 
-    public ushort Width { get; set; }
-    public ushort Height { get; set; }
-
     public short Depth { get; set; } = 1;
 
     public CellTextureBuffer()
