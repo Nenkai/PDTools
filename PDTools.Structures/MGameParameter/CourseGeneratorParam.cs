@@ -18,7 +18,7 @@ public class CourseGeneratorParam
     public float LengthY { get; set; } = 0;
     public CourseGeneratorKind CourseGeneratorKind { get; set; } = CourseGeneratorKind.GENERATOR_CIRCUIT;
     public CourseGeneratorLengthType CourseGeneratorLengthType { get; set; } = CourseGeneratorLengthType.LENGTH;
-    public string CourseName { get; set; }
+    public string? CourseName { get; set; }
 
     public List<CourseGeneratorParamSection> Sections { get; set; } = [];
     public bool FirstVersionIncompatible { get; set; }

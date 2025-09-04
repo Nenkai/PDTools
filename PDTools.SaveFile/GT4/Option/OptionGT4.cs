@@ -119,17 +119,17 @@ public class OptionGT4 : IGameSerializeBase<OptionGT4>
     [Browsable(false)]
     public ColorCorrection replay_color_correction { get; set; } = new ColorCorrection();
 
-    public string entrance_addr { get; set; }
+    public string? entrance_addr { get; set; }
     public int entrance_port { get; set; }
     public int use_upnp { get; set; }
     public int udp_bind_port_setting { get; set; }
     public int udp_bind_port { get; set; }
 
     [Browsable(false)]
-    public byte[] unk_udpdata { get; set; }
+    public byte[] unk_udpdata { get; set; } = new byte[0x10];
 
     [Browsable(false)]
-    public byte[] unk_end_data { get; set; }
+    public byte[] unk_end_data { get; set; } = new byte[0x24];
 
     [Browsable(false)]
     public GameZone GameZone { get; set; } = new GameZone();

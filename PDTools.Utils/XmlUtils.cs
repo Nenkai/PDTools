@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,11 +11,14 @@ namespace PDTools.Utils;
 
 public static class XmlUtils
 {
-    public static void WriteElementValue(this XmlWriter xml, string localName, string value)
+    public static void WriteElementValue(this XmlWriter xml, string localName, string? value)
     {
-        xml.WriteStartElement(localName);
-        xml.WriteAttributeString("value", value);
-        xml.WriteEndElement();
+        if (value is not null)
+        {
+            xml.WriteStartElement(localName);
+            xml.WriteAttributeString("value", value);
+            xml.WriteEndElement();
+        }
     }
 
     public static void WriteEmptyElement(this XmlWriter xml, string localName)
@@ -48,19 +52,23 @@ public static class XmlUtils
         => WriteElementValue(xml, localName, ((int)(object)value).ToString());
 
 
-    public static T ReadValueEnum<T>(this XmlNode node) where T : Enum
+    public static T? ReadValueEnum<T>(this XmlNode node) where T : Enum
     {
-        var val = node.Attributes["value"].Value;
+        XmlAttribute? attrValue = node?.Attributes?["value"];
+        if (attrValue is null)
+            return default;
+
+        string val = attrValue.Value;
         if (string.IsNullOrEmpty(val))
             return default;
 
-        return (T)Enum.Parse(typeof(T), node.Attributes["value"].Value);
+        return (T)Enum.Parse(typeof(T), val);
     }
 
-    private static bool TryGetValueAttribute(XmlNode node, out XmlAttribute attr)
+    private static bool TryGetValueAttribute(XmlNode node, [NotNullWhen(true)] out XmlAttribute? attr)
     {
         attr = null;
-        if (node.Attributes.Count > 0)
+        if (node?.Attributes?.Count > 0)
         {
             attr = node.Attributes["value"];
             return attr != null;
@@ -69,9 +77,9 @@ public static class XmlUtils
         return false;
     }
 
-    public static string ReadValueString(this XmlNode node)
+    public static string? ReadValueString(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
             return attr.Value;
 
         return null;
@@ -79,7 +87,7 @@ public static class XmlUtils
 
     public static uint ReadValueUInt(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (uint.TryParse(attr.Value, out uint value))
                 return value;
@@ -90,7 +98,7 @@ public static class XmlUtils
 
     public static int ReadValueInt(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (int.TryParse(attr.Value, out int value))
                 return value;
@@ -101,7 +109,7 @@ public static class XmlUtils
 
     public static byte ReadValueByte(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (byte.TryParse(attr.Value, out byte value))
                 return value;
@@ -112,7 +120,7 @@ public static class XmlUtils
 
     public static sbyte ReadValueSByte(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (sbyte.TryParse(attr.Value, out sbyte value))
                 return value;
@@ -123,7 +131,7 @@ public static class XmlUtils
 
     public static float ReadValueSingle(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (float.TryParse(attr.Value, out float value))
                 return value;
@@ -134,7 +142,7 @@ public static class XmlUtils
 
     public static short ReadValueShort(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (short.TryParse(attr.Value, out short value))
                 return value;
@@ -145,7 +153,7 @@ public static class XmlUtils
 
     public static ushort ReadValueUShort(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (ushort.TryParse(attr.Value, out ushort value))
                 return value;
@@ -156,7 +164,7 @@ public static class XmlUtils
 
     public static ulong ReadValueULong(this XmlNode node)
     {
-        if (TryGetValueAttribute(node, out XmlAttribute attr))
+        if (TryGetValueAttribute(node, out XmlAttribute? attr))
         {
             if (ulong.TryParse(attr.Value, out ulong value))
                 return value;

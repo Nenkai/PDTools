@@ -26,7 +26,7 @@ public class LicenseCondition
     /// </summary>
     public LicenseDisplayModeType DisplayMode { get; set; } = LicenseDisplayModeType.NONE;
 
-    public List<string> GadgetNames { get; set; } = [];
+    public List<string?> GadgetNames { get; set; } = [];
     public List<LicenseConditionData> FinishCondition { get; set; } = [];
     public List<LicenseConditionData> FailureCondition { get; set; } = [];
     public List<LicenseConditionData> SuccessCondition { get; set; } = [];
@@ -89,19 +89,67 @@ public class LicenseCondition
                     DisplayMode = node.ReadValueEnum<LicenseDisplayModeType>(); break;
 
                 case "gadget_names":
-                    foreach (XmlNode gadget in node.SelectNodes("gadget"))
-                        GadgetNames.Add(gadget.ReadValueString());
+                    {
+                        var gadgetNames = node.SelectNodes("gadget");
+                        if (gadgetNames is not null)
+                        {
+                            foreach (XmlNode? gadget in gadgetNames)
+                            {
+                                if (gadget is null)
+                                    continue;
+
+                                GadgetNames.Add(gadget.ReadValueString());
+                            }
+                        }
+                    }
                     break;
 
                 case "failure_condition":
-                    foreach (XmlNode childNode in node.SelectNodes("data"))
-                        ParseConditionList(childNode, FailureCondition); break;
+                    {
+                        var nodes = node.SelectNodes("data");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode? childNode in nodes)
+                            {
+                                if (childNode is null)
+                                    continue;
+
+                                ParseConditionList(childNode, FailureCondition);
+                            }
+                        }
+                    }
+                    break;
+
                 case "finish_condition":
-                    foreach (XmlNode childNode in node.SelectNodes("data"))
-                        ParseConditionList(childNode, FinishCondition); break;
+                    {
+                        var nodes = node.SelectNodes("data");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode? childNode in nodes)
+                            {
+                                if (childNode is null)
+                                    continue;
+
+                                ParseConditionList(childNode, FinishCondition);
+                            }
+                        }
+                    }
+                    break;
                 case "success_condition":
-                    foreach (XmlNode childNode in node.SelectNodes("data"))
-                        ParseConditionList(childNode, SuccessCondition); break;
+                    {
+                        var nodes = node.SelectNodes("data");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode? childNode in nodes)
+                            {
+                                if (childNode is null)
+                                    continue;
+
+                                ParseConditionList(childNode, SuccessCondition);
+                            }
+                        }
+                    }
+                    break;
             }
         }
     }

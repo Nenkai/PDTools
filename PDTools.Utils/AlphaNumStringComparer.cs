@@ -11,10 +11,10 @@ public class AlphaNumStringComparer : IComparer<string>
     private static readonly AlphaNumStringComparer _default = new AlphaNumStringComparer();
     public static AlphaNumStringComparer Default => _default;
 
-    public int Compare(string value1, string value2)
+    public int Compare(string? value1, string? value2)
     {
-        string v1 = value1;
-        string v2 = value2;
+        string v1 = value1 ?? string.Empty;
+        string v2 = value2 ?? string.Empty;
 
         int min = v1.Length > v2.Length ? v2.Length : v1.Length;
         for (int i = 0; i < min; i++)

@@ -11,13 +11,13 @@ namespace PDTools.SaveFile.GT4.UserProfile;
 public class UserProfileGT4 : IGameSerializeBase<UserProfileGT4>
 {
     public const int MAX_USERNAME_LENGTH = 32;
-    public string UserName { get; set; }
+    public string? UserName { get; set; }
 
     public const int MAX_PASSWORD_LENGTH = 8;
-    public string Password { get; set; }
+    public string? Password { get; set; }
 
     public const int MAX_ENTRY_NAME_LENGTH = 16;
-    public string LastEntryName { get; set; }
+    public string? LastEntryName { get; set; }
 
     public long Score { get; set; }
     public long TotalPrizeMoney { get; set; }

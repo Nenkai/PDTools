@@ -22,12 +22,12 @@ public class RankingStats
     public byte ABS { get; set; }
     public byte FrontTire { get; set; }
     public byte RearTire { get; set; }
-    public string CountryCode { get; set; }
+    public string? CountryCode { get; set; }
     public byte Paint { get; set; }
     public AutomobileControllerType ControllerType { get; set; }
     public byte Color { get; set; }
     public long CarCode { get; set; }
-    public string SpecialGuestName { get; set; }
+    public string? SpecialGuestName { get; set; }
 
     // Based on "UnpackRankingStats(d[1])"
     public static RankingStats Read(Span<byte> stats)
@@ -35,7 +35,7 @@ public class RankingStats
         SpanReader sr = new SpanReader(stats, Endian.Big);
         byte version = sr.ReadByte();
         if (version > 2)
-            return null;
+            throw new NotSupportedException("RankingStats version > 2 not supported");
 
         RankingStats rStats = new RankingStats();
 

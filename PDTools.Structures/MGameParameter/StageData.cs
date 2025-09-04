@@ -164,11 +164,18 @@ public class StageData
     public static List<StageResetData> ParseStageDataResetList(XmlNode node)
     {
         var list = new List<StageResetData>();
-        foreach (XmlNode pNode in node.SelectNodes("stage_reset_data"))
+        var stageResetDataNodes = node.SelectNodes("stage_reset_data");
+        if (stageResetDataNodes is not null)
         {
-            var data = new StageResetData();
-            data.ParseFromXml(pNode);
-            list.Add(data);
+            foreach (XmlNode? pNode in stageResetDataNodes)
+            {
+                if (pNode is null)
+                    continue;
+
+                var data = new StageResetData();
+                data.ParseFromXml(pNode);
+                list.Add(data);
+            }
         }
 
         return list;

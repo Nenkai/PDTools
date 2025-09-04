@@ -16,7 +16,7 @@ public class RunCourseEvent : IDayEvent
     public Result Result { get; set; }
     public RunCourseMode CourseMode { get; set; }
     public int BestTime { get; set; }
-    public DbCode CourseCode { get; set; }
+    public DbCode CourseCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

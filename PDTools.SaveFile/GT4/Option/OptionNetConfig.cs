@@ -10,7 +10,7 @@ namespace PDTools.SaveFile.GT4.Option;
 
 public class OptionNetConfig : IGameSerializeBase<OptionNetConfig>
 {
-    public byte[] Data { get; set; }
+    public byte[] Data { get; set; } = new byte[0x258];
 
     public void CopyTo(OptionNetConfig dest)
     {

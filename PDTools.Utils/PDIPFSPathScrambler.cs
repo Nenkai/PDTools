@@ -14,7 +14,7 @@ public class PDIPFSPathResolver
 	private const string Charset = "K59W4S6H7DOVJPERUQMT8BAIC2YLG30Z1FNX";
 	private const string CharsetLower = "k59w4s6h7dvjprqmt8bc2ylg30z1fnx";
 
-	private static string _default;
+	private static string? _default;
 	public static string Default
 	{
 		get
@@ -25,7 +25,7 @@ public class PDIPFSPathResolver
 		}
 	}
 
-	private static string _defaultOld;
+	private static string? _defaultOld;
 	public static string DefaultOld
 	{
 		get

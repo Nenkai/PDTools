@@ -524,7 +524,7 @@ public class RaceParameter
     /// <summary>
     /// GT5 Only.
     /// </summary>
-    public BoostParams BoostParams { get; set; }
+    public BoostParams? BoostParams { get; set; }
 
     /// <summary>
     /// GT6 Only.
@@ -950,16 +950,19 @@ public class RaceParameter
                 case "boost_flag":
                     BoostFlag = raceNode.ReadValueBool(); break;
                 case "datetime":
-                    var dateStr = raceNode.Attributes["datetime"].Value;
-                    if (dateStr.Equals("1970/00/00 00:00:00"))
-                        Date = null;
-                    else
+                    string? dateStr = raceNode.Attributes?["datetime"]?.Value;
+                    if (dateStr is not null)
                     {
-                        string date = dateStr.Replace("/00", "/01");
-                        if (DateTime.TryParseExact(date, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time))
-                            Date = time;
-                        else
+                        if (dateStr.Equals("1970/00/00 00:00:00"))
                             Date = null;
+                        else
+                        {
+                            string date = dateStr.Replace("/00", "/01");
+                            if (DateTime.TryParseExact(date, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time))
+                                Date = time;
+                            else
+                                Date = null;
+                        }
                     }
                     break;
                 case "time_progress_speed":
@@ -1010,22 +1013,47 @@ public class RaceParameter
                 case "attack_separate_type":
                     AttackSeparateType = raceNode.ReadValueEnum<AttackSeparateType>(); break;
                 case "grid_list":
-                    int i = 0;
-                    foreach (XmlNode n in raceNode.SelectNodes("v"))
                     {
-                        if (i >= 32)
-                            break;
+                        int i = 0;
+                        var nodes = raceNode.SelectNodes("v");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode? n in nodes)
+                            {
+                                if (i >= 32)
+                                    break;
 
-                        GridList[i] = n.ReadValueSByte();
+                                if (n is null)
+                                {
+                                    throw new ArgumentException("grid_list has a null node");
+                                }
+
+
+                                GridList[i++] = n.ReadValueSByte();
+                            }
+                        }
                     }
                     break;
                 case "event_v_list":
-                    foreach (XmlNode n in raceNode.SelectNodes("v"))
                     {
-                        if (EventVList.Count > 30)
-                            break;
+                        var nodes = raceNode.SelectNodes("v");
+                        int i = 0;
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode n in nodes)
+                            {
+                                if (i >= 30)
+                                    break;
 
-                        EventVList.Add(n.ReadValueShort());
+                                if (n is null)
+                                {
+                                    throw new ArgumentException("event_v_list has a null node");
+                                }
+
+                                EventVList.Add(n.ReadValueShort());
+                                i++;
+                            }
+                        }
                     }
                     break;
 
@@ -1096,22 +1124,36 @@ public class RaceParameter
                 */
                 case "new_weather_data":
                     {
-                        foreach (XmlNode point in raceNode.SelectNodes("point"))
+                        var nodes = raceNode.SelectNodes("point");
+                        if (nodes is not null)
                         {
-                            var data = new WeatherData();
-                            foreach (XmlNode pointNode in point.ChildNodes)
+                            foreach (XmlNode point in nodes)
                             {
-                                switch (pointNode.Name)
+                                var data = new WeatherData();
+                                foreach (XmlNode pointNode in point.ChildNodes)
                                 {
-                                    case "time_rate":
-                                        data.TimeRate = pointNode.ReadValueSingle(); break;
-                                    case "low":
-                                        data.Low = float.Parse(pointNode.ReadValueString(), CultureInfo.InvariantCulture.NumberFormat); break;
-                                    case "high":
-                                        data.High = float.Parse(pointNode.ReadValueString(), CultureInfo.InvariantCulture.NumberFormat); break;
+                                    switch (pointNode.Name)
+                                    {
+                                        case "time_rate":
+                                            data.TimeRate = pointNode.ReadValueSingle(); break;
+                                        case "low":
+                                            {
+                                                string? value = pointNode.ReadValueString();
+                                                if (value is not null && float.TryParse(value, CultureInfo.InvariantCulture.NumberFormat, out float low))
+                                                    data.Low = low;
+                                            }
+                                            break;
+                                        case "high":
+                                            {
+                                                string? value = pointNode.ReadValueString();
+                                                if (value is not null && float.TryParse(value, CultureInfo.InvariantCulture.NumberFormat, out float high))
+                                                    data.High = high;
+                                            }
+                                            break;
+                                    }
                                 }
+                                NewWeatherData.Add(data);
                             }
-                            NewWeatherData.Add(data);
                         }
                     }
                     break;
@@ -1123,38 +1165,56 @@ public class RaceParameter
     {
         BoostParams = new BoostParams();
 
-        int i = 0;
-        foreach (XmlNode node in boostParamsNode.SelectNodes("param"))
+        var nodes = boostParamsNode.SelectNodes("param");
+        if (nodes is not null)
         {
-            switch (i)
+            int i = 0;
+            foreach (XmlNode node in nodes)
             {
-                case 0:
-                    BoostParams.BoostFront = node.ReadValueByte(); break;
-                case 1:
-                    BoostParams.BoostRear = node.ReadValueSByte(); break;
-                case 2:
-                    BoostParams.BoostFrontMax = node.ReadValueByte(); break;
-                case 3:
-                    BoostParams.BoostRearMax = node.ReadValueSByte(); break;
-                case 4:
-                    BoostParams.BoostFrontMin = node.ReadValueByte(); break;
-                case 5:
-                    BoostParams.BoostRear = node.ReadValueSByte(); break;
-            }
+                switch (i)
+                {
+                    case 0:
+                        BoostParams.BoostFront = node.ReadValueByte(); break;
+                    case 1:
+                        BoostParams.BoostRear = node.ReadValueSByte(); break;
+                    case 2:
+                        BoostParams.BoostFrontMax = node.ReadValueByte(); break;
+                    case 3:
+                        BoostParams.BoostRearMax = node.ReadValueSByte(); break;
+                    case 4:
+                        BoostParams.BoostFrontMin = node.ReadValueByte(); break;
+                    case 5:
+                        BoostParams.BoostRear = node.ReadValueSByte(); break;
+                }
 
-            i++;
+                i++;
+            }
         }
     }
 
     public void ParseBoostTables(XmlNode boostTableArrayNode)
     {
-        foreach (XmlNode boostTableNode in boostTableArrayNode.SelectNodes("boost_table"))
+        XmlNodeList? boostTableNodes = boostTableArrayNode.SelectNodes("boost_table");
+        if (boostTableNodes is null)
+            return;
+
+        foreach (XmlNode? boostTableNode in boostTableNodes)
         {
+            if (boostTableNode is null)
+                continue;
+
             var paramList = boostTableNode.SelectNodes("param");
             int currentIndex = -1;
+
+            if (paramList is null)
+                continue;
+
             for (int i = 0; i < paramList.Count; i++)
             {
-                XmlNode currentNode = paramList[i];
+                XmlNode? currentNode = paramList[i];
+
+                if (currentNode is null)
+                    continue;
 
                 if (i == 0)
                     currentIndex = currentNode.ReadValueInt();

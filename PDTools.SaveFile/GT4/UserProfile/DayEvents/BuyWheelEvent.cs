@@ -16,7 +16,7 @@ public class BuyWheelEvent : IDayEvent
     public WheelCategoryType WheelCategory { get; set; }
     public byte Unk { get; set; }
     public byte Unk2 { get; set; }
-    public DbCode WheelCode { get; set; }
+    public DbCode WheelCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

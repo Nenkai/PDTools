@@ -14,12 +14,13 @@ public class SellCarEvent : IDayEvent
 
     public byte ColorIndex { get; set; }
     public short Price { get; set; }
-    public DbCode CarCode { get; set; }
+    public DbCode CarCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {
         ((SellCarEvent)dest).ColorIndex = ColorIndex;
         ((SellCarEvent)dest).Price = Price;
+
         ((SellCarEvent)dest).CarCode = new DbCode(CarCode.Code, CarCode.TableId);
     }
 

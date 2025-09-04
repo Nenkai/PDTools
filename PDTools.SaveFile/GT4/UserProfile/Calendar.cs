@@ -23,7 +23,7 @@ public class Calendar : IGameSerializeBase<Calendar>
 
         for (var i = 0; i < dest.Events.Length; i++)
         {
-            dest.Events[i] = (IDayEvent)Activator.CreateInstance(Events[i].GetType());
+            dest.Events[i] = (IDayEvent)Activator.CreateInstance(Events[i].GetType())!;
             Events[i].CopyTo(dest.Events[i]);
         }
 

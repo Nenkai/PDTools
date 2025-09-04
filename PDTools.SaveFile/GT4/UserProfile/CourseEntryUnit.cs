@@ -14,10 +14,10 @@ public class CourseEntryUnit : IGameSerializeBase<CourseEntryUnit>
 {
     public int RaceTime { get; set; }
     public int Date { get; set; }
-    public DbCode CarCode { get; set; }
+    public DbCode CarCode { get; set; } = new();
 
     public const int MAX_PASSCODE_LEN = 32;
-    public string PassCode { get; set; }
+    public string? PassCode { get; set; }
     public byte[] Data = new byte[3];
 
     public void CopyTo(CourseEntryUnit dest)
@@ -35,7 +35,7 @@ public class CourseEntryUnit : IGameSerializeBase<CourseEntryUnit>
         sw.WriteInt32(Date);
         sw.WriteInt32(CarCode.Code);
         sw.WriteInt32(CarCode.TableId);
-        sw.WriteStringFix(PassCode, MAX_PASSCODE_LEN);
+        sw.WriteStringFix(PassCode ?? string.Empty, MAX_PASSCODE_LEN);
     }
 
     public void Unpack(GT4Save save, ref SpanReader sr)

@@ -34,7 +34,7 @@ public sealed class Salsa20SymmetricAlgorithm : SymmetricAlgorithm
     /// <param name="rgbKey">The secret key to use for the symmetric algorithm.</param>
     /// <param name="rgbIV">The initialization vector to use for the symmetric algorithm.</param>
     /// <returns>A symmetric decryptor object.</returns>
-    public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[] rgbIV)
+    public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV)
     {
         // decryption and encryption are symmetrical
         return CreateEncryptor(rgbKey, rgbIV);
@@ -47,14 +47,14 @@ public sealed class Salsa20SymmetricAlgorithm : SymmetricAlgorithm
     /// <param name="rgbKey">The secret key to use for the symmetric algorithm.</param>
     /// <param name="rgbIV">The initialization vector to use for the symmetric algorithm.</param>
     /// <returns>A symmetric encryptor object.</returns>
-    public override ICryptoTransform CreateEncryptor(byte[] rgbKey, byte[] rgbIV)
+    public override ICryptoTransform CreateEncryptor(byte[] rgbKey, byte[]? rgbIV)
     {
         ArgumentNullException.ThrowIfNull(rgbKey, nameof(rgbKey));
         if (!ValidKeySize(rgbKey.Length * 8))
             throw new CryptographicException("Invalid key size; it must be 128 or 256 bits.");
         CheckValidIV(rgbIV, nameof(rgbIV));
 
-        return new Salsa20CryptoTransform(rgbKey, rgbIV, m_rounds);
+        return new Salsa20CryptoTransform(rgbKey, rgbIV!, m_rounds);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public sealed class Salsa20SymmetricAlgorithm : SymmetricAlgorithm
     }
 
     // Verifies that iv is a legal value for a Salsa20 IV.
-    private static void CheckValidIV(byte[] iv, string paramName)
+    private static void CheckValidIV(byte[]? iv, string paramName)
     {
         if (iv == null)
             throw new ArgumentNullException(paramName);
@@ -300,7 +300,7 @@ public sealed class Salsa20SymmetricAlgorithm : SymmetricAlgorithm
         static readonly byte[] c_sigma = Encoding.ASCII.GetBytes("expand 32-byte k");
         static readonly byte[] c_tau = Encoding.ASCII.GetBytes("expand 16-byte k");
 
-        uint[] m_state;
+        uint[]? m_state;
         readonly int m_rounds;
     }
 }

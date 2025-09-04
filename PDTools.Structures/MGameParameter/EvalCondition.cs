@@ -21,7 +21,7 @@ public class EvalCondition
     public int Gold { get; set; } = 0;
     public int Silver { get; set; } = 0;
     public int Bronze { get; set; } = 0;
-    public string GhostDataPath { get; set; }
+    public string? GhostDataPath { get; set; }
 
     public bool IsDefault()
     {

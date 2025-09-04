@@ -1,10 +1,12 @@
-﻿using System;
+﻿using PDTools.Utils;
+
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using PDTools.Utils;
 
 namespace PDTools.Structures.MGameParameter;
 
@@ -98,18 +100,36 @@ public class FailureCondition
             switch (pNode.Name)
             {
                 case "type_list":
-                    foreach (XmlNode type in pNode.SelectNodes("type"))
                     {
-                        FailCondition cond = type.ReadValueEnum<FailCondition>();
-                        if (cond == FailCondition.NONE || FailConditions.Contains(cond))
-                            continue;
-                        FailConditions.Add(cond);
+                        var list = pNode.SelectNodes("type");
+                        if (list is not null)
+                        {
+                            foreach (XmlNode? type in list)
+                            {
+                                if (type is null)
+                                    continue;
+
+                                FailCondition cond = type.ReadValueEnum<FailCondition>();
+                                if (cond == FailCondition.NONE || FailConditions.Contains(cond))
+                                    continue;
+                                FailConditions.Add(cond);
+                            }
+                        }
                     }
                     break;
 
                 case "data_list":
-                    foreach (XmlNode data in pNode.SelectNodes("data"))
-                        DataList.Add(data.ReadValueInt());
+                    {
+                        var list = pNode.SelectNodes("data");
+                        if (list is not null)
+                        {
+                            foreach (XmlNode? data in list)
+                            {
+                                if (data is not null)
+                                    DataList.Add(data.ReadValueInt());
+                            }
+                        }
+                    }
                     break;
 
                 case "no_failure_at_result":

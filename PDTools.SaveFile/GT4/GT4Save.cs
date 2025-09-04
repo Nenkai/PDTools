@@ -11,6 +11,7 @@ using System.ComponentModel;
 using PDTools.Crypto;
 using PDTools.Utils;
 using PDTools.Enums.PS2;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PDTools.SaveFile.GT4;
 
@@ -19,6 +20,7 @@ public class GT4Save
     public const int ALIGNMENT = 0x10;
 
     public GT4SaveType Type { get; set; }
+
     public string GameDataName { get; set; }
 
     public GT4GameData GameData { get; set; } = new GT4GameData();

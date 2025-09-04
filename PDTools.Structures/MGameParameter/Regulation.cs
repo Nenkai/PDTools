@@ -88,7 +88,7 @@ public class Regulation
     public int NeedBSpecLevel { get; set; } = -1;
     public int LimitBSpecDriverCount { get; set; } = -1;
     public int NeedBSpecDriverCount { get; set; } = -1;
-    public string NeedEntitlement { get; set; }
+    public string? NeedEntitlement { get; set; }
 
     public bool IsDefault()
     {
@@ -267,7 +267,9 @@ public class Regulation
         xml.WriteElementInt("need_bspec_level", NeedBSpecLevel);
         xml.WriteElementInt("limit_bspec_driver_count", LimitBSpecDriverCount);
         xml.WriteElementInt("need_bspec_driver_count", NeedBSpecDriverCount);
-        xml.WriteElementValue("need_entitlement", NeedEntitlement);
+
+        if (!string.IsNullOrEmpty(NeedEntitlement))
+            xml.WriteElementValue("need_entitlement", NeedEntitlement);
     }
 
     public void ParseFromXml(XmlNode node)
@@ -375,42 +377,93 @@ public class Regulation
 
     private void ParseRaceAllowedManufacturers(XmlNode node)
     {
-        foreach (XmlNode manufacturerNode in node.SelectNodes("tuner"))
+        Tuners = [];
+
+        XmlNodeList? tunerNodes = node.SelectNodes("tuner");
+        if (tunerNodes is null)
+            return;
+
+        foreach (XmlNode? manufacturerNode in tunerNodes)
+        {
+            if (manufacturerNode is null)
+                continue;
+
             Tuners.Add(node.ReadValueEnum<Tuner>());
+        }
     }
 
     private void ParseRaceAllowedVehicles(XmlNode node)
     {
         Cars = [];
-        foreach (XmlNode vehicleNode in node.SelectNodes("car"))
+        XmlNodeList? carNodes = node.SelectNodes("car");
+        if (carNodes is null)
+            return;
+
+        foreach (XmlNode? vehicleNode in carNodes)
         {
-            string label = vehicleNode.Attributes["label"].Value;
-            Cars.Add(new MCarThin(label));
+            if (vehicleNode?.Attributes is null)
+                continue;
+
+            XmlAttribute? label = vehicleNode.Attributes["label"];
+            if (label is null)
+                continue;
+
+            Cars.Add(new MCarThin(label.Value));
         }
     }
 
     private void ParseRaceDisallowedVehicles(XmlNode node)
     {
         BanCars = [];
-        foreach (XmlNode vehicleNode in node.SelectNodes("car"))
+        XmlNodeList? carNodes = node.SelectNodes("car");
+        if (carNodes is null)
+            return;
+
+        foreach (XmlNode? vehicleNode in carNodes)
         {
-            string label = vehicleNode.Attributes["label"].Value;
-            BanCars.Add(new MCarThin(label));
+            if (vehicleNode?.Attributes is null)
+                continue;
+
+            XmlAttribute? label = vehicleNode.Attributes["label"];
+            if (label is null)
+                continue;
+
+            BanCars.Add(new MCarThin(label.Value));
         }
     }
 
     private void ParseAllowedCountries(XmlNode node)
     {
         Countries = [];
-        foreach (XmlNode countryNode in node.SelectNodes("country"))
-            Countries.Add(countryNode.ReadValueEnum<Country>());
+
+        XmlNodeList? countryNodes = node.SelectNodes("country");
+        if (countryNodes is null)
+            return;
+
+        foreach (XmlNode? countryNode in countryNodes)
+        {
+            if (countryNode is null)
+                continue;
+
+            Countries.Add(node.ReadValueEnum<Country>());
+        }
     }
 
     private void ParseAllowedCategories(XmlNode node)
     {
         CarCategories = [];
-        foreach (XmlNode countryNode in node.SelectNodes("category"))
-            CarCategories.Add(countryNode.ReadValueEnum<CarCategoryRestriction>());
+
+        XmlNodeList? categoryNodes = node.SelectNodes("category");
+        if (categoryNodes is null)
+            return;
+
+        foreach (XmlNode? categoryNode in categoryNodes)
+        {
+            if (categoryNode is null)
+                continue;
+
+            CarCategories.Add(node.ReadValueEnum<CarCategoryRestriction>());
+        }
     }
 
     public void Deserialize(ref BitStream reader)

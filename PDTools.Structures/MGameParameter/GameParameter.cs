@@ -90,8 +90,8 @@ public class GameParameter
         XmlDocument sortedDoc = new XmlDocument();
         sortedDoc.Load(ms);
 
-        SortXml(sortedDoc["GameParameter"]);
-        sortedDoc["GameParameter"].WriteTo(writer);
+        SortXml(sortedDoc["GameParameter"]!);
+        sortedDoc["GameParameter"]!.WriteTo(writer);
     }
 
     private static void SortXml(XmlNode node)
@@ -136,12 +136,18 @@ public class GameParameter
                     FolderId = childNode.ReadValueULong(); break;
 
                 case "events":
-                    foreach (XmlNode eventNode in childNode.SelectNodes("event"))
                     {
-                        var newEvent = new Event();
-                        newEvent.ParseFromXml(eventNode);
-                        newEvent.FixInvalidNodesIfNeeded();
-                        Events.Add(newEvent);
+                        var nodes = childNode.SelectNodes("event");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode eventNode in nodes)
+                            {
+                                var newEvent = new Event();
+                                newEvent.ParseFromXml(eventNode);
+                                newEvent.FixInvalidNodesIfNeeded();
+                                Events.Add(newEvent);
+                            }
+                        }
                     }
                     break;
 
@@ -188,7 +194,7 @@ public class GameParameter
 
     public byte[] Serialize()
     {
-        BitStream bs = new BitStream(BitStreamMode.Write, 1024);
+        BitStream bs = new BitStream();
         bs.WriteUInt32(0xE6_E6_4F_17);
         bs.WriteInt32(1_01); // Version
         bs.WriteUInt64(FolderId);
@@ -250,7 +256,7 @@ public class GameParameter
     }
 
     public static GameParameter CreateSingleRace(int course_code, int entry_num, int arcade_laps, short ai_skill = -1, int enemy_lv = -1, 
-        int boost_lv = -1, PenaltyLevelTypes penalty_level = PenaltyLevelTypes.OFF, List<int> prize_table = null, bool one_make = false)
+        int boost_lv = -1, PenaltyLevelTypes penalty_level = PenaltyLevelTypes.OFF, List<int>? prize_table = null, bool one_make = false)
     {
         var gp = new GameParameter();
         if (entry_num > 16)

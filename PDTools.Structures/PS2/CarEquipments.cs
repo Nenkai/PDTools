@@ -10,40 +10,40 @@ namespace PDTools.Structures.PS2;
 
 public class CarEquipments
 {
-    public DbCode CarCode { get; set; }
-    public DbCode TunedCarCode { get; set; }
-    public DbCode Variation { get; set; }
+    public DbCode CarCode { get; set; } = new();
+    public DbCode TunedCarCode { get; set; } = new();
+    public DbCode Variation { get; set; } = new();
     public byte VariationOrder { get; set; }
-    public DbCode Brake { get; set; }
-    public DbCode BrakeController { get; set; }
-    public DbCode Chassis { get; set; }
-    public DbCode Engine { get; set; }
-    public DbCode Drivetrain { get; set; }
-    public DbCode Gear { get; set; }
-    public DbCode Suspension { get; set; }
-    public DbCode LSD { get; set; }
-    public DbCode FrontTire { get; set; }
-    public DbCode RearTire { get; set; }
-    public DbCode Steer { get; set; }
-    public DbCode Lightweight { get; set; }
-    public DbCode RacingModify { get; set; }
-    public DbCode Portpolish { get; set; }
-    public DbCode EngineBalance { get; set; }
-    public DbCode Displacement { get; set; }
-    public DbCode Computer { get; set; }
-    public DbCode Natune { get; set; }
-    public DbCode TurbineKit { get; set; }
-    public DbCode Flywheel { get; set; }
-    public DbCode Clutch { get; set; }
-    public DbCode PropellerShaft { get; set; }
-    public DbCode Muffler { get; set; }
-    public DbCode Intercooler { get; set; }
-    public DbCode ASCC { get; set; }
-    public DbCode TCSC { get; set; }
-    public DbCode Wheel { get; set; }
-    public DbCode NOS { get; set; }
-    public DbCode Wing { get; set; }
-    public DbCode SuperCharger { get; set; }
+    public DbCode Brake { get; set; } = new();
+    public DbCode BrakeController { get; set; } = new();
+    public DbCode Chassis { get; set; } = new();
+    public DbCode Engine { get; set; } = new();
+    public DbCode Drivetrain { get; set; } = new();
+    public DbCode Gear { get; set; } = new();
+    public DbCode Suspension { get; set; } = new();
+    public DbCode LSD { get; set; } = new();
+    public DbCode FrontTire { get; set; } = new();
+    public DbCode RearTire { get; set; } = new();
+    public DbCode Steer { get; set; } = new();
+    public DbCode Lightweight { get; set; } = new();
+    public DbCode RacingModify { get; set; } = new();
+    public DbCode Portpolish { get; set; } = new();
+    public DbCode EngineBalance { get; set; } = new();
+    public DbCode Displacement { get; set; } = new();
+    public DbCode Computer { get; set; } = new();
+    public DbCode Natune { get; set; } = new();
+    public DbCode TurbineKit { get; set; } = new();
+    public DbCode Flywheel { get; set; } = new();
+    public DbCode Clutch { get; set; } = new();
+    public DbCode PropellerShaft { get; set; } = new();
+    public DbCode Muffler { get; set; } = new();
+    public DbCode Intercooler { get; set; } = new();
+    public DbCode ASCC { get; set; } = new();
+    public DbCode TCSC { get; set; } = new();
+    public DbCode Wheel { get; set; } = new();
+    public DbCode NOS { get; set; } = new();
+    public DbCode Wing { get; set; } = new();
+    public DbCode SuperCharger { get; set; } = new();
     public ushort GearReverse { get; set; }
     public ushort GearRatio1 { get; set; }
     public ushort GearRatio2 { get; set; }
@@ -122,7 +122,7 @@ public class CarEquipments
     public byte Susp_FrontSpringRateLevel { get; set; }
     public byte Susp_RearSpringRateLevel { get; set; }
     public byte byte169 { get; set; }
-    public byte[] Unk_GT4OData { get; set; }
+    public byte[] Unk_GT4OData { get; set; } = new byte[0x18];
 
     public void CopyTo(CarEquipments dest)
     {
@@ -241,7 +241,6 @@ public class CarEquipments
 
         if (Unk_GT4OData != null)
         {
-            dest.Unk_GT4OData = new byte[0x18];
             Array.Copy(Unk_GT4OData, dest.Unk_GT4OData, Unk_GT4OData.Length);
         }
     }

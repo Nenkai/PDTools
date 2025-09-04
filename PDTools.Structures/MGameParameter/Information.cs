@@ -18,16 +18,16 @@ public class Information
     public LocalizeText RegistrationNotice { get; set; } = new LocalizeText();
     public ushort NarrationID { get; set; }
 
-    public string LogoImagePath { get; set; }
+    public string? LogoImagePath { get; set; }
     public byte LogoImageLayout { get; set; }
-    public byte[] LogoImageBuffer { get; set; }
-    public string LogoOtherInfo { get; set; }
+    public byte[]? LogoImageBuffer { get; set; }
+    public string? LogoOtherInfo { get; set; }
 
-    public string FlierImagePath { get; set; }
-    public byte[] FlierImageBuffer { get; set; }
-    public string FlierOtherInfo { get; set; }
+    public string? FlierImagePath { get; set; }
+    public byte[]? FlierImageBuffer { get; set; }
+    public string? FlierOtherInfo { get; set; }
 
-    public string RaceLabel { get; set; }
+    public string? RaceLabel { get; set; }
     public ushort RaceInfoMinute { get; set; }
 
     public bool IsDefault()
@@ -168,13 +168,23 @@ public class Information
                 case "logo_image_layout":
                     LogoImageLayout = informationNode.ReadValueByte(); break;
                 case "logo_image_buffer":
-                    LogoImageBuffer = Convert.FromBase64String(informationNode.ReadValueString()); break;
+                    {
+                        string? logoImageBuffer = informationNode.ReadValueString();
+                        if (logoImageBuffer is not null)
+                            LogoImageBuffer = Convert.FromBase64String(logoImageBuffer); 
+                        break;
+                    }
                 case "logo_other_info":
                     LogoOtherInfo = informationNode.ReadValueString(); break;
                 case "flier_image_path":
                     FlierImagePath = informationNode.ReadValueString(); break;
                 case "flier_image_buffer":
-                    FlierImageBuffer = Convert.FromBase64String(informationNode.ReadValueString()); break;
+                    {
+                        string? flierImageBuffer = informationNode.ReadValueString();
+                        if (flierImageBuffer is not null)
+                            FlierImageBuffer = Convert.FromBase64String(flierImageBuffer);
+                        break;
+                    }
                 case "flier_other_info":
                     FlierOtherInfo = informationNode.ReadValueString(); break;
             }

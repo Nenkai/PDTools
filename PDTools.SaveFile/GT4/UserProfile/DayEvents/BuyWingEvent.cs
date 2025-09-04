@@ -12,7 +12,7 @@ public class BuyWingEvent : IDayEvent
 {
     public DayEventType EventType => DayEventType.BUY_WING;
 
-    public DbCode WingCode { get; set; }
+    public DbCode WingCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

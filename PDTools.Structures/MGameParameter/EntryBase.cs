@@ -22,12 +22,12 @@ public class EntryBase
     /// <summary>
     /// Name of the driver.
     /// </summary>
-    public string DriverName { get; set; }
+    public string? DriverName { get; set; }
 
     /// <summary>
     /// Region of the driver.
     /// </summary>
-    public string DriverRegion { get; set; }
+    public string? DriverRegion { get; set; }
 
     /// <summary>
     /// Defaults to 0.
@@ -408,8 +408,13 @@ public class EntryBase
             switch (entryDetailNode.Name)
             {
                 case "car":
-                    Car.CarLabel = entryDetailNode.Attributes["label"].Value;
-                    Car.Paint = short.Parse(entryDetailNode.Attributes["color"].Value);
+                    {
+                        Car.CarLabel = entryDetailNode.Attributes?["label"]?.Value ?? string.Empty;
+
+                        var colorStr = entryDetailNode?.Attributes?["color"];
+                        if (colorStr is not null && short.TryParse(colorStr.Value, out short color))
+                            Car.Paint = color;
+                    }
                     break;
 
                 case "driver_name":
@@ -421,12 +426,24 @@ public class EntryBase
                 case "proxy_driver_model":
                     ProxyDriverModel = entryDetailNode.ReadValueSByte(); break;
                 case "boost_race_ratio":
-                    foreach (XmlNode race_ratio_node in entryDetailNode.SelectNodes("race_ratio"))
-                        BoostRaceRatio.Add(race_ratio_node.ReadValueSByte());
+                    {
+                        var nodes = entryDetailNode.SelectNodes("race_ratio");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode race_ratio_node in nodes)
+                                BoostRaceRatio.Add(race_ratio_node.ReadValueSByte());
+                        }
+                    }
                     break;
                 case "boost_ratio":
-                    foreach (XmlNode ratio_node in entryDetailNode.SelectNodes("ratio"))
-                        BoostRatio.Add(ratio_node.ReadValueByte());
+                    {
+                        var nodes = entryDetailNode.SelectNodes("ratio");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode race_ratio_node in nodes)
+                                BoostRatio.Add(race_ratio_node.ReadValueByte());
+                        }
+                    }
                     break;
                 case "ai_skill_breaking":
 
@@ -506,8 +523,8 @@ public class EntryBase
 
         Car.Read(ref reader);
 
-        DriverName = reader.ReadString4Aligned();
-        DriverRegion = reader.ReadString4Aligned();
+        DriverName = reader.ReadString4Aligned(align: 4);
+        DriverRegion = reader.ReadString4Aligned(align: 4);
         RaceClassID = reader.ReadByte();
         reader.ReadSByte();
 

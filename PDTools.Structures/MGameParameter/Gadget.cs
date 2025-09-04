@@ -51,8 +51,12 @@ public class Gadget
 
     public void ReadPostureNode(XmlNode node)
     {
-        foreach (XmlNode param in node.SelectNodes("param"))
-            Postures.Add(param.ReadValueSingle());
+        var nodes = node.SelectNodes("param");
+        if (nodes is not null)
+        {
+            foreach (XmlNode param in nodes)
+                Postures.Add(param.ReadValueSingle());
+        }
     }
 
     public void WriteToXml(XmlWriter xml)

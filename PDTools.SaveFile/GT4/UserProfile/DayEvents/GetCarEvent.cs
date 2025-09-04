@@ -16,7 +16,7 @@ public class GetCarEvent : IDayEvent
     public GetCarReason Reason { get; set; }
     public byte Unk2 { get; set; }
     public int Unk3 { get; set; }
-    public DbCode CarCode { get; set; }
+    public DbCode CarCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

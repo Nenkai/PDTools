@@ -56,7 +56,7 @@ public sealed class ChaCha20 : IDisposable
 	/// <summary>
 	/// The ChaCha20 state (aka "context")
 	/// </summary>
-	private uint[] state;
+	private uint[] state = new uint[stateLength];
 
 	/// <summary>
 	/// Determines if the objects in this class have been disposed of. Set to true by the Dispose() method.
@@ -80,7 +80,6 @@ public sealed class ChaCha20 : IDisposable
 	/// </param>
 	public ChaCha20(byte[] key, byte[] nonce, uint counter)
 	{
-		this.state = new uint[stateLength];
 		this.isDisposed = false;
 
 		this.KeySetup(key);
@@ -459,8 +458,6 @@ public sealed class ChaCha20 : IDisposable
 			{
 				Array.Clear(state, 0, state.Length);
 			}
-
-			state = null;
 		}
 
 		isDisposed = true;

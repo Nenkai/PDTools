@@ -10,8 +10,8 @@ namespace PDTools.Structures;
 
 public class DbCode
 {
-    public int Code { get; set; }
-    public int TableId { get; set; }
+    public int Code { get; set; } = -1;
+    public int TableId { get; set; } = -1;
 
     public DbCode(int code, int tableId)
     {
@@ -19,7 +19,10 @@ public class DbCode
         TableId = tableId;
     }
 
-    private DbCode() {  }
+    public DbCode()
+    {
+
+    }
 
     public static DbCode Unpack(ref SpanReader sr)
     {

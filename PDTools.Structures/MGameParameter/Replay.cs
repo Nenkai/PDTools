@@ -13,11 +13,11 @@ namespace PDTools.Structures.MGameParameter;
 
 public class Replay
 {
-    public string LocalPath { get; set; }
+    public string? LocalPath { get; set; }
 
-    public string Url { get; set; }
+    public string? Url { get; set; }
 
-    public string DemoDataPath { get; set; }
+    public string? DemoDataPath { get; set; }
 
     /// <summary>
     /// Not exposed in XMLs. Defaults to false.
@@ -85,9 +85,15 @@ public class Replay
 
     public void WriteToXml(XmlWriter xml)
     {
-        xml.WriteElementValue("local_path", LocalPath);
-        xml.WriteElementValue("url", Url);
-        xml.WriteElementValue("demo_data_path", DemoDataPath);
+        if (!string.IsNullOrEmpty(LocalPath))
+            xml.WriteElementValue("local_path", LocalPath);
+
+        if (!string.IsNullOrEmpty(Url))
+            xml.WriteElementValue("url", Url);
+
+        if (!string.IsNullOrEmpty(DemoDataPath))
+            xml.WriteElementValue("demo_data_path", DemoDataPath);
+
         xml.WriteElementValue("replay_recording_quality", ReplayRecordingQuality.ToString());
         xml.WriteElementBool("auto_save", AutoSave);
     }
@@ -119,9 +125,9 @@ public class Replay
             throw new InvalidDataException("Unexpected Replay magic");
 
         uint version = bs.ReadUInt32();
-        LocalPath = bs.ReadString4Aligned();
-        Url = bs.ReadString4Aligned();
-        DemoDataPath = bs.ReadString4Aligned();
+        LocalPath = bs.ReadString4Aligned(align: 0x04);
+        Url = bs.ReadString4Aligned(align: 0x04);
+        DemoDataPath = bs.ReadString4Aligned(align: 0x04);
         UploadVideo = bs.ReadBool();
         ExportVideo = bs.ReadBool();
         DataLogger = bs.ReadBool();
@@ -137,9 +143,9 @@ public class Replay
         bs.WriteUInt32(0x_E6_E6_C1_D0);
         bs.WriteUInt32(1_00); // Version
 
-        bs.WriteNullStringAligned4(LocalPath);
-        bs.WriteNullStringAligned4(Url);
-        bs.WriteNullStringAligned4(DemoDataPath);
+        bs.WriteNullStringAligned4(LocalPath ?? string.Empty);
+        bs.WriteNullStringAligned4(Url ?? string.Empty);
+        bs.WriteNullStringAligned4(DemoDataPath ?? string.Empty);
         bs.WriteBool(UploadVideo);
         bs.WriteBool(ExportVideo);
         bs.WriteBool(DataLogger);

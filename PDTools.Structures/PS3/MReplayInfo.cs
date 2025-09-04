@@ -29,13 +29,13 @@ public class MReplayInfo
     public ulong FilesystemVersion { get; set; }
     public uint EntryNum { get; set; }
 
-    public short[] FinishOrders { get; set; }
-    public int[] TotalTimes { get; set; }
-    public int[] BestTimes { get; set; }
+    public short[] FinishOrders { get; set; } = [];
+    public int[] TotalTimes { get; set; } = [];
+    public int[] BestTimes { get; set; } = [];
 
-    public ReplayEntry[] ReplayEntries;
+    public ReplayEntry[] ReplayEntries { get; set; } = [];
 
-    public byte[] GameParameterBuffer { get; set; }
+    public byte[] GameParameterBuffer { get; set; } = [];
     public GameParameter GameParameter { get; set; } = new GameParameter();
 
     public static MReplayInfo LoadFromFile(string fileName)
@@ -137,14 +137,14 @@ public class ReplayEntry
 {
     public int EntryIndex { get; set; }
     public TimeSpan[] SectorTimes = new TimeSpan[16];
-    public string EntryName { get; set; }
+    public string? EntryName { get; set; }
 
     public short FinishOrder;
     public TimeSpan TotalTime { get; set; }
     public TimeSpan BestTime { get; set; }
 
     public MCarParameter Car { get; set; }
-    public MCarDriverParameter[] DriverParameter { get; set; }
+    public MCarDriverParameter[] DriverParameter { get; set; } = [];
 
     public void ParseEntry(ref BitStream bs, int bufferSize)
     {

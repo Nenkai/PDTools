@@ -93,8 +93,15 @@ public class GameParameterEventList
 
     private void ParseEventText(XmlDocument doc)
     {
-        foreach (XmlNode node in doc.DocumentElement.ChildNodes[0])
+        var childNode = doc?.DocumentElement?.ChildNodes[0];
+        if (childNode is null)
+            return;
+
+        foreach (XmlNode? node in childNode)
         {
+            if (node is null)
+                continue;
+
             switch (node.Name)
             {
                 case "arcade":
@@ -125,8 +132,15 @@ public class GameParameterEventList
 
     private void ParseEventData(GameParameter parent, XmlDocument doc)
     {
-        foreach (XmlNode node in doc.DocumentElement.ChildNodes[0])
+        var childNode = doc?.DocumentElement?.ChildNodes[0];
+        if (childNode is null)
+            return;
+
+        foreach (XmlNode? node in childNode)
         {
+            if (node is null)
+                continue;
+
             switch (node.Name)
             {
                 case "id":

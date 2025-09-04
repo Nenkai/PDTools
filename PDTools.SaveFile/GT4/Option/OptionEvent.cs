@@ -10,7 +10,7 @@ namespace PDTools.SaveFile.GT4.Option;
 
 public class OptionEvent : IGameSerializeBase<OptionEvent>
 {
-    public string EventName { get; set; }
+    public string? EventName { get; set; }
 
     public void CopyTo(OptionEvent dest)
     {
@@ -19,7 +19,7 @@ public class OptionEvent : IGameSerializeBase<OptionEvent>
 
     public void Pack(GT4Save save, ref SpanWriter sw)
     {
-        sw.WriteStringFix(EventName, 0x50);
+        sw.WriteStringFix(EventName ?? string.Empty, 0x50);
     }
 
     public void Unpack(GT4Save save, ref SpanReader sr)

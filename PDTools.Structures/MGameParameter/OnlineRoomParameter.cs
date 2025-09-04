@@ -20,8 +20,8 @@ public class OnlineRoomParameter
         0x00, 0x00, 0xAA, 0xAA
     ];
 
-    public string Comment { get; set; }
-    public string Password { get; set; }
+    public string? Comment { get; set; }
+    public string? Password { get; set; }
     public sbyte RoomType { get; set; }
     public sbyte ChatType { get; set; }
     public sbyte VoiceQuality { get; set; } = 4;
@@ -36,7 +36,7 @@ public class OnlineRoomParameter
     public bool FreerunCollision { get; set; } = true;
     public int Weather { get; set; }
     public int GameRegionCode { get; set; }
-    public string LoungeOwnerID { get; set; }
+    public string? LoungeOwnerID { get; set; }
     public sbyte Scope { get; set; }
     public short AlarmTime { get; set; } = -1;
     public sbyte RoomPolicy { get; set; }

@@ -257,25 +257,46 @@ public class ArcadeStyleSetting
                     InitialVelocityH = node.ReadValueUShort(); break;
 
                 case "section_extend_seconds":
-                    int i = 0;
-                    foreach (XmlNode sec in node.SelectNodes("seconds"))
                     {
-                        if (i >= 16)
-                            break;
-                        SectionExtendSeconds[i] = sec.ReadValueSByte();
-                        i++;
+                        var nodes = node.SelectNodes("seconds");
+                        if (nodes is not null)
+                        {
+                            int i = 0;
+                            foreach (XmlNode? sec in nodes)
+                            {
+                                if (i >= 16)
+                                    break;
+
+                                if (sec is null)
+                                {
+                                    throw new ArgumentException("section_extend_seconds has null node");
+                                }
+
+                                SectionExtendSeconds[i++] = sec.ReadValueSByte();
+                            }
+                        }
                     }
                     break;
 
                 case "speed_trap":
-                    int j = 0;
-                    foreach (XmlNode sec in node.SelectNodes("coursev"))
                     {
-                        if (j >= 16)
-                            break;
+                        var nodes = node.SelectNodes("coursev");
+                        if (nodes is not null)
+                        {
+                            int i = 0;
+                            foreach (XmlNode? sec in nodes)
+                            {
+                                if (i >= 16)
+                                    break;
 
-                        SpeedTraps[j] = (uint)sec.ReadValueSingle();
-                        j++;
+                                if (sec is null)
+                                {
+                                    throw new ArgumentException("speed_trap has null node");
+                                }
+
+                                SpeedTraps[i++] = (uint)sec.ReadValueSingle();
+                            }
+                        }
                     }
                     break;
             }

@@ -100,8 +100,8 @@ public class Event
     /// </summary>
     public ArcadeStyleSetting ArcadeSetting { get; set; } = new ArcadeStyleSetting();
 
-    public string AIScript { get; set; }
-    public string PenaltyScript { get; set; }
+    public string? AIScript { get; set; }
+    public string? PenaltyScript { get; set; }
 
     public void CopyTo(Event other)
     {
@@ -273,7 +273,6 @@ public class Event
 
             xml.WriteElementValue("penalty_script", PenaltyScript);
             xml.WriteElementValue("ai_script", AIScript);
-
         }
         xml.WriteEndElement();
     }

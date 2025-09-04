@@ -282,9 +282,23 @@ public class EntryGenerate
                     break;
 
                 case "delays":
-                    int i = 0;
-                    foreach (XmlNode delay in entryGenerateNode.SelectNodes("delay"))
-                        EntryBaseDelays[i++] = delay.ReadValueInt();
+                    {
+                        var nodes = entryGenerateNode.SelectNodes("delay");
+                        if (nodes is not null)
+                        {
+                            int i = 0;
+                            foreach (XmlNode? delay in nodes)
+                            {
+                                if (delay is null)
+                                {
+                                    i++;
+                                    continue;
+                                }
+
+                                EntryBaseDelays[i++] = delay.ReadValueInt();
+                            }
+                        }
+                    }
                     break;
 
                 case "enemy_sort_type":
@@ -300,8 +314,15 @@ public class EntryGenerate
 
     private void ParseEntryBaseArray(XmlNode node)
     {
-        foreach (XmlNode entryBaseNode in node.SelectNodes("entry_base"))
+        var nodes = node.SelectNodes("entry_base");
+        if (nodes is null)
+            return;
+
+        foreach (XmlNode? entryBaseNode in nodes)
         {
+            if (entryBaseNode is null)
+                continue;
+
             var entryBase = new EntryBase();
             entryBase.ReadFromXml(entryBaseNode);
             EntryBaseArray.Add(entryBase);
@@ -311,9 +332,17 @@ public class EntryGenerate
     private void ParseMCarThinList(XmlNode node)
     {
         Cars = [];
-        foreach (XmlNode vehicleNode in node.SelectNodes("car"))
+
+        var carNodes = node.SelectNodes("car");
+        if (carNodes is null)
+            return;
+
+        foreach (XmlNode? vehicleNode in carNodes)
         {
-            string label = vehicleNode.Attributes["label"].Value;
+            if (vehicleNode is null)
+                continue;
+
+            string label = vehicleNode.Attributes?["label"]?.Value ?? string.Empty;
             Cars.Add(new MCarThin(label));
         }
     }

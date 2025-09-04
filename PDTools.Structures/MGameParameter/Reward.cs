@@ -79,7 +79,7 @@ public class Reward
     /// <summary>
     /// Used for custom car presents.
     /// </summary>
-    public EntryBase TunedEntryPresent { get; set; }
+    public EntryBase? TunedEntryPresent { get; set; }
 
     public void SetRewardPresent(int index, EventPresent present)
         => Present[index] = present;
@@ -131,7 +131,11 @@ public class Reward
         other.PresentType = PresentType;
         other.EntryPresentType = EntryPresentType;
 
-        TunedEntryPresent?.CopyTo(other.TunedEntryPresent);
+        if (other.TunedEntryPresent is null)
+        {
+            other.TunedEntryPresent = new EntryBase();
+            TunedEntryPresent?.CopyTo(other.TunedEntryPresent);
+        }
     }
 
     public void WriteToXml(XmlWriter xml)
@@ -197,11 +201,17 @@ public class Reward
                     PresentType = rewardNode.ReadValueEnum<RewardPresentType>(); break;
 
                 case "present":
-                    foreach (XmlNode presentNode in node.SelectNodes("item"))
                     {
-                        var present = new EventPresent();
-                        present.ParseFromXml(presentNode);
-                        Present.Add(present);
+                        var itemNodes = node.SelectNodes("item");
+                        if (itemNodes is not null)
+                        {
+                            foreach (XmlNode presentNode in itemNodes)
+                            {
+                                var present = new EventPresent();
+                                present.ParseFromXml(presentNode);
+                                Present.Add(present);
+                            }
+                        }
                     }
                     break;
 
@@ -209,11 +219,17 @@ public class Reward
                     EntryPresentType = rewardNode.ReadValueEnum<RewardEntryPresentType>(); break;
 
                 case "entry_present":
-                    foreach (XmlNode presentNode in node.SelectNodes("item"))
                     {
-                        var present = new EventPresent();
-                        present.ParseFromXml(presentNode);
-                        EntryPresent.Add(present);
+                        var itemNodes = node.SelectNodes("item");
+                        if (itemNodes is not null)
+                        {
+                            foreach (XmlNode presentNode in itemNodes)
+                            {
+                                var present = new EventPresent();
+                                present.ParseFromXml(presentNode);
+                                EntryPresent.Add(present);
+                            }
+                        }
                     }
                     break;
 
@@ -221,18 +237,37 @@ public class Reward
                     PrizeType = rewardNode.ReadValueBool(); break;
 
                 case "point_table":
-                    foreach (XmlNode pointNode in rewardNode.SelectNodes("point"))
-                        PointTable.Add(pointNode.ReadValueInt());
+                    {
+                        var pointNodes = rewardNode.SelectNodes("point");
+                        if (pointNodes is not null)
+                        {
+                            foreach (XmlNode pointNode in pointNodes)
+                                PointTable.Add(pointNode.ReadValueInt());
+                        }
+                    }
                     break;
 
                 case "prize_table":
-                    foreach (XmlNode prizeNode in rewardNode.SelectNodes("prize"))
-                        PrizeTable.Add(prizeNode.ReadValueInt());
+                    {
+                        var prizeNodes = rewardNode.SelectNodes("prize");
+                        if (prizeNodes is not null)
+                        {
+                            foreach (XmlNode prizeNode in prizeNodes)
+                                PrizeTable.Add(prizeNode.ReadValueInt());
+                        }
+                    }
                     break;
 
                 case "star_table":
-                    foreach (XmlNode starNode in rewardNode.SelectNodes("star"))
-                        StarTable.Add(starNode.ReadValueEnum<FinishResult>());
+                    {
+                        var starNodes = rewardNode.SelectNodes("star");
+                        if (starNodes is not null)
+                        {
+                            foreach (XmlNode starNode in starNodes)
+                                StarTable.Add(starNode.ReadValueEnum<FinishResult>());
+                        }
+                    }
+
                     break;
 
                 case "entry_base":
@@ -292,7 +327,7 @@ public class EventPresent
     public int Argument4 { get; set; } = -1;
 
     // Only parsed as a blob in Seasonals Root
-    public string FName { get; set; }
+    public string? FName { get; set; }
 
     public void CopyTo(EventPresent other)
     {
@@ -377,8 +412,14 @@ public class EventPresent
 
     public void ParseFromXml(XmlNode node)
     {
-        foreach (XmlAttribute attr in node.Attributes)
+        if (node.Attributes is null)
+            return;
+
+        foreach (XmlAttribute? attr in node.Attributes)
         {
+            if (attr is null)
+                continue;
+
             switch (attr.Name)
             {
                 case "type_id":

@@ -11,7 +11,7 @@ namespace PDTools.SaveFile.GT4.UserProfile;
 
 public class CourseRecordUnit : IGameSerializeBase<CourseRecordUnit>
 {
-    public DbCode CourseCode { get; set; }
+    public DbCode CourseCode { get; set; } = new();
     public CourseEntryUnit[] Entries { get; set; } = new CourseEntryUnit[10];
     public int[] SectionTimes { get; set; } = new int[16];
     public byte[] DriverExp { get; set; } = new byte[8];

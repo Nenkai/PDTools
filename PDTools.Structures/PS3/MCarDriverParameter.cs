@@ -13,9 +13,9 @@ public class MCarDriverParameter
     public int Version { get; set; }
     public uint unk2;
     public short unk3;
-    public string DisplayName { get; set; }
-    public string OnlineID { get; set; }
-    public string Region { get; set; }
+    public string? DisplayName { get; set; }
+    public string? OnlineID { get; set; }
+    public string? Region { get; set; }
     public byte Port { get; set; }
     public DriverType DriverType { get; set; }
     public byte ResidenceID { get; set; }
@@ -295,18 +295,18 @@ public class MCarDriverParameter
         bs.WriteBoolBit(DisplayDrivingLine);
 
         byte[] name = new byte[Version >= 110 ? 32 : 64];
-        Encoding.UTF8.GetBytes(DisplayName).AsSpan().CopyTo(name);
+        Encoding.UTF8.GetBytes(DisplayName ?? string.Empty).AsSpan().CopyTo(name);
         bs.WriteByteData(name);
 
         if (Version >= 109)
         {
             byte[] onlineIdBuffer = new byte[18];
-            Encoding.UTF8.GetBytes(OnlineID).AsSpan().CopyTo(onlineIdBuffer);
+            Encoding.UTF8.GetBytes(OnlineID ?? string.Empty).AsSpan().CopyTo(onlineIdBuffer);
             bs.WriteByteData(onlineIdBuffer);
         }
 
         byte[] region = new byte[4];
-        Encoding.UTF8.GetBytes(Region).AsSpan().CopyTo(region);
+        Encoding.UTF8.GetBytes(Region ?? string.Empty).AsSpan().CopyTo(region);
         bs.WriteByteData(region);
 
         Settings.Serialize(ref bs);

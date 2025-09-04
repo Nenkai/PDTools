@@ -26,8 +26,8 @@ public class EventListFolder
 
     public int Voucher { get; set; }
     public int Registration { get; set; }
-    public string BgImage { get; set; }
-    public string IconImage { get; set; }
+    public string? BgImage { get; set; }
+    public string? IconImage { get; set; }
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
     public DateTime NewDate { get; set; }
@@ -35,7 +35,7 @@ public class EventListFolder
     public GameItemType GameItemType { get; set; }
     public GameItemCategory GameItemCategory { get; set; }
     public int GameItemID { get; set; }
-    public string GameItemValue { get; set; }
+    public string? GameItemValue { get; set; }
     public bool DLCFlag { get; set; }
     public List<ulong> EventIDList { get; set; } = [];
 

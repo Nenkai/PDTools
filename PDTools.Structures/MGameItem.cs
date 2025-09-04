@@ -28,9 +28,9 @@ public class MGameItem
     public uint Argument4 { get; set; }
 
     // f_name
-    public string F_Name { get; set; }
+    public string? F_Name { get; set; }
 
-    public byte[] Blob { get; set; }
+    public byte[]? Blob { get; set; }
 
     public void Write(byte[] data)
     {
@@ -65,7 +65,7 @@ public class MGameItem
         item.Argument2 = stream.ReadUInt32();
         item.Argument3 = stream.ReadUInt32();
         item.Argument4 = stream.ReadUInt32();
-        item.F_Name = stream.ReadString4Aligned();
+        item.F_Name = stream.ReadString4Aligned(align: 0x04);
         item.Blob = stream.ReadByteArrayPrefixed();
 
         for (int i = 0; i < 0x40; i++)

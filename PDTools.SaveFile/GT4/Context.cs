@@ -10,10 +10,10 @@ namespace PDTools.SaveFile.GT4;
 
 public class ContextGT4 : IGameSerializeBase<ContextGT4>
 {
-    public string MajorProject { get; set; }
-    public string MajorPage { get; set; }
+    public string MajorProject { get; set; } = string.Empty;
+    public string MajorPage { get; set; } = string.Empty;
     public int CurrentStackSize { get; set; }
-    public byte[] Stack { get; set; }
+    public byte[] Stack { get; set; } = new byte[0x100];
 
     public void CopyTo(ContextGT4 dest)
     {

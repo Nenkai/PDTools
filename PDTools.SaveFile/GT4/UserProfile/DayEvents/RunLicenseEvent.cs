@@ -16,7 +16,7 @@ public class RunLicenseEvent : IDayEvent
     public byte Unk14 { get; set; }
     public byte Unk { get; set; }
     public int BestTime { get; set; }
-    public DbCode RaceCode { get; set; }
+    public DbCode RaceCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

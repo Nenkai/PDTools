@@ -19,12 +19,12 @@ public class Entry
     /// <summary>
     /// Name of the driver.
     /// </summary>
-    public string DriverName { get; set; }
+    public string? DriverName { get; set; }
 
     /// <summary>
     /// Region of the driver.
     /// </summary>
-    public string DriverRegion { get; set; }
+    public string? DriverRegion { get; set; }
 
     public MCarDriverParameter[] DriverParameter { get; set; } = new MCarDriverParameter[4];
 
@@ -90,6 +90,7 @@ public class Entry
     public void CopyTo(Entry other)
     {
         Car.CopyTo(other.Car);
+        // TODO: Implement copy of car parameter!
         //CarParameter.CopyTo(other.CarParameter);
         other.PlayerNumber = PlayerNumber;
         other.DriverName = DriverName;
@@ -205,8 +206,17 @@ public class Entry
                 case "player_no":
                     PlayerNumber = entryDetailNode.ReadValueInt(); break;
                 case "car":
-                    Car.CarLabel = entryDetailNode.Attributes["label"].Value;
-                    Car.Paint = short.Parse(entryDetailNode.Attributes["color"].Value);
+                    Car ??= new MCarThin();
+                    if (entryDetailNode.Attributes is not null)
+                    {
+                        Car.CarLabel = entryDetailNode.Attributes["label"]?.Value ?? null;
+                        XmlAttribute? colorAttribute = entryDetailNode.Attributes["color"];
+                        if (colorAttribute is not null)
+                        {
+                            if (short.TryParse(colorAttribute.Value, out short value))
+                                Car.Paint = value;
+                        }
+                    }
                     break;
                 case "car_parameter":
                     throw new NotImplementedException("Implement car_parameter parsing!");
@@ -238,12 +248,24 @@ public class Entry
                     InitialFuel100 = entryDetailNode.ReadValueByte(); break;
 
                 case "boost_race_ratio":
-                    foreach (XmlNode race_ratio_node in entryDetailNode.SelectNodes("race_ratio"))
-                        BoostRaceRatio.Add(race_ratio_node.ReadValueSByte());
+                    {
+                        var nodes = entryDetailNode.SelectNodes("race_ratio");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode race_ratio_node in nodes)
+                                BoostRaceRatio.Add(race_ratio_node.ReadValueSByte());
+                        }
+                    }
                     break;
                 case "boost_ratio":
-                    foreach (XmlNode ratio_node in entryDetailNode.SelectNodes("ratio"))
-                        BoostRatio.Add(ratio_node.ReadValueByte());
+                    {
+                        var nodes = entryDetailNode.SelectNodes("ratio");
+                        if (nodes is not null)
+                        {
+                            foreach (XmlNode race_ratio_node in nodes)
+                                BoostRatio.Add(race_ratio_node.ReadValueByte());
+                        }
+                    }
                     break;
 
                 case "ai_skill_breaking":
@@ -272,8 +294,8 @@ public class Entry
         Car.Read(ref reader);
 
         CarParameter = MCarParameter.ImportFromBlob(ref reader);
-        DriverName = reader.ReadString4Aligned();
-        DriverRegion = reader.ReadString4Aligned();
+        DriverName = reader.ReadString4Aligned(align: 0x04);
+        DriverRegion = reader.ReadString4Aligned(align: 0x04);
 
         for (int i = 0; i < 4; i++)
             DriverParameter[i].Deserialize(ref reader);

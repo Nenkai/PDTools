@@ -10,7 +10,7 @@ namespace PDTools.SaveFile.GT4.UserProfile;
 
 public class GarageScratchUnit : IGameSerializeBase<GarageScratchUnit>
 {
-    public DbCode CarCode { get; set; }
+    public DbCode CarCode { get; set; } = new();
     public ulong Flags { get; set; }
     public int Unk { get; set; }
     public int Odometer { get; set; }

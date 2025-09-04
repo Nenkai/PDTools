@@ -4,7 +4,7 @@ namespace PDTools.Crypto;
 
 public class MCipherGT5
 {
-    public static byte[] Decrypt(Span<byte> buffer)
+    public static byte[]? Decrypt(Span<byte> buffer)
     {
         byte[] outBuf = new byte[buffer.Length - 8];
         if (DecryptImpl(buffer, outBuf, buffer.Length, 0x3039))
@@ -55,11 +55,12 @@ public class MCipherGT6
 /// </summary>
 public class MCipherGTS
 {
-    public static byte[] Decrypt(Span<byte> buffer)
+    public static byte[]? Decrypt(Span<byte> buffer)
     {
         byte[] outBuf = new byte[buffer.Length];
         if (DecryptImpl(buffer, outBuf, buffer.Length, 0x3039))
             return outBuf;
+
         return null;
     }
 

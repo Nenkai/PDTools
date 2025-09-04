@@ -59,12 +59,12 @@ public class Track
     /// <summary>
     /// For GT5
     /// </summary>
-    public byte[] CoursePathway { get; set; }
+    public byte[]? CoursePathway { get; set; }
 
     /// <summary>
     /// For GT6. Custom TED. Must be PS2ZIP'ed.
     /// </summary>
-    public byte[] EditData { get; set; }
+    public byte[]? EditData { get; set; }
 
     public void CopyTo(Track other)
     {
@@ -133,7 +133,7 @@ public class Track
             switch (trackNode.Name)
             {
                 case "course_code":
-                    CourseLabel = trackNode.Attributes["label"].Value; break;
+                    CourseLabel = trackNode?.Attributes?["label"]?.Value ?? string.Empty; break;
 
                 case "generated_course_id":
                     GeneratedCourseID = trackNode.ReadValueULong(); break;
@@ -146,10 +146,16 @@ public class Track
                     CourseGeneratorParam.ParseFromXml(trackNode); break;
 
                 case "course_pathway":
-                    CoursePathway = Convert.FromBase64String(trackNode.ReadValueString()); break;
+                    var crsPathway = trackNode.ReadValueString();
+                    if (crsPathway != null)
+                        CoursePathway = Convert.FromBase64String(crsPathway);
+                    break;
 
                 case "edit_data":
-                    EditData = Convert.FromBase64String(trackNode.ReadValueString()); break;
+                    var editData = trackNode.ReadValueString();
+                    if (editData != null)
+                        EditData = Convert.FromBase64String(editData);
+                    break;
 
                 case "course_layout_no":
                     CourseLayoutNumber = trackNode.ReadValueInt(); break;

@@ -12,7 +12,7 @@ public class NoEvent : IDayEvent
 {
     public DayEventType EventType => DayEventType.NO_EVENT;
 
-    public byte[] Data { get; set; }
+    public byte[] Data { get; set; } = new byte[0x0F];
 
     public void CopyTo(IDayEvent dest)
     {

@@ -12,9 +12,9 @@ public class CarGarage
 {
     public const int MAX_SHEETS = 3;
     public CarEquipments[] Sheets { get; set; } = new CarEquipments[MAX_SHEETS];
-    public byte[] UnkData { get; set; }
+    public byte[] UnkData { get; set; } = new byte[0x20];
     public int Unk { get; set; }
-    public byte[] Unk2 { get; set; }
+    public byte[] Unk2 { get; set; } = new byte[0x0C];
     public AutomobileAccumulatedStatus Status { get; set; } = new AutomobileAccumulatedStatus();
 
     public void CopyTo(CarGarage dest)
@@ -60,7 +60,9 @@ public class CarGarage
         Status.Pack(ref sw);
     }
 
+#pragma warning disable IDE1006 // Naming Styles - Justification: Original game function name
     public static int partsTypeToTrunkTopNum(PartsTypeGT4 partsType)
+#pragma warning restore IDE1006 // Naming Styles
     {
         switch (partsType)
         {

@@ -9,7 +9,7 @@ namespace PDTools.Structures.MGameParameter;
 
 public class StageResetData
 {
-    public string Code { get; set; }
+    public string? Code { get; set; }
     public StageCoordType Coord { get; set; }
     public sbyte TargetID { get; set; }
     public sbyte ResourceID { get; set; }

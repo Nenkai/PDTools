@@ -92,7 +92,7 @@ public ref struct BitStream
     }
 
 #if DEBUG
-    private StreamWriter _sw;
+    private StreamWriter? _sw;
 #endif
 
     /// <summary>
@@ -190,7 +190,7 @@ public ref struct BitStream
     /// <param name="str">String to get the size of.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public static uint GetSizeOfVariablePrefixString(string str, Encoding encoding = default)
+    public static uint GetSizeOfVariablePrefixString(string str, Encoding? encoding = default)
     {
         uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
         return GetSizeOfVarInt(byteCount) + byteCount;
@@ -202,7 +202,7 @@ public ref struct BitStream
     /// <param name="str">String to get the size of.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public static uint GetSizeOfVariablePrefixStringAlt(string str, Encoding encoding = default)
+    public static uint GetSizeOfVariablePrefixStringAlt(string str, Encoding? encoding = default)
     {
         uint byteCount = (uint)(encoding == default ? Encoding.UTF8.GetByteCount(str) : encoding.GetByteCount(str));
         return GetSizeOfVarIntAlt(byteCount) + byteCount;
@@ -550,7 +550,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadVarPrefixString(Encoding encoding = default)
+    public string ReadVarPrefixString(Encoding? encoding = default)
     {
         int strLen = (int)ReadVarInt();
         if (strLen < 0)
@@ -566,7 +566,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadVarPrefixStringAlt(Encoding encoding = default)
+    public string ReadVarPrefixStringAlt(Encoding? encoding = default)
     {
         int strLen = (int)ReadVarIntAlt();
         if (strLen < 0)
@@ -583,7 +583,7 @@ public ref struct BitStream
     /// <param name="byteCount">Byte count.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadStringRaw(int byteCount, Encoding encoding = default)
+    public string ReadStringRaw(int byteCount, Encoding? encoding = default)
     {
         byte[] bytes = new byte[byteCount];
         ReadIntoByteArray(byteCount, bytes, Byte_Bits);
@@ -595,7 +595,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadNullTerminatedString(Encoding encoding = default)
+    public string ReadNullTerminatedString(Encoding? encoding = default)
     {
         List<byte> bytes = [];
 
@@ -614,7 +614,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadString4(Encoding encoding = default)
+    public string ReadString4(Encoding? encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
@@ -628,7 +628,7 @@ public ref struct BitStream
     /// <param name="align">Alignment.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
     /// <returns></returns>
-    public string ReadString4Aligned(int align, Encoding encoding = default)
+    public string ReadString4Aligned(int align, Encoding? encoding = default)
     {
         int strLen = ReadInt32();
         byte[] chars = new byte[strLen];
@@ -897,7 +897,7 @@ public ref struct BitStream
 #endif
     }
 
-    public void WriteNullStringAligned4(string value, Encoding encoding = default)
+    public void WriteNullStringAligned4(string? value, Encoding? encoding = default)
     {
         // Require to seek to the next round byte incase we're currently in the middle of a byte's bits
         if (BitCounter != 0)
@@ -1004,7 +1004,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="str">String to write.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
-    public void WriteVarPrefixString(string str, Encoding encoding = default)
+    public void WriteVarPrefixString(string str, Encoding? encoding = default)
     {
         WriteVarInt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))
@@ -1016,7 +1016,7 @@ public ref struct BitStream
     /// </summary>
     /// <param name="str">String to write.</param>
     /// <param name="encoding">Encoding. Defaults to UTF-8.</param>
-    public void WriteVarPrefixStringAlt(string str, Encoding encoding = default)
+    public void WriteVarPrefixStringAlt(string str, Encoding? encoding = default)
     {
         WriteVarIntAlt((uint)str.Length);
         if (!string.IsNullOrEmpty(str))

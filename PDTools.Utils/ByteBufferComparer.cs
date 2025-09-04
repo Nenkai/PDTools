@@ -9,10 +9,10 @@ public class ByteBufferComparer : IComparer<byte[]>
     private static readonly ByteBufferComparer _default = new ByteBufferComparer();
     public static ByteBufferComparer Default => _default;
 
-    public int Compare(byte[] value1, byte[] value2)
+    public int Compare(byte[]? value1, byte[]? value2)
     {
-        byte[] v1 = value1;
-        byte[] v2 = value2;
+        byte[] v1 = value1 ?? [];
+        byte[] v2 = value2 ?? [];
 
         if (v1.Length < v2.Length)
             return -1;

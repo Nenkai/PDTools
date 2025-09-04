@@ -17,7 +17,7 @@ public class LicenseEntryUnit : IGameSerializeBase<LicenseEntryUnit>
     public Result Result { get; set; }
 
     public const int MAX_PASSCODE_LEN = 32;
-    public string PassCode { get; set; }
+    public string PassCode { get; set; } = string.Empty;
     public byte[] Data = new byte[3];
 
     public void CopyTo(LicenseEntryUnit dest)

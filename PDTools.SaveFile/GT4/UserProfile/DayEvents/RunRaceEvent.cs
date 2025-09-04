@@ -16,7 +16,7 @@ public class RunRaceEvent : IDayEvent
     public Result Result { get; set; }
     public byte Unk2 { get; set; }
     public int BestTime { get; set; }
-    public DbCode RaceCode { get; set; }
+    public DbCode RaceCode { get; set; } = new();
 
     public void CopyTo(IDayEvent dest)
     {

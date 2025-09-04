@@ -107,7 +107,7 @@ public class GarageFile
     /// </summary>
     /// <param name="index"></param>
     /// <returns></returns>
-    public CarGarage GetCar(uint index)
+    public CarGarage? GetCar(uint index)
     {
         if (index >= 1000)
             return null;

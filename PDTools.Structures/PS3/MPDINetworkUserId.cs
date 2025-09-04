@@ -9,26 +9,26 @@ using Syroot.BinaryData.Memory;
 
 using PDTools.Utils;
 
-namespace PDTools.Structures.PS3;
+namespace PDTools.Structures;
 
 public class MPDINetworkUserId
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     public int Unk { get; set; }
-    public string Domain { get; set; }
-    public string Region { get; set; }
-    public string NpIdResource { get; set; }
+    public string Domain { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
+    public string NpIdResource { get; set; } = string.Empty;
     public int Unk2 { get; set; }
     public int Unk3 { get; set; }
     public int UserNumber { get; set; }
     public CellNetCtlEtherAddr Addr { get; set; }
 
-    public static MPDINetworkUserId Read(Span<byte> data)
+    public static MPDINetworkUserId? Read(Span<byte> data)
     {
         if (data.Length != 0x30)
-            return null;
+            throw new ArgumentException("Data buffer must be at least 0x30 to parse into a MPDINetworkUserId.");
 
-        MPDINetworkUserId id = default;
+        MPDINetworkUserId id = new();
         SpanReader sr = new SpanReader(data);
         id.Name = sr.ReadFixedString(0x10);
         id.Unk = sr.ReadInt32();
@@ -50,7 +50,7 @@ public unsafe struct CellNetCtlEtherAddr
     const int CELL_NET_CTL_ETHER_ADDR_LEN = 6;
 
     private fixed byte _data[CELL_NET_CTL_ETHER_ADDR_LEN];
-    public Span<byte> Data
+    public Span<byte> Data 
     {
         get
         {

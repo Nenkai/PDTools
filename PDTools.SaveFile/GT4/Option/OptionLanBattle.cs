@@ -11,12 +11,12 @@ namespace PDTools.SaveFile.GT4.Option;
 public class OptionLANBattle : IGameSerializeBase<OptionLANBattle>
 {
     public int Unk { get; set; }
-    public string Name1 { get; set; }
+    public string? Name1 { get; set; }
     public int Style { get; set; }
-    public string Name2 { get; set; }
+    public string? Name2 { get; set; }
     public int Style2 { get; set; }
 
-    public byte[] Data { get; set; }
+    public byte[]? Data { get; set; }
 
     public void CopyTo(OptionLANBattle dest)
     {
@@ -26,21 +26,21 @@ public class OptionLANBattle : IGameSerializeBase<OptionLANBattle>
         dest.Name2 = Name2;
         dest.Style2 = Style2;
 
-        dest.Data = new byte[Data.Length];
-        Array.Copy(Data, dest.Data, Data.Length);
+        if (Data is not null)
+        {
+            dest.Data = new byte[Data.Length];
+            Array.Copy(Data, dest.Data, Data.Length);
+        }
     }
 
     public void Pack(GT4Save save, ref SpanWriter sw)
     {
         sw.WriteInt32(Unk);
-
-        sw.WriteStringFix(Name1, 0x40);
+        sw.WriteStringFix(Name1 ?? string.Empty, 0x40);
         sw.WriteInt32(Style);
-
-        sw.WriteStringFix(Name2, 0x40);
+        sw.WriteStringFix(Name2 ?? string.Empty, 0x40);
         sw.WriteInt32(Style2);
-
-        sw.WriteBytes(Data);
+        sw.WriteBytes(Data ?? []);
 
         // No align
     }
