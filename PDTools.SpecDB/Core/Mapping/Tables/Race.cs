@@ -19,7 +19,7 @@ public class Race : TableMetadata
             Columns.Add(new ColumnMetadata("AllowEntry", DBColumnType.Key));
 
             // 0x10
-            Columns.Add(new ColumnMetadata("?", DBColumnType.Int));
+            Columns.Add(new ColumnMetadata("RaceMode", DBColumnType.String, "UnistrDB.sdb"));
             Columns.Add(new ColumnMetadata("PlayerVCoord", DBColumnType.Int));
             Columns.Add(new ColumnMetadata("Minutes", DBColumnType.Short));
             Columns.Add(new ColumnMetadata("Gold_MS", DBColumnType.Short));
