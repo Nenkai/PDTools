@@ -339,12 +339,8 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         // Swap channels for DDS
         if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
         {
-            var sp = MemoryMarshal.Cast<byte, uint>(imageData);
             for (var i = 0; i < Width * Height * 4; i += 4)
             {
-                // Swap endian first
-                sp[i / 4] = BinaryPrimitives.ReverseEndianness(sp[i / 4]);
-
                 // Remap channels
                 byte r = imageData[i + (byte)InR];
                 byte g = imageData[i + (byte)InG];
