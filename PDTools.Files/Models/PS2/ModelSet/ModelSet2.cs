@@ -263,6 +263,23 @@ public class ModelSet2 : ModelSetPS2Base
         return TextureSetLists[0];
     }
 
+    /// <summary>
+    /// Returns the texture set list for a specific color/paint variation index.
+    /// TextureSetLists[colorIndex] is a list of LOD-level texture sets for that color.
+    /// </summary>
+    public List<TextureSet1> GetTextureSetList(int colorIndex)
+    {
+        if (TextureSetLists.Count == 0)
+            return [];
+        int clampedIdx = Math.Clamp(colorIndex, 0, TextureSetLists.Count - 1);
+        return TextureSetLists[clampedIdx];
+    }
+
+    /// <summary>
+    /// Returns the number of built-in paint color variations (from the model header's colorCount field).
+    /// </summary>
+    public int GetNumColors() => TextureSetLists.Count;
+
     public override uint AddShape(PGLUshape shape)
     {
         Shapes.Add(shape);
