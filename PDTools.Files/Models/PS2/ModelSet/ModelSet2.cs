@@ -240,7 +240,14 @@ public class ModelSet2 : ModelSetPS2Base
                 bs.Position = baseMdlPos + off;
 
                 TextureSet1 textureSet = new TextureSet1();
-                textureSet.FromStream(bs);
+                try
+                {
+                    textureSet.FromStream(bs);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[WARNING] Failed to read texture set (lod={j}, color={i}): {ex.Message}. Skipping texture set.");
+                }
                 list.Add(textureSet);
             }
 
