@@ -191,9 +191,20 @@ public class Table
         sr.Position = 4;
         DatabaseTable.TableAttribute = sr.ReadUInt16();
         DatabaseTable.AlignedBytes = sr.ReadUInt16();
-        DatabaseTable.RowCount = sr.ReadUInt16();
-        DatabaseTable.RowSize = sr.ReadUInt16();
-        uint entryCount = sr.ReadUInt32();
+        
+        uint entryCount;
+        if (specDb.SpecDBFolderType.ToString().StartsWith("GT4"))
+        {
+            DatabaseTable.RowCount = sr.ReadUInt32();
+            DatabaseTable.RowSize = (int)sr.ReadUInt32();
+            entryCount = DatabaseTable.RowCount;
+        }
+        else
+        {
+            DatabaseTable.RowCount = sr.ReadUInt16();
+            DatabaseTable.RowSize = sr.ReadUInt16();
+            entryCount = sr.ReadUInt32();
+        }
 
         if (sr.Length <= 32)
             return;
@@ -598,6 +609,7 @@ public class Table
             RowKey key = Keys[i];
 
             DebugPrint($"Reading row: {key.Label} - {key.Id} - DBT Index: {i}");
+            try {
             GetRowByIndex(i, out Span<byte> rowData);
             DebugPrint("");
 
@@ -607,6 +619,10 @@ public class Table
             Rows.Add(result.Row);
 
             IsTableProperlyMapped = result.ReadAll;
+            } catch (Exception ex) { 
+                if (Rows.Count < 5)
+                    System.IO.File.AppendAllText(@"C:\Gt4\SpecDBTester\result.log", $"Row {i} fail: {ex.Message}\n"); 
+            }
         }
 
 #if DEBUG

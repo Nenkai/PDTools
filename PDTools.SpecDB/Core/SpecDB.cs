@@ -40,7 +40,7 @@ namespace PDTools.SpecDB.Core
         /// <summary>
         /// All tables that should be loaded as per original implementation.
         /// </summary>
-        public Table[] Fixed_Tables { get; }
+        public Table[] Fixed_Tables { get; set; }
         public StringDatabase UniversalStringDatabase { get; set; }
         public StringDatabase LocaleStringDatabase { get; set; }
         public string LocaleName { get; set; } = "british"; // Change this accordingly.
@@ -118,7 +118,7 @@ namespace PDTools.SpecDB.Core
             return db;
         }
 
-        private void ReadStringDatabases()
+        public void ReadStringDatabases()
         {
             UniversalStringDatabase = ReadStringDatabase("UnistrDB.sdb");
             LocaleStringDatabase = ReadStringDatabase($"{LocaleName}_StrDB.sdb");
@@ -126,13 +126,7 @@ namespace PDTools.SpecDB.Core
 
         private StringDatabase ReadStringDatabase(string name)
         {
-            byte[] sdbFile = File.ReadAllBytes(Path.Combine(FolderName, name));
-            SpanReader sr = new SpanReader(sdbFile);
-            sr.Position = 0x08;
-            Endian endian = sr.ReadInt16() == 1 ? Endian.Little : Endian.Big;
-            StringDatabase sdb = new StringDatabase(endian);
-
-            return sdb;
+            return StringDatabase.LoadFromFile(Path.Combine(FolderName, name));
         }
 
         public bool KeyExistsAtTable(int keyCode, int tableID)
@@ -368,6 +362,7 @@ namespace PDTools.SpecDB.Core
         // Non Original Implementations
         public void PreLoadAllTablesFromCurrentFolder()
         {
+            Fixed_Tables = new Table[SPEC_DB_TABLE_COUNT];
             var tablePaths = Directory.GetFiles(FolderName, "*.dbt", SearchOption.TopDirectoryOnly);
             foreach (var table in tablePaths)
             {
@@ -375,12 +370,22 @@ namespace PDTools.SpecDB.Core
                 if (!File.Exists(Path.Combine(FolderName, tableName) + ".idi"))
                     continue;
 
+                try {
+                    // Console.WriteLine($"Loading {path} ..."); // Console output is messy, let's just use System.IO.File.AppendAllText
+                    System.IO.File.AppendAllText(@"C:\Gt4\SpecDBTester\result.log", $"PreLoading Table: {tableName}\n");
+                } catch { /* Ignore */ }
+
+                try {
                 var specdbTable = new Table(tableName);
                 specdbTable.AddressInitialize(this);
                 specdbTable.ReadIDIMapOffsets(this);
                 specdbTable.CreateDebugPrinter(Path.Combine(FolderName, "debug", $"{tableName}.txt"));
 
+                if (specdbTable.TableID >= 0 && specdbTable.TableID < Fixed_Tables.Length)
+                    Fixed_Tables[specdbTable.TableID] = specdbTable;
+
                 Tables.Add(specdbTable.TableName, specdbTable);
+                } catch (Exception ex) { System.IO.File.AppendAllText(@"C:\Gt4\SpecDBTester\result.log", $"Failed loading {tableName}: {ex.Message}\n"); }
             }
         }
 
