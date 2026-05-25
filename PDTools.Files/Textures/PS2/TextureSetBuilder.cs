@@ -32,11 +32,12 @@ public class TextureSetBuilder
     private readonly List<TextureTask> _textures = [];
 
     /* Used to keep track of GS blocks without texture data allocated
-     * So that we can put other textures's data in them */
-    private readonly SortedDictionary<int, GSBlock> _unusedGsBlocksIndices = new();
+     * So that we can put ot   private readonly SortedDictionary<int, GSBlock> _unusedGsBlocksIndices = new();
 
     /* Used to keep track of all GS blocks we've used up */
     private readonly List<ushort> _usedGsBlocksIndices = [];
+
+    private Dictionary<string, (ushort CBP, byte CSA)> _variationPaletteCache = new();
 
     private int _lastFreeVerticalBlock = -1;
 
@@ -72,9 +73,6 @@ public class TextureSetBuilder
     private void AddImage(Image<Rgba32> img, TextureConfig config)
     {
         _logger?.LogInformation("Adding image {x}x{y}, format={format}", img.Width, img.Height, config.Format);
-
-        if (config.IsTextureMap)
-            img.Mutate(e => e.Resize((int)BitOperations.RoundUpToPowerOf2((uint)img.Width), (int)BitOperations.RoundUpToPowerOf2((uint)img.Height)));
 
         var pgluTexture = new PGLUtexture();
         pgluTexture.tex0.PSM = config.Format;
@@ -214,7 +212,7 @@ public class TextureSetBuilder
         else
             throw new Exception($"Texture file '{path}' must use less than {paletteSize} colors ahead of time.");
 
-        ClutPatchTask clutPatch = new ClutPatchTask(fullPalette);
+        ClutPatchTask clutPatch = new ClutPatchTask(fullPalette, (ushort)pgluTextureIndex);
 
         while (_clutPatchSets.Count <= clutPatchSetIndex)
             _clutPatchSets.Add([]);
@@ -234,8 +232,8 @@ public class TextureSetBuilder
 
         WriteClutPatches();
 
-        // Debug statements... HIGH WATER MARK (Max Block) is usually a lot higher than the last CSA, this may be a clue to further size optimization
-        Console.WriteLine("--- VRAM ALLOCATION MAP ---");
+        // Sometimes this information is useful to debug changes to the Tex1 Optimization
+        Console.WriteLine("--- Tex1 ALLOCATION MAP ---");
         foreach (var t in _textures)
         {
             Console.WriteLine($"Format: {t.PGLUTexture.tex0.PSM} | Size: {t.Image.Width}x{t.Image.Height} | Blocks Used: {t.SizeInGSBlocks} | TBP: {t.PGLUTexture.tex0.TBP0_TextureBaseAddress}");
@@ -245,7 +243,7 @@ public class TextureSetBuilder
             if (p.tex0.CBP_ClutBlockPointer > 0)
                 Console.WriteLine($"Palette Format: {p.tex0.PSM} | CBP: {p.tex0.CBP_ClutBlockPointer} | CSA: {p.tex0.CSA_ClutEntryOffset}");
         }
-        Console.WriteLine($"HIGH WATER MARK (Max Block): {_usedGsBlocksIndices.Max(e => e)}");
+        Console.WriteLine($"Peak Allocation (Max Block): {GetPeakAllocation()}");
         Console.WriteLine("---------------------------");
 
         bool swizzle = _textures.Count >= 2;
@@ -298,143 +296,183 @@ public class TextureSetBuilder
     /// <param name="palette"></param>
     /// <param name="reuseOldPaletteLocations"></param>
     /// <returns></returns>
-    private (ushort CBP, byte CSA) FitPaletteToGSMemory(SCE_GS_PSM textureFormat, int width, int height, Rgba32[] palette, bool reuseOldPaletteLocations = false)
-    {
-        if (reuseOldPaletteLocations)
+	private (ushort CBP, byte CSA) FitPaletteToGSMemory(SCE_GS_PSM textureFormat, int width, int height, Rgba32[] palette, bool reuseOldPaletteLocations = false)
+	{
+		string paletteHash = string.Empty;
+	
+		if (reuseOldPaletteLocations)
+		{
+			// 1. Check Base Textures (Original Logic)
+			for (int i = 0; i < _texSet.pgluTextures.Count; i++)
+			{
+				PGLUtexture pgluTexture = _texSet.pgluTextures[i];
+				if (pgluTexture.tex0.PSM == textureFormat && _textures[i].Palette != null && _textures[i].Palette.AsSpan().SequenceEqual(palette))
+				{
+					return (pgluTexture.tex0.CBP_ClutBlockPointer, pgluTexture.tex0.CSA_ClutEntryOffset);
+				}
+			}
+	
+			// 2. Check Previously Allocated Variation Palettes (The 10% Saver)
+			using (var md5 = System.Security.Cryptography.MD5.Create())
+			{
+                var bytes = MemoryMarshal.AsBytes(palette.AsSpan()).ToArray();
+                paletteHash = textureFormat.ToString() + "_" + BitConverter.ToString(System.Security.Cryptography.MD5.HashData(bytes));
+			}
+	
+			if (_variationPaletteCache.TryGetValue(paletteHash, out var cachedLocation))
+			{
+				return cachedLocation; // Found an exact match from a previous variation
+			}
+		}
+	
+		List<ushort> usedBlocksOfTexture = GSPixelFormat.PSM_CT32.GetUsedBlocks(width, height);
+		int size = Tex1Utils.GetDataSize(width, height, SCE_GS_PSM.SCE_GS_PSMCT32);
+		int csa = 0;
+		byte csaTakenSpace = (byte)Math.Min(size / 32, 8);
+		int idx = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture, csaTakenSpace);
+	
+		ushort cbp;
+		if (idx != -1)
+		{
+			cbp = (ushort)idx;
+			if (usedBlocksOfTexture.Count == 1)
+			{
+				// Fix 1: Read the block, update it, and WRITE IT BACK
+				GSBlock block = _unusedGsBlocksIndices[idx + usedBlocksOfTexture[0]];
+				csa = block.CurrentCSA;
+				
+				block.CurrentCSA += csaTakenSpace;
+				
+				if (block.CurrentCSA >= 8)
+				{
+					_unusedGsBlocksIndices.Remove(block.Index);
+					_usedGsBlocksIndices.Add((ushort)block.Index);
+				}
+				else
+				{
+					// CRITICAL C# FIX: Save the modified struct back to the dictionary
+					_unusedGsBlocksIndices[block.Index] = block;
+				}
+			}
+			else
+			{
+				for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+				{
+					_unusedGsBlocksIndices.Remove((ushort)(idx + usedBlocksOfTexture[i]));
+					_usedGsBlocksIndices.Add((ushort)(idx + usedBlocksOfTexture[i]));
+				}
+			}
+		}
+		else
+		{
+			cbp = _tbp_Textures; // Lock in the CBP BEFORE incrementing TBP
+			_tbp_Textures += (ushort)usedBlocksOfTexture.Count;
+	
+			if (usedBlocksOfTexture.Count == 1)
+			{
+				csa = 0; // Starts at 0 for a brand new block
+	
+				// Fix 2: Track the CBP we just used, not the freshly incremented TBP!
+				GSBlock partialFilledBlock = new GSBlock(cbp, csaTakenSpace);
+				_unusedGsBlocksIndices.Add(partialFilledBlock.Index, partialFilledBlock);
+			}
+			else
+			{
+				for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+					_usedGsBlocksIndices.Add((ushort)(cbp + usedBlocksOfTexture[i]));
+			}
+		}
+	
+		switch (textureFormat)
+		{
+			case SCE_GS_PSM.SCE_GS_PSMT8:
+				_gsMemory.WriteTexPSMCT32(cbp, 1, 0, 0, 16, 16, MemoryMarshal.Cast<Rgba32, uint>(palette), csa * 32);
+				break;
+			case SCE_GS_PSM.SCE_GS_PSMT4:
+				_gsMemory.WriteTexPSMCT32(cbp, 1, 0, 0, 8, 2, MemoryMarshal.Cast<Rgba32, uint>(palette), csa * 32);
+				break;
+		}
+	
+        if (reuseOldPaletteLocations && !string.IsNullOrEmpty(paletteHash))
         {
-            for (int i = 0; i < _texSet.pgluTextures.Count; i++)
-            {
-                // Is there an identical palette somewhere already?
-                PGLUtexture pgluTexture = _texSet.pgluTextures[i];
-                if (pgluTexture.tex0.PSM == textureFormat && _textures[i].Palette.AsSpan().SequenceEqual(palette))
-                {
-                    // return its cbp - Save on size
-                    return (pgluTexture.tex0.CBP_ClutBlockPointer, pgluTexture.tex0.CSA_ClutEntryOffset);
-                }
-            }
-        }
-
-        /* The game cheats a bit with "CSA" - is it even used for its original purpose?
-         * "CSA" here is used as an offset WITHIN the block itself
-         * So a block (256 bytes) can store 4 PSMT4 palettes (64 * 4)
-         * CSA goes every 32 */
-
-        List<ushort> usedBlocksOfTexture = GSPixelFormat.PSM_CT32.GetUsedBlocks(width, height);
-        int size = Tex1Utils.GetDataSize(width, height, SCE_GS_PSM.SCE_GS_PSMCT32);
-        int csa = 0;
-        byte csaTakenSpace = (byte)Math.Min(size / 32, 8);
-        int idx = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture, csaTakenSpace);
-
-        ushort cbp;
-        if (idx != -1)
-        {
-            cbp = (ushort)idx;
-
-            // Is this a palette that fits in one singular block?
-            if (usedBlocksOfTexture.Count == 1)
-            {
-                GSBlock block = _unusedGsBlocksIndices[idx + usedBlocksOfTexture[0]];
-                csa = block.CurrentCSA;
-
-                block.CurrentCSA += csaTakenSpace;
-                if (block.CurrentCSA >= 8)
-                {
-                    // Block CSA is 8 (32 * 8 = 256 bytes). This block is filled, move on
-                    _unusedGsBlocksIndices.Remove(block.Index);
-                    _usedGsBlocksIndices.Add((ushort)block.Index);
-                    _tbp_Textures++;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < usedBlocksOfTexture.Count; i++)
-                {
-                    _unusedGsBlocksIndices.Remove((ushort)(idx + usedBlocksOfTexture[i]));
-                    _usedGsBlocksIndices.Add((ushort)(idx + usedBlocksOfTexture[i]));
-                }
-            }
-        }
-        else
-        {
-            cbp = _tbp_Textures;
-            _tbp_Textures += (ushort)usedBlocksOfTexture.Count;
-
-            if (usedBlocksOfTexture.Count == 1)
-            {
-                csa = csaTakenSpace;
-
-                GSBlock partialFilledBlock = new GSBlock(_tbp_Textures + usedBlocksOfTexture[0], csaTakenSpace);
-                _unusedGsBlocksIndices.Add(partialFilledBlock.Index, partialFilledBlock);
-            }
-            else
-            {
-                for (int i = 0; i < usedBlocksOfTexture.Count; i++)
-                    _usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[i]));
-            }
-        }
-
-        switch (textureFormat)
-        {
-            case SCE_GS_PSM.SCE_GS_PSMT8:
-                _gsMemory.WriteTexPSMCT32(cbp, 1,
-                    0, 0,
-                    16, 16,
-                    MemoryMarshal.Cast<Rgba32, uint>(palette),
-                    csa * 32);
-                break;
-
-            case SCE_GS_PSM.SCE_GS_PSMT4:
-                _gsMemory.WriteTexPSMCT32(cbp, 1,
-                    0, 0,
-                    8, 2,
-                    MemoryMarshal.Cast<Rgba32, uint>(palette),
-                    csa * 32);
-                break;
+            _variationPaletteCache[paletteHash] = (cbp, (byte)csa);
         }
 
         return (cbp, (byte)csa);
-    }
+	}
 
-    private void WriteClutPatches()
-    {
-        if (_texSet.ClutPatchSet.Count < 1)
-            return;
-
-        for (ushort i = 0; i < _texSet.pgluTextures.Count; i++)
-        {
-            var clutPatch = _texSet.ClutPatchSet[0].TexturesToPatch[i];
-            var pgluTexture= _texSet.pgluTextures[i];
-
-            clutPatch.CBP_ClutBufferBasePointer = pgluTexture.tex0.CBP_ClutBlockPointer;
-            clutPatch.CSA_ClutEntryOffset = pgluTexture.tex0.CSA_ClutEntryOffset;
-            clutPatch.PGLUTextureIndex = i;
-            clutPatch.Format = SCE_GS_PSM.SCE_GS_PSMCT32;
-        }
-
-        for (int varIndex = 1; varIndex < _clutPatchSets.Count; varIndex++)
-        {
-            var clutPatchSet = new ClutPatchSet();
-            _texSet.ClutPatchSet.Add(clutPatchSet);
-
-            for (ushort textureIndex = 0; textureIndex < _clutPatchSets[varIndex].Count; textureIndex++)
-            {
-                ClutPatchTask clutPatchTask = _clutPatchSets[varIndex][textureIndex];
-
-                SCE_GS_PSM textureFormat = _textures[textureIndex].PGLUTexture.tex0.PSM;
-                int width = textureFormat == SCE_GS_PSM.SCE_GS_PSMT8 ? 16 : 8;
-                int height = textureFormat == SCE_GS_PSM.SCE_GS_PSMT8 ? 16 : 2;
-
-                var clutPatch = new TextureClutPatch();
-                (ushort CBP, byte CSA) = FitPaletteToGSMemory(textureFormat, width, height, clutPatchTask.Palette, reuseOldPaletteLocations: true);
-                clutPatch.CBP_ClutBufferBasePointer = CBP;
-                clutPatch.CSA_ClutEntryOffset = CSA;
-                clutPatch.PGLUTextureIndex = textureIndex;
-                clutPatch.Format = SCE_GS_PSM.SCE_GS_PSMCT32;
-
-                clutPatchSet.TexturesToPatch.Add(clutPatch);
-            }
-        }
-    }
+	private void WriteClutPatches()
+	{
+		if (_clutPatchSets.Count == 0)
+			return;
+	
+		// 1. Find all texture indices that are patched in ANY variation
+		// Using a SortedSet ensures the array order is perfectly identical across all variations
+		var patchedTextureIndices = new SortedSet<ushort>();
+		for (int v = 1; v < _clutPatchSets.Count; v++)
+		{
+			foreach (var task in _clutPatchSets[v])
+				patchedTextureIndices.Add(task.TargetTextureIndex);
+		}
+	
+		// 2. Base Variation (0): Establish the baseline array
+		foreach (ushort targetIndex in patchedTextureIndices)
+		{
+			var pgluTexture = _texSet.pgluTextures[targetIndex];
+			
+			var clutPatch = new TextureClutPatch
+			{
+				CBP_ClutBufferBasePointer = pgluTexture.tex0.CBP_ClutBlockPointer,
+				CSA_ClutEntryOffset = pgluTexture.tex0.CSA_ClutEntryOffset,
+				PGLUTextureIndex = targetIndex,
+				Format = SCE_GS_PSM.SCE_GS_PSMCT32 
+			};
+			_texSet.ClutPatchSet[0].TexturesToPatch.Add(clutPatch);
+		}
+	
+		// 3. Subsequent Variations: Must perfectly mirror the Base Variation array length and order
+		for (int varIndex = 1; varIndex < _clutPatchSets.Count; varIndex++)
+		{
+			var clutPatchSet = new ClutPatchSet();
+			_texSet.ClutPatchSet.Add(clutPatchSet);
+	
+			// Quick lookup dictionary for the tasks present in this specific variation
+			var tasksForThisVariation = _clutPatchSets[varIndex].ToDictionary(t => t.TargetTextureIndex);
+	
+			// Iterate over the exact same sorted baseline indices
+			foreach (ushort targetIndex in patchedTextureIndices)
+			{
+				var clutPatch = new TextureClutPatch
+				{
+					PGLUTextureIndex = targetIndex,
+					Format = SCE_GS_PSM.SCE_GS_PSMCT32
+				};
+	
+				if (tasksForThisVariation.TryGetValue(targetIndex, out var clutPatchTask))
+				{
+					// This variation ACTIVELY changes this texture. Write the new palette to VRAM.
+					SCE_GS_PSM textureFormat = _textures[targetIndex].PGLUTexture.tex0.PSM;
+					int width = textureFormat == SCE_GS_PSM.SCE_GS_PSMT8 ? 16 : 8;
+					int height = textureFormat == SCE_GS_PSM.SCE_GS_PSMT8 ? 16 : 2;
+	
+					(ushort CBP, byte CSA) = FitPaletteToGSMemory(textureFormat, width, height, clutPatchTask.Palette, reuseOldPaletteLocations: true);
+					
+					clutPatch.CBP_ClutBufferBasePointer = CBP;
+					clutPatch.CSA_ClutEntryOffset = CSA;
+				}
+				else
+				{
+					// This variation DOES NOT change this texture. 
+					// Generate a Ghost Patch pointing to the base palette to prevent index desync.
+					var baseTexture = _texSet.pgluTextures[targetIndex];
+					clutPatch.CBP_ClutBufferBasePointer = baseTexture.tex0.CBP_ClutBlockPointer;
+					clutPatch.CSA_ClutEntryOffset = baseTexture.tex0.CSA_ClutEntryOffset;
+				}
+	
+				clutPatchSet.TexturesToPatch.Add(clutPatch);
+			}
+		}
+	}
 
     /// <summary>
     /// Fits all the textures to the emulated GS memory in a block-optimized way and updates their block pointers.
@@ -455,32 +493,33 @@ public class TextureSetBuilder
 		instead of arranging them to begin with
 		*/
 	
-		var texturesOptimized = _textures
-			// 1. Group by Format to keep page matrices aligned
-			.OrderByDescending(t => t.PGLUTexture.tex0.PSM) 
-			// 2. Sort by strict hardware footprint (Largest to Smallest)
-			.ThenByDescending(t => t.SizeInGSBlocks)
-			// 3. Tie-breaker for perfectly square hardware packing
-			.ThenByDescending(t => t.Image.Width) 
-			.ToList();
+        var texturesOptimized = _textures
+        // Group formats to keep GS page matrices aligned
+        .OrderByDescending(t => t.PGLUTexture.tex0.PSM) 
+        // Anchor the massive liveries first so they stack perfectly flush
+        .ThenByDescending(t => t.SizeInGSBlocks)
+        .ToList();
 	
 		// Cache to track which pixel arrays are already in VRAM
-		var allocatedTBPs = new Dictionary<byte[], ushort>(new ByteArrayComparer());
+		var allocatedTBPs = new Dictionary<TextureCacheKey, ushort>();
 	
 		foreach (TextureTask texture in texturesOptimized)
 		{
+			// Generate the unique, format-aware hash key for this texture
+			var cacheKey = new TextureCacheKey(
+				texture.PGLUTexture.tex0.PSM, 
+				texture.Image.Width, 
+				texture.Image.Height, 
+				texture.PackedImageData
+			);
+		
 			// --- TBP Deduplication Check ---
-			if (allocatedTBPs.TryGetValue(texture.PackedImageData, out ushort existingTbp))
+			if (allocatedTBPs.TryGetValue(cacheKey, out ushort existingTbp))
 			{
 				_logger?.LogInformation("Deduplicating Texture Data. Sharing TBP: {tbp}", existingTbp);
-				
-				// Point the new texture header to the exact same GS Memory block
 				texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = existingTbp;
-				
-				// Skip the allocation and memory writing phase completely
 				continue; 
 			}
-			// -------------------------------
 	
 			List<ushort> usedBlocksOfTexture = texture.TexturePixelFormat.GetUsedBlocks(texture.Image.Width, texture.Image.Height);
 	
@@ -504,7 +543,7 @@ public class TextureSetBuilder
 					texture.PackedImageData);
 				
 				// Cache the successfully written texture
-				allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+				allocatedTBPs[cacheKey] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
 				continue;
 			}
 	
@@ -551,7 +590,7 @@ public class TextureSetBuilder
 						texture.PackedImageData);
 					
 					// Cache the successfully written texture
-					allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+					allocatedTBPs[cacheKey] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
 					continue;
 				}
 			}
@@ -578,12 +617,10 @@ public class TextureSetBuilder
 					texture.PackedImageData);
 	
 			// Cache the successfully written texture
-			allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+			allocatedTBPs[cacheKey] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
 	
-			uint textureTbp = texture.SizeInGSBlocks;
-			if (textureTbp == 1)
-				textureTbp = 4;
-			_tbp_Textures += (ushort)textureTbp;
+            uint textureTbp = texture.SizeInGSBlocks;
+            _tbp_Textures += (ushort)textureTbp;
 		}
 	}
 
@@ -616,7 +653,7 @@ public class TextureSetBuilder
 
 	private void BuildSwizzledTransfers()
 	{
-		// 1. Calculate the true physical boundary of the VRAM
+		// 1. Calculate the TRUE physical boundary of the VRAM
 		int maxTextureBlock = 0;
 		foreach (var t in _textures)
 		{
@@ -631,10 +668,21 @@ public class TextureSetBuilder
 			if (endBlock > maxPaletteBlock) maxPaletteBlock = endBlock;
 		}
 	
-		// The true required footprint
-		int lastUsedBlock = Math.Max(maxTextureBlock, maxPaletteBlock);
+		// Check the Variation Palettes ---
+		int maxPatchBlock = 0;
+		foreach (var patchSet in _texSet.ClutPatchSet)
+		{
+			foreach (var patch in patchSet.TexturesToPatch)
+			{
+				int endBlock = patch.CBP_ClutBufferBasePointer + 1;
+				if (endBlock > maxPatchBlock) maxPatchBlock = endBlock;
+			}
+		}
 	
-		// Make sure we calculate (and align) the size from the blocks instead since we're swizzling
+		// The true required footprint encompasses textures, base palettes, and patch palettes
+		int lastUsedBlock = GetPeakAllocation();
+	
+		// Make sure we calculate and align the size from the blocks instead since we're swizzling
 		var transferSizes = Tex1Utils.CalculateSwizzledTransferSizes(lastUsedBlock * GSMemory.BLOCK_SIZE_BYTES);
 	
 		int tbp = 0;
@@ -683,7 +731,7 @@ public class TextureSetBuilder
 	{
 		int unusedBlockFitIndex = -1;
 	
-		// SortedDictionary: It now evaluates the lowest memory addresses first
+		// Because this is a SortedDictionary, it now strictly evaluates the lowest memory addresses first.
 		foreach (var kvp in _unusedGsBlocksIndices)
 		{
 			GSBlock block = kvp.Value;
@@ -696,7 +744,7 @@ public class TextureSetBuilder
 			{
 				int blockIdx = block.Index + usedBlocksOfTexture[j];
 				if (!_unusedGsBlocksIndices.ContainsKey((ushort)blockIdx))
-					break; // Gap is too small
+					break; // Gap is too small, collision detected
 			}
 	
 			if (j == usedBlocksOfTexture.Count)
@@ -846,6 +894,34 @@ public class TextureSetBuilder
 
         return (outpal, indices);
     }
+
+	private int GetPeakAllocation()
+    {
+        int maxBlock = 0;
+
+        foreach (var t in _textures)
+        {
+            int endBlock = t.PGLUTexture.tex0.TBP0_TextureBaseAddress + t.SizeInGSBlocks;
+            if (endBlock > maxBlock) maxBlock = endBlock;
+        }
+
+        foreach (var p in _texSet.pgluTextures)
+        {
+            int endBlock = p.tex0.CBP_ClutBlockPointer + 1; 
+            if (endBlock > maxBlock) maxBlock = endBlock;
+        }
+
+        foreach (var patchSet in _texSet.ClutPatchSet)
+        {
+            foreach (var patch in patchSet.TexturesToPatch)
+            {
+                int endBlock = patch.CBP_ClutBufferBasePointer + 1;
+                if (endBlock > maxBlock) maxBlock = endBlock;
+            }
+        }
+
+        return maxBlock;
+    }
 }
 
 public class TextureTask
@@ -898,10 +974,14 @@ public class TextureTask
 public class ClutPatchTask
 {
     public Rgba32[] Palette { get; set; }
+    
+    // The new property that ties this palette to a specific texture index
+    public ushort TargetTextureIndex { get; set; }
 
-    public ClutPatchTask(Rgba32[] palette)
+    public ClutPatchTask(Rgba32[] palette, ushort targetTextureIndex)
     {
         Palette = palette;
+        TargetTextureIndex = targetTextureIndex;
     }
 }
 
@@ -917,21 +997,34 @@ public class GSBlock
     }
 }
 
-public class ByteArrayComparer : IEqualityComparer<byte[]>
+public readonly struct TextureCacheKey : IEquatable<TextureCacheKey>
 {
-    public bool Equals(byte[] x, byte[] y) {
-        if (ReferenceEquals(x, y)) return true;
-        if (x == null || y == null || x.Length != y.Length) return false;
-        return x.AsSpan().SequenceEqual(y);
-    }
+	public SCE_GS_PSM Format { get; }
+	public int Width { get; }
+	public int Height { get; }
+	public string DataHash { get; }
 
-    public int GetHashCode(byte[] obj) {
-        if (obj == null || obj.Length == 0) return 0;
-        int hash = 17;
-        hash = hash * 31 + obj.Length;
-        hash = hash * 31 + obj[0];
-        hash = hash * 31 + obj[obj.Length / 2];
-        hash = hash * 31 + obj[obj.Length - 1];
-        return hash;
-    }
+	public TextureCacheKey(SCE_GS_PSM format, int width, int height, byte[] data)
+	{
+		Format = format;
+		Width = width;
+		Height = height;
+
+		using (var md5 = System.Security.Cryptography.MD5.Create())
+		{
+			DataHash = BitConverter.ToString(md5.ComputeHash(data));
+		}
+	}
+
+	public bool Equals(TextureCacheKey other)
+	{
+		return Format == other.Format &&
+			Width == other.Width &&
+			Height == other.Height &&
+			DataHash == other.DataHash;
+	}
+
+	public override bool Equals(object obj) => obj is TextureCacheKey other && Equals(other);
+
+	public override int GetHashCode() => HashCode.Combine(Format, Width, Height, DataHash);
 }

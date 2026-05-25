@@ -16,7 +16,7 @@ namespace PDTools.Files.Textures.PS2;
 public abstract class TextureSetPS2Base
 {
     protected GSMemory _gsMemory = new();
-    protected byte[] _inputData;
+    protected byte[] _inputData; // TextureSet1.cs uses this, may need refactor
 
     public ushort TotalBlockSize { get; set; }
     public List<PGLUtexture> pgluTextures { get; set; } = [];
@@ -68,8 +68,9 @@ public abstract class TextureSetPS2Base
         if (_gsMemory is null)
             throw new Exception("Not input mode");
 
-        int fullWidth = (int)Math.Pow(2, texture.tex0.TW_TextureWidth);
-        int fullHeight = (int)Math.Pow(2, texture.tex0.TH_TextureHeight);
+            // faster and cleaner to use standard C# bit-shifting
+            int fullWidth = 1 << texture.tex0.TW_TextureWidth;
+            int fullHeight = 1 << texture.tex0.TH_TextureHeight;
 
         byte[] textureData;
         uint[] palette = null;
@@ -105,17 +106,15 @@ public abstract class TextureSetPS2Base
                             palette,
                             (csa * 32));
                         break;
-                    case SCE_GS_PSM.SCE_GS_PSMCT16: // TODO: this doesn't work properly when csa > 0
-                        ushort[] palette16 = new ushort[8 * 2];
-                        _gsMemory.ReadTexPSMCT16(cbp,
-                            1,
-                            0, 0,
-                            8, 2, // Always 8x2 for PSMT4
-                            palette16,
-                            csa * 32);
+                    case SCE_GS_PSM.SCE_GS_PSMCT16:
+                        ushort[] palette16_T4 = new ushort[16];
+    
+                        // Use CSA * 32 to offset the VRAM read, but read into index 0 of palette16_T4
+                        _gsMemory.ReadTexPSMCT16(cbp, 1, 0, 0, 8, 2, palette16_T4, csa * 32);
 
                         Console.WriteLine("Warning: CSA > 0 not properly supported for PSMCT16 yet");
-                        PSMCT16To32(palette, palette16, csa * 16); // If CSA=1, skip 16 colors
+                        // Convert directly
+                        PSMCT16To32(palette, palette16_T4);
                         break;
                     default:
                         throw new NotImplementedException($"Invalid or not supported palette format {texture.tex0.CPSM_ClutPartPixelFormatSetup}");
@@ -144,17 +143,14 @@ public abstract class TextureSetPS2Base
                                 csa * 32);
                             break;
                         case SCE_GS_PSM.SCE_GS_PSMCT16:
-                            ushort[] palette16 = new ushort[16];
+                            ushort[] palette16_T8 = new ushort[256];
 
-                            _gsMemory.ReadTexPSMCT16(cbp,
-                                1,
-                                0, 0,
-                                8, 2, // Always 16x16 for PSMT8
-                                palette16,
-                                csa * 32);
+                            // Use CSA * 32 to offset the VRAM read
+                            _gsMemory.ReadTexPSMCT16(cbp, 1, 0, 0, 16, 16, palette16_T8, csa * 32);
                             Console.WriteLine("Warning: CSA > 0 not properly supported for PSMCT16 yet");
 
-                            PSMCT16To32(palette, palette16, csa * 16); // A single CSA step of 1 still jumps 16 colors
+                            // Convert directly
+                            PSMCT16To32(palette, palette16_T8);
                             break;
 
                         default:
@@ -214,10 +210,14 @@ public abstract class TextureSetPS2Base
                     {
                         for (var x = 0; x < fullWidth; x++)
                         {
-                            img[x, y] = pixels[y * fullWidth + x];
+                            // 1. Grab raw pixel struct
+                            Rgba32 p = pixels[y * fullWidth + x];
+        
+                            // 2. Halve the alpha channel
+                            p.A = texture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMCT24 ? (byte)0xFF : (byte)Tex1Utils.Normalize(p.A, 0x00, 0x80, 0x00, 0xFF);
 
-                            byte a = texture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMCT24 ? (byte)0xFF : (byte)Tex1Utils.Normalize(img[x, y].A, 0x00, 0x80, 0x00, 0xFF);
-                            img[x, y] = new Rgba32(img[x, y].R, img[x, y].G, img[x, y].B, a); // Rescale alpha 0-128 to 0-256. PS2 things
+                            // 3. Assign
+                            img[x, y] = p;
                         }
                     }
 
@@ -272,22 +272,23 @@ public abstract class TextureSetPS2Base
         return outpal;
     }
 
-	protected static void PSMCT16To32(uint[] palette, ushort[] palette16, int colorIndexOffset)
+	protected static void PSMCT16To32(uint[] palette, ushort[] palette16)
 	{
-		// Page 72, GS User's Manual
-        // PSMCT16 stores the higher 5 bits of each color when converting to PSMCT32
 		for (int i = 0; i < palette16.Length; i++)
 		{
-			byte r = (byte)(((palette16[i] >> 0) & 0b11111) << 3);
-			byte g = (byte)(((palette16[i] >> 5) & 0b11111) << 3);
-			byte b = (byte)(((palette16[i] >> 10) & 0b11111) << 3);
-			byte a = (palette16[i] >> 15 == 1) ? (byte)0x80 : (byte)0x00;
+			// Extract 5-bit values and correctly expand them to 8-bit (0-255)
+			byte r = (byte)((palette16[i] >> 0) & 0b11111);
+			byte g = (byte)((palette16[i] >> 5) & 0b11111);
+			byte b = (byte)((palette16[i] >> 10) & 0b11111);
+			
+			r = (byte)((r << 3) | (r >> 2));
+			g = (byte)((g << 3) | (g >> 2));
+			b = (byte)((b << 3) | (b >> 2));
+			
+			byte a = ((palette16[i] & 0x8000) != 0) ? (byte)0x80 : (byte)0x00; // Use a direct bitmask against the 15th bit
 	
-			// Apply the color to the specific offset provided by the caller
-			if (colorIndexOffset + i < palette.Length)
-			{
-				palette[colorIndexOffset + i] = (uint)(r | g << 8 | b << 16 | a << 24);
-			}
+			// Always write to the exact same index in the image's local palette
+			palette[i] = (uint)(r | g << 8 | b << 16 | a << 24);
 		}
 	}
 }
