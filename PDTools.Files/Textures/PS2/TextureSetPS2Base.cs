@@ -115,7 +115,7 @@ public abstract class TextureSetPS2Base
                             csa * 32);
 
                         Console.WriteLine("Warning: CSA > 0 not properly supported for PSMCT16 yet");
-                        PSMCT16To32(palette, palette16);
+                        PSMCT16To32(palette, palette16, csa * 16); // If CSA=1, skip 16 colors
                         break;
                     default:
                         throw new NotImplementedException($"Invalid or not supported palette format {texture.tex0.CPSM_ClutPartPixelFormatSetup}");
@@ -144,7 +144,7 @@ public abstract class TextureSetPS2Base
                                 csa * 32);
                             break;
                         case SCE_GS_PSM.SCE_GS_PSMCT16:
-                            ushort[] palette16 = new ushort[16 * 16];
+                            ushort[] palette16 = new ushort[16];
 
                             _gsMemory.ReadTexPSMCT16(cbp,
                                 1,
@@ -154,7 +154,7 @@ public abstract class TextureSetPS2Base
                                 csa * 32);
                             Console.WriteLine("Warning: CSA > 0 not properly supported for PSMCT16 yet");
 
-                            PSMCT16To32(palette, palette16);
+                            PSMCT16To32(palette, palette16, csa * 16); // A single CSA step of 1 still jumps 16 colors
                             break;
 
                         default:
@@ -272,18 +272,22 @@ public abstract class TextureSetPS2Base
         return outpal;
     }
 
-    protected static void PSMCT16To32(uint[] palette, ushort[] palette16)
-    {
-        // Page 72, GS User's Manual
+	protected static void PSMCT16To32(uint[] palette, ushort[] palette16, int colorIndexOffset)
+	{
+		// Page 72, GS User's Manual
         // PSMCT16 stores the higher 5 bits of each color when converting to PSMCT32
-        for (int i = 0; i < 16; i++)
-        {
-            byte r = (byte)(((palette16[i] >> 0) & 0b11111) << 3);
-            byte g = (byte)(((palette16[i] >> 5) & 0b11111) << 3);
-            byte b = (byte)(((palette16[i] >> 10) & 0b11111) << 3);
-            byte a = (palette16[i] >> 15 == 1) ? (byte)0x80 : (byte)0x00;
-
-            palette[i] = (uint)(r | g << 8 | b << 16 | a << 24);
-        }
-    }
+		for (int i = 0; i < palette16.Length; i++)
+		{
+			byte r = (byte)(((palette16[i] >> 0) & 0b11111) << 3);
+			byte g = (byte)(((palette16[i] >> 5) & 0b11111) << 3);
+			byte b = (byte)(((palette16[i] >> 10) & 0b11111) << 3);
+			byte a = (palette16[i] >> 15 == 1) ? (byte)0x80 : (byte)0x00;
+	
+			// Apply the color to the specific offset provided by the caller
+			if (colorIndexOffset + i < palette.Length)
+			{
+				palette[colorIndexOffset + i] = (uint)(r | g << 8 | b << 16 | a << 24);
+			}
+		}
+	}
 }

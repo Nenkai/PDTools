@@ -33,7 +33,7 @@ public class TextureSetBuilder
 
     /* Used to keep track of GS blocks without texture data allocated
      * So that we can put other textures's data in them */
-    private readonly Dictionary<int, GSBlock> _unusedGsBlocksIndices = [];
+    private readonly SortedDictionary<int, GSBlock> _unusedGsBlocksIndices = new();
 
     /* Used to keep track of all GS blocks we've used up */
     private readonly List<ushort> _usedGsBlocksIndices = [];
@@ -234,6 +234,20 @@ public class TextureSetBuilder
 
         WriteClutPatches();
 
+        // Debug statements... HIGH WATER MARK (Max Block) is usually a lot higher than the last CSA, this may be a clue to further size optimization
+        Console.WriteLine("--- VRAM ALLOCATION MAP ---");
+        foreach (var t in _textures)
+        {
+            Console.WriteLine($"Format: {t.PGLUTexture.tex0.PSM} | Size: {t.Image.Width}x{t.Image.Height} | Blocks Used: {t.SizeInGSBlocks} | TBP: {t.PGLUTexture.tex0.TBP0_TextureBaseAddress}");
+        }
+        foreach (var p in _texSet.pgluTextures)
+        {
+            if (p.tex0.CBP_ClutBlockPointer > 0)
+                Console.WriteLine($"Palette Format: {p.tex0.PSM} | CBP: {p.tex0.CBP_ClutBlockPointer} | CSA: {p.tex0.CSA_ClutEntryOffset}");
+        }
+        Console.WriteLine($"HIGH WATER MARK (Max Block): {_usedGsBlocksIndices.Max(e => e)}");
+        Console.WriteLine("---------------------------");
+
         bool swizzle = _textures.Count >= 2;
         if (swizzle)
             BuildSwizzledTransfers();
@@ -427,115 +441,151 @@ public class TextureSetBuilder
     /// </summary>
     /// <returns></returns>
     /// <exception cref="OutOfMemoryException"></exception>
-    private void WriteTexturesOptimized()
-    {
-        /* Order by textures that allocates the most GS blocks without actually using them
-         * That way we can put texture data in there
-
-         * There's still some good improvements that can be made here for certain
-           as i am only trying to fit the rest of the textures where they can fit
-           instead of arranging them to begin with
-        */
-
-        var texturesByUnusedGsBlocks = _textures.OrderByDescending(e => e.SizeInGSBlocks);
-        foreach (TextureTask texture in texturesByUnusedGsBlocks)
-        {
-            List<ushort> usedBlocksOfTexture = texture.TexturePixelFormat.GetUsedBlocks(texture.Image.Width, texture.Image.Height);
-
-            // #1: Start searching if we can fit the texture in all unused GS blocks.
-            int unusedBlockFitIndex = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture);
-            if (unusedBlockFitIndex != -1)
-            {
-                // We were able to fit the texture in unused blocks
-                for (int i = 0; i < usedBlocksOfTexture.Count; i++)
-                {
-                    if (_unusedGsBlocksIndices.ContainsKey((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i])))
-                        _unusedGsBlocksIndices.Remove((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
-
-                    _usedGsBlocksIndices.Add((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
-                }
-
-                texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = (ushort)unusedBlockFitIndex;
-                WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
-                    texture.Image.Width, texture.Image.Height,
-                    texture.PGLUTexture.tex0.PSM,
-                    texture.PackedImageData);
-                continue;
-            }
-
-            // #2: Check if we can fit the texture after the last vertical row (provided the page layout is ok?)
-            int afterLastRowFitBlockIdx = -1;
-            if (_tbp_Textures != 0 && _lastFreeVerticalBlock != -1)
-            {
-                for (ushort blockIdx = (ushort)_lastFreeVerticalBlock; blockIdx < _tbp_Textures; blockIdx++)
-                {
-                    int j = 0;
-                    for (j = 0; j < usedBlocksOfTexture.Count; j++)
-                    {
-                        if (_usedGsBlocksIndices.Contains((ushort)(blockIdx + usedBlocksOfTexture[j])))
-                        {
-                            // Starting block index is not suitable to fit the texture, move to next one
-                            break;
-                        }
-                    }
-
-                    if (j == usedBlocksOfTexture.Count)
-                    {
-                        afterLastRowFitBlockIdx = blockIdx;
-                        break;
-                    }
-                }
-
-                if (afterLastRowFitBlockIdx != -1)
-                {
-                    for (int i = 0; i < usedBlocksOfTexture.Count; i++)
-                    {
-                        if (_unusedGsBlocksIndices.ContainsKey((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i])))
-                            _unusedGsBlocksIndices.Remove((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
-
-                        _usedGsBlocksIndices.Add((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
-                    }
-
-                    texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = (ushort)afterLastRowFitBlockIdx;
-                    _lastFreeVerticalBlock = (ushort)(afterLastRowFitBlockIdx + texture.FirstFreeVerticalBlock);
-
-                    _tbp_Textures = _usedGsBlocksIndices.Max(e => e);
-                    WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
-                        texture.Image.Width, texture.Image.Height,
-                        texture.PGLUTexture.tex0.PSM,
-                        texture.PackedImageData);
-                    continue;
-                }
-            }
-
-
-            // Unable to fit anywhere (it seems). We are allocating new blocks starting from tbp
-            texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = _tbp_Textures;
-            _lastFreeVerticalBlock = (ushort)(_tbp_Textures + texture.FirstFreeVerticalBlock);
-
-            for (int i = 0; i < texture.UnusedGSBlocks.Count; i++)
-            {
-                ushort idx = (ushort)(_tbp_Textures + texture.UnusedGSBlocks[i]);
-                _unusedGsBlocksIndices.Add(idx, new GSBlock(idx, 0));
-            }
-
-            for (int j = 0; j < usedBlocksOfTexture.Count; j++)
-                _usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[j]));
-
-            if (_tbp_Textures + texture.SizeInGSBlocks >= GSMemory.MAX_BLOCKS)
-                throw new OutOfMemoryException($"Textures take more space than the maximum GS memory capacity ({_tbp_Textures + texture.SizeInGSBlocks} >= {GSMemory.MAX_BLOCKS}).");
-
-            WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
-                    texture.Image.Width, texture.Image.Height,
-                    texture.PGLUTexture.tex0.PSM,
-                    texture.PackedImageData);
-
-            uint textureTbp = texture.SizeInGSBlocks;
-            if (textureTbp == 1)
-                textureTbp = 4;
-            _tbp_Textures += (ushort)textureTbp;
-        }
-    }
+    
+    
+    // We are going to intercept the textures before they ever touch the emulated GS Memory.
+    // If the pixel indices match an image we have already processed, we point the texture header
+    // to the existing TBP and skip allocating new blocks entirely
+	private void WriteTexturesOptimized()
+	{
+		/* Order by textures that allocates the most GS blocks without actually using them
+		* That way we can put texture data in there
+		* There's still some good improvements that can be made here for certain
+		as i am only trying to fit the rest of the textures where they can fit
+		instead of arranging them to begin with
+		*/
+	
+		var texturesOptimized = _textures
+			// 1. Group by Format to keep page matrices aligned
+			.OrderByDescending(t => t.PGLUTexture.tex0.PSM) 
+			// 2. Sort by strict hardware footprint (Largest to Smallest)
+			.ThenByDescending(t => t.SizeInGSBlocks)
+			// 3. Tie-breaker for perfectly square hardware packing
+			.ThenByDescending(t => t.Image.Width) 
+			.ToList();
+	
+		// Cache to track which pixel arrays are already in VRAM
+		var allocatedTBPs = new Dictionary<byte[], ushort>(new ByteArrayComparer());
+	
+		foreach (TextureTask texture in texturesOptimized)
+		{
+			// --- TBP Deduplication Check ---
+			if (allocatedTBPs.TryGetValue(texture.PackedImageData, out ushort existingTbp))
+			{
+				_logger?.LogInformation("Deduplicating Texture Data. Sharing TBP: {tbp}", existingTbp);
+				
+				// Point the new texture header to the exact same GS Memory block
+				texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = existingTbp;
+				
+				// Skip the allocation and memory writing phase completely
+				continue; 
+			}
+			// -------------------------------
+	
+			List<ushort> usedBlocksOfTexture = texture.TexturePixelFormat.GetUsedBlocks(texture.Image.Width, texture.Image.Height);
+	
+			// #1: Start searching if we can fit the texture in all unused GS blocks.
+			int unusedBlockFitIndex = CanFitBlocksInUnusedBlocks(usedBlocksOfTexture);
+			if (unusedBlockFitIndex != -1)
+			{
+				// We were able to fit the texture in unused blocks
+				for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+				{
+					if (_unusedGsBlocksIndices.ContainsKey((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i])))
+						_unusedGsBlocksIndices.Remove((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
+	
+					_usedGsBlocksIndices.Add((ushort)(unusedBlockFitIndex + usedBlocksOfTexture[i]));
+				}
+	
+				texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = (ushort)unusedBlockFitIndex;
+				WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
+					texture.Image.Width, texture.Image.Height,
+					texture.PGLUTexture.tex0.PSM,
+					texture.PackedImageData);
+				
+				// Cache the successfully written texture
+				allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+				continue;
+			}
+	
+			// #2: Check if we can fit the texture after the last vertical row (provided the page layout is ok?)
+			int afterLastRowFitBlockIdx = -1;
+			if (_tbp_Textures != 0 && _lastFreeVerticalBlock != -1)
+			{
+				for (ushort blockIdx = (ushort)_lastFreeVerticalBlock; blockIdx < _tbp_Textures; blockIdx++)
+				{
+					int j = 0;
+					for (j = 0; j < usedBlocksOfTexture.Count; j++)
+					{
+						if (_usedGsBlocksIndices.Contains((ushort)(blockIdx + usedBlocksOfTexture[j])))
+						{
+							// Starting block index is not suitable to fit the texture, move to next one
+							break;
+						}
+					}
+	
+					if (j == usedBlocksOfTexture.Count)
+					{
+						afterLastRowFitBlockIdx = blockIdx;
+						break;
+					}
+				}
+	
+				if (afterLastRowFitBlockIdx != -1)
+				{
+					for (int i = 0; i < usedBlocksOfTexture.Count; i++)
+					{
+						if (_unusedGsBlocksIndices.ContainsKey((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i])))
+							_unusedGsBlocksIndices.Remove((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
+	
+						_usedGsBlocksIndices.Add((ushort)(afterLastRowFitBlockIdx + usedBlocksOfTexture[i]));
+					}
+	
+					texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = (ushort)afterLastRowFitBlockIdx;
+					_lastFreeVerticalBlock = (ushort)(afterLastRowFitBlockIdx + texture.FirstFreeVerticalBlock);
+	
+					_tbp_Textures = _usedGsBlocksIndices.Max(e => e);
+					WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
+						texture.Image.Width, texture.Image.Height,
+						texture.PGLUTexture.tex0.PSM,
+						texture.PackedImageData);
+					
+					// Cache the successfully written texture
+					allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+					continue;
+				}
+			}
+	
+			// Unable to fit anywhere (it seems). We are allocating new blocks starting from tbp
+			texture.PGLUTexture.tex0.TBP0_TextureBaseAddress = _tbp_Textures;
+			_lastFreeVerticalBlock = (ushort)(_tbp_Textures + texture.FirstFreeVerticalBlock);
+	
+			for (int i = 0; i < texture.UnusedGSBlocks.Count; i++)
+			{
+				ushort idx = (ushort)(_tbp_Textures + texture.UnusedGSBlocks[i]);
+				_unusedGsBlocksIndices.Add(idx, new GSBlock(idx, 0));
+			}
+	
+			for (int j = 0; j < usedBlocksOfTexture.Count; j++)
+				_usedGsBlocksIndices.Add((ushort)(_tbp_Textures + usedBlocksOfTexture[j]));
+	
+			if (_tbp_Textures + texture.SizeInGSBlocks >= GSMemory.MAX_BLOCKS)
+				throw new OutOfMemoryException($"Textures take more space than the maximum GS memory capacity ({_tbp_Textures + texture.SizeInGSBlocks} >= {GSMemory.MAX_BLOCKS}).");
+	
+			WriteTextureToGSMemory(texture.PGLUTexture.tex0.TBP0_TextureBaseAddress, texture.PGLUTexture.tex0.TBW_TextureBufferWidth,
+					texture.Image.Width, texture.Image.Height,
+					texture.PGLUTexture.tex0.PSM,
+					texture.PackedImageData);
+	
+			// Cache the successfully written texture
+			allocatedTBPs[texture.PackedImageData] = texture.PGLUTexture.tex0.TBP0_TextureBaseAddress;
+	
+			uint textureTbp = texture.SizeInGSBlocks;
+			if (textureTbp == 1)
+				textureTbp = 4;
+			_tbp_Textures += (ushort)textureTbp;
+		}
+	}
 
     private void BuildTransfers()
     {
@@ -564,28 +614,44 @@ public class TextureSetBuilder
         }
     }
 
-    private void BuildSwizzledTransfers()
-    {
-        int lastUsedBlock = _usedGsBlocksIndices.Max(e => e);
-
-        // Make sure we calculate (and align) the size from the blocks instead since we're swizzling
-        var transferSizes = Tex1Utils.CalculateSwizzledTransferSizes(lastUsedBlock * GSMemory.BLOCK_SIZE_BYTES);
-
-        int tbp = 0;
-        foreach (var (Width, Height) in transferSizes)
-        {
-            _logger?.LogDebug("Adding swizzled transfer {x}x{y}, tbp={tbp}", Width, Height, tbp);
-
-            byte[] transferData = new byte[Width * Height * 4];
-            _gsMemory.ReadTexPSMCT32(tbp, 1,
-                0, 0,
-                Width, Height,
-                MemoryMarshal.Cast<byte, uint>(transferData));
-            AddTransfer(GSPixelFormat.PSM_CT32, (ushort)tbp, 1, (ushort)Width, (ushort)Height, transferData);
-
-            tbp += transferData.Length / GSMemory.BLOCK_SIZE_BYTES;
-        }
-    }
+	private void BuildSwizzledTransfers()
+	{
+		// 1. Calculate the true physical boundary of the VRAM
+		int maxTextureBlock = 0;
+		foreach (var t in _textures)
+		{
+			int endBlock = t.PGLUTexture.tex0.TBP0_TextureBaseAddress + t.SizeInGSBlocks;
+			if (endBlock > maxTextureBlock) maxTextureBlock = endBlock;
+		}
+	
+		int maxPaletteBlock = 0;
+		foreach (var p in _texSet.pgluTextures)
+		{
+			int endBlock = p.tex0.CBP_ClutBlockPointer + 1; 
+			if (endBlock > maxPaletteBlock) maxPaletteBlock = endBlock;
+		}
+	
+		// The true required footprint
+		int lastUsedBlock = Math.Max(maxTextureBlock, maxPaletteBlock);
+	
+		// Make sure we calculate (and align) the size from the blocks instead since we're swizzling
+		var transferSizes = Tex1Utils.CalculateSwizzledTransferSizes(lastUsedBlock * GSMemory.BLOCK_SIZE_BYTES);
+	
+		int tbp = 0;
+		foreach (var (Width, Height) in transferSizes)
+		{
+			_logger?.LogDebug("Adding swizzled transfer {x}x{y}, tbp={tbp}", Width, Height, tbp);
+	
+			byte[] transferData = new byte[Width * Height * 4];
+			_gsMemory.ReadTexPSMCT32(tbp, 1,
+				0, 0,
+				Width, Height,
+				MemoryMarshal.Cast<byte, uint>(transferData));
+			AddTransfer(GSPixelFormat.PSM_CT32, (ushort)tbp, 1, (ushort)Width, (ushort)Height, transferData);
+	
+			tbp += transferData.Length / GSMemory.BLOCK_SIZE_BYTES;
+		}
+	}
 
     private static bool ImageFitsColorPalette(Image<Rgba32> img, int paletteSize, out List<Rgba32> colorPalette)
     {
@@ -613,38 +679,35 @@ public class TextureSetBuilder
     /// <param name="usedBlocksOfTexture">Blocks to fit</param>
     /// <param name="csa">CSA to fit in a block</param>
     /// <returns>Block index start. -1 if it could not be fitted.</returns>
-    private int CanFitBlocksInUnusedBlocks(List<ushort> usedBlocksOfTexture, int csa = 8)
-    {
-        int unusedBlockFitIndex = -1;
-
-        foreach (GSBlock block in _unusedGsBlocksIndices.Values)
-        {
-            // Special case when a texture/palette fits into a single block where we can
-            // tweak the csa register to point to it
-            if (usedBlocksOfTexture.Count == 1 && block.CurrentCSA + csa <= 8)
-            {
-                // We can reuse a partially filled block using CSA
-                return block.Index;
-            }
-
-            int j = 0;
-            for (j = 0; j < usedBlocksOfTexture.Count; j++)
-            {
-                int blockIdx = block.Index + usedBlocksOfTexture[j];
-
-                if (!_unusedGsBlocksIndices.ContainsKey((ushort)blockIdx))
-                    break;
-            }
-
-            if (j == usedBlocksOfTexture.Count)
-            {
-                unusedBlockFitIndex = block.Index;
-                break;
-            }
-        }
-
-        return unusedBlockFitIndex;
-    }
+	private int CanFitBlocksInUnusedBlocks(List<ushort> usedBlocksOfTexture, int csa = 8)
+	{
+		int unusedBlockFitIndex = -1;
+	
+		// SortedDictionary: It now evaluates the lowest memory addresses first
+		foreach (var kvp in _unusedGsBlocksIndices)
+		{
+			GSBlock block = kvp.Value;
+			
+			if (usedBlocksOfTexture.Count == 1 && block.CurrentCSA + csa <= 8)
+				return block.Index;
+	
+			int j = 0;
+			for (j = 0; j < usedBlocksOfTexture.Count; j++)
+			{
+				int blockIdx = block.Index + usedBlocksOfTexture[j];
+				if (!_unusedGsBlocksIndices.ContainsKey((ushort)blockIdx))
+					break; // Gap is too small
+			}
+	
+			if (j == usedBlocksOfTexture.Count)
+			{
+				unusedBlockFitIndex = block.Index;
+				break; // Found the lowest possible gap that fits
+			}
+		}
+	
+		return unusedBlockFitIndex;
+	}
 
     /// <summary>
     /// Creates image data for the specified texture.
@@ -851,5 +914,24 @@ public class GSBlock
     {
         Index = index;
         CurrentCSA = currentCSA;
+    }
+}
+
+public class ByteArrayComparer : IEqualityComparer<byte[]>
+{
+    public bool Equals(byte[] x, byte[] y) {
+        if (ReferenceEquals(x, y)) return true;
+        if (x == null || y == null || x.Length != y.Length) return false;
+        return x.AsSpan().SequenceEqual(y);
+    }
+
+    public int GetHashCode(byte[] obj) {
+        if (obj == null || obj.Length == 0) return 0;
+        int hash = 17;
+        hash = hash * 31 + obj.Length;
+        hash = hash * 31 + obj[0];
+        hash = hash * 31 + obj[obj.Length / 2];
+        hash = hash * 31 + obj[obj.Length - 1];
+        return hash;
     }
 }
