@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using System.Numerics;
 
 using Syroot.BinaryData;
-using PDTools.Files.Models.PS2.RenderCommands;
 
-namespace PDTools.Files.Models.PS2.Commands;
+namespace PDTools.Files.Models.PS2.RenderCommands;
 
 /// <summary>
 /// Calls glDisable(15). Disables face culling
