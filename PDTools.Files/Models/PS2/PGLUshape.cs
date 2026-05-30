@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -288,10 +289,10 @@ public class PGLUshapeConverted
     {
         for (int i = 0; i < Vertices.Count; i++)
         {
-            objWriter.Write($"v {Vertices[i].X} {Vertices[i].Y} {Vertices[i].Z}");
+            objWriter.Write(string.Create(CultureInfo.InvariantCulture, $"v {Vertices[i].X.ToString(CultureInfo.InvariantCulture)} {Vertices[i].Y} {Vertices[i].Z}"));
             if (Colors.Count == Vertices.Count)
             {
-                objWriter.Write($" {Colors[i][0] * (1.0f / 255.0f)} {Colors[i][1] * (1.0f / 255.0f)} {Colors[i][2] * (1.0f / 255.0f)} {Colors[i][3] * (1.0f / 128.0f)}");
+                objWriter.Write(string.Create(CultureInfo.InvariantCulture, $" {Colors[i][0] * (1.0f / 255.0f)} {Colors[i][1] * (1.0f / 255.0f)} {Colors[i][2] * (1.0f / 255.0f)} {Colors[i][3] * (1.0f / 128.0f)}"));
             }
 
             objWriter.WriteLine();
@@ -299,10 +300,10 @@ public class PGLUshapeConverted
         objWriter.WriteLine();
 
         for (int i = 0; i < UVs.Count; i++)
-            objWriter.WriteLine($"vt {UVs[i].X} {UVs[i].Y}");
+            objWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"vt {UVs[i].X} {UVs[i].Y}"));
 
         for (int i = 0; i < Normals.Count; i++)
-            objWriter.WriteLine($"vn {Normals[i].X} {Normals[i].Y} {Normals[i].Z}");
+            objWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"vn {Normals[i].X} {Normals[i].Y} {Normals[i].Z}");
 
         objWriter.WriteLine();
 
@@ -321,10 +322,10 @@ public class PGLUshapeConverted
                 if (currentMatId != 0 && materials is not null)
                 {
                     var material = materials[currentMatId - 1];
-                    matWriter.WriteLine($"Ka {material.Ambient.R} {material.Ambient.G} {material.Ambient.B} {material.Ambient.A}");
-                    matWriter.WriteLine($"Kd {material.Diffuse.R} {material.Diffuse.G} {material.Diffuse.B} {material.Diffuse.A}");
-                    matWriter.WriteLine($"Ks {material.Specular.R} {material.Specular.G} {material.Specular.B} {material.Specular.A}");
-                    matWriter.WriteLine($"Ke {material.UnkColor.R} {material.UnkColor.G} {material.UnkColor.B} {material.UnkColor.A}");
+                    matWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Ka {material.Ambient.R} {material.Ambient.G} {material.Ambient.B} {material.Ambient.A}"));
+                    matWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Kd {material.Diffuse.R} {material.Diffuse.G} {material.Diffuse.B} {material.Diffuse.A}"));
+                    matWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Ks {material.Specular.R} {material.Specular.G} {material.Specular.B} {material.Specular.A}"));
+                    matWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Ke {material.UnkColor.R} {material.UnkColor.G} {material.UnkColor.B} {material.UnkColor.A}"));
                 }
 
                 if (Faces[i].TexId != 0 && Faces[i].TexId != 511) // Not External
