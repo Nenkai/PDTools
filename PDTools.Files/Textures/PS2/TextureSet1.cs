@@ -21,25 +21,24 @@ namespace PDTools.Files.Textures.PS2;
  * If you wanna follow along, grab 010 Editor and this template
  * https://github.com/Nenkai/GT-File-Specifications-Documentation/blob/master/Formats/GT4/GT4_Tex1_TexSet.bt
  * 
- * PGLUTextures defines the textures in the set, and passes GS registers for each one. 
+ * Transfers define the transfers between the file buffers to the GS memory to be made when the file is initially loaded.
+ * PGLUTextures defines the textures in the texture set, and when a texture has to be loaded, the GS registers defined in the file are applied to the actual registers.
  * Any tbp field (including mipmap) is remapped at runtime. 
  * 
- * The GS Transfers are the hard part. 
+ * The GS Textures are the hard part. 
  * 
- * But before explaining the transfers, it's important to be familiar with the GS's block/page system,
+ * But before explaining the textures, it's important to be familiar with the GS's block/page system,
  * so refer to Page 161<->175 of the GS's Users Manual (Docs&Training\HardwareManuals in PS2 SDK).
  * 
  * The important registers to keep in mind are TBP and CBP (in tex0). These are block pointers/offsets.
  * Blocks are in essence just 256 bytes aka "64 words". They kinda work as a separate coordinate system and denotes where pixels go in GS (per pixel format).
  *
- * When you have a texture that's for instance 350x350, the height and width are raised to the next power of 2, so 512x512.
+ * When you have a texture that's for instance 350x350, the height and width are raised to the next power of 2, so 512x512 (TW/TH).
  * That leaves a space with what's rendered and what isn't (350<->512), so extra data can be put there, it can be the image's palette, or another texture
  * So don't be surprised if you see the CBP register of a texture in the middle of what would appear to be the main texture's.
  * 
- * Now, for GS transfers.
- * 
- * Suppose you have one basic texture with a palette, PDI's builder simply builds two transfers - one with the image data, the other with the palette.
- * Simple enough, right?
+ * For transfers (which i've at least figured out), suppose you have one basic texture with a palette, PDI's builder simply builds two transfers - one with the image data, the other with the palette.
+ *
  * Texture sets with more than one texture are "swizzled" into buffers converted from i.e 4bit/8bit to PSMCT32 (32 bit) so the GS can load them faster.
  * To read them (and convert to png), I used GSTextureConvert.
  * https://ps2linux.no-ip.info/playstation2-linux.com/projects/ezswizzle/
@@ -52,7 +51,7 @@ namespace PDTools.Files.Textures.PS2;
  * For an example, look at advertise/us/premium.img (GT4 Online).
  * There's 3 transfers, 64x1216, 32x16 and 8x8.
  * 
- * TextureSet1 makes uses of 4 rather complex optimizations (in order of most important):
+ * For texture packing, PDI makes uses of 3 rather complex optimizations (in order of most important):
  * 1. [PARTIALLY DONE] Textures, or palettes, can be inside the non-rendered area of other textures, to save on GS blocks
  *    ^ could use some more optis or algorithms to reorder the textures in a way that maximizes usage of unused blocks
  *    
@@ -64,8 +63,11 @@ namespace PDTools.Files.Textures.PS2;
  * 3. [DONE] When a different palette is used for certain textures, the CSA register can be set, which presumably avoids using an extra block for a palette.
  *    Example: A free block (256 bytes) left by a texture that uses PSMT4 (8x2 palette, 64 bytes) essentially means that 4 palettes that can be stored there (csa 0, 2, 4, 6).
  * 
- * 4. [DONE] Swizzling - Multiple texture buffers of different formats swizzled into PSMCT32 for faster upload to GS
+ * [DONE] Swizzling - Multiple textures of different formats are swizzled into PSMCT32 as 1 to 4 transfers for faster upload to GS
  *   -> Done in TextureSetBuilder in Build(), read the note though
+ *
+ * If you intend to improve on this, please study the GS memory layout first. GS's Users Manual will help.
+ * It may sound trivial to simply apply a standard packing algorithm like texture atlases do, but a reminder that the GS memory layout is NOT linear. 
  */
 
 /// <summary>
