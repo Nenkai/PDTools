@@ -67,7 +67,11 @@ namespace PDTools.Files.Textures.PS2;
  *   -> Done in TextureSetBuilder in Build(), read the note though
  *
  * If you intend to improve on this, please study the GS memory layout first. GS's Users Manual will help.
- * It may sound trivial to simply apply a standard packing algorithm like texture atlases do, but a reminder that the GS memory layout is NOT linear. 
+ * It may sound trivial to simply apply a standard packing algorithm like texture atlases do, but a reminder that the GS memory layout is NOT linear.
+ *
+ * It may be worth building some kind of GS memory previewer?
+ *
+ * It's also unknown if textures in model formats (cars or courses) could simply just be manually arranged in a previewer, not sure if artists would enjoy dealing with the GS memory layouts themselves though.
  */
 
 /// <summary>
