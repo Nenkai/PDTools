@@ -303,7 +303,7 @@ public class PGLUshapeConverted
             objWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"vt {UVs[i].X} {UVs[i].Y}"));
 
         for (int i = 0; i < Normals.Count; i++)
-            objWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"vn {Normals[i].X} {Normals[i].Y} {Normals[i].Z}");
+            objWriter.WriteLine(string.Create(CultureInfo.InvariantCulture, $"vn {Normals[i].X} {Normals[i].Y} {Normals[i].Z}"));
 
         objWriter.WriteLine();
 
