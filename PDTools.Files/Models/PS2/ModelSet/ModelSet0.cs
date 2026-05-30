@@ -4,18 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+
 using Syroot.BinaryData;
-using System.Numerics;
-using System.Runtime.InteropServices;
 
 using PDTools.Files.Textures.PS2;
-using PDTools.Utils;
-using PDTools.Files.Models.PS2.Commands;
-
-using SixLabors.ImageSharp;
-using System.Reflection;
-using System.Xml.Linq;
-using PDTools.Files.Models.PS3.ModelSet3;
 
 namespace PDTools.Files.Models.PS2.ModelSet;
 
