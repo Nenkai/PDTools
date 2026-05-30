@@ -149,7 +149,7 @@ public abstract class TextureSetPS2Base
                             _gsMemory.ReadTexPSMCT16(cbp,
                                 1,
                                 0, 0,
-                                8, 2, // Always 16x16 for PSMT8
+                                16, 16, // Always 16x16 for PSMT8
                                 palette16,
                                 csa * 32);
                             Console.WriteLine("Warning: CSA > 0 not properly supported for PSMCT16 yet");
