@@ -9,9 +9,7 @@ using System.Threading.Tasks;
 using Syroot.BinaryData;
 
 using PDTools.Files.Textures.PS2;
-using PDTools.Files.Models.PS2.Commands;
 using PDTools.Files.Models.VM;
-using PDTools.Files.Textures;
 
 namespace PDTools.Files.Models.PS2.ModelSet;
 

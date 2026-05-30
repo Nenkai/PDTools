@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using PDTools.Files.Models.PS2.Commands;
 using PDTools.Files.Models.PS2.RenderCommands;
 
 namespace PDTools.Files.Models.PS2;

@@ -7,8 +7,6 @@ using System.IO;
 
 using Syroot.BinaryData;
 
-using PDTools.Files.Models.PS2.Commands;
-using PDTools.Utils;
 using System.Numerics;
 
 namespace PDTools.Files.Models.PS2.ModelSet;
