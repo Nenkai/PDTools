@@ -1,4 +1,7 @@
-﻿using System.Numerics;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using System.Numerics;
 using Syroot.BinaryData;
 
 namespace PDTools.Files.Courses.PS2.Runway;

@@ -1,4 +1,7 @@
-﻿using Syroot.BinaryData.Memory;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using Syroot.BinaryData.Memory;
 using System.IO;
 using System.Security.Cryptography;
 using System.Numerics;

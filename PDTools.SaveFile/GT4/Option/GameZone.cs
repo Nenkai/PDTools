@@ -1,4 +1,7 @@
-﻿using PDTools.Enums.PS2;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Enums.PS2;
 
 using Syroot.BinaryData.Memory;
 

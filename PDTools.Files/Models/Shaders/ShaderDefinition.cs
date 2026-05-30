@@ -1,4 +1,7 @@
-﻿using PDTools.Files.Models.Shaders;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Files.Models.Shaders;
 
 using Syroot.BinaryData;
 

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using System;
 using Syroot.BinaryData.Memory;
 using System.IO;
 using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;

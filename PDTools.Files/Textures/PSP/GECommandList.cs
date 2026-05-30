@@ -1,4 +1,7 @@
-﻿using PDTools.Utils;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Utils;
 using Syroot.BinaryData;
 
 using System;

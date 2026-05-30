@@ -1,4 +1,7 @@
-﻿using PDTools.Files.Fonts;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Files.Fonts;
 
 using System;
 using System.IO;

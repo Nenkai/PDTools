@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
 using System.Collections.Generic;
 using System.IO;
 

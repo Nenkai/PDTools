@@ -1,4 +1,7 @@
-﻿using PDTools.Files.Courses.PS2.Runway;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Files.Courses.PS2.Runway;
 using Syroot.BinaryData;
 
 using System;

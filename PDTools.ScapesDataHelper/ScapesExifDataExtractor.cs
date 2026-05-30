@@ -1,4 +1,7 @@
-﻿using System.Buffers.Binary;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 
 using PDTools.Crypto;

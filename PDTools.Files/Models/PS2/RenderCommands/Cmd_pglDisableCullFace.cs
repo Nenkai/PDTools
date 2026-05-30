@@ -8,6 +8,9 @@ using System.Numerics;
 using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS2.RenderCommands;
+// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
 
 /// <summary>
 /// Calls glDisable(15). Disables face culling

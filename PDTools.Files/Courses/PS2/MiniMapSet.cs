@@ -1,4 +1,7 @@
-﻿using PDTools.Files.Textures.PS2;
+﻿// Copyright (c) 2026 Nenkai
+// SPDX-License-Identifier: MIT
+
+using PDTools.Files.Textures.PS2;
 
 using Syroot.BinaryData;
 
