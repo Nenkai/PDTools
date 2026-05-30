@@ -93,7 +93,7 @@ public class TextureSetBuilder
             pgluTexture.tex0.TW_TextureWidth = (byte)Math.Log(config.RepeatWidth, 2);
         }
 
-        if (config.WrapModeS == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
+        if (config.WrapModeT == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP)
             pgluTexture.tex0.TH_TextureHeight = (byte)Math.Log(heightPow2, 2);
         else
         {
@@ -539,6 +539,8 @@ public class TextureSetBuilder
 
     private void BuildTransfers()
     {
+        var uploadedPaletteRegions = new HashSet<ushort>();
+
         foreach (var texture in _textures)
         {
             _logger?.LogDebug("Adding transfer {x}x{y}, tbp={tbp}", texture.Image.Width, texture.Image.Height, texture.PGLUTexture.tex0.TBP0_TextureBaseAddress);
@@ -550,26 +552,48 @@ public class TextureSetBuilder
             if (texture.Palette != null)
             {
                 ushort cbp = texture.PGLUTexture.tex0.CBP_ClutBlockPointer;
+
+                // Multiple palettes may share the same CBP block using different CSA offsets.
+                // Avoid re-uploading the same palette block twice.
+                if (uploadedPaletteRegions.Contains(cbp))
+                    continue;
+
+                byte[] data = new byte[GSMemory.BLOCK_SIZE_BYTES];
+
                 if (texture.PGLUTexture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMT8)
                 {
+                    _gsMemory.ReadTexPSMCT32(cbp,
+                                1,
+                                0, 0,
+                                16, 16, // Always 16x16 for PSMT8
+                                MemoryMarshal.Cast<byte, uint>(data),
+                                0);
+
                     AddTransfer(GSPixelFormat.PSM_CT32, cbp, 4, // bw = 4, important
-                        16, 16, MemoryMarshal.Cast<Rgba32, byte>(texture.Palette).ToArray());
+                        16, 16, data);
                 }
                 else
                 {
+                    _gsMemory.ReadTexPSMCT32(cbp,
+                        1,
+                        0, 0,
+                        8, 8, // 8, 8 instead of 8, 2 because a block may have multiple palettes (PSMT4 = 4 at most)
+                        MemoryMarshal.Cast<byte, uint>(data),
+                        0);
+
                     AddTransfer(GSPixelFormat.PSM_CT32, cbp, 1,
-                        8, 2, MemoryMarshal.Cast<Rgba32, byte>(texture.Palette).ToArray());
+                        8, 8, data);
                 }
+
+                uploadedPaletteRegions.Add(cbp);
             }
         }
     }
 
     private void BuildSwizzledTransfers()
     {
-        int lastUsedBlock = _usedGsBlocksIndices.Max(e => e);
-
         // Make sure we calculate (and align) the size from the blocks instead since we're swizzling
-        var transferSizes = Tex1Utils.CalculateSwizzledTransferSizes(lastUsedBlock * GSMemory.BLOCK_SIZE_BYTES);
+        var transferSizes = Tex1Utils.CalculateSwizzledTransferSizes(_tbp_Textures * GSMemory.BLOCK_SIZE_BYTES);
 
         int tbp = 0;
         foreach (var (Width, Height) in transferSizes)
@@ -696,10 +720,7 @@ public class TextureSetBuilder
     /// <exception cref="NotImplementedException"></exception>
     private void WriteTextureToGSMemory(int tbp, int tbw, int width, int height, SCE_GS_PSM psm, byte[] data)
     {
-        _logger?.LogInformation("Writing Texture {x}x{y}, psm={psm} tbp={tbp}",
-            width, height,
-            psm,
-            tbp);
+        _logger?.LogInformation("Writing Texture {x}x{y}, psm={psm} tbp=0x{tbp:x}", width, height, psm, tbp);
 
         switch (psm)
         {
@@ -725,7 +746,7 @@ public class TextureSetBuilder
                 break;
 
             default:
-                throw new NotImplementedException("Format not implemented");
+                throw new NotImplementedException($"Format {psm} not implemented");
         }
     }
 
