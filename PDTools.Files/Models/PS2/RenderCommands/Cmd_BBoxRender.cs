@@ -19,9 +19,14 @@ public class Cmd_BBoxRender : ModelSetupPS2Command
     public Vector3[] BBox { get; set; }
     public List<ModelSetupPS2Command> CommandsOnRender { get; set; } = [];
 
+    /// <summary>Absolute stream byte offset where the BBox Vector3 points begin (recorded
+    /// on read so callers can scale the cull box in place without re-serialising).</summary>
+    public long BBoxStreamOffset { get; set; }
+
     public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
         byte count = bs.Read1Byte();
+        BBoxStreamOffset = bs.Position;
         BBox = new Vector3[count];
         for (int i = 0; i < count; i++)
             BBox[i] = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());

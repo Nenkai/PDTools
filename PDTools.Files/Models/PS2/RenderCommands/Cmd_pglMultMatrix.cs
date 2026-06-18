@@ -15,8 +15,13 @@ public class Cmd_pglMultMatrix : ModelSetupPS2Command
 
     public Matrix4x4 Matrix { get; set; }
 
+    /// <summary>Absolute stream byte offset of the 16 matrix floats (recorded on read so
+    /// callers can scale the translation column in place).</summary>
+    public long MatrixStreamOffset { get; set; }
+
     public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
+        MatrixStreamOffset = bs.Position;
         Matrix = new Matrix4x4(
                bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle(),
                bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle(),

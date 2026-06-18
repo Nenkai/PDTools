@@ -21,6 +21,10 @@ public class Cmd_pglTranslate : ModelSetupPS2Command
     /// </summary>
     public Vector3 Vector { get; set; }
 
+    /// <summary>Absolute stream byte offset of the translation floats (recorded on read so
+    /// callers can scale the placement in place without re-serialising).</summary>
+    public long VectorStreamOffset { get; set; }
+
     public Cmd_pglTranslate()
     {
 
@@ -33,6 +37,7 @@ public class Cmd_pglTranslate : ModelSetupPS2Command
 
     public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
+        VectorStreamOffset = bs.Position;
         Vector = new Vector3(bs.ReadSingle(), bs.ReadSingle(), bs.ReadSingle());
     }
 

@@ -212,6 +212,10 @@ public class ModelSet1 : ModelSetPS2Base
 
     public override List<PGLUmaterial> GetVariationMaterials(int varIndex)
     {
+        // Track models have no variation materials (VariationMaterialsTable is empty).
+        // Fall back to the base Materials list so the dumper doesn't crash.
+        if (varIndex >= VariationMaterialsTable.Count)
+            return Materials;
         return VariationMaterialsTable[varIndex];
     }
 

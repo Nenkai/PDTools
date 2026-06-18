@@ -32,7 +32,8 @@ public class TextureSetBuilder
     private readonly List<TextureTask> _textures = [];
 
     /* Used to keep track of GS blocks without texture data allocated
-     * So that we can put ot   private readonly SortedDictionary<int, GSBlock> _unusedGsBlocksIndices = new();
+     * So that we can put other textures's data in them */
+    private readonly SortedDictionary<int, GSBlock> _unusedGsBlocksIndices = new();
 
     /* Used to keep track of all GS blocks we've used up */
     private readonly List<ushort> _usedGsBlocksIndices = [];

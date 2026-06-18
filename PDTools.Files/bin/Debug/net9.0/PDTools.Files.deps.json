@@ -1,0 +1,261 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "PDTools.Files/1.0.0": {
+        "dependencies": {
+          "BCnEncoder.Net": "2.1.0",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.1",
+          "PDTools.Hashing": "1.0.0",
+          "PDTools.Utils": "1.0.0",
+          "Pfim": "0.11.3",
+          "SharpZipLib": "1.4.2",
+          "SixLabors.ImageSharp": "3.1.6",
+          "SixLabors.ImageSharp.Drawing": "2.1.5",
+          "Syroot.BinaryData": "5.2.2",
+          "Syroot.BinaryData.Memory": "5.2.2"
+        },
+        "runtime": {
+          "PDTools.Files.dll": {}
+        }
+      },
+      "BCnEncoder.Net/2.1.0": {
+        "dependencies": {
+          "Microsoft.Toolkit.HighPerformance": "7.0.2"
+        },
+        "runtime": {
+          "lib/netstandard2.1/BCnEncoder.dll": {
+            "assemblyVersion": "2.1.0.0",
+            "fileVersion": "2.1.0.0"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.1": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.124.61010"
+          }
+        }
+      },
+      "Microsoft.Extensions.Logging.Abstractions/9.0.1": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.1"
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.124.61010"
+          }
+        }
+      },
+      "Microsoft.Toolkit.HighPerformance/7.0.2": {
+        "runtime": {
+          "lib/net5.0/Microsoft.Toolkit.HighPerformance.dll": {
+            "assemblyVersion": "7.0.0.0",
+            "fileVersion": "7.0.2.1"
+          }
+        }
+      },
+      "Pfim/0.11.3": {
+        "runtime": {
+          "lib/netstandard2.0/Pfim.dll": {
+            "assemblyVersion": "0.11.3.0",
+            "fileVersion": "0.11.3.0"
+          }
+        }
+      },
+      "SharpZipLib/1.4.2": {
+        "runtime": {
+          "lib/net6.0/ICSharpCode.SharpZipLib.dll": {
+            "assemblyVersion": "1.4.2.13",
+            "fileVersion": "1.4.2.13"
+          }
+        }
+      },
+      "SixLabors.Fonts/2.0.8": {
+        "runtime": {
+          "lib/net6.0/SixLabors.Fonts.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.8.0"
+          }
+        }
+      },
+      "SixLabors.ImageSharp/3.1.6": {
+        "runtime": {
+          "lib/net6.0/SixLabors.ImageSharp.dll": {
+            "assemblyVersion": "3.0.0.0",
+            "fileVersion": "3.1.6.0"
+          }
+        }
+      },
+      "SixLabors.ImageSharp.Drawing/2.1.5": {
+        "dependencies": {
+          "SixLabors.Fonts": "2.0.8",
+          "SixLabors.ImageSharp": "3.1.6"
+        },
+        "runtime": {
+          "lib/net6.0/SixLabors.ImageSharp.Drawing.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.1.5.0"
+          }
+        }
+      },
+      "Syroot.BinaryData/5.2.2": {
+        "dependencies": {
+          "Syroot.BinaryData.Core": "5.2.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Syroot.BinaryData.dll": {
+            "assemblyVersion": "5.2.2.0",
+            "fileVersion": "5.2.2.0"
+          }
+        }
+      },
+      "Syroot.BinaryData.Core/5.2.0": {
+        "runtime": {
+          "lib/netcoreapp2.1/Syroot.BinaryData.Core.dll": {
+            "assemblyVersion": "5.2.0.0",
+            "fileVersion": "5.2.0.0"
+          }
+        }
+      },
+      "Syroot.BinaryData.Memory/5.2.2": {
+        "dependencies": {
+          "Syroot.BinaryData.Core": "5.2.0"
+        },
+        "runtime": {
+          "lib/netcoreapp2.1/Syroot.BinaryData.Memory.dll": {
+            "assemblyVersion": "5.2.2.0",
+            "fileVersion": "5.2.2.0"
+          }
+        }
+      },
+      "PDTools.Hashing/1.0.0": {
+        "runtime": {
+          "PDTools.Hashing.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "PDTools.Utils/1.0.0": {
+        "dependencies": {
+          "Syroot.BinaryData": "5.2.2",
+          "Syroot.BinaryData.Memory": "5.2.2"
+        },
+        "runtime": {
+          "PDTools.Utils.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PDTools.Files/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "BCnEncoder.Net/2.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bBKYUDhpYenmp8vy5BVUHmS2LFym0NMga9V+S1eMJ+4zQLBwDw63Bs83AKOyqBKC2AqqgxXdTFA2a2V+SmGoIw==",
+      "path": "bcnencoder.net/2.1.0",
+      "hashPath": "bcnencoder.net.2.1.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Tr74eP0oQ3AyC24ch17N8PuEkrPbD0JqIfENCYqmgKYNOmL8wQKzLJu3ObxTUDrjnn4rHoR1qKa37/eQyHmCDA==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/9.0.1",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.9.0.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Logging.Abstractions/9.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-w2gUqXN/jNIuvqYwX3lbXagsizVNXYyt6LlF57+tMve4JYCEgCMMAjRce6uKcDASJgpMbErRT1PfHy2OhbkqEA==",
+      "path": "microsoft.extensions.logging.abstractions/9.0.1",
+      "hashPath": "microsoft.extensions.logging.abstractions.9.0.1.nupkg.sha512"
+    },
+    "Microsoft.Toolkit.HighPerformance/7.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tG6v0AhDw/yJMtiH/tI4F6I/+sNIfu4++6WFfN73FyNcPh31et33w45wo8Lx1sfxcfLtkYk+w2fvU/MubYg4VQ==",
+      "path": "microsoft.toolkit.highperformance/7.0.2",
+      "hashPath": "microsoft.toolkit.highperformance.7.0.2.nupkg.sha512"
+    },
+    "Pfim/0.11.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UNVStuGHVIGyBlQaLX8VY6KpzZm/pG2zpV8ewNSXNFKFVPn8dLQKJITfps3lwUMzwTL+Do7RrMUvgQ1ZsPTu4w==",
+      "path": "pfim/0.11.3",
+      "hashPath": "pfim.0.11.3.nupkg.sha512"
+    },
+    "SharpZipLib/1.4.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yjj+3zgz8zgXpiiC3ZdF/iyTBbz2fFvMxZFEBPUcwZjIvXOf37Ylm+K58hqMfIBt5JgU/Z2uoUS67JmTLe973A==",
+      "path": "sharpziplib/1.4.2",
+      "hashPath": "sharpziplib.1.4.2.nupkg.sha512"
+    },
+    "SixLabors.Fonts/2.0.8": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-psTLKJVKaD8PKm+Bz/mSSNo4m0VCTYoJ97TF/ynxEWkn4sFUipI0rzE2V/KBtfU0TOn/gF/+1XBOEvusGZZMhA==",
+      "path": "sixlabors.fonts/2.0.8",
+      "hashPath": "sixlabors.fonts.2.0.8.nupkg.sha512"
+    },
+    "SixLabors.ImageSharp/3.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dHQ5jugF9v+5/LCVHCWVzaaIL6WOehqJy6eju/0VFYFPEj2WtqkGPoEV9EVQP83dHsdoqYaTuWpZdwAd37UwfA==",
+      "path": "sixlabors.imagesharp/3.1.6",
+      "hashPath": "sixlabors.imagesharp.3.1.6.nupkg.sha512"
+    },
+    "SixLabors.ImageSharp.Drawing/2.1.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cER1JfvshYDmTxw+gUy/x5e1xoNWhrD6s3AFf8rRUx9hWSXYdOFreQfUrM/QooMj0rF7+hkVtvGnV3EdMx4dxA==",
+      "path": "sixlabors.imagesharp.drawing/2.1.5",
+      "hashPath": "sixlabors.imagesharp.drawing.2.1.5.nupkg.sha512"
+    },
+    "Syroot.BinaryData/5.2.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3E4l6a20cnsgywGdurRfrtv3+au02AsKb3yEmcsskgJrJsRv2UaD9MaSFOJLloAjP5ZI8Tjn6YSWF3k5pfdrkg==",
+      "path": "syroot.binarydata/5.2.2",
+      "hashPath": "syroot.binarydata.5.2.2.nupkg.sha512"
+    },
+    "Syroot.BinaryData.Core/5.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zMrTKIa+zwvFqkahbDdCzGW0Jq7BVE44gzuK0OT0ia+DpRtZTcwqOzSMiLs7Z2urY9vMqh5yTMLGVUal0dkQAA==",
+      "path": "syroot.binarydata.core/5.2.0",
+      "hashPath": "syroot.binarydata.core.5.2.0.nupkg.sha512"
+    },
+    "Syroot.BinaryData.Memory/5.2.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SZhuJbqrXrECebYwWIRfuvWAlw0wcEvpM98ZDdMl0JSwgocvzGqFC7lP9j8oeeHjmNxOJ+cxNH3wVkGNwf0Q9A==",
+      "path": "syroot.binarydata.memory/5.2.2",
+      "hashPath": "syroot.binarydata.memory.5.2.2.nupkg.sha512"
+    },
+    "PDTools.Hashing/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "PDTools.Utils/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

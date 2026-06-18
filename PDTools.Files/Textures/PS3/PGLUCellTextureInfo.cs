@@ -251,6 +251,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         uint imageNameOffset = bs.ReadUInt32();
         bs.Position = imageNameOffset - basePos;
         SourceFileName = bs.ReadString(StringCoding.ZeroTerminated);
+        Name = SourceFileName;
     }
 
     internal void CreateDDSData(byte[] imageData, Stream outStream)
@@ -275,7 +276,6 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
             default:
                 // 32bpp
                 header.PitchOrLinearSize = (Width * 32 + 7) / 8;
-                //bs.WriteInt32(0);
                 break;
         }
 
@@ -289,7 +289,6 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
             case CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45:
                 header.FormatFlags = DDSPixelFormatFlags.DDPF_FOURCC;
 
-                // FourCC
                 if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
                     header.FourCCName = "DXT1";
                 else if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
@@ -303,20 +302,22 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
                 header.FourCCName = "DX10";
                 header.RGBBitCount = 32;
 
-                header.RBitMask = 0x000000FF;  // RBitMask 
-                header.GBitMask = 0x0000FF00;  // GBitMask
-                header.BBitMask = 0x00FF0000;  // BBitMask
-                header.ABitMask = 0xFF000000;  // ABitMask
+                header.RBitMask = 0x000000FF;  // R BitMask 
+                header.GBitMask = 0x0000FF00;  // G BitMask
+                header.BBitMask = 0x00FF0000;  // B BitMask
+                header.ABitMask = 0xFF000000;  // A BitMask
 
                 header.DxgiFormat = DDS_DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM;
                 break;
         }
 
-        // Unswizzle
+        bool is32bpp = format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8
+                    || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8;
 
-        if ((format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
-            && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
+        // Unswizzle
+        if (is32bpp && !FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN))
         {
+            // Swizzled (SZ): de-swizzle via Morton order (dimensions are power-of-two).
             int byteCount = Width * Height * 4;
             byte[] newImageData = new byte[byteCount];
 
@@ -335,17 +336,33 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
 
             imageData = newImageData;
         }
-
-        // Swap channels for DDS
-        if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+        else if (is32bpp)
         {
-            var sp = MemoryMarshal.Cast<byte, uint>(imageData);
+            // Linear (LN): rows are padded to the row pitch (Pitch, in bytes; typically
+            // nextPow2(Width) * 4). DDS/Pfim expect tightly-packed rows, so strip the
+            // per-row padding here. Without this, any texture whose width isn't a power of
+            // two decodes sheared into diagonal stripes.
+            int rowBytes = Width * 4;
+            int stride = Pitch >= rowBytes ? Pitch : rowBytes;
+            if (stride != rowBytes && imageData.Length >= stride * Height)
+            {
+                byte[] tight = new byte[rowBytes * Height];
+                for (int y = 0; y < Height; y++)
+                    Array.Copy(imageData, y * stride, tight, y * rowBytes, rowBytes);
+
+                imageData = tight;
+            }
+        }
+
+        // Remap channels into the DDS R8G8B8A8 byte order.
+        // Source is big-endian A8R8G8B8, i.e. bytes [A,R,G,B]; the GCM remap (InR/InG/InB/InA)
+        // selects, per output channel, the source component using A=0,R=1,G=2,B=3 — which is
+        // exactly the source byte index. (The previous code byte-reversed each pixel first,
+        // which scrambled the standard identity remap into R<->G / B<->A channel swaps.)
+        if (is32bpp)
+        {
             for (var i = 0; i < Width * Height * 4; i += 4)
             {
-                // Swap endian first
-                sp[i / 4] = BinaryPrimitives.ReverseEndianness(sp[i / 4]);
-
-                // Remap channels
                 byte r = imageData[i + (byte)InR];
                 byte g = imageData[i + (byte)InG];
                 byte b = imageData[i + (byte)InB];
@@ -364,16 +381,43 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
 
     public void InitFromDDSImage(IImage image, CELL_GCM_TEXTURE_FORMAT format)
     {
-        FormatBits = format;
+        // The built data is linear (not swizzled), so the LN flag must be set or the decoder
+        // (which keys off this register) will Morton-deswizzle it back into garbage.
+        FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
         Width = (ushort)image.Width;
         Height = (ushort)image.Height;
-        Pitch = Width * 4;
-        MipmapLevelLast = (byte)image.MipMaps.Length;
+
+        // RSX linear (LN) row pitch = bytes per row that PD writes, and it's format-specific:
+        //   32bpp (A8R8G8B8/D8R8G8B8): nextPow2(Width) * 4  (e.g. 46px -> 64px -> 256; a tight 184
+        //     isn't 64-aligned and the GPU rejects it). FromStandardImage row-pads data to match.
+        //   DXT1 : blocksPerRow * 8   (8 bytes per 4x4 block)
+        //   DXT23/DXT45 : blocksPerRow * 16  (16 bytes per block)
+        // The old code wrote Width*4 for ALL DXT, which equals blocksPerRow*16 for block-aligned
+        // widths (so DXT23/45 were right) but is DOUBLE the DXT1 pitch -> the RSX over-strides each
+        // block row and runs off the data half-way down -> garbled bottom half in-game.
+        bool is32bpp = format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8
+                    || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8;
+        int blocksPerRow = (Width + 3) / 4;
+        Pitch = format switch
+        {
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1 => blocksPerRow * 8,
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23 => blocksPerRow * 16,
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45 => blocksPerRow * 16,
+            _ => is32bpp ? NextPowerOfTwo(Width) * 4 : Width * 4,
+        };
+
+        // PD's GPB textures live in main (XDR) memory, not RSX local video memory. Writing the
+        // default LOCAL makes the GPU sample texels from the wrong memory pool -> in-game crash.
+        Location = CELL_GCM_LOCATION.CELL_GCM_LOCATION_MAIN;
+
+        // MipmapLevelLast is a 1-based level COUNT (PD writes 1 for a single-mip texture); Pfim's
+        // MipMaps does not include the base level, so add 1. We always build a single mip (-m 1).
+        MipmapLevelLast = (byte)(image.MipMaps.Length + 1);
 
         var cellBufferInfo = BufferInfo as CellTextureBuffer;
         cellBufferInfo.Width = (ushort)image.Width;
         cellBufferInfo.Height = (ushort)image.Height;
-        cellBufferInfo.LastMipmapLevel = (byte)image.MipMaps.Length;
+        cellBufferInfo.LastMipmapLevel = MipmapLevelLast;
         cellBufferInfo.FormatBits = format | CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
     }
 
@@ -405,27 +449,250 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
                 pixels[j] = BinaryPrimitives.ReverseEndianness(pixels[j]);
         }
 
-        BufferInfo.ImageData = ddsData;
+        // Row-pad the tightly-packed pixels up to the RSX pitch (nextPow2(Width)*4) so the
+        // stored layout matches PD/hardware. No-op when Pitch == Width*4 (pow2 widths, DXT).
+        BufferInfo.ImageData = PadRowsToPitch(ddsData, Width, Height, Pitch);
         SourceFileName = Path.GetFileNameWithoutExtension(path);
 
         File.Delete(ddsFileName);
         return true;
     }
 
+    /// <summary>The pixel format a .dds file actually stores (probed from its header).</summary>
+    private enum DdsSourceFormat { Unknown, Uncompressed, Dxt1, Dxt3, Dxt5 }
+
+    /// <summary>
+    /// Probes a DDS file's header for the pixel format it ACTUALLY stores and where its pixel data
+    /// begins. Handles legacy FourCC DXTn, DX10-extended (DXGI) BC/uncompressed, and raw RGB(A).
+    /// </summary>
+    private static (DdsSourceFormat fmt, int dataOffset) ProbeDds(byte[] file)
+    {
+        const uint DDPF_FOURCC = 0x4;
+        uint pfFlags = BinaryPrimitives.ReadUInt32LittleEndian(file.AsSpan(0x50));
+        string fourCC = Encoding.ASCII.GetString(file, 0x54, 4);
+
+        if ((pfFlags & DDPF_FOURCC) != 0)
+        {
+            if (fourCC == "DX10")
+            {
+                // DX10 extended header (20 bytes) follows the 0x80 base header; dxgiFormat is at 0x80.
+                uint dxgi = BinaryPrimitives.ReadUInt32LittleEndian(file.AsSpan(0x80));
+                DdsSourceFormat f = dxgi switch
+                {
+                    70 or 71 or 72 => DdsSourceFormat.Dxt1, // BC1 (typeless/unorm/unorm_srgb)
+                    73 or 74 or 75 => DdsSourceFormat.Dxt3, // BC2
+                    76 or 77 or 78 => DdsSourceFormat.Dxt5, // BC3
+                    _ => DdsSourceFormat.Uncompressed,      // e.g. 28 R8G8B8A8, 87 B8G8R8A8
+                };
+                return (f, 0x94);
+            }
+
+            DdsSourceFormat ff = fourCC switch
+            {
+                "DXT1" => DdsSourceFormat.Dxt1,
+                "DXT2" or "DXT3" => DdsSourceFormat.Dxt3,
+                "DXT4" or "DXT5" => DdsSourceFormat.Dxt5,
+                _ => DdsSourceFormat.Unknown,
+            };
+            return (ff, 0x80);
+        }
+
+        // No FourCC -> uncompressed RGB(A) described by the legacy bit masks.
+        return (DdsSourceFormat.Uncompressed, 0x80);
+    }
+
+    /// <summary>
+    /// Decodes a Pfim-loaded DDS into tightly-packed canonical RGBA bytes ([R,G,B,A] per pixel).
+    /// Pfim normalises any source channel order/format (DXT, A8R8G8B8, B8G8R8A8, DX10, ...) into its
+    /// BGRA buffer, so this works regardless of how the .dds was authored.
+    /// </summary>
+    private static byte[] DecodeToRgba(IImage dds)
+    {
+        int w = dds.Width, h = dds.Height, stride = dds.Stride;
+        byte[] src = dds.Data;
+        byte[] outp = new byte[w * h * 4];
+        int di = 0;
+        switch (dds.Format)
+        {
+            case ImageFormat.Rgba32: // Pfim Rgba32 == BGRA byte order
+                for (int y = 0; y < h; y++)
+                {
+                    int row = y * stride;
+                    for (int x = 0; x < w; x++)
+                    {
+                        int s = row + x * 4;
+                        outp[di++] = src[s + 2]; // R
+                        outp[di++] = src[s + 1]; // G
+                        outp[di++] = src[s + 0]; // B
+                        outp[di++] = src[s + 3]; // A
+                    }
+                }
+                break;
+            case ImageFormat.Rgb24: // BGR byte order, opaque
+                for (int y = 0; y < h; y++)
+                {
+                    int row = y * stride;
+                    for (int x = 0; x < w; x++)
+                    {
+                        int s = row + x * 3;
+                        outp[di++] = src[s + 2]; // R
+                        outp[di++] = src[s + 1]; // G
+                        outp[di++] = src[s + 0]; // B
+                        outp[di++] = 255;        // A
+                    }
+                }
+                break;
+            default:
+                throw new NotSupportedException($"Unsupported DDS pixel layout for decode: {dds.Format}");
+        }
+        return outp;
+    }
+
+    /// <summary>
+    /// Builds a Cell texture from a .dds file. The filename flag (DXT1/DXT23/DXT45/A8R8G8B8/...) is the
+    /// authority on the OUTPUT format; this probes what the .dds actually contains and, if it already
+    /// matches a DXT target, copies the blocks verbatim (lossless, the inverse of <see cref="GetDDS"/>).
+    /// Otherwise it decodes the image and re-encodes/repacks into the requested format: 32bpp targets
+    /// repack channels into PD's big-endian A8R8G8B8, mismatched DXT targets are BC-encoded.
+    /// No texconv involved.
+    /// </summary>
+    public bool FromDDS(string path, CELL_GCM_TEXTURE_FORMAT format)
+    {
+        byte[] file = File.ReadAllBytes(path);
+        if (file.Length < 0x80 || file[0] != 'D' || file[1] != 'D' || file[2] != 'S' || file[3] != ' ')
+        {
+            Console.WriteLine($"Not a valid DDS file: {path}");
+            return false;
+        }
+
+        var (srcFmt, dataOffset) = ProbeDds(file);
+
+        var dds = Pfimage.FromFile(path);
+        InitFromDDSImage(dds, format);
+
+        // We only ever store the base level, so present the texture as single-mip regardless of any
+        // mips the source .dds carried (avoids claiming mip data we didn't write).
+        MipmapLevelLast = 1;
+        if (BufferInfo is CellTextureBuffer cbuf)
+            cbuf.LastMipmapLevel = 1;
+
+        bool targetIsDxt = format is CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1
+                                  or CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23
+                                  or CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45;
+
+        if (targetIsDxt)
+        {
+            DdsSourceFormat targetAsSrc = format switch
+            {
+                CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1 => DdsSourceFormat.Dxt1,
+                CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23 => DdsSourceFormat.Dxt3,
+                _ => DdsSourceFormat.Dxt5,
+            };
+
+            int blocksPerRow = (Width + 3) / 4;
+            int blocksPerCol = (Height + 3) / 4;
+            int blockBytes = blocksPerRow * blocksPerCol * (targetAsSrc == DdsSourceFormat.Dxt1 ? 8 : 16);
+
+            if (srcFmt == targetAsSrc && dataOffset + blockBytes <= file.Length)
+            {
+                // Lossless: the .dds already holds exactly this DXT format. Standard DDS block order
+                // == PD PS3 order, so copy the base-level blocks verbatim (no BC re-encode).
+                BufferInfo.ImageData = file.AsMemory(dataOffset, blockBytes);
+            }
+            else
+            {
+                // Source is uncompressed or a different BC format -> decode and BC-encode to target.
+                byte[] rgba = DecodeToRgba(dds);
+                var encoder = new BCnEncoder.Encoder.BcEncoder();
+                encoder.OutputOptions.Format = targetAsSrc switch
+                {
+                    DdsSourceFormat.Dxt1 => BCnEncoder.Shared.CompressionFormat.Bc1,
+                    DdsSourceFormat.Dxt3 => BCnEncoder.Shared.CompressionFormat.Bc2,
+                    _ => BCnEncoder.Shared.CompressionFormat.Bc3,
+                };
+                encoder.OutputOptions.Quality = BCnEncoder.Encoder.CompressionQuality.BestQuality;
+                encoder.OutputOptions.GenerateMipMaps = false;
+                BufferInfo.ImageData = encoder.EncodeToRawBytes(rgba, Width, Height, BCnEncoder.Encoder.PixelFormat.Rgba32)[0];
+            }
+        }
+        else
+        {
+            // 32bpp target (A8R8G8B8 / D8R8G8B8): decode to canonical RGBA, then store PD's big-endian
+            // [A,R,G,B] byte order, row-padded to the RSX pitch. Lossless for any 32bpp source.
+            byte[] rgba = DecodeToRgba(dds);
+            byte[] tight = new byte[Width * Height * 4];
+            for (int i = 0; i < Width * Height; i++)
+            {
+                byte r = rgba[i * 4 + 0], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2], a = rgba[i * 4 + 3];
+                tight[i * 4 + 0] = a;
+                tight[i * 4 + 1] = r;
+                tight[i * 4 + 2] = g;
+                tight[i * 4 + 3] = b;
+            }
+            BufferInfo.ImageData = PadRowsToPitch(tight, Width, Height, Pitch);
+        }
+
+        SourceFileName = Path.GetFileNameWithoutExtension(path);
+        return true;
+    }
+
+    private static int NextPowerOfTwo(int value)
+    {
+        int p = 1;
+        while (p < value)
+            p <<= 1;
+        return p;
+    }
+
+    /// <summary>
+    /// Pads each 4-bytes-per-pixel row of <paramref name="tight"/> (width*4 bytes) out to
+    /// <paramref name="pitch"/> bytes. Returns the input unchanged when no padding is needed.
+    /// </summary>
+    private static Memory<byte> PadRowsToPitch(Memory<byte> tight, int width, int height, int pitch)
+    {
+        int rowBytes = width * 4;
+        if (pitch <= rowBytes)
+            return tight;
+
+        byte[] padded = new byte[pitch * height];
+        Span<byte> src = tight.Span;
+        for (int y = 0; y < height; y++)
+            src.Slice(y * rowBytes, rowBytes).CopyTo(padded.AsSpan(y * pitch));
+        return padded;
+    }
+
+    /// <summary>
+    /// Serialises this texture to a standard .dds (DXT FourCC for DXT1/23/45, a DX10 R8G8B8A8 header
+    /// for 32bpp) - the editable form used by the lossless DDS round-trip. Inverse of <see cref="FromDDS"/>.
+    /// </summary>
     public byte[] GetDDS()
     {
         using var ms = new MemoryStream();
-        CreateDDSData(BufferInfo.ImageData.ToArray(), ms); // Change format for DXT10 if we're doing a direct extract to dds
+        CreateDDSData(BufferInfo.ImageData.ToArray(), ms);
         ms.Position = 0;
 
         return ms.ToArray();
+    }
+
+    public override string GetPixelFormatName()
+    {
+        CELL_GCM_TEXTURE_FORMAT format = FormatBits & ~CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN;
+        return format switch
+        {
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 => "A8R8G8B8",
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8 => "D8R8G8B8",
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1 => "DXT1",
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23 => "DXT23",
+            CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT45 => "DXT45",
+            _ => format.ToString(),
+        };
     }
 
     public override Image GetAsImage()
     {
         // TODO: don't make a dds first. decode straight away.
         using var ms = new MemoryStream();
-        CreateDDSData(BufferInfo.ImageData.ToArray(), ms); // Change format for DXT10 if we're doing a direct extract to dds
+        CreateDDSData(BufferInfo.ImageData.ToArray(), ms);
         ms.Position = 0;
 
         var dds = Pfimage.FromStream(ms);
@@ -436,8 +703,11 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         }
         else if (dds.Format == ImageFormat.Rgba32)
         {
-            // Without the alignment, for some reason pfim's data becomes weird
-            var i = Image.LoadPixelData<Bgra32>(dds.Data, (int)Utils.MiscUtils.AlignValue((uint)dds.Width, 4), dds.Height); 
+            // Image data is now tightly packed (rows de-padded in CreateDDSData), so the
+            // image width matches the data exactly. The previous code rounded the width up
+            // to a multiple of 4, which made LoadPixelData over-read and throw for any
+            // texture whose width wasn't a multiple of 4 (producing no output at all).
+            var i = Image.LoadPixelData<Bgra32>(dds.Data, dds.Width, dds.Height);
             return i;
         }
         else
@@ -450,7 +720,18 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
 
     private static void ConvertFileToDDS(string fileName, CELL_GCM_TEXTURE_FORMAT imgFormat)
     {
-        string arguments = $"\"{fileName}\"";
+        // Strip the PNG's colour-profile chunks (sRGB/gAMA/iCCP/cHRM) before handing it to texconv.
+        // texconv/WIC otherwise honor an embedded profile and gamma-convert the pixels - WITHOUT a
+        // profile it treats the data as-is (raw passthrough) for every output format. This replaces
+        // the old "-srgbo" flag, which was passthrough for A8R8G8B8 but BRIGHTENED DXT (linear->sRGB)
+        // so unmodified DXT textures came back too bright. Stripping (no srgb flag) is byte-exact
+        // passthrough for A8R8G8B8/D8R8G8B8 AND DXT, for both chunkless dumps and editor-saved PNGs.
+        string tempDir = Path.Combine(Path.GetTempPath(), "txs3conv_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string strippedPng = Path.Combine(tempDir, Path.GetFileName(fileName)); // same base name -> <dir>/<base>.dds
+        StripPngColorChunks(fileName, strippedPng);
+
+        string arguments = $"\"{strippedPng}\"";
         if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT1)
             arguments += " -f DXT1";
         else if (imgFormat == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_COMPRESSED_DXT23)
@@ -465,11 +746,54 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         arguments += " -y"      // Overwrite if it exists
                   + " -m 1"     // Don't care about extra mipmaps
                   + " -nologo"  // No copyright logo
-                  + " -srgb"   // Auto correct gamma
                   + $" -o {Path.GetDirectoryName(fileName)}"; // Set directory to file input's directory
 
-        Process converter = Process.Start(Path.Combine(Directory.GetCurrentDirectory(), "texconv.exe"), arguments);
+        // texconv.exe is deployed next to the converter executable. Resolve it from the
+        // app's base directory (not the caller's CWD) so the build works no matter where
+        // the process was launched from
+        Process converter = Process.Start(Path.Combine(AppContext.BaseDirectory, "texconv.exe"), arguments);
         converter.WaitForExit();
+
+        try { Directory.Delete(tempDir, true); } catch { /* best-effort temp cleanup */ }
+    }
+
+    /// <summary>
+    /// Copies <paramref name="src"/> PNG to <paramref name="dst"/>, dropping the colour-profile
+    /// ancillary chunks (sRGB/gAMA/iCCP/cHRM) so texconv doesn't gamma-convert by them. Pixels are
+    /// untouched. Falls back to a plain copy if the file isn't a PNG.
+    /// </summary>
+    private static void StripPngColorChunks(string src, string dst)
+    {
+        byte[] d = File.ReadAllBytes(src);
+        ReadOnlySpan<byte> sig = [0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A];
+        if (d.Length < 8 || !d.AsSpan(0, 8).SequenceEqual(sig))
+        {
+            File.Copy(src, dst, overwrite: true);
+            return;
+        }
+
+        using var outFs = new FileStream(dst, FileMode.Create);
+        outFs.Write(d, 0, 8);
+        int p = 8;
+        while (p + 8 <= d.Length)
+        {
+            int len = (d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3];
+            int total = 12 + len;
+            if (total < 12 || p + total > d.Length)
+                break;
+
+            bool isColourChunk = (d[p + 4] == 's' && d[p + 5] == 'R' && d[p + 6] == 'G' && d[p + 7] == 'B')
+                              || (d[p + 4] == 'g' && d[p + 5] == 'A' && d[p + 6] == 'M' && d[p + 7] == 'A')
+                              || (d[p + 4] == 'i' && d[p + 5] == 'C' && d[p + 6] == 'C' && d[p + 7] == 'P')
+                              || (d[p + 4] == 'c' && d[p + 5] == 'H' && d[p + 6] == 'R' && d[p + 7] == 'M');
+            if (!isColourChunk)
+                outFs.Write(d, p, total);
+
+            bool isEnd = d[p + 4] == 'I' && d[p + 5] == 'E' && d[p + 6] == 'N' && d[p + 7] == 'D';
+            p += total;
+            if (isEnd)
+                break;
+        }
     }
 
 }

@@ -1,0 +1,17 @@
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Files.deps.json
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Files.dll
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Files.pdb
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Hashing.dll
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Utils.dll
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Hashing.pdb
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\bin\Release\net9.0\PDTools.Utils.pdb
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.csproj.AssemblyReference.cache
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.AssemblyInfoInputs.cache
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.AssemblyInfo.cs
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.csproj.CoreCompileInputs.cache
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools..56880567.Up2Date
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.dll
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\refint\PDTools.Files.dll
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\PDTools.Files.pdb
+C:\Users\User\Desktop\gtps2modeltool2\PDTools\PDTools.Files\obj\Release\net9.0\ref\PDTools.Files.dll

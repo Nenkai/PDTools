@@ -63,8 +63,10 @@ public class ModelSet2Serializer
         bs.WriteUInt32(ModelSet2.MAGIC);
         bs.WriteUInt32((uint)(relocationInfoOffset - _baseMdlPos));
         bs.WriteUInt32(relocationDataSize);
-        bs.WriteUInt32(0); // Relocatrion base
+        bs.WriteUInt32(0); // Relocation base
         bs.WriteUInt32((uint)lastPos); // File size
+        bs.WriteByte(0); // 0x14: unk
+        bs.WriteByte(_modelSet.InstanceFlags); // 0x15: InstanceFlags (preserves original or 0 for new models)
 
         bs.Position = lastPos;
     }
@@ -74,28 +76,54 @@ public class ModelSet2Serializer
         long instanceOffset = bs.Position;
         int size = _modelSet.GetInstanceSize();
 
-        bs.Position = instanceOffset + 0x20;
+        // Instance header: 0x20 bytes (explicit zero-init; runtime fills +0x00 and +0x10)
+        bs.WriteInt32(0); // +0x00: parentModelSetPtr (runtime fills this)
+        long outRegsPtrPos = bs.Position;
+        bs.WriteInt32(0); // +0x04: outRegistersPtr (patched below if registers exist)
+        long unkRegsPtrPos = bs.Position;
+        bs.WriteInt32(0); // +0x08: unkRegistersPtr (patched below if registers exist)
+        long hostMethodRegsPtrPos = bs.Position;
+        bs.WriteInt32(0); // +0x0C: hostMethodRegistersPtr (patched below if registers exist)
+        bs.WriteInt32(0); // +0x10: hostMethodInfosFuncs (runtime fills this)
+        bs.WriteInt32(0); // +0x14
+        bs.WriteInt32(0); // +0x18
+        bs.WriteInt32(0); // +0x1C
+
+        // Register arrays follow the 0x20-byte header
         long outRegistersOffset = bs.Position;
         for (int i = 0; i < _modelSet.OutRegisterInfos.Count; i++)
+            bs.WriteUInt32(0);
+
+        long unkRegistersOffset = bs.Position;
+        for (int i = 0; i < _modelSet.InstanceUnkRegisterCount; i++) // Fixed: was missing entirely
             bs.WriteUInt32(0);
 
         long hostMethodRegistersOffset = bs.Position;
         for (int i = 0; i < _modelSet.HostMethodInfos.Count; i++)
             bs.WriteUInt32(0);
+
         long lastPos = bs.Position;
 
+        // Patch register pointers in instance header
         if (_modelSet.OutRegisterInfos.Count > 0)
         {
-            bs.Position = instanceOffset + 0x04;
+            bs.Position = outRegsPtrPos;
             WriteOffset32(bs, (uint)(outRegistersOffset - _baseMdlPos));
+        }
+
+        if (_modelSet.InstanceUnkRegisterCount > 0) // Fixed: was missing entirely
+        {
+            bs.Position = unkRegsPtrPos;
+            WriteOffset32(bs, (uint)(unkRegistersOffset - _baseMdlPos));
         }
 
         if (_modelSet.HostMethodInfos.Count > 0)
         {
-            bs.Position = instanceOffset + 0x0C;
-            WriteOffset32(bs, ((uint)(hostMethodRegistersOffset - _baseMdlPos)));
+            bs.Position = hostMethodRegsPtrPos;
+            WriteOffset32(bs, (uint)(hostMethodRegistersOffset - _baseMdlPos));
         }
 
+        // Write instance offset and size to MDLS header
         bs.Position = _baseMdlPos + 0x7C;
         WriteOffset32(bs, (uint)(instanceOffset - _baseMdlPos));
 
@@ -137,12 +165,12 @@ public class ModelSet2Serializer
         for (int i = 0; i < _modelSet.VariationMaterials.Count; i++)
         {
             bs.Position = variationMaterialsOffset + (i * 0x04);
-            WriteOffset32(bs, (uint)(_baseMdlPos - dataOffset));
+            WriteOffset32(bs, (uint)(dataOffset - _baseMdlPos)); // Fixed: was _baseMdlPos - dataOffset
 
             bs.Position = dataOffset;
-            for (int j = 0; i < _modelSet.VariationMaterials[j].Count; j++)
+            for (int j = 0; j < _modelSet.VariationMaterials[i].Count; j++) // Fixed: j < count, [i] not [j]
             {
-                PGLUmaterial material = _modelSet.VariationMaterials[j][i];
+                PGLUmaterial material = _modelSet.VariationMaterials[i][j]; // Fixed: [i][j] not [j][i]
                 material.Write(bs);
             }
             dataOffset = bs.Position;
@@ -303,6 +331,7 @@ public class ModelSet2Serializer
                     }
                 }
 
+                TexSetListHashToOffset.Add(listHash, (uint)texOffsetTable); // Fixed: was never populated
             }
         }
 

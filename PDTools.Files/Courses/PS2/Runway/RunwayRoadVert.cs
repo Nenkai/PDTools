@@ -26,6 +26,16 @@ public class RunwayRoadVert
         return vert;
     }
 
+    public void ToStream(BinaryStream bs)
+    {
+        bs.WriteSingle(Vertex.X);
+        bs.WriteSingle(Vertex.Y);
+        bs.WriteSingle(Vertex.Z);
+        bs.WriteInt16(Unk);
+        bs.WriteByte(Unk2);
+        bs.WriteByte(Unk3);
+    }
+
     public static int GetSize()
     {
         return 0x10;

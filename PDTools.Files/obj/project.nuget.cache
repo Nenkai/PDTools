@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "dgSpecHash": "+AeklT/moLU=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\User\\Desktop\\gtps2modeltool2\\PDTools\\PDTools.Files\\PDTools.Files.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\User\\.nuget\\packages\\bcnencoder.net\\2.1.0\\bcnencoder.net.2.1.0.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.1\\microsoft.extensions.dependencyinjection.abstractions.9.0.1.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.1\\microsoft.extensions.logging.abstractions.9.0.1.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.toolkit.highperformance\\7.0.2\\microsoft.toolkit.highperformance.7.0.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\pfim\\0.11.3\\pfim.0.11.3.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\sharpziplib\\1.4.2\\sharpziplib.1.4.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\sixlabors.fonts\\2.0.8\\sixlabors.fonts.2.0.8.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\sixlabors.imagesharp\\3.1.6\\sixlabors.imagesharp.3.1.6.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\sixlabors.imagesharp.drawing\\2.1.5\\sixlabors.imagesharp.drawing.2.1.5.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\syroot.binarydata\\5.2.2\\syroot.binarydata.5.2.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\syroot.binarydata.core\\5.2.0\\syroot.binarydata.core.5.2.0.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\syroot.binarydata.memory\\5.2.2\\syroot.binarydata.memory.5.2.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\4.5.2\\system.runtime.compilerservices.unsafe.4.5.2.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.netcore.app.ref\\9.0.16\\microsoft.netcore.app.ref.9.0.16.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\9.0.16\\microsoft.windowsdesktop.app.ref.9.0.16.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.16\\microsoft.aspnetcore.app.ref.9.0.16.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.6 has a known high severity vulnerability, https://github.com/advisories/GHSA-2cmq-823j-5qj8",
+      "projectPath": "C:\\Users\\User\\Desktop\\gtps2modeltool2\\PDTools\\PDTools.Files\\PDTools.Files.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\User\\Desktop\\gtps2modeltool2\\PDTools\\PDTools.Files\\PDTools.Files.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'SixLabors.ImageSharp' 3.1.6 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-rxmq-m78w-7wmc",
+      "projectPath": "C:\\Users\\User\\Desktop\\gtps2modeltool2\\PDTools\\PDTools.Files\\PDTools.Files.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\User\\Desktop\\gtps2modeltool2\\PDTools\\PDTools.Files\\PDTools.Files.csproj",
+      "libraryId": "SixLabors.ImageSharp",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    }
+  ]
+}

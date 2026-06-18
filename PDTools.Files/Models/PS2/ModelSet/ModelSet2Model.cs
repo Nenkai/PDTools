@@ -165,20 +165,36 @@ public class ModelSet2Model : ModelPS2Base
         }
 
         float[] dist = new float[3];
-        float total_UNUSED = 0.0f;
         float final = 0.0f;
         for (i = 0; i < 3; i++)
         {
             float center = (min[i] + max[i]) * 0.5f;
             dist[i] = center;
-            final = (max[i] - center) * (max[i] - center);
-            total_UNUSED += final;
+            float half = max[i] - center;
+            final += half * half; // Fixed: accumulate all three axes (was replacing each iteration)
         }
 
         // Not original, added for convenience
         Origin = new Vector3(dist);
 
         Unk = MathF.Sqrt(final);
+    }
+
+    /// <summary>
+    /// Sets the model origin and bounding sphere radius from an axis-aligned bounding box.
+    /// Skips populating the 8 corner vectors (Bounds list stays empty).
+    /// </summary>
+    public void SetOriginAndRadius(Vector3 min, Vector3 max)
+    {
+        float cx = (min.X + max.X) * 0.5f;
+        float cy = (min.Y + max.Y) * 0.5f;
+        float cz = (min.Z + max.Z) * 0.5f;
+        Origin = new Vector3(cx, cy, cz);
+
+        float dx = max.X - cx;
+        float dy = max.Y - cy;
+        float dz = max.Z - cz;
+        Unk = MathF.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     public static uint GetSize()

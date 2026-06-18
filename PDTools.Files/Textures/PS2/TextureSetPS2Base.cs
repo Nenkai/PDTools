@@ -16,11 +16,12 @@ namespace PDTools.Files.Textures.PS2;
 public abstract class TextureSetPS2Base
 {
     protected GSMemory _gsMemory = new();
-    protected byte[] _inputData; // TextureSet1.cs uses this, may need refactor
 
     public ushort TotalBlockSize { get; set; }
     public List<PGLUtexture> pgluTextures { get; set; } = [];
     public List<GSTransfer> GSTransfers { get; set; } = [];
+
+    protected byte[] _inputData; // TextureSet1.cs uses this, may need refactor
 
     protected void InitializeGSMemory()
     {

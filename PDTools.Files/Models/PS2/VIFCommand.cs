@@ -18,6 +18,11 @@ public class VIFCommand
     public GIFTag GIFTag { get; set; }
     public List<object> UnpackData { get; set; } = [];
 
+    /// <summary>Absolute stream byte offset where this command's data (unpack elements /
+    /// GIFTag) begins. Recorded on read so callers can patch the raw vertex bytes in place
+    /// without re-serialising the whole model.</summary>
+    public long DataStreamOffset { get; set; }
+
     public void FromStream(BinaryStream bs)
     {
         VUAddr = bs.ReadUInt16();
@@ -26,6 +31,8 @@ public class VIFCommand
         byte bits = bs.Read1Byte();
         CommandOpcode = (VIFCommandOpcode)(bits & 0b1111111);
         IRQ = (bits >> 7 & 1) == 1;
+
+        DataStreamOffset = bs.Position;
 
         if (VUAddr == 0xC0C0)
         {

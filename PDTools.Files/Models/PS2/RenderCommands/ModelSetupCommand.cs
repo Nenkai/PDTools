@@ -78,6 +78,8 @@ public abstract class ModelSetupPS2Command
             ModelSetupPS2Opcode.pglAlphaFail => new Cmd_pglAlphaFail(),
             ModelSetupPS2Opcode.pglGT3_2_1ui => new Cmd_GT3_2_1ui(),
             ModelSetupPS2Opcode.pglGT3_2_4f => new Cmd_GT3_2_4f(),
+            ModelSetupPS2Opcode.pglCylinderMapHint => new Cmd_pglCylinderMapHint(),
+            ModelSetupPS2Opcode.ModelSet_setShapeTweenRatio => new Cmd_ModelSet_setShapeTweenRatio(),
             ModelSetupPS2Opcode.pgl_53 => new Cmd_Unk53(),
             ModelSetupPS2Opcode.CallVM => new Cmd_CallVM(),
             ModelSetupPS2Opcode.VM_pglRotate => new Cmd_VM_pglRotate(),
