@@ -23,6 +23,19 @@ public abstract class TextureSetPS2Base
 
     protected byte[] _inputData; // TextureSet1.cs uses this, may need refactor
 
+    /// <summary>
+    /// The raw source bytes this texture set was parsed from (null if it was not parsed from a stream).
+    /// </summary>
+    public byte[] RawInputData => _inputData;
+
+    /// <summary>
+    /// When true and <see cref="RawInputData"/> is available, serialization writes those bytes
+    /// verbatim instead of re-deriving the Tex1 layout. Used to transplant untouched GT4 texture
+    /// sets into GT3 archives without the lossy re-serialize round-trip. Default false so any tool
+    /// that edits the parsed texture data still gets a fresh, correct serialization.
+    /// </summary>
+    public bool UseRawInputDataOnSerialize { get; set; }
+
     protected void InitializeGSMemory()
     {
         // Initialize GS Memory. This will unswizzle each buffer as needed
@@ -229,10 +242,70 @@ public abstract class TextureSetPS2Base
                 throw new NotSupportedException($"Format {texture.tex0.PSM} not supported");
         }
 
-        // Crop region with actual texture dimensions
-        img.Mutate(e => e.Crop((int)texture.ClampSettings.MAXU + 1, (int)texture.ClampSettings.MAXV + 1));
+        // Crop to the actual used sub-region, but ONLY on an axis that uses REGION_CLAMP (where MAXU/MAXV hold the
+        // real max texel). A REPEAT/CLAMP axis leaves MAXU/MAXV at 0, so the old unconditional crop shrank such
+        // textures to 1px (e.g. 32x64 REPEAT number-atlas signs decoded as 1x1). Those axes use the full tex0 size.
+        int cropW = texture.ClampSettings.WMS == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP
+            ? Math.Clamp((int)texture.ClampSettings.MAXU + 1, 1, fullWidth) : fullWidth;
+        int cropH = texture.ClampSettings.WMT == SCE_GS_CLAMP_PARAMS.SCE_GS_REGION_CLAMP
+            ? Math.Clamp((int)texture.ClampSettings.MAXV + 1, 1, fullHeight) : fullHeight;
+        if (cropW != fullWidth || cropH != fullHeight)
+            img.Mutate(e => e.Crop(cropW, cropH));
 
         return img;
+    }
+
+    /// <summary>
+    /// Reads a texture's raw CLUT (palette) from GS memory as packed RGBA (SCE storage order — pre-detile,
+    /// pre-alpha-normalize), exactly as it sits in the buffer. Returns null for a direct-colour (non-paletted)
+    /// texture. Uses the texture's own tex0 CBP/CSA unless <paramref name="clutPatch"/> overrides them.
+    /// Requires input (GS-memory) mode. Used to detect/extract per-paint colour variations by diffing.
+    /// </summary>
+    public uint[] GetClut(int textureIndex, TextureClutPatch clutPatch = null)
+    {
+        if (_gsMemory is null)
+            throw new Exception("Not input mode (GS memory not initialized)");
+
+        PGLUtexture texture = pgluTextures[textureIndex];
+        ushort cbp = clutPatch is not null ? clutPatch.CBP_ClutBufferBasePointer : texture.tex0.CBP_ClutBlockPointer;
+        byte csa = clutPatch is not null ? clutPatch.CSA_ClutEntryOffset : texture.tex0.CSA_ClutEntryOffset;
+        SCE_GS_PSM paletteFormat = texture.tex0.CPSM_ClutPartPixelFormatSetup;
+
+        switch (texture.tex0.PSM)
+        {
+            case SCE_GS_PSM.SCE_GS_PSMT4:
+            case SCE_GS_PSM.SCE_GS_PSMT4HH:
+            case SCE_GS_PSM.SCE_GS_PSMT4HL:
+            {
+                uint[] pal = new uint[8 * 2]; // 16 entries
+                if (paletteFormat == SCE_GS_PSM.SCE_GS_PSMCT32)
+                    _gsMemory.ReadTexPSMCT32(cbp, 1, 0, 0, 8, 2, pal, csa * 32);
+                else if (paletteFormat == SCE_GS_PSM.SCE_GS_PSMCT16)
+                {
+                    ushort[] p16 = new ushort[16];
+                    _gsMemory.ReadTexPSMCT16(cbp, 1, 0, 0, 8, 2, p16, csa * 32);
+                    PSMCT16To32(pal, p16);
+                }
+                else return null;
+                return pal;
+            }
+            case SCE_GS_PSM.SCE_GS_PSMT8:
+            {
+                uint[] pal = new uint[16 * 16]; // 256 entries
+                if (paletteFormat == SCE_GS_PSM.SCE_GS_PSMCT32)
+                    _gsMemory.ReadTexPSMCT32(cbp, 1, 0, 0, 16, 16, pal, csa * 32);
+                else if (paletteFormat == SCE_GS_PSM.SCE_GS_PSMCT16)
+                {
+                    ushort[] p16 = new ushort[256];
+                    _gsMemory.ReadTexPSMCT16(cbp, 1, 0, 0, 16, 16, p16, csa * 32);
+                    PSMCT16To32(pal, p16);
+                }
+                else return null;
+                return pal;
+            }
+            default:
+                return null; // direct-colour texture, no CLUT
+        }
     }
 
     public void Dump()

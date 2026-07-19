@@ -43,7 +43,7 @@ public class PGLUOrbisTextureInfo : PGLUTextureInfo
     public int Pitch { get; set; }
     public int ImageSize { get; set; }
 
-    public override void Read(BinaryStream bs, long basePos)
+    public override void Read(BinaryStream bs, long basePos, long relocPtr = 0)
     {
         bs.ReadInt32(); // Nothing
         int bits = bs.ReadInt32();
@@ -87,7 +87,8 @@ public class PGLUOrbisTextureInfo : PGLUTextureInfo
         uint fileNameOffset = bs.ReadUInt32();
         uint field_0x44 = bs.ReadUInt32();
 
-        bs.Position = fileNameOffset - basePos;
+        // Absolute against the set's relocation pointer, then offset from the set's own start.
+        bs.Position = basePos + (fileNameOffset - relocPtr);
         Name = bs.ReadString(StringCoding.ZeroTerminated);
     }
 

@@ -21,7 +21,15 @@ public abstract class PGLUTextureInfo
 
     public abstract void Write(BinaryStream bs);
 
-    public abstract void Read(BinaryStream bs, long basePos);
+    /// <summary>
+    /// Reads this texture's render params.
+    /// </summary>
+    /// <param name="bs">Stream to read from.</param>
+    /// <param name="basePos">Absolute stream position the texture set starts at.</param>
+    /// <param name="relocPtr">The set's relocation pointer (its header field at 0x08). A set's
+    /// internal pointers are absolute against this, so an absolute stream position is
+    /// <c>basePos + (pointer - relocPtr)</c>. It is 0 for a set written standalone.</param>
+    public abstract void Read(BinaryStream bs, long basePos, long relocPtr = 0);
 
     /// <summary>
     /// Short token for this texture's pixel format (e.g. "A8R8G8B8", "DXT45", "IDTEX8"),

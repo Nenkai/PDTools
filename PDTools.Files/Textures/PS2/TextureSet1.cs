@@ -165,8 +165,115 @@ public class TextureSet1 : TextureSetPS2Base
         return GetImageData(texture, textureClutPatch);
     }
 
+    /// <summary>
+    /// Injects GT3-style colour variations into this (already-parsed) texture set, Approach-B: the base GS data is
+    /// preserved (re-read from the loaded GS memory) and each recolouring texture's alternate palettes are placed into
+    /// APPENDED GS blocks (CSA-packed 4-per-block for PSMT4, 4 whole blocks for PSMT8), then N <see cref="ClutPatchSet"/>s
+    /// are emitted (set[0] = base tex0 pointers, set[1..N-1] = the alternates, recolouring textures only, SortedSet order
+    /// with ghost = base for a paint that doesn't change a given texture). Grows <see cref="TextureSetPS2Base.TotalBlockSize"/>
+    /// and regenerates the GS transfers. Flips off raw-passthrough so <see cref="Serialize"/> writes the new set.
+    /// </summary>
+    /// <param name="paintCount">Total paint count N (index 0 = base).</param>
+    /// <param name="recolourPalettes">recolouring texture index → the N per-paint raw CLUTs (as from <see cref="TextureSetPS2Base.GetClut"/>);
+    /// [0] = base (reference), [1..N-1] = the alternates to place.</param>
+    public void AddColorVariations(int paintCount, IReadOnlyDictionary<int, uint[][]> recolourPalettes)
+    {
+        if (recolourPalettes is null || recolourPalettes.Count == 0 || paintCount <= 1)
+            return;
+        if (_gsMemory is null)
+            throw new Exception("AddColorVariations requires input (GS-memory) mode — call FromStream first.");
+
+        ushort nextBlock = TotalBlockSize;                              // append cursor (mirror builder _tbp_Textures)
+        var appendedT4 = new List<(ushort block, byte csa)>();          // partially-filled appended PSMT4 CLUT blocks
+        var dedup = new Dictionary<string, (ushort cbp, byte csa)>();   // MD5(palette) → placement (mirror _variationPaletteCache)
+        var placement = new Dictionary<int, (ushort cbp, byte csa)[]>();
+
+        foreach (int texIndex in recolourPalettes.Keys.OrderBy(k => k)) // outer texture / inner paint → fill-then-spill like ty0028
+        {
+            uint[][] pals = recolourPalettes[texIndex];
+            sceGsTex0 tx = pgluTextures[texIndex].tex0;
+            bool isT8 = tx.PSM == SCE_GS_PSM.SCE_GS_PSMT8;
+            var place = new (ushort cbp, byte csa)[paintCount];
+            place[0] = (tx.CBP_ClutBlockPointer, tx.CSA_ClutEntryOffset); // base = resident, never re-placed
+            uint[] basePal = pals[0];
+
+            for (int v = 1; v < paintCount; v++)
+            {
+                uint[] p = pals[v];
+                if (p.AsSpan().SequenceEqual(basePal)) { place[v] = place[0]; continue; } // ghost
+
+                string key = (isT8 ? "T8_" : "T4_") + Convert.ToHexString(
+                    System.Security.Cryptography.MD5.HashData(MemoryMarshal.AsBytes(p.AsSpan())));
+                if (dedup.TryGetValue(key, out var cached)) { place[v] = cached; continue; }
+
+                ushort cbp; byte csa;
+                if (!isT8)
+                {
+                    int bi = appendedT4.FindIndex(b => b.csa + 2 <= 8); // CSA 0/2/4/6 in one block
+                    if (bi >= 0) { cbp = appendedT4[bi].block; csa = appendedT4[bi].csa; appendedT4[bi] = (cbp, (byte)(csa + 2)); }
+                    else { cbp = nextBlock++; csa = 0; appendedT4.Add((cbp, 2)); }
+                    _gsMemory.WriteTexPSMCT32(cbp, 1, 0, 0, 8, 2, p, csa * 32);
+                }
+                else
+                {
+                    cbp = nextBlock; nextBlock += 4; csa = 0;           // PSMT8 palette = 4 whole blocks
+                    _gsMemory.WriteTexPSMCT32(cbp, 1, 0, 0, 16, 16, p, 0);
+                }
+                dedup[key] = (cbp, csa);
+                place[v] = (cbp, csa);
+            }
+            placement[texIndex] = place;
+        }
+
+        if (nextBlock > GSMemory.MAX_BLOCKS)
+            throw new InvalidOperationException($"Colour-variation CLUTs overflow GS memory ({nextBlock} > {GSMemory.MAX_BLOCKS} blocks).");
+        TotalBlockSize = nextBlock;
+
+        // Regenerate transfers from GS memory [0, nextBlock) — base blocks re-read identically + the appended CLUT pool.
+        GSTransfers.Clear();
+        int tbp = 0;
+        foreach (var (Width, Height) in Tex1Utils.CalculateSwizzledTransferSizes(nextBlock * GSMemory.BLOCK_SIZE_BYTES))
+        {
+            byte[] data = new byte[Width * Height * 4];
+            _gsMemory.ReadTexPSMCT32(tbp, 1, 0, 0, Width, Height, MemoryMarshal.Cast<byte, uint>(data));
+            GSTransfers.Add(new GSTransfer { BP = (ushort)tbp, BW = 1, Format = SCE_GS_PSM.SCE_GS_PSMCT32, Width = (ushort)Width, Height = (ushort)Height, Data = data });
+            tbp += data.Length / GSMemory.BLOCK_SIZE_BYTES;
+        }
+
+        // Emit N ClutPatchSets (recolouring textures only, identical SortedSet order across all sets, ghost = base).
+        var patched = new SortedSet<int>(recolourPalettes.Keys);
+        ClutPatchSet.Clear();
+        for (int v = 0; v < paintCount; v++)
+        {
+            var cps = new ClutPatchSet();
+            foreach (int idx in patched)
+            {
+                (ushort cbp, byte csa) = placement[idx][v];
+                cps.TexturesToPatch.Add(new TextureClutPatch
+                {
+                    CBP_ClutBufferBasePointer = cbp,
+                    CSA_ClutEntryOffset = csa,
+                    Format = pgluTextures[idx].tex0.CPSM_ClutPartPixelFormatSetup,
+                    PGLUTextureIndex = (ushort)idx,
+                });
+            }
+            ClutPatchSet.Add(cps);
+        }
+
+        UseRawInputDataOnSerialize = false; // must re-serialize now that the set has changed
+    }
+
     public void Serialize(Stream stream)
     {
+        // Verbatim transplant: write the original parsed Tex1 bytes untouched. GT3 and GT4 share the
+        // same Tex1 format, so an untouched GT4 set is byte-compatible with GT3 and avoids any lossy
+        // re-derivation of offsets/alignment/CLUT-patch layout that can corrupt some sets.
+        if (UseRawInputDataOnSerialize && _inputData is not null && _inputData.Length > 0)
+        {
+            stream.Write(_inputData, 0, _inputData.Length);
+            return;
+        }
+
         var bs = new BinaryStream(stream, ByteConverter.Little);
 
         long basePos = bs.Position;

@@ -15,6 +15,10 @@ public class Cmd_pgluTexTableFromExternalTexSetUShort : ModelSetupPS2Command
 
     public ushort ExternalTexSetIndex { get; set; }
 
+    public Cmd_pgluTexTableFromExternalTexSetUShort()
+    {
+    }
+
     public Cmd_pgluTexTableFromExternalTexSetUShort(ushort value)
     {
         ExternalTexSetIndex = value;
@@ -22,12 +26,12 @@ public class Cmd_pgluTexTableFromExternalTexSetUShort : ModelSetupPS2Command
 
     public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        bs.WriteUInt16(ExternalTexSetIndex);
+        ExternalTexSetIndex = bs.ReadUInt16();
     }
 
     public override void Write(BinaryStream bs)
     {
-        ExternalTexSetIndex = bs.ReadUInt16();
+        bs.WriteUInt16(ExternalTexSetIndex);
     }
 
     public override string ToString()

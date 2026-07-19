@@ -1,0 +1,35 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Numerics;
+
+using Syroot.BinaryData;
+
+namespace PDTools.Files.Models.PS2.RenderCommands;
+
+/// <summary>
+/// GT4 and above. Calls pglRotateX using VM output registers. Operand: 1 ushort out-register index.
+/// </summary>
+public class Cmd_VM_pglRotateX : ModelSetupPS2Command
+{
+    public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.VM_pglRotateX;
+
+    public ushort OutRegisterIndex { get; set; }
+
+    public override void Read(BinaryStream bs, int commandsBaseOffset)
+    {
+        OutRegisterIndex = bs.ReadUInt16();
+    }
+
+    public override void Write(BinaryStream bs)
+    {
+        bs.WriteUInt16(OutRegisterIndex);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(Cmd_VM_pglRotateX)}";
+    }
+}

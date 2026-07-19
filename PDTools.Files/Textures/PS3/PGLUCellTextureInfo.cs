@@ -185,7 +185,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         bs.WriteInt32(0); // Img name offset to write later if exists
     }
 
-    public override void Read(BinaryStream bs, long basePos)
+    public override void Read(BinaryStream bs, long basePos, long relocPtr = 0)
     {
         Head0 = bs.ReadUInt32();
         Offset = bs.ReadUInt32();
@@ -249,11 +249,25 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         ImageId = bs.ReadUInt32();
         bs.ReadUInt32();
         uint imageNameOffset = bs.ReadUInt32();
-        bs.Position = imageNameOffset - basePos;
+        // The set's pointers are absolute against its relocation pointer, so rebase then offset from
+        // the set's own start. (0 - 0 for a standalone file; the old "offset - basePos" went negative
+        // for any set read in place inside a bigger file.)
+        bs.Position = basePos + (imageNameOffset - relocPtr);
         SourceFileName = bs.ReadString(StringCoding.ZeroTerminated);
         Name = SourceFileName;
     }
 
+    /// <summary>
+    /// Serialises this texture's pixels into a standard DDS in <paramref name="outStream"/>.
+    /// </summary>
+    /// <remarks>
+    /// ORIENTATION: PD stores PS3 textures bottom-up (bottom-left UV origin) whereas DDS/PNG are
+    /// top-down, so decoded images come out vertically flipped compared to how they appear in-game.
+    /// That is intentional and left alone: the rows are reproduced byte-for-byte, and because the
+    /// build path doesn't flip either, extract -> edit -> rebuild round-trips stay byte-exact. Flip
+    /// vertically in an image editor if you want to view/author art the right way up. (PSP 3SXT is
+    /// top-down and needs no such flip.)
+    /// </remarks>
     internal void CreateDDSData(byte[] imageData, Stream outStream)
     {
         var header = new DdsHeader();

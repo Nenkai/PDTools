@@ -153,7 +153,7 @@ public class TextureSet3
                 bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x98);
 
                 PGLUGETextureInfo textureInfo = new PGLUGETextureInfo();
-                textureInfo.Read(bs, BaseTextureSetPosition);
+                textureInfo.Read(bs, BaseTextureSetPosition, RelocPtr);
                 TextureInfos.Add(textureInfo);
 
                 textureInfo.BufferInfo = (GETextureBuffer)Buffers[(int)textureInfo.BufferId];
@@ -198,7 +198,7 @@ public class TextureSet3
                 TextureSet3Buffer texture = Buffers[i];
 
                 PGLUTextureInfo textureInfo = new PGLUCellTextureInfo();
-                textureInfo.Read(bs, BaseTextureSetPosition);
+                textureInfo.Read(bs, BaseTextureSetPosition, RelocPtr);
                 TextureInfos.Add(textureInfo);
 
                 // PS3 texture infos are parallel to buffer infos (texture i <-> buffer i); the
@@ -208,7 +208,8 @@ public class TextureSet3
                 textureInfo.BufferId = (uint)i;
                 textureInfo.BufferInfo = texture;
 
-                bs.Position = BaseTextureSetPosition + texture.ImageOffset;
+                // Image offsets are absolute against the relocation pointer too (0 standalone).
+                bs.Position = BaseTextureSetPosition + (texture.ImageOffset - RelocPtr);
                 texture.ImageData = new byte[texture.ImageSize];
                 bs.ReadExactly(texture.ImageData.Span);
             }
@@ -259,7 +260,7 @@ public class TextureSet3
                 bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x48);
 
                 PGLUTextureInfo textureInfo = new PGLUOrbisTextureInfo();
-                textureInfo.Read(bs, BaseTextureSetPosition);
+                textureInfo.Read(bs, BaseTextureSetPosition, RelocPtr);
                 TextureInfos.Add(textureInfo);
                 textureInfo.BufferInfo = Buffers[(int)textureInfo.BufferId];
             }
@@ -315,7 +316,7 @@ public class TextureSet3
         }
 
         const int texOff = 0x40, texInfoSize = 0x98, bufInfoSize = 0x20;
-        const int cmdCount = 17;                  // non-paletted command list length
+        const int cmdCount = 17; // non-paletted command list length
         int cmdLen = cmdCount * 4;
         int cmdStart = texOff + (n * texInfoSize);
         int bufStart = cmdStart + (n * cmdLen);
@@ -430,7 +431,7 @@ public class TextureSet3
             uint tpfReg = 0xc3000100u | (byte)format;
 
             bs.WriteUInt32(0xa0000000);                                     // TBP0
-            bs.WriteUInt32(0xa8000000u | (uint)mipWidth);                  // TBW0
+            bs.WriteUInt32(0xa8000000u | (uint)mipWidth);                   // TBW0
             bs.WriteUInt32(0xb8000000u | ((uint)log2H << 8) | (uint)log2W); // TSIZE0
             bs.WriteUInt32(suRaw);
             bs.WriteUInt32(svRaw);

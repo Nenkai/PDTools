@@ -18,6 +18,14 @@ public class VIFCommand
     public GIFTag GIFTag { get; set; }
     public List<object> UnpackData { get; set; } = [];
 
+    /// <summary>
+    /// For STROW commands: the 4 raw int32 ROW register values that follow the command header. The base
+    /// parser previously skipped these bytes; they are captured here because GT4 course-vertex packets encode
+    /// vertices as STROW/STMOD-accumulated DELTAS, and the cumulative decode needs the ROW seed. Null for
+    /// non-STROW commands.
+    /// </summary>
+    public int[] RowData { get; set; }
+
     /// <summary>Absolute stream byte offset where this command's data (unpack elements /
     /// GIFTag) begins. Recorded on read so callers can patch the raw vertex bytes in place
     /// without re-serialising the whole model.</summary>
@@ -43,7 +51,8 @@ public class VIFCommand
         {
             if (CommandOpcode == VIFCommandOpcode.STROW)
             {
-                bs.Position += 4 * 4;
+                // Capture the 4 ROW register int32s (needed for GT4's STROW/STMOD cumulative vertex decode).
+                RowData = bs.ReadInt32s(4);
             }
             else if (((int)CommandOpcode & (int)VIFCommandOpcode.UNPACK) != 0)
             {

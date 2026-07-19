@@ -60,7 +60,7 @@ public class PGLUGETextureInfo : PGLUTextureInfo
         throw new NotImplementedException();
     }
 
-    public override void Read(BinaryStream bs, long basePos)
+    public override void Read(BinaryStream bs, long basePos, long relocPtr = 0)
     {
         byte[] buffer = bs.ReadBytes(0x98);
         BitStream bitStream = new BitStream(BitStreamMode.Read, buffer, BitStreamSignificantBitOrder.MSB);
@@ -101,11 +101,14 @@ public class PGLUGETextureInfo : PGLUTextureInfo
         BufferId = bitStream.ReadUInt16();
         bitStream.ReadUInt32();
 
+        // The set's pointers are absolute against its relocation pointer, so rebase then offset from
+        // the set's own start. (0 - 0 for a standalone file; the old "offset - basePos" went negative
+        // for any set read in place inside a bigger file.)
         uint nameOffset = bitStream.ReadUInt32();
-        bs.Position = nameOffset - basePos;
+        bs.Position = basePos + (nameOffset - relocPtr);
         Name = bs.ReadString(StringCoding.ZeroTerminated);
 
-        bs.Position = subParamsOffset - basePos;
+        bs.Position = basePos + (subParamsOffset - relocPtr);
         CommandList.Read(bs, this);
     }
 

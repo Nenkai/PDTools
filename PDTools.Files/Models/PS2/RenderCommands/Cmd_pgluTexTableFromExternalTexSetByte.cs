@@ -17,12 +17,12 @@ public class Cmd_pgluTexTableFromExternalTexSetByte : ModelSetupPS2Command
 
     public override void Read(BinaryStream bs, int commandsBaseOffset)
     {
-        bs.WriteByte(ExternalTexSetIndex);
+        ExternalTexSetIndex = bs.Read1Byte();
     }
 
     public override void Write(BinaryStream bs)
     {
-        ExternalTexSetIndex = bs.Read1Byte();
+        bs.WriteByte(ExternalTexSetIndex);
     }
 
     public override string ToString()

@@ -14,9 +14,22 @@ namespace PDTools.Files.Models.PS2;
 
 public class PGLUshape
 {
-    /* Valid values are 1-2-3-4-5, GT4 only supports 1 & 4. 
-     * 2 uses a value from command 51 (gt3 only command). */
-    // 5 also works, although no idea what it does - vertex colors related? uses alpha? used in shadow shapes
+    /// <summary>
+    /// Shape render-program selector + flags (low 5 bits of the shape-header byte). Reverse-engineered via the
+    /// GT4→GT3 course converter (see GTPS2ModelTool MdlsToGtm1Converter). Layout:
+    ///   bits 0-1 (Unk1 &amp; 0x03) = VU rendering program:
+    ///     0 = per-vertex COLOUR (unlit): colours @0xC080 (V4_8), UVs @0xC040 (V2_32).
+    ///     1 = per-vertex NORMALS (lit):  normals @0xC080 (V3_32), UVs @0xC040.
+    ///     2 = ENVIRONMENT/SPHERE-map reflection: colours @0xC080 + per-vertex reflection DIRECTIONS @0xC040
+    ///         (V3_32; the compressed twin is V3_8 @0x8040 ÷127) and NO UVs — the VU generates texcoords from the
+    ///         directions. (Uses the op51 / pglGT3_2_4f reflection tint; that is what the old comment meant.)
+    ///     3 = CYLINDER-map reflection (e.g. glass building facades): same attribute layout as 2, but the VU also
+    ///         needs a per-draw pglCylinderMapHint (op49 = the shape's world centroid) as the projection origin,
+    ///         and the reflection is drawn with an ADDITIVE blend (GS ALPHA 0x58) over a separate base-texture pass.
+    ///   bit 2 (Unk1 &amp; 0x04) = SHADOW / additive-decal flag (GT4 "UseUnknownShadowFlag"): a coincident additive
+    ///     darkening pass (grass/kerb shadows, cast-shadow decals). ORTHOGONAL to the selector — so e.g. 5 = 1|4
+    ///     (a shadow-flagged normal shape). GT4 course models chiefly use 0/1/2/3 (+ the 0x04 bit).
+    /// </summary>
     public byte Unk1 { get; set; }
     public byte Unk2 { get; set; }
     public byte Unk3 { get; set; }
@@ -25,6 +38,16 @@ public class PGLUshape
 
     public List<VIFDescriptor> VIFDescriptors { get; set; } = [];
     public List<VIFPacket> VIFPackets { get; set; } = [];
+
+    /// <summary>
+    /// Optional verbatim shape bytes. When set, <see cref="Write(BinaryStream, long)"/> emits
+    /// these unchanged instead of re-serialising the parsed VIF packets. The shape's internal
+    /// reloc pointer and VIF data offsets are stored relative to the shape's own start, so the
+    /// bytes are position-independent and safe to relocate. This is used by the MDLS→GTM1
+    /// converter to preserve GT4 (compressed-vertex) shapes that the VIF re-serialiser cannot
+    /// reproduce faithfully.
+    /// </summary>
+    public byte[] RawData { get; set; }
 
     public void FromStream(BinaryStream bs)
     {
@@ -58,6 +81,14 @@ public class PGLUshape
 
     public void Write(BinaryStream bs, long mdlBasePos)
     {
+        // Verbatim passthrough (position-independent: all internal pointers are shape-relative).
+        if (RawData is not null)
+        {
+            bs.WriteBytes(RawData);
+            bs.Align(0x10, grow: true);
+            return;
+        }
+
         long baseShapeOffset = bs.Position;
 
         bs.WriteUInt32(0); // Reloc ptr
