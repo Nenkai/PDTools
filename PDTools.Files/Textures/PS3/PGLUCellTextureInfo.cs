@@ -336,6 +336,18 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
             imageData = newImageData;
         }
 
+        // Linear textures’ rows are stored using a hardware aligned pitch, strip any padding and repack
+        if ((format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
+            && FormatBits.HasFlag(CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_LN)
+            && Pitch != Width * 4)
+        {
+            byte[] packed = new byte[Width * Height * 4];
+            for (int y = 0; y < Height; y++)
+                Buffer.BlockCopy(imageData, y * Pitch, packed, y * Width * 4, Width * 4);
+
+            imageData = packed;
+        }
+
         // Swap channels for DDS
         if (format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_A8R8G8B8 || format == CELL_GCM_TEXTURE_FORMAT.CELL_GCM_TEXTURE_D8R8G8B8)
         {
@@ -432,8 +444,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         }
         else if (dds.Format == ImageFormat.Rgba32)
         {
-            // Without the alignment, for some reason pfim's data becomes weird
-            var i = Image.LoadPixelData<Bgra32>(dds.Data, (int)Utils.MiscUtils.AlignValue((uint)dds.Width, 4), dds.Height); 
+            var i = Image.LoadPixelData<Bgra32>(dds.Data, dds.Width, dds.Height);
             return i;
         }
         else
