@@ -280,7 +280,8 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         }
 
 
-        header.LastMipmapLevel = MipmapLevelLast;
+        // Only the base image is written below, so the mip count is hardcoded to 1. Using the real count would make DDS readers expect levels that were never written
+        header.LastMipmapLevel = 1;
 
         switch (format)
         {
