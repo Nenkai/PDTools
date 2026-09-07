@@ -103,7 +103,7 @@ public abstract class VMInstruction
         };
     }
 
-    public virtual string Disassemble(Dictionary<short, VMHostMethodEntry> values)
+    public virtual string? Disassemble(Dictionary<short, VMHostMethodEntry> values)
     {
         return ToString();
     }

@@ -15,7 +15,7 @@ public class PMSHMeshUnk0x1C
 {
     public byte Field_0x00 { get; set; }
     public byte Count_0x01 { get; set; }
-    public byte[] Data { get; set; }
+    public byte[]? Data { get; set; }
 
     public static PMSHMeshUnk0x1C FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
@@ -26,9 +26,12 @@ public class PMSHMeshUnk0x1C
         ushort dataSize = bs.ReadUInt16();
         uint dataOffset = bs.ReadUInt32();
 
-        bs.Position = mdlBasePos + dataOffset;
-        entry.Data = bs.ReadBytes(dataSize);
-        
+        if (dataOffset != 0)
+        {
+            bs.Position = mdlBasePos + dataOffset;
+            entry.Data = bs.ReadBytes(dataSize);
+        }
+
         return entry;
     }
 

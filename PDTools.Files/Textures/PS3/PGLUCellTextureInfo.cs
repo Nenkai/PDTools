@@ -382,7 +382,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         Pitch = Width * 4;
         MipmapLevelLast = (byte)image.MipMaps.Length;
 
-        var cellBufferInfo = BufferInfo as CellTextureBuffer;
+        var cellBufferInfo = (CellTextureBuffer)BufferInfo;
         cellBufferInfo.Width = (ushort)image.Width;
         cellBufferInfo.Height = (ushort)image.Height;
         cellBufferInfo.LastMipmapLevel = (byte)image.MipMaps.Length;

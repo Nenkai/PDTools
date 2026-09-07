@@ -39,7 +39,7 @@ public class Sssq
             message.Read(bs, lastStatus);
             if (message.Status == 0xFF)
             {
-                var meta = message.Event as SqMetaEvent;
+                var meta = (SqMetaEvent)message.Event;
                 if (meta.Type == 0x2F)
                     break;
             }
@@ -192,7 +192,7 @@ public class SqMetaEvent : ISqEvent
 {
     public byte Type { get; set; }
     public uint Length { get; set; }
-    public ISqMeta Meta { get; set; }
+    public ISqMeta? Meta { get; set; }
 
     public void Read(BinaryStream bs)
     {

@@ -13,18 +13,18 @@ using Syroot.BinaryData;
 
 namespace PDTools.Files.Models.PS3.ModelSet3.Materials;
 
-public class MDL3MaterialShaderReferences
+public class MDL3MaterialUnkShaderReferences
 {
     public int Field_0x04 { get; set; }
-    public ShadersProgram_0x20 ShaderProgram { get; set; }
-    public ShadersProgram_0x2C ShaderProgram2 { get; set; }
+    public ShadersProgram_0x20? ShaderProgram { get; set; }
+    public ShadersProgram_0x2C? ShaderProgram2 { get; set; }
     public int Field_0x14 { get; set; }
     public short Field_0x18 { get; set; }
 
-    public short[] UnkData { get; set; }
-    public static MDL3MaterialShaderReferences FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
+    public short[]? UnkData { get; set; }
+    public static MDL3MaterialUnkShaderReferences FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
-        MDL3MaterialShaderReferences entry = new MDL3MaterialShaderReferences();
+        MDL3MaterialUnkShaderReferences entry = new MDL3MaterialUnkShaderReferences();
 
         short field_0x00 = bs.ReadInt16();
         short field_0x02 = bs.ReadInt16();

@@ -16,129 +16,129 @@ namespace PDTools.Files.Models.PS2.CarModel1;
 public class OnboardCameras
 {
     [JsonIgnore]
-    public List<OnboardCameraData> Cameras { get; set; } = [];
+    public List<OnboardCameraData?> Cameras { get; set; } = [];
 
-    public OnboardCameraData DEFAULT
+    public OnboardCameraData? DEFAULT
     {
         get => Cameras.Count >= 1 ? Cameras[0] : null;
         set => SetCamera(0, value);
     }
 
-    public OnboardCameraData CHASE
+    public OnboardCameraData? CHASE
     {
         get => Cameras.Count >= 2 ? Cameras[1] : null;
         set => SetCamera(1, value);
     }
 
-    public OnboardCameraData UNK_2
+    public OnboardCameraData? UNK_2
     {
         get => Cameras.Count >= 3 ? Cameras[2] : null;
         set => SetCamera(2, value);
     }
 
-    public OnboardCameraData MIRROR_L
+    public OnboardCameraData? MIRROR_L
     {
         get => Cameras.Count >= 1 ? Cameras[3] : null;
         set => SetCamera(3, value);
     }
 
-    public OnboardCameraData MIRROR_R
+    public OnboardCameraData? MIRROR_R
     {
         get => Cameras.Count >= 1 ? Cameras[4] : null;
         set => SetCamera(4, value);
     }
 
-    public OnboardCameraData NOSE
+    public OnboardCameraData? NOSE
     {
         get => Cameras.Count >= 6 ? Cameras[5] : null;
         set => SetCamera(5, value);
     }
 
-    public OnboardCameraData BONNET
+    public OnboardCameraData? BONNET
     {
         get => Cameras.Count >= 7 ? Cameras[6] : null;
         set => SetCamera(6, value);
     }
 
-    public OnboardCameraData ROOF
+    public OnboardCameraData? ROOF
     {
         get => Cameras.Count >= 8 ? Cameras[7] : null;
         set => SetCamera(7, value);
     }
 
-    public OnboardCameraData BACK
+    public OnboardCameraData? BACK
     {
         get => Cameras.Count >= 9 ? Cameras[8] : null;
         set => SetCamera(8, value);
     }
 
-    public OnboardCameraData TAIL
+    public OnboardCameraData? TAIL
     {
         get => Cameras.Count >= 10 ? Cameras[9] : null;
         set => SetCamera(9, value);
     }
 
-    public OnboardCameraData SIDE_L
+    public OnboardCameraData? SIDE_L
     {
         get => Cameras.Count >= 11 ? Cameras[10] : null;
         set => SetCamera(10, value);
     }
 
-    public OnboardCameraData SIDE_R
+    public OnboardCameraData? SIDE_R
     {
         get => Cameras.Count >= 12 ? Cameras[11] : null;
         set => SetCamera(11, value);
     }
 
-    public OnboardCameraData FENDER_L
+    public OnboardCameraData? FENDER_L
     {
         get => Cameras.Count >= 13 ? Cameras[12] : null;
         set => SetCamera(12, value);
     }
 
-    public OnboardCameraData FENDER_R
+    public OnboardCameraData? FENDER_R
     {
         get => Cameras.Count >= 14 ? Cameras[13] : null;
         set => SetCamera(13, value);
     }
 
-    public OnboardCameraData WHEEL_FL
+    public OnboardCameraData? WHEEL_FL
     {
         get => Cameras.Count >= 15 ? Cameras[14] : null;
         set => SetCamera(14, value);
     }
 
-    public OnboardCameraData WHEEL_FR
+    public OnboardCameraData? WHEEL_FR
     {
         get => Cameras.Count >= 16 ? Cameras[15] : null;
         set => SetCamera(15, value);
     }
 
-    public OnboardCameraData WHEEL_RL
+    public OnboardCameraData? WHEEL_RL
     {
         get => Cameras.Count >= 17 ? Cameras[16] : null;
         set => SetCamera(16, value);
     }
 
-    public OnboardCameraData WHEEL_RR
+    public OnboardCameraData? WHEEL_RR
     {
         get => Cameras.Count >= 18 ? Cameras[17] : null;
         set => SetCamera(17, value);
     }
 
-    public OnboardCameraData OPTION_1
+    public OnboardCameraData? OPTION_1
     {
         get => Cameras.Count >= 19 ? Cameras[18] : null;
         set => SetCamera(18, value);
     }
 
-    public OnboardCameraData OPTION_2
+    public OnboardCameraData? OPTION_2
     {
         get => Cameras.Count >= 20 ? Cameras[19] : null;
         set => SetCamera(19, value);
     }
 
-    public void SetCamera(int index, OnboardCameraData data)
+    public void SetCamera(int index, OnboardCameraData? data)
     {
         while (Cameras.Count < index + 1)
             Cameras.Add(new OnboardCameraData());
@@ -149,7 +149,12 @@ public class OnboardCameras
     public void Write(BinaryStream bs)
     {
         foreach (var cam in Cameras)
-            cam.Write(bs);
+        {
+            if (cam is not null)
+                cam.Write(bs);
+            else
+                new OnboardCameraData().Write(bs);
+        }
     }
 }
 

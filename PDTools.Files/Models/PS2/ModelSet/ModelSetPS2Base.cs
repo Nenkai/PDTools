@@ -67,11 +67,11 @@ public abstract class ModelSetPS2Base
             switch (command.Opcode)
             {
                 case ModelSetupPS2Opcode.BBoxRender:
-                    ProcessCommands(extractor, (command as Cmd_BBoxRender).CommandsOnRender);
+                    ProcessCommands(extractor, ((Cmd_BBoxRender)command).CommandsOnRender);
                     break;
 
                 case ModelSetupPS2Opcode.LODSelect:
-                    var lodSel = command as Cmd_LODSelect;
+                    var lodSel = (Cmd_LODSelect)command;
                     for (int i = 0; i < lodSel.CommandsPerLOD.Count; i++)
                     {
                         extractor.SetLOD(i);
@@ -81,7 +81,7 @@ public abstract class ModelSetPS2Base
                     break;
 
                 case ModelSetupPS2Opcode.CallModelCallback:
-                    var callbackCmd = command as Cmd_CallModelCallback;
+                    var callbackCmd = (Cmd_CallModelCallback)command;
                     if (callbackCmd.Parameter == ModelCallbackParameter.IsTailLampActive)
                     {
                         extractor.CurrentCallback = 0;
@@ -101,7 +101,7 @@ public abstract class ModelSetPS2Base
                     break;
 
                 case ModelSetupPS2Opcode.pgluSetTexTable_Byte:
-                    byte index = (command as Cmd_pgluSetTexTable_Byte).TexSetTableIndex;
+                    byte index = ((Cmd_pgluSetTexTable_Byte)command).TexSetTableIndex;
                     extractor.SetTexTable(index);
                     break;
 
@@ -117,7 +117,7 @@ public abstract class ModelSetPS2Base
                         }
 
 
-                        var callShape = (command as Cmd_pgluCallShapeByte);
+                        var callShape = ((Cmd_pgluCallShapeByte)command);
                         int shapeIndex = callShape.ShapeIndex;
                         PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
                         shapeData.ShapeIndex = shapeIndex;
@@ -136,7 +136,7 @@ public abstract class ModelSetPS2Base
 
                 case ModelSetupPS2Opcode.pgl_53:
                     {
-                        var callShape = (command as Cmd_Unk53);
+                        var callShape = ((Cmd_Unk53)command);
                         int shapeIndex = callShape.ShapeIndex;
                         PGLUshapeConverted shapeData = Shapes[shapeIndex].GetShapeData();
                         shapeData.ShapeIndex = shapeIndex;

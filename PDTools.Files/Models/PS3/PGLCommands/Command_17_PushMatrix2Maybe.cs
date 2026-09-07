@@ -16,7 +16,7 @@ namespace PDTools.Files.Models.PS3.PGLCommands
     /// </summary>
     public class Command_17_PGLTranslate : ModelSetupCommand
     {
-        public float[] Unk { get; set; }
+        public float[] Unk { get; set; } = new float[16];
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             Unk = bs.ReadSingles(16);

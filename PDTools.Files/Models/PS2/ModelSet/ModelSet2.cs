@@ -114,8 +114,10 @@ public class ModelSet2 : ModelSetPS2Base
         ReadExternalInfos(bs, basePos, externalInfoOffset, externalInfoCount);
         ReadOutRegisterInfo(bs, basePos, outRegisterInfoOffset, outRegisterInfoCount);
 
-        Instance instance = new Instance();
-        instance.ModelSet = this;
+        Instance instance = new Instance
+        {
+            ModelSet = this
+        };
 
         if ((InstanceFlags & 1) != 0)
         {
@@ -329,22 +331,22 @@ public class ModelSet2 : ModelSetPS2Base
 
     public class Instance
     {
-        public ModelSet2 ModelSet { get; set; }
+        public required ModelSet2 ModelSet { get; set; }
 
         /// <summary>
         /// Info about each register provided in model set out register infos
         /// </summary>
-        public RegisterVal[] OutputRegisters { get; set; }
+        public RegisterVal[]? OutputRegisters { get; set; }
 
         /// <summary>
         /// Maybe external?
         /// </summary>
-        public RegisterVal[] Unk2 { get; set; }
+        public RegisterVal[]? Unk2 { get; set; }
 
         /// <summary>
         /// Engine provided from the specified model set host method infos
         /// </summary>
-        public RegisterVal[] HostMethodRegisters { get; set; }
+        public RegisterVal[]? HostMethodRegisters { get; set; }
 
         public void Read(BinaryStream bs, long baseMdlPos)
         {

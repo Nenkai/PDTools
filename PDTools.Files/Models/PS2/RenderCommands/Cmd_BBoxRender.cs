@@ -19,7 +19,7 @@ public class Cmd_BBoxRender : ModelSetupPS2Command
 {
     public override ModelSetupPS2Opcode Opcode => ModelSetupPS2Opcode.BBoxRender;
 
-    public Vector3[] BBox { get; set; }
+    public Vector3[]? BBox { get; set; }
     public List<ModelSetupPS2Command> CommandsOnRender { get; set; } = [];
 
     public override void Read(BinaryStream bs, int commandsBaseOffset)

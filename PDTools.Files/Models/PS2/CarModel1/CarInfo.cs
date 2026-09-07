@@ -195,7 +195,7 @@ public class CarInfo
         return JsonSerializer.Serialize(this, _jsonSerializerOptions);
     }
 
-    public static CarInfo FromJson(string json)
+    public static CarInfo? FromJson(string json)
     {
         return JsonSerializer.Deserialize<CarInfo>(json, _jsonSerializerOptions);
     }

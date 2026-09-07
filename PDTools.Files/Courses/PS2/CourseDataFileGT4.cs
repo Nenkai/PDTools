@@ -24,77 +24,77 @@ public class CourseDataFileGT4
     /// <summary>
     /// Main model
     /// </summary>
-    public ModelSet2 World { get; set; }
+    public ModelSet2? World { get; set; }
 
     /// <summary>
     /// Scenery Model (lights, banners, signs, buildings)
     /// </summary>
-    public ModelSet2 Environment { get; set; }
+    public ModelSet2? Environment { get; set; }
 
-    public ModelSet2 Reflection { get; set; }
+    public ModelSet2? Reflection { get; set; }
 
     /// <summary>
     /// Normally used for road reflection
     /// </summary>
-    public ModelSet2 ReflectionMask { get; set; }
+    public ModelSet2? ReflectionMask { get; set; }
 
-    public ModelSet2 After { get; set; }
+    public ModelSet2? After { get; set; }
 
     /// <summary>
     /// Sky Model
     /// </summary>
-    public ModelSet2 Sky { get; set; }
+    public ModelSet2? Sky { get; set; }
 
     /// <summary>
     /// Scenery/Sky Model
     /// </summary>
-    public ModelSet2 EnvSky { get; set; }
+    public ModelSet2? EnvSky { get; set; }
 
     /// <summary>
     /// Distant/Far Model
     /// </summary>
-    public ModelSet2 Far { get; set; }
+    public ModelSet2? Far { get; set; }
 
     /// <summary>
     /// Sky model (mirror)
     /// </summary>
-    public ModelSet2 MirrorSky { get; set; }
+    public ModelSet2? MirrorSky { get; set; }
 
     /// <summary>
     /// Smoke texture set.
     /// </summary>
-    public TextureSet1 RaceSmoke { get; set; }
+    public TextureSet1? RaceSmoke { get; set; }
 
     /// <summary>
     /// Minimap.
     /// </summary>
-    public MiniMapSet MiniMap { get; set; }
+    public MiniMapSet? MiniMap { get; set; }
 
-    public TextureSet1 UnusedSphereReflectionTexture { get; set; }
+    public TextureSet1? UnusedSphereReflectionTexture { get; set; }
 
     /// <summary>
     /// Shape of the flare.
     /// </summary>
-    public PGLUshape FlareShape { get; set; }
+    public PGLUshape? FlareShape { get; set; }
 
     /// <summary>
     /// Texture of the flare.
     /// </summary>
-    public TextureSet1 FlareTexture { get; set; }
+    public TextureSet1? FlareTexture { get; set; }
 
     /// <summary>
     /// Particles texture set.
     /// </summary>
-    public TextureSet1 ParticleTexture { get; set; }
+    public TextureSet1? ParticleTexture { get; set; }
 
     /// <summary>
     /// Texture of the flare reflection.
     /// </summary>
-    public TextureSet1 FlareReflection { get; set; }
+    public TextureSet1? FlareReflection { get; set; }
 
-    public ModelSet2 ReflectionUnk0xC8 { get; set; }
+    public ModelSet2? ReflectionUnk0xC8 { get; set; }
 
-    public ModelSet2 FgSky { get; set; }
+    public ModelSet2? FgSky { get; set; }
 
 
     /// <summary>

@@ -19,7 +19,7 @@ public class RunwayRayCastData
 
     public void ToStream(BinaryStream bs)
     {
-        bs.WriteUInt32(MainRoadTriIndex.Value);
+        bs.WriteUInt32(MainRoadTriIndex ?? 0);
 
         for (int j = 0; j < RoadTriIndices.Count; j++)
         {

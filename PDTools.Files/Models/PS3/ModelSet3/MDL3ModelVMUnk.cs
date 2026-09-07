@@ -14,7 +14,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3;
 
 public class MDL3ModelVMUnk
 {
-    public short[] UnkIndices { get; set; }
+    public short[]? UnkIndices { get; set; }
 
     public static MDL3ModelVMUnk FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
@@ -25,8 +25,11 @@ public class MDL3ModelVMUnk
         bs.Position += 0x2C;
         short indexCount = bs.ReadInt16();
 
-        bs.Position = indicesOffset;
-        unk.UnkIndices = bs.ReadInt16s(indexCount);
+        if (indicesOffset != 0)
+        {
+            bs.Position = indicesOffset;
+            unk.UnkIndices = bs.ReadInt16s(indexCount);
+        }
 
         return unk;
     }

@@ -48,6 +48,6 @@ public class PDITexture
         long textureSetSize = bs.ReadInt64();
 
         bs.Position = basePos + textureSetOffset;
-        TextureSet.FromStream(bs, TextureSet3.TextureConsoleType.PS4);
+        TextureSet.FromStream(bs, TextureSet3.TextureSetPlatformFormatType.PS4);
     }
 }

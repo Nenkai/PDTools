@@ -19,11 +19,11 @@ namespace PDTools.Files.Models.PS2.ModelSet;
 /// </summary>
 public class ModelSet0Model : ModelPS2Base
 {
-    public PGLUshape UnkModel0 { get; set; }
-    public PGLUshape MainModel { get; set; }
-    public PGLUshape UnkModel2 { get; set; }
-    public PGLUshape ReflectionModel { get; set; }
-    public PGLUshape UnkModel4 { get; set; }
+    public PGLUshape? UnkModel0 { get; set; }
+    public PGLUshape? MainModel { get; set; }
+    public PGLUshape? UnkModel2 { get; set; }
+    public PGLUshape? ReflectionModel { get; set; }
+    public PGLUshape? UnkModel4 { get; set; }
 
     public Vector3[] BoundaryBox = new Vector3[8];
 

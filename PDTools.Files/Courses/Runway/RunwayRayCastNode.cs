@@ -32,12 +32,12 @@ public class RunwayRayCastNode
     /// <summary>
     /// For branches
     /// </summary>
-    public RunwayRayCastNode Left { get; set; }
+    public RunwayRayCastNode? Left { get; set; }
 
     /// <summary>
     /// For branches
     /// </summary>
-    public RunwayRayCastNode Right { get; set; }
+    public RunwayRayCastNode? Right { get; set; }
 
     /// <summary>
     /// For leaves

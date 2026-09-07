@@ -23,6 +23,7 @@ using PDTools.Files.Textures.PS3;
 using PDTools.Files.Textures.PS4;
 using PDTools.Files.Textures.PSP;
 using SixLabors.Fonts;
+using Microsoft.Extensions.Logging;
 
 namespace PDTools.Files.Textures;
 
@@ -30,6 +31,8 @@ public class TextureSet3
 {
     public const string MAGIC = "TXS3";
     public const string MAGIC_LE = "3SXT";
+
+    private readonly ILogger? _logger;
 
     public List<TextureSet3Buffer> Buffers { get; set; } = [];
     public List<PGLUTextureInfo> TextureInfos { get; set; } = [];
@@ -49,12 +52,12 @@ public class TextureSet3
 
     public long BaseTextureSetPosition { get; set; }
 
-    public TextureSet3()
+    public TextureSet3(ILoggerFactory? loggerFactory = null)
     {
-
+        _logger = loggerFactory?.CreateLogger<TextureSet3>();
     }
 
-    public void FromStream(Stream stream, TextureConsoleType consoleType)
+    public void FromStream(Stream stream, TextureSetPlatformFormatType consoleType)
     {
         BaseTextureSetPosition = stream.Position;
 
@@ -69,15 +72,15 @@ public class TextureSet3
 
         int fileSize = bs.ReadInt32();
 
-        if (consoleType == TextureConsoleType.PS4) // 64 bit
+        if (consoleType == TextureSetPlatformFormatType.PS4) // 64 bit
         {
             ReadPS4Header(bs);
         }
-        else if (consoleType == TextureConsoleType.PS3)
+        else if (consoleType == TextureSetPlatformFormatType.PS3)
         {
             ReadPS3Header(bs);
         }
-        else if (consoleType == TextureConsoleType.PSP)
+        else if (consoleType == TextureSetPlatformFormatType.PSP)
         {
             ReadPSPHeader(bs);
         }
@@ -272,7 +275,7 @@ public class TextureSet3
     /// <param name="outputName"></param>
     public void ConvertToStandardFormat(string outputName)
     {
-        Console.WriteLine($"Processing {outputName} with {TextureInfos.Count} texture(s)...");
+        _logger?.LogInformation("Processing {} with {} texture(s)...", outputName, TextureInfos.Count);
 
         for (int i = 0; i < TextureInfos.Count; i++)
         {
@@ -288,7 +291,7 @@ public class TextureSet3
             else
                 texturePath = Path.Combine(Path.GetDirectoryName(texturePath), actualName);
 
-            Console.WriteLine($"- Converting '{texturePath}'...");
+            _logger?.LogInformation("- Converting '{}'...", texturePath);
 
             using var img = texture.GetAsImage();
 
@@ -391,7 +394,7 @@ public class TextureSet3
 
             bs.Position = txsBasePos + imageInfoOffset + (i * 0x20);
 
-            var textureInfo = TextureInfos[i] as PGLUCellTextureInfo;
+            var textureInfo = (PGLUCellTextureInfo)TextureInfos[i];
             bs.WriteInt32(imageOffset);
             bs.WriteInt32(endImageOffset - imageOffset); // Size
             bs.WriteByte(2);
@@ -434,17 +437,17 @@ public class TextureSet3
         return ms.ToArray();
     }
 
-    public void FromFile(string file, TextureConsoleType consoleType = TextureConsoleType.PS3)
+    public void FromFile(string file, TextureSetPlatformFormatType consoleType = TextureSetPlatformFormatType.PS3)
     {
         using var fs = new FileStream(file, FileMode.Open);
         FromStream(fs, consoleType);
     }
 
 
-    public enum TextureConsoleType
+    public enum TextureSetPlatformFormatType
     {
         PSP,
         PS3,
         PS4,
-    };
+    }
 }

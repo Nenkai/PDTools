@@ -22,7 +22,7 @@ public class DdsHeader
     public int LastMipmapLevel { get; set; }
 
     public DDSPixelFormatFlags FormatFlags { get; set; }
-    public string FourCCName { get; set; }
+    public string? FourCCName { get; set; }
 
     public int RGBBitCount { get; set; }
     public uint RBitMask { get; set; }
@@ -32,7 +32,7 @@ public class DdsHeader
 
     public DDS_DXGI_FORMAT DxgiFormat { get; set; }
 
-    public byte[] ImageData { get; set; }
+    public byte[]? ImageData { get; set; }
 
     public void Write(Stream outStream)
     {

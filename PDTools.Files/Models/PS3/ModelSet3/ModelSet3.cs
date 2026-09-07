@@ -49,8 +49,8 @@ public class ModelSet3
     public List<MDL3ShapeKey> ShapeKeys { get; set; } = [];
     public List<MDL3FlexibleVertexDefinition> FlexibleVertexFormats { get; set; } = [];
     public MDL3Materials Materials { get; set; } = new();
-    public TextureSet3 TextureSet { get; set; }
-    public ShadersHeader Shaders { get; set; }
+    public TextureSet3? TextureSet { get; set; }
+    public ShadersHeader? Shaders { get; set; }
     public List<MDL3Bone> Bones { get; set; } = [];
     public ushort _0x68Size { get; set; }
     public ushort VMStackSize { get; set; }
@@ -60,14 +60,14 @@ public class ModelSet3
     public List<MDL3WingData> WingData { get; set; } = [];
     public List<MDL3WingKey> WingKeys { get; set; } = [];
     public List<MDL3ModelVMUnk> UnkVMData { get; set; } = [];
-    public MDL3ModelVMUnk2 UnkVMData2 { get; set; }
-    public MDL3ModelVMContext VMContext { get; set; }
+    public MDL3ModelVMUnk2? UnkVMData2 { get; set; }
+    public MDL3ModelVMContext? VMContext { get; set; }
     public List<PackedMeshKey> PackedMeshKeys { get; set; } = [];
     public PackedMeshHeader PackedMesh { get; set; } = new();
-    public MDL3ShapeStreamingManager StreamingInfo { get; set; }
-    public ShapeStreamData ShapeStream { get; set; }
+    public MDL3ShapeStreamingManager? StreamingInfo { get; set; }
+    public ShapeStreamData? ShapeStream { get; set; }
 
-    public CourseDataFile ParentCourseData { get; set; }
+    public CourseDataFile? ParentCourseData { get; set; }
     public BinaryStream Stream { get; set; }
 
     public static ModelSet3 FromStream(Stream stream, int txsPos = 0)
@@ -299,7 +299,7 @@ public class ModelSet3
     {
         bs.Position = baseMdlPos + offset;
         TextureSet = new TextureSet3();
-        TextureSet.FromStream(bs, TextureSet3.TextureConsoleType.PS3);
+        TextureSet.FromStream(bs, TextureSet3.TextureSetPlatformFormatType.PS3);
     }
 
     private void ReadShaders(BinaryStream bs, long baseMdlPos, uint offset, uint count)
@@ -405,7 +405,7 @@ public class ModelSet3
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     /// <exception cref="NotSupportedException"></exception>
-    public Vector3[] GetVerticesOfShape(ushort shapeIndex)
+    public Vector3[]? GetVerticesOfShape(ushort shapeIndex)
     {
         if ((short)shapeIndex == -1)
             throw new InvalidOperationException("Shape Index was -1.");
@@ -454,7 +454,7 @@ public class ModelSet3
         {
             PMSHMesh entry = PackedMesh.Meshes[shape.PackedMeshRef.PackedMeshEntryIndex];
             PMSHFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.FlexVertexDeclarationID];
-            PMSHFlexVertexElementDefinition element = flexDef.GetElement("position");
+            PMSHFlexVertexElementDefinition? element = flexDef.GetElement("position");
 
             if (element is null)
                 return null;
@@ -494,7 +494,7 @@ public class ModelSet3
     /// </summary>
     /// <param name="meshIndex"></param>
     /// <returns></returns>
-    public List<Tri> GetTrisOfMesh(ushort meshIndex)
+    public List<Tri>? GetTrisOfMesh(ushort meshIndex)
     {
         MDL3Shape mesh = Shapes[meshIndex];
         var list = new List<Tri>();
@@ -565,15 +565,22 @@ public class ModelSet3
     /// </summary>
     /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public Vector2[] GetUVsOfMesh(ushort shapeIndex)
+    public Vector2[]? GetUVsOfMesh(ushort shapeIndex)
     {
         var shape = Shapes[shapeIndex];
         Vector2[] arr;
 
         var mat = Materials.Definitions[shape.MaterialIndex];
         MDL3MaterialData matData = Materials.MaterialDatas[mat.MaterialDataID];
-        ShaderDefinition shader = Shaders.Definitions[matData._0x14.ShaderID];
-        var prog = Shaders.Programs0x20[shader.ProgramID];
+
+        ShaderDefinition? shader = null;
+        ShadersProgram_0x20? prog = null;
+        if (Shaders is not null)
+        {
+            // TODO.
+            shader = Shaders.Definitions[matData.ShaderReference.ShaderID];
+            prog = Shaders.Programs0x20[shader.ProgramID];
+        }
 
         /*
         float scaleX = BinaryPrimitives.ReadSingleBigEndian(prog.Program.AsSpan(0x20));
@@ -660,7 +667,7 @@ public class ModelSet3
     /// </summary>
     /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public (uint, uint, uint)[] GetNormalsOfShape(ushort shapeIndex)
+    public (uint, uint, uint)[]? GetNormalsOfShape(ushort shapeIndex)
     {
         var shape = Shapes[shapeIndex];
         if (shape.FVFIndex != -1)
@@ -705,7 +712,7 @@ public class ModelSet3
         {
             PMSHMesh entry = PackedMesh.Meshes[shape.PackedMeshRef.PackedMeshEntryIndex];
             PMSHFlexVertexDefinition flexDef = PackedMesh.StructDeclarations[entry.FlexVertexDeclarationID];
-            PMSHFlexVertexElementDefinition element = flexDef.GetElement("normal");
+            PMSHFlexVertexElementDefinition? element = flexDef.GetElement("normal");
 
             if (element is null)
                 return null;
@@ -748,7 +755,7 @@ public class ModelSet3
     /// </summary>
     /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    public Vector3[] GetBBoxOfShape(ushort shapeIndex)
+    public Vector3[]? GetBBoxOfShape(ushort shapeIndex)
     {
         var shape = Shapes[shapeIndex];
 

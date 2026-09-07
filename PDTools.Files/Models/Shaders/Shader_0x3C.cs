@@ -13,12 +13,12 @@ namespace PDTools.Files.Models.Shaders;
 
 public class Shaders_0x3C
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public int Unk1 { get; set; }
     public int Unk2 { get; set; }
     public short Unk3 { get; set; }
     public short Unk4 { get; set; }
-    public byte[] Unk5 { get; set; }
+    public byte[] Unk5 { get; set; } = new byte[3];
 
     public static Shaders_0x3C FromStream(BinaryStream bs, long basePos)
     {
@@ -33,8 +33,11 @@ public class Shaders_0x3C
         entry.Unk4 = bs.ReadInt16();
         entry.Unk5 = bs.ReadBytes(3);
 
-        bs.Position = basePos + nameOffset;
-        entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        if (nameOffset != 0)
+        {
+            bs.Position = basePos + nameOffset;
+            entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         return entry;
     }

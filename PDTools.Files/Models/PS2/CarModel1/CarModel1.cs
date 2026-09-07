@@ -28,10 +28,10 @@ public class CarModel1
     /// </summary>
     public const int MaxSizeRace = 0xA8000;
 
-    public CarInfo CarInfo { get; set; }
-    public ModelSet1 ModelSet { get; set; }
-    public TireFile Tire { get; set; }
-    public WheelFile Wheel { get; set; }
+    public CarInfo? CarInfo { get; set; }
+    public ModelSet1? ModelSet { get; set; }
+    public TireFile? Tire { get; set; }
+    public WheelFile? Wheel { get; set; }
 
     public void FromStream(Stream stream)
     {
@@ -92,20 +92,23 @@ public class CarModel1
         bs.Position += 0x40; // Skip header for now
 
         long carInfoOffset = bs.Position;
-        CarInfo.Write(bs);
+        CarInfo?.Write(bs);
         bs.Position = 0x40 + AlignValue((uint)bs.Position - 0x40, 0x80);
 
         long mainModelOffset = bs.Position;
-        var modelSetSerializer = new ModelSet1Serializer(ModelSet);
-        modelSetSerializer.Write(stream);
+        if (ModelSet is not null)
+        {
+            var modelSetSerializer = new ModelSet1Serializer(ModelSet);
+            modelSetSerializer.Write(stream);
+        }
         bs.Align(0x40, grow: true);
 
         long tireOffset = bs.Position;
-        Tire.Write(stream);
+        Tire?.Write(stream);
         bs.Align(0x40, grow: true);
 
         long wheelOffset = bs.Position;
-        Wheel.Write(stream);
+        Wheel?.Write(stream);
         bs.Align(0x40, grow: true);
 
         // Why not

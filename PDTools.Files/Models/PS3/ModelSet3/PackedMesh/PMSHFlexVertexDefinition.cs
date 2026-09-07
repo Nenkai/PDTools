@@ -78,9 +78,9 @@ public class PMSHFlexVertexDefinition
         return declaration;
     }
 
-    public PMSHFlexVertexElementDefinition GetElement(string name)
+    public PMSHFlexVertexElementDefinition? GetElement(string name)
     {
-        if (PackedElements.TryGetValue(name, out PMSHFlexVertexElementDefinition elem))
+        if (PackedElements.TryGetValue(name, out PMSHFlexVertexElementDefinition? elem))
             return elem;
 
         // TODO: Elements can have multiple elements with the same name.

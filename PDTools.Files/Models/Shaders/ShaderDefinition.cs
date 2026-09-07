@@ -16,7 +16,7 @@ namespace PDTools.Files.Models.Shaders;
 
 public class ShaderDefinition
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public int UnkID { get; set; }
     public short ProgramID { get; set; }
     public short Unk0x24_Or_0x2C_EntryID { get; set; }
@@ -30,8 +30,11 @@ public class ShaderDefinition
         def.ProgramID = bs.ReadInt16();
         def.Unk0x24_Or_0x2C_EntryID = bs.ReadInt16();
 
-        bs.Position = basePos + nameOffset;
-        def.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        if (nameOffset != 0)
+        {
+            bs.Position = basePos + nameOffset;
+            def.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         return def;
     }

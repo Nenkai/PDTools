@@ -21,12 +21,13 @@ using PDTools.Files.Textures.PS2.GSPixelFormats;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.HighPerformance;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PDTools.Files.Textures.PS2;
 
 public class TextureSetBuilder
 {
-    private readonly ILogger _logger;
+    private readonly ILogger? _logger;
 
     // Underlaying texture set
     private readonly TextureSet1 _texSet = new();
@@ -50,9 +51,10 @@ public class TextureSetBuilder
 
     public int TextureCount => _textures.Count;
     public IReadOnlyList<TextureTask> Textures => _textures;
-    public TextureSetBuilder(ILogger log = null)
+
+    public TextureSetBuilder(ILoggerFactory? loggerFactory = null)
     {
-        _logger = log;
+        _logger = loggerFactory?.CreateLogger<TextureSetBuilder>();
     }
 
     /// <summary>
@@ -124,9 +126,11 @@ public class TextureSetBuilder
         // Color enabled
         pgluTexture.tex0.TCC_ColorComponent = 1;
 
-        var textureTask = new TextureTask();
-        textureTask.Image = img;
-        textureTask.TexturePixelFormat = GSPixelFormat.GetFormatFromPSMFormat(pgluTexture.tex0.PSM);
+        var textureTask = new TextureTask
+        {
+            Image = img,
+            TexturePixelFormat = GSPixelFormat.GetFormatFromPSMFormat(pgluTexture.tex0.PSM),
+        };
         textureTask.SizeInGSBlocks = (ushort)(textureTask.TexturePixelFormat.GetLastBlockIndexForImageDimensions(img.Width, img.Height) + 1);
         textureTask.UnusedGSBlocks = textureTask.TexturePixelFormat.GetUnusedBlocks(textureTask.Image.Width, textureTask.Image.Height, out int firstFreeVerticalBlock);
         textureTask.FirstFreeVerticalBlock = firstFreeVerticalBlock;
@@ -139,7 +143,7 @@ public class TextureSetBuilder
             Rgba32[] fullPalette = new Rgba32[paletteSize];
             textureTask.IndexedImage = new byte[img.Height, img.Width];
 
-            bool fits = ImageFitsColorPalette(img, paletteSize, out List<Rgba32> colorPalette);
+            bool fits = ImageFitsColorPalette(img, paletteSize, out List<Rgba32>? colorPalette);
             if (!fits)
             {
                 _logger?.LogInformation("Quantizing texture {x}x{y} for format {format} as color palette is larger than can fit..", img.Width, img.Height, pgluTexture.tex0.PSM);
@@ -211,9 +215,9 @@ public class TextureSetBuilder
         int paletteSize = pgluTexture.tex0.PSM == SCE_GS_PSM.SCE_GS_PSMT8 ? 256 : 16;
         Rgba32[] fullPalette = new Rgba32[paletteSize];
 
-        bool fits = ImageFitsColorPalette(img, paletteSize, out List<Rgba32> colorPalette);
+        bool fits = ImageFitsColorPalette(img, paletteSize, out List<Rgba32>? colorPalette);
         if (fits)
-            colorPalette.CopyTo(fullPalette);
+            colorPalette!.CopyTo(fullPalette);
         else
             throw new Exception($"Texture file '{path}' must use less than {paletteSize} colors ahead of time.");
 
@@ -614,7 +618,7 @@ public class TextureSetBuilder
         }
     }
 
-    private static bool ImageFitsColorPalette(Image<Rgba32> img, int paletteSize, out List<Rgba32> colorPalette)
+    private static bool ImageFitsColorPalette(Image<Rgba32> img, int paletteSize, out List<Rgba32>? colorPalette)
     {
         colorPalette = null;
 
@@ -812,14 +816,19 @@ public class TextureSetBuilder
 public class TextureTask
 {
     /// <summary>
+    /// Raw Image data.
+    /// </summary>
+    public required Image<Rgba32> Image { get; set; }
+
+    /// <summary>
+    /// GS Format for this texture.
+    /// </summary>
+    public required GSPixelFormat TexturePixelFormat { get; set; }
+
+    /// <summary>
     /// PGLUTexture structure.
     /// </summary>
     public PGLUtexture PGLUTexture { get; set; }
-
-    /// <summary>
-    /// Raw Image data.
-    /// </summary>
-    public Image<Rgba32> Image { get; set; }
 
     /// <summary>
     /// Indexed image (when the image has a palette). <br/>
@@ -827,11 +836,6 @@ public class TextureTask
     /// IndexedImage[Y,X]
     /// </summary>
     public byte[,] IndexedImage { get; set; }
-
-    /// <summary>
-    /// GS Format for this texture.
-    /// </summary>
-    public GSPixelFormat TexturePixelFormat { get; set; }
 
     public byte[] PackedImageData { get; set; }
 

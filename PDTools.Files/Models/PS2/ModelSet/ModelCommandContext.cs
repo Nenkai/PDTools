@@ -18,7 +18,7 @@ public class ModelCommandShapeExtractor
     public RenderCommandContext RenderCommandContext { get; set; } = new();
 
     public string ModelName { get; set; }
-    public string ExtraShapeName { get; set; }
+    public string? ExtraShapeName { get; set; }
 
     public int ModelIndex { get; set; }
     public int CurrentLOD { get; set; } = -1;

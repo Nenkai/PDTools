@@ -26,23 +26,23 @@ public class CameraGT4
     public float UnkField_0x28 { get; set; }
     public float UnkField_0x2C { get; set; }
     public float UnkField_0x30 { get; set; }
-    public CurveGT4 PositionCurve { get; set; }
-    public CurveGT4 HeightCurve { get; set; }
-    public CurveGT4 Curve0x3C { get; set; }
-    public CurveGT4 Curve0x40 { get; set; }
-    public CurveGT4 Curve0x44 { get; set; }
-    public CurveGT4 Curve0x48 { get; set; }
-    public CurveGT4 CurvePermRotationMaybeLeftRight { get; set; }
-    public CurveGT4 FOVCurve { get; set; }
-    public CurveGT4 Curve0x50 { get; set; }
-    public CurveGT4 Curve0x54 { get; set; }
-    public CurveGT4 Curve0x58 { get; set; }
+    public CurveGT4? PositionCurve { get; set; }
+    public CurveGT4? HeightCurve { get; set; }
+    public CurveGT4? Curve0x3C { get; set; }
+    public CurveGT4? Curve0x40 { get; set; }
+    public CurveGT4? Curve0x44 { get; set; }
+    public CurveGT4? Curve0x48 { get; set; }
+    public CurveGT4? CurvePermRotationMaybeLeftRight { get; set; }
+    public CurveGT4? FOVCurve { get; set; }
+    public CurveGT4? Curve0x50 { get; set; }
+    public CurveGT4? Curve0x54 { get; set; }
+    public CurveGT4? Curve0x58 { get; set; }
     public float UnkField_0x5C { get; set; }
     public float UnkField_0x60 { get; set; }
-    public CurveGT4 Curve0x64 { get; set; }
-    public CurveGT4 Curve0x68 { get; set; }
-    public CurveGT4 Curve0x6C { get; set; }
-    public CurveGT4 Curve0x70 { get; set; }
+    public CurveGT4? Curve0x64 { get; set; }
+    public CurveGT4? Curve0x68 { get; set; }
+    public CurveGT4? Curve0x6C { get; set; }
+    public CurveGT4? Curve0x70 { get; set; }
 
     public void Read(BinaryStream bs, long basePos, uint version)
     {

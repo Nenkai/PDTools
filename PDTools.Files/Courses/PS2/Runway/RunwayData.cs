@@ -68,7 +68,7 @@ public class RunwayData
     public List<RunwayCluster> Clusters { get; set; } = [];
 
     public byte TreeMaxDepth { get; set; }
-    public Node Root { get; set; }
+    public Node? Root { get; set; }
 
     /// <summary>
     /// '4WNR'
@@ -173,7 +173,7 @@ public class RunwayData
         return rwy;
     }
 
-    private static Node TraverseRead(BinaryStream stream, int depthLeft)
+    private static Node? TraverseRead(BinaryStream stream, int depthLeft)
     {
         if (depthLeft < 0)
             return null;
@@ -213,7 +213,7 @@ public class RunwayData
             return traverse(out result, Bounds, startPoint, endPoint, Root, depth, 0);
         }
         else
-            result = null;
+            result = default;
 
         return false;
     }
@@ -235,7 +235,7 @@ public class RunwayData
         float pos = MathUtils.Lerp(axisBoundsMin, axisBoundsMax, node.Value); // (axisBoundsMin * (1.0f - node.Value)) + (axisBoundsMax * node.Value);
         float v20 = axisV1 - pos;
 
-        Node nextNode;
+        Node? nextNode;
 
         clusterIndex *= 2;
 
@@ -456,14 +456,14 @@ public class RunwayData
                     float nextV = nextcp.TrackV;
 
                     if (nextcp.TrackV < cp.TrackV)
-                        nextV = this.TrackV;
+                        nextV = TrackV;
 
                     vcoord += (nextV - vcoord) * result.X;
                     lowest = current;
 
                     // Loop back
-                    if (vcoord > this.TrackV)
-                        vcoord -= this.TrackV;
+                    if (vcoord > TrackV)
+                        vcoord -= TrackV;
                 }
             }
         }
@@ -472,16 +472,16 @@ public class RunwayData
     }
 
     /// <summary>
-    /// 
+    /// Computes the ST coordinates of a point within a quad
     /// </summary>
     /// <param name="result"></param>
-    /// <param name="pos">Position</param>
+    /// <param name="point">Position</param>
     /// <param name="p1">Rect P1</param>
     /// <param name="p2">Rect P2</param>
     /// <param name="p3">Rect P3</param>
     /// <param name="p4">Rect P4</param>
-    /// <returns></returns>
-    public static bool QuadSTCompute(out Vector3 result, Vector3 pos, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
+    /// <returns>True if the point is within the quad.</returns>
+    public static bool QuadSTCompute(out Vector3 result, Vector3 point, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
     {
         float p3p1XDiff = p3.X - p1.X;
         float p3p1ZDiff = p3.Z - p1.Z;
@@ -493,8 +493,8 @@ public class RunwayData
         if (p3p1XDiff == 0.0 && p3p1ZDiff == 0.0 && p2p4XDiff == 0.0 && p2p4ZDiff == 0.0f)
             return false;
 
-        float posP1XDiff = pos.X - p1.X;
-        float posP1ZDiff = pos.Z - p1.Z;
+        float posP1XDiff = point.X - p1.X;
+        float posP1ZDiff = point.Z - p1.Z;
 
         float unk = posP1ZDiff * p3p1XDiff - posP1XDiff * p3p1ZDiff;
         if (unk <= 0.0f)
@@ -505,8 +505,8 @@ public class RunwayData
             float unk2 = posP1ZDiff * p2p1XDiff - posP1XDiff * p2p1ZDiff;
             if (0.0f <= unk2)
             {
-                float posP4XDiff = pos.X - p4.X;
-                float posP4ZDiff = pos.Z - p4.Z;
+                float posP4XDiff = point.X - p4.X;
+                float posP4ZDiff = point.Z - p4.Z;
 
                 float unk3 = posP4ZDiff * p2p4XDiff - posP4XDiff * p2p4ZDiff;
                 if (unk3 <= 0.0f)
@@ -536,10 +536,14 @@ public class RunwayData
                             result.Y = (unk2 * -2.0f) / (unk6 - unk7);
                         }
 
-                        result.Z = pos.Y - ((1.0f - result.X) * (1.0f - result.Y) * p1.Y 
-                                                + result.X * (1.0f - result.Y) * p2.Y 
-                                                + (1.0f - result.X) * result.Y * p3.Y 
-                                                + result.X * result.Y * p4.Y);
+                        float w00 = (1.0f - result.X) * (1.0f - result.Y);
+                        float w10 = result.X * (1.0f - result.Y);
+                        float w01 = (1.0f - result.X) * result.Y;
+                        float w11 = result.X * result.Y;
+
+                        float surfaceY = w00 * p1.Y + w10 * p2.Y + w01 * p3.Y + w11 * p4.Y;
+
+                        result.Z = point.Y - surfaceY;
 
                         return true;
                     }
@@ -554,11 +558,11 @@ public class RunwayData
     {
         public byte Axis;
         public float Value;
-        public Node Left;
-        public Node Right;
+        public Node? Left;
+        public Node? Right;
     }
 
-    public class RunwayResult
+    public struct RunwayResult
     {
         public Vector3 HitPoint { get; set; } // 0x00
         public byte TriUnk { get; set; } // 0x0C
@@ -571,6 +575,11 @@ public class RunwayData
 
         public short TriIndex { get; set; } = -1; // 0x30
         public short Cluster { get; set; } = -1; // 0x32
+
+        public RunwayResult()
+        {
+
+        }
     }
 
     public struct RunwayHint

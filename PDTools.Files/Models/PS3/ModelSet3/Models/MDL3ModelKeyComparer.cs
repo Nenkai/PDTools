@@ -11,7 +11,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3.Models;
 
 public class MDL3ModelKeyComparer : IComparer<MDL3ModelKey>
 {
-    private static readonly MDL3ModelKeyComparer _default = new MDL3ModelKeyComparer();
+    private static readonly MDL3ModelKeyComparer _default = new();
     public static MDL3ModelKeyComparer Default => _default;
 
     public int Compare(MDL3ModelKey value1, MDL3ModelKey value2)

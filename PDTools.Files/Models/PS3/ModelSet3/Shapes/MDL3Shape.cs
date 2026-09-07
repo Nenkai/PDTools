@@ -14,7 +14,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3.Shapes;
 
 public class MDL3Shape
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     public ushort Flags { get; set; }
 
@@ -53,23 +53,24 @@ public class MDL3Shape
     /// <summary>
     /// Bounds for this mesh. Must be 8 vectors
     /// </summary>
-    public Vector3[] BBox { get; set; }
+    public Vector3[]? BBox { get; set; }
 
     public bool Tristrip = false;
 
-    public MDL3FlexibleVertexDefinition FVF { get; set; }
-    public MDL3Material Material { get; set; }
-    public MDL3ShapePackedMeshRef PackedMeshRef { get; set; }
+    public MDL3FlexibleVertexDefinition? FVF { get; set; }
+    public MDL3Material? Material { get; set; }
+    public MDL3ShapePackedMeshRef? PackedMeshRef { get; set; }
 
     public static MDL3Shape FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
         long meshBasePos = bs.Position;
 
-        MDL3Shape mesh = new();
-
-        mesh.Flags = bs.ReadUInt16();
-        mesh.FVFIndex = bs.ReadInt16();
-        mesh.MaterialIndex = bs.ReadInt16();
+        MDL3Shape mesh = new()
+        {
+            Flags = bs.ReadUInt16(),
+            FVFIndex = bs.ReadInt16(),
+            MaterialIndex = bs.ReadInt16()
+        };
         bs.ReadUInt16(); // Unk
         mesh.VertexCount = bs.ReadUInt32();
         mesh.VerticesOffset = bs.ReadUInt32();

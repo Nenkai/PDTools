@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.Shaders;
 
 public class ShadersProgram_0x2C
 {
-    public byte[] Program { get; set; }
+    public byte[]? Program { get; set; }
     public List<ShaderProgramEntry_0x2C_0x10> _0x10 { get; set; } = [];
     public List<ShaderProgramEntry_0x2C_0x14> _0x14 { get; set; } = [];
     public List<ShaderProgramEntry_0x2C_0x18> _0x18 { get; set; } = [];

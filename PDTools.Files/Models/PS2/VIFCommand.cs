@@ -18,7 +18,7 @@ public class VIFCommand
     public VIFCommandOpcode CommandOpcode { get; set; }
     public bool IRQ { get; set; }
 
-    public GIFTag GIFTag { get; set; }
+    public GIFTag? GIFTag { get; set; }
     public List<object> UnpackData { get; set; } = [];
 
     public void FromStream(BinaryStream bs)

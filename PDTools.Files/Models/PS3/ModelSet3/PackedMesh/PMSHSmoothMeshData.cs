@@ -19,9 +19,9 @@ namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 /// </summary>
 public class PMSHSmoothMeshData
 {
-    public byte[] PackedVertexData { get; set; }
-    public byte[] PackedIndexBufferData { get; set; }
-    public byte[] PackedCommandsData { get; set; }
+    public byte[]? PackedVertexData { get; set; }
+    public byte[]? PackedIndexBufferData { get; set; }
+    public byte[]? PackedCommandsData { get; set; }
     public ushort PackedFlexVertCount { get; set; }
     public ushort NonPackedFlexVertCount { get; set; }
     public byte PackedFaceIndexBitSize { get; set; }

@@ -118,25 +118,25 @@ public class PGLUshape
             int faceI = 0;
 
             VIFPacket packet = VIFPackets[j];
-            VIFCommand vertCommand = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC000 || // Regular
+            VIFCommand? vertCommand = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC000 || // Regular
                                                                          e.VUAddr == 0x8000);  // GT4 (compressed)
 
-            VIFCommand uvCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[])) ||  // Regular 
+            VIFCommand? uvCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is int[])) ||  // Regular 
                                                                        (e.VUAddr == 0x8040 && e.UnpackData.Any(a => a is short[]))); // GT4 (compressed)
 
-            VIFCommand normalsCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 ||   // Regular
+            VIFCommand? normalsCommand = packet.Commands.FirstOrDefault(e => (e.VUAddr == 0xC040 ||   // Regular
                                                                              e.VUAddr == 0xC080) &&  // External Texture
                                                                              e.UnpackData.Any(a => a is int[] arr && arr.Length == 3));
 
-            VIFCommand vertColors = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC080 && e.UnpackData.Any(a => a is byte[]));
+            VIFCommand? vertColors = packet.Commands.FirstOrDefault(e => e.VUAddr == 0xC080 && e.UnpackData.Any(a => a is byte[]));
 
 
-            VIFCommand resets = packet.Commands.Find(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is byte[]));
+            VIFCommand? resets = packet.Commands.Find(e => e.VUAddr == 0xC040 && e.UnpackData.Any(a => a is byte[]));
 
             VIFDescriptor desc = VIFDescriptors[j];
 
             int resetIndex = 1;
-            int nextVertReset = ((resets.UnpackData[resetIndex] as byte[])[0] + 6) / 3;
+            int nextVertReset = (((byte[])resets.UnpackData[resetIndex])[0] + 6) / 3;
 
             for (var l = 0; l < vertCommand.UnpackData.Count; l++)
             {
@@ -272,7 +272,7 @@ public class PGLUshapeConverted
     /// Dumps the shape to a obj file
     /// </summary>
     /// <param name="file"></param>
-    public void DumpToObjFile(string file, List<PGLUmaterial> materials = null)
+    public void DumpToObjFile(string file, List<PGLUmaterial>? materials = null)
     {
         using var objWriter = new StreamWriter(Path.ChangeExtension(file, ".obj"));
         using var mtlWriter = new StreamWriter(Path.ChangeExtension(file, ".mtl"));
@@ -288,7 +288,7 @@ public class PGLUshapeConverted
     /// <param name="texSetIndex"></param>
     /// <param name="faceIdxStart"></param>
     /// <param name="vtIdxStart"></param>
-    public void DumpToObj(StreamWriter objWriter, StreamWriter matWriter, int texSetIndex, int faceIdxStart, int vnIdxStart, int vtIdxStart, List<PGLUmaterial> materials)
+    public void DumpToObj(StreamWriter objWriter, StreamWriter matWriter, int texSetIndex, int faceIdxStart, int vnIdxStart, int vtIdxStart, List<PGLUmaterial>? materials)
     {
         for (int i = 0; i < Vertices.Count; i++)
         {

@@ -66,7 +66,7 @@ public abstract class TextureSetPS2Base
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
     /// <exception cref="NotImplementedException"></exception>
-    protected Image<Rgba32> GetImageData(PGLUtexture texture, TextureClutPatch textureClutPatch = null)
+    protected Image<Rgba32> GetImageData(PGLUtexture texture, TextureClutPatch? textureClutPatch = null)
     {
         if (_gsMemory is null)
             throw new Exception("Not input mode");
@@ -75,7 +75,7 @@ public abstract class TextureSetPS2Base
         int fullHeight = (int)Math.Pow(2, texture.tex0.TH_TextureHeight);
 
         byte[] textureData;
-        uint[] palette = null;
+        uint[]? palette = null;
 
         ushort cbp = textureClutPatch is not null ? textureClutPatch.CBP_ClutBufferBasePointer : texture.tex0.CBP_ClutBlockPointer;
         byte csa = textureClutPatch is not null ? textureClutPatch.CSA_ClutEntryOffset : texture.tex0.CSA_ClutEntryOffset;

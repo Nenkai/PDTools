@@ -96,7 +96,7 @@ public class ModelSet3Model
             switch (setupCommand.Opcode)
             {
                 case ModelSetupOpcode.Command_5_Switch:
-                    var switchCmd = setupCommand as Command_5_Switch;
+                    var switchCmd = (Command_5_Switch)setupCommand;
                     switchCmd.BranchJumpIndices = new int[switchCmd.BranchOffsets.Length];
 
                     for (int i1 = 0; i1 < switchCmd.BranchOffsets.Length; i1++)
@@ -114,7 +114,7 @@ public class ModelSet3Model
                     break;
 
                 case ModelSetupOpcode.Command_9_JumpToByte:
-                    var jumpCmd = setupCommand as Command_JumpByte;
+                    var jumpCmd = (Command_JumpByte)setupCommand;
                     int byteOffset = jumpCmd.AbsoluteJumpToOffset;
                     for (var j = i; j < Commands.Count; j++)
                     {
@@ -126,7 +126,7 @@ public class ModelSet3Model
                     break;
 
                 case ModelSetupOpcode.Command_10_JumpToShort:
-                    var shortJumpCmd = setupCommand as Command_JumpShort;
+                    var shortJumpCmd = (Command_JumpShort)setupCommand;
                     int shortOffset = shortJumpCmd.AbsoluteJumpOffset;
                     for (var j = i; j < Commands.Count; j++)
                     {

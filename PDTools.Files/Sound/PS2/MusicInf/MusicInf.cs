@@ -112,16 +112,20 @@ public class MusicInf
 
             for (int i = 0; i < playlistCount; i++)
             {
-                Playlist playlist = new Playlist();
-                playlist.Name = playlistNames[i];
+                Playlist playlist = new Playlist
+                {
+                    Name = playlistNames[i]
+                };
                 br.Position = 0x14 + i * 0x08;
                 int dataOffset = br.ReadInt32();
                 int trackCount = br.ReadInt32();
 
                 for (int j = 0; j < trackCount; j++)
                 {
-                    var track = new Track();
-                    track.ParentPlaylist = playlist;
+                    var track = new Track
+                    {
+                        ParentPlaylist = playlist
+                    };
                     br.Position = dataOffset + j * 0x18;
                     int code = br.ReadInt32();
                     int file = br.ReadInt32();

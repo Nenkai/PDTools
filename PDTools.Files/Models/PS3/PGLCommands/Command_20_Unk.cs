@@ -17,7 +17,7 @@ namespace PDTools.Files.Models.PS3.PGLCommands
     /// </summary>
     public class Command_20_PGLRotateX : ModelSetupCommand
     {
-        public float[] Values { get; set; }
+        public float[] Values { get; set; } = new float[4];
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
             Values = bs.ReadSingles(4);

@@ -49,9 +49,9 @@ public class Cmd_CallModelCallback : ModelSetupPS2Command
                 if (opcode == ModelSetupPS2Opcode.Jump_UShort || opcode == ModelSetupPS2Opcode.Jump_Byte)
                 {
                     if (opcode == ModelSetupPS2Opcode.Jump_UShort)
-                        endOfAllOffset = bs.Position - 2 + (cmd as Cmd_JumpUShort).JumpOffset;
+                        endOfAllOffset = bs.Position - 2 + ((Cmd_JumpUShort)cmd).JumpOffset;
                     else if (opcode == ModelSetupPS2Opcode.Jump_Byte)
-                        endOfAllOffset = bs.Position - 1 + (cmd as Cmd_JumpByte).JumpOffset;
+                        endOfAllOffset = bs.Position - 1 + ((Cmd_JumpByte)cmd).JumpOffset;
                     break;
                 }
 

@@ -25,7 +25,7 @@ public class CourseDataFile : IDisposable
     public record CourseDataFileEntry(uint Type, uint Alignment, uint DataStart, uint DataLength);
     public List<CourseDataFileEntry> Entries { get; set; } = [];
 
-    public ModelSet3 MainModelSet { get; set; }
+    public ModelSet3? MainModelSet { get; set; }
     public Stream Stream { get; set; }
 
     public static CourseDataFile Open(string file)

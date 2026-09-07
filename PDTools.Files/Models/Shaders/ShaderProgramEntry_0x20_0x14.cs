@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.Shaders;
 
 public class ShaderProgramEntry_0x20_0x14
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public short Unk { get; set; }
     public short Unk2 { get; set; }
     public short Unk3 { get; set; }
@@ -30,8 +30,11 @@ public class ShaderProgramEntry_0x20_0x14
         entry.Unk4 = bs.ReadInt16();
         entry.Unk5 = bs.ReadInt32();
 
-        bs.Position = basePos + nameOffset;
-        entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        if (nameOffset != 0)
+        {
+            bs.Position = basePos + nameOffset;
+            entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         return entry;
     }

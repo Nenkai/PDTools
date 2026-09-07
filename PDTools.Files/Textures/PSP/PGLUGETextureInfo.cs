@@ -4,6 +4,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -123,15 +124,16 @@ public class PGLUGETextureInfo : PGLUTextureInfo
         {
             case eSCE_GE_TPF.SCE_GE_TPF_5650:
                 throw new NotImplementedException("SCE_GE_TPF_5650 not yet implemented.");
-                break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_5551:
                 throw new NotImplementedException("SCE_GE_TPF_5551 not yet implemented.");
-                break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_4444:
                 throw new NotImplementedException("SCE_GE_TPF_4444 not yet implemented.");
-                break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_8888:
                 break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_IDTEX4:
             case eSCE_GE_TPF.SCE_GE_TPF_IDTEX8:
                 {
@@ -158,21 +160,22 @@ public class PGLUGETextureInfo : PGLUTextureInfo
                 break;
             case eSCE_GE_TPF.SCE_GE_TPF_IDTEX16:
                 throw new NotImplementedException("SCE_GE_TPF_IDTEX16 not yet implemented.");
-                break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_IDTEX32:
                 throw new NotImplementedException("SCE_GE_TPF_IDTEX32 not yet implemented.");
-                break;
+
             case eSCE_GE_TPF.SCE_GE_TPF_DXT1:
             case eSCE_GE_TPF.SCE_GE_TPF_DXT3:
             case eSCE_GE_TPF.SCE_GE_TPF_DXT5:
                 {
                     BcDecoder decoder = new BcDecoder();
 
-                    var bcType = TPF.tpf switch
+                    CompressionFormat bcType = TPF.tpf switch
                     {
                         eSCE_GE_TPF.SCE_GE_TPF_DXT1 => CompressionFormat.Bc1,
                         eSCE_GE_TPF.SCE_GE_TPF_DXT3 => CompressionFormat.Bc2,
                         eSCE_GE_TPF.SCE_GE_TPF_DXT5 => CompressionFormat.Bc3,
+                        _ => throw new UnreachableException(),
                     };
 
                     byte[] data = new byte[BufferInfo.ImageData.Span.Length];

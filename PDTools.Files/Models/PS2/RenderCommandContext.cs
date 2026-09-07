@@ -210,7 +210,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglAlphaFunc:
                 {
-                    var alphaFunc = cmd as Cmd_pglAlphaFunc;
+                    var alphaFunc = (Cmd_pglAlphaFunc)cmd;
                     if (alphaFunc.TST != AlphaTestFunc ||
                         alphaFunc.REF != AlphaTestRef)
                         diff = true;
@@ -222,7 +222,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglAlphaFail:
                 {
-                    var alphaFail = cmd as Cmd_pglAlphaFail;
+                    var alphaFail = (Cmd_pglAlphaFail)cmd;
                     if (alphaFail.FailMethod != AlphaFail)
                         diff = true;
 
@@ -244,7 +244,7 @@ public class RenderCommandContext
                 break;
             case ModelSetupPS2Opcode.pglSetDestinationAlphaFunc:
                 {
-                    var dest = cmd as Cmd_pglSetDestinationAlphaFunc;
+                    var dest = (Cmd_pglSetDestinationAlphaFunc)cmd;
                     if (dest.Func != DestinationAlphaFunc)
                         diff = true;
                     
@@ -254,7 +254,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglBlendFunc:
                 {
-                    var blend = cmd as Cmd_pglBlendFunc;
+                    var blend = (Cmd_pglBlendFunc)cmd;
                     if (blend.A != BlendFunc_A ||
                         blend.B != BlendFunc_B ||
                         blend.C != BlendFunc_C ||
@@ -278,7 +278,7 @@ public class RenderCommandContext
                 break;
             case ModelSetupPS2Opcode.pglDepthBias:
                 {
-                    var bias = cmd as Cmd_pglDepthBias;
+                    var bias = (Cmd_pglDepthBias)cmd;
                     if (bias.Value != 0.0f)
                         diff = true;
 
@@ -288,7 +288,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglColorMask:
                 {
-                    var colorMask = cmd as Cmd_pglColorMask;
+                    var colorMask = (Cmd_pglColorMask)cmd;
                     if ((uint)(int)~colorMask.ColorMask != ColorMask)
                         diff = true;
 
@@ -298,7 +298,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglSetFogColor:
                 {
-                    var fogCol = cmd as Cmd_pglSetFogColor;
+                    var fogCol = (Cmd_pglSetFogColor)cmd;
                     if (fogCol.Color != FogColor)
                         diff = true;
 
@@ -315,7 +315,7 @@ public class RenderCommandContext
                 {
                     if (cmd.Opcode == ModelSetupPS2Opcode.pglGT3_2_4f)
                     {
-                        var gt3_2_4f = cmd as Cmd_GT3_2_4f;
+                        var gt3_2_4f = (Cmd_GT3_2_4f)cmd;
                         if (gt3_2_4f.R != UnkGT3_2_R ||
                             gt3_2_4f.G != UnkGT3_2_G ||
                             gt3_2_4f.B != UnkGT3_2_B ||
@@ -329,7 +329,7 @@ public class RenderCommandContext
                     }
                     else if (cmd.Opcode == ModelSetupPS2Opcode.pglGT3_2_1ui)
                     {
-                        var gt3_2_4f = cmd as Cmd_GT3_2_1ui;
+                        var gt3_2_4f = (Cmd_GT3_2_1ui)cmd;
                         if (gt3_2_4f.Color != UnkGT3_2_R ||
                             gt3_2_4f.Color != UnkGT3_2_G ||
                             gt3_2_4f.Color != UnkGT3_2_B ||
@@ -366,7 +366,7 @@ public class RenderCommandContext
 
             case ModelSetupPS2Opcode.pglExternalTexIndex:
                 {
-                    var cmd_ = cmd as Cmd_pgluSetExternalTexIndex;
+                    var cmd_ = (Cmd_pgluSetExternalTexIndex)cmd;
                     if (cmd_.TexIndex != ExternalTexIndex)
                         diff = true;
 

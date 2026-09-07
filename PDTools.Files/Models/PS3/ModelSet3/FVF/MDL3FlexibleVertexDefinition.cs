@@ -16,9 +16,9 @@ public class MDL3FlexibleVertexDefinition
     public int Unk0x04 { get; set; }
     public byte VertexSize { get; set; }
     public Dictionary<string, MDL3FVFElementDefinition> Elements = [];
-    public MDL3FVFFieldArrayDefinition ArrayDefinition { get; set; }
+    public MDL3FVFFieldArrayDefinition? ArrayDefinition { get; set; }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public static MDL3FlexibleVertexDefinition FromStream(BinaryStream bs, long baseMdlPos, uint mdl3Version)
     {
         MDL3FlexibleVertexDefinition def = new MDL3FlexibleVertexDefinition();
@@ -30,7 +30,7 @@ public class MDL3FlexibleVertexDefinition
         byte fieldCount = bs.Read1Byte();
         def.VertexSize = bs.Read1Byte();
         bs.Position += 0x5A;
-        uint unkOffset_0x74 = bs.ReadUInt32();
+        uint arrayDefinitionCount = bs.ReadUInt32();
 
         bs.Position = baseMdlPos + nameOffset;
         def.Name = bs.ReadString(StringCoding.ZeroTerminated);
@@ -42,9 +42,9 @@ public class MDL3FlexibleVertexDefinition
             def.Elements.Add(element.Name, element);
         }
 
-        if (unkOffset_0x74 != 0)
+        if (arrayDefinitionCount != 0)
         {
-            bs.Position = baseMdlPos + unkOffset_0x74;
+            bs.Position = baseMdlPos + arrayDefinitionCount;
             def.ArrayDefinition = MDL3FVFFieldArrayDefinition.FromStream(bs, baseMdlPos, mdl3Version);
         }
         return def;

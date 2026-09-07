@@ -7,16 +7,20 @@ using System.IO;
 using Syroot.BinaryData;
 
 using PDTools.Files.Models.PS3.ModelSet3.ShapeStream;
-using MDL3 = PDTools.Files.Models.PS3.ModelSet3.ModelSet3;
+using PDTools.Files.Models.PS3.ModelSet3;
+using System;
 
 namespace PDTools.Files.Models.ShapeStream;
 
 public class ShapeStream
 {
-    public List<ShapeStreamChunk> Chunks = new List<ShapeStreamChunk>();
+    public List<ShapeStreamChunk> Chunks = [];
 
-    static public ShapeStream FromStream(Stream stream, MDL3 mdl)
+    static public ShapeStream FromStream(Stream stream, ModelSet3 mdl)
     {
+        if (mdl.StreamingInfo is null)
+            throw new InvalidOperationException("ModelSet3 has no shape streaming information.");
+
         ShapeStream ss = new();
 
         ushort i = 0;
@@ -30,11 +34,11 @@ public class ShapeStream
         return ss;
     }
 
-    public ShapeStreamShape GetShapeByIndex(ushort meshIndex)
+    public ShapeStreamShape? GetShapeByIndex(ushort meshIndex)
     {
         foreach (var chunk in Chunks)
         {
-            if (chunk.Meshes.TryGetValue(meshIndex, out ShapeStreamShape mesh))
+            if (chunk.Meshes.TryGetValue(meshIndex, out ShapeStreamShape? mesh))
                 return mesh;
         }
 

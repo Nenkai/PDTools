@@ -587,6 +587,9 @@ public class ModelSet3Serializer
 
     private void WriteShadersStructures(BinaryStream bs, long baseModelSetOffset, long shadersHeaderOffset, OptimizedStringTable strTable)
     {
+        if (ModelSet.Shaders is null)
+            return;
+
         long baseShaderDefPos = bs.Position;
         long lastOffset = bs.Position;
 
@@ -984,7 +987,7 @@ public class ModelSet3Serializer
 
     private void WriteMaterialStructures2(BinaryStream bs, long baseModelSetOffset)
     {
-        List<MDL3MaterialData_0x14> entries = ModelSet.Materials.MaterialDatas.Select(e => e._0x14).ToList();
+        List<MDL3MaterialShaderReference> entries = ModelSet.Materials.MaterialDatas.Select(e => e.ShaderReference).ToList();
 
         long lastOffset = bs.Position;
 
@@ -997,7 +1000,7 @@ public class ModelSet3Serializer
 
         for (var i = 0; i < entries.Count; i++)
         {
-            MDL3MaterialData_0x14 entry = entries[i];
+            MDL3MaterialShaderReference entry = entries[i];
             int entryOffset = (int)bs.Position;
 
             bs.WriteInt32(0); // Name offset, write later
@@ -1033,7 +1036,9 @@ public class ModelSet3Serializer
         for (int i = 0; i < ModelSet.Materials.MaterialDatas.Count; i++)
         {
             MDL3MaterialData mat = ModelSet.Materials.MaterialDatas[i];
-            var @ref = mat.ShaderReferences;
+            var @ref = mat.UnkShaderReferences;
+            Debug.Assert(@ref is not null);
+
             int entryOffset = (int)bs.Position;
 
             bs.WriteInt32(@ref.UnkData != null ? 1 : 0);
@@ -1077,8 +1082,11 @@ public class ModelSet3Serializer
 
         bs.Position = lastOffset;
 
-        int FindProgOffset(ShadersProgram_0x20 prog)
+        int FindProgOffset(ShadersProgram_0x20? prog)
         {
+            if (ModelSet.Shaders is null)
+                return -1;
+
             for (int i = 0; i < ModelSet.Shaders.Programs0x20.Count; i++)
             {
                 ShadersProgram_0x20 p = ModelSet.Shaders.Programs0x20[i];
@@ -1089,8 +1097,11 @@ public class ModelSet3Serializer
             return -1;
         }
 
-        int FindProgOffset2(ShadersProgram_0x2C prog)
+        int FindProgOffset2(ShadersProgram_0x2C? prog)
         {
+            if (ModelSet.Shaders is null)
+                return -1;
+
             for (int i = 0; i < ModelSet.Shaders.Programs0x20.Count; i++)
             {
                 ShadersProgram_0x2C p = ModelSet.Shaders.Programs0x2C[i];
@@ -1176,7 +1187,7 @@ public class ModelSet3Serializer
             bs.Position = materialsDataOffset + i * MDL3MaterialData.GetSize() + 0x10;
             bs.WriteInt32(data.TextureKeys.Count > 0 ? entriesOffset : 0);
 
-            if (data._0x14 != null)
+            if (data.ShaderReference != null)
             {
                 int offset0x14 = bs.ReadInt32();
                 bs.Position = offset0x14 + 0x18;

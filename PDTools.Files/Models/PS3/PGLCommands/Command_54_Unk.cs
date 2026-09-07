@@ -14,7 +14,7 @@ namespace PDTools.Files.Models.PS3.PGLCommands
     public class Command_54_Unk : ModelSetupCommand
     {
         public ushort Value { get; set; }
-        public ushort[] BranchOffsets { get; set; }
+        public ushort[]? BranchOffsets { get; set; }
 
         public override void Read(BinaryStream bs, int commandsBaseOffset)
         {
@@ -37,8 +37,8 @@ namespace PDTools.Files.Models.PS3.PGLCommands
         {
             bs.WriteUInt16(Value);
 
-            bs.WriteByte((byte)BranchOffsets.Length);
-            bs.WriteUInt16s(BranchOffsets);
+            bs.WriteByte((byte)(BranchOffsets?.Length ?? 0));
+            bs.WriteUInt16s(BranchOffsets ?? []);
         }
 
         public override string ToString()

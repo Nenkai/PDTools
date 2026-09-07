@@ -144,8 +144,8 @@ public class RelocatorBase
     {
         List<RelocationTypeGroup> typeGroups = [];
 
-        RelocationTypeGroup currentTypeGroup = null;
-        RelocationOffsetGroup offsetGroup = null;
+        RelocationTypeGroup? currentTypeGroup = null;
+        RelocationOffsetGroup? offsetGroup = null;
 
         int typeGroupStartIndex = 0;
         while (typeGroupStartIndex < OffsetsToRelocate.Count)
@@ -163,9 +163,9 @@ public class RelocatorBase
             int i;
             for (i = typeGroupStartIndex; i < OffsetsToRelocate.Count; i++)
             {
-                if (offsetGroup.Offsets.Count >= 0x7F)
+                if (offsetGroup!.Offsets.Count >= 0x7F)
                 {
-                    currentTypeGroup.OffsetGroups.Add(offsetGroup);
+                    currentTypeGroup!.OffsetGroups.Add(offsetGroup);
                     offsetGroup = new RelocationOffsetGroup();
                 }
 
@@ -175,8 +175,8 @@ public class RelocatorBase
 
             if (typeGroupStartIndex >= OffsetsToRelocate.Count)
             {
-                typeGroups.Add(currentTypeGroup);
-                currentTypeGroup.OffsetGroups.Add(offsetGroup);
+                typeGroups.Add(currentTypeGroup!);
+                currentTypeGroup!.OffsetGroups.Add(offsetGroup!);
             }
         }
 
@@ -205,11 +205,9 @@ public class RelocatorBase
             return firstVal;
     }
 
-    // ...thanks ChatGPT
     private static void WriteCompressed7BitInt(BinaryStream bs, int value)
     {
-        if (value < 0)
-            throw new ArgumentOutOfRangeException(nameof(value), "Value must be non-negative.");
+        ArgumentOutOfRangeException.ThrowIfNegative(value, nameof(value));
 
         if (value < 0x80)
         {

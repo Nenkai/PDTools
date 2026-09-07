@@ -13,18 +13,21 @@ namespace PDTools.Files.Models.PS3.ModelSet3.Shapes;
 public class MDL3ShapeKey
 {
     public uint ShapeID;
-    public string Name;
+    public string? Name;
 
     public static MDL3ShapeKey FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
         MDL3ShapeKey meshInfo = new();
-        int strOffset = bs.ReadInt32();
+        int nameOffset = bs.ReadInt32();
         meshInfo.ShapeID = bs.ReadUInt32();
 
-        bs.Position = mdlBasePos + strOffset;
+        if (nameOffset != 0)
+        {
+            bs.Position = mdlBasePos + nameOffset;
 
-        // first will be empty so skip it
-        meshInfo.Name = bs.ReadString(StringCoding.ZeroTerminated);
+            // first will be empty so skip it
+            meshInfo.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         return meshInfo;
     }

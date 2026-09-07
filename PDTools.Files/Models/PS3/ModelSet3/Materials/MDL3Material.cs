@@ -15,7 +15,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3.Materials;
 
 public class MDL3Material
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public short MaterialDataID { get; set; }
     public short CellGcmParamsID { get; set; }
     public ushort Flags { get; set; }
@@ -32,8 +32,11 @@ public class MDL3Material
         ushort keyCount = bs.ReadUInt16();
         uint keyOffset = bs.ReadUInt32();
 
-        bs.Position = mdlBasePos + nameOffset;
-        entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        if (nameOffset != 0)
+        {
+            bs.Position = mdlBasePos + nameOffset;
+            entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         for (int i = 0; i < keyCount; i++)
         {
@@ -50,7 +53,7 @@ public class MDL3Material
         return 0x34;
     }
 
-    public override string ToString()
+    public override string? ToString()
     {
         return Name;
     }

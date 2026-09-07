@@ -29,7 +29,7 @@ public class SeSeq
             message.Read(bs, lastStatus);
             if (message.Status == 0xFF)
             {
-                var meta = message.Event as SeMetaEvent;
+                var meta = (SeMetaEvent)message.Event;
                 if (meta.Type == 0x2F)
                     break;
             }

@@ -15,18 +15,18 @@ namespace PDTools.Files.Models.PS3.ModelSet3.Materials;
 
 public class MDL3MaterialData
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public int UnkIndex { get; set; }
     public byte Unk0x01 { get; set; }
     public byte Version { get; set; }
     public short Unk0x20 { get; set; }
 
-    public int[] Unk0x0CData { get; set; }
-    public List<MDL3TextureKey> TextureKeys { get; set; } = new();
-    public MDL3MaterialData_0x14 _0x14 { get; set; } = new();
-    public List<MDL3MaterialData_0x18> _0x18 { get; set; } = new();
-    public MDL3MaterialData_0x1C _0x1C { get; set; }
-    public MDL3MaterialShaderReferences ShaderReferences { get; set; }
+    public int[]? Unk0x0CData { get; set; }
+    public List<MDL3TextureKey> TextureKeys { get; set; } = [];
+    public MDL3MaterialShaderReference ShaderReference { get; set; } = new();
+    public List<MDL3MaterialData_0x18> _0x18 { get; set; } = [];
+    public MDL3MaterialData_0x1C? _0x1C { get; set; }
+    public MDL3MaterialUnkShaderReferences? UnkShaderReferences { get; set; }
 
     public static MDL3MaterialData FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {
@@ -47,8 +47,11 @@ public class MDL3MaterialData
         int count0x18 = bs.ReadInt16();
         int shaderReferencesOffset = bs.ReadInt32();
 
-        bs.Position = nameOffset;
-        entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        if (nameOffset != 0)
+        {
+            bs.Position = nameOffset;
+            entry.Name = bs.ReadString(StringCoding.ZeroTerminated);
+        }
 
         if (unkOffset0x0C != 0)
         {
@@ -67,7 +70,7 @@ public class MDL3MaterialData
         if (unkOffset0x14 != 0)
         {
             bs.Position = mdlBasePos + unkOffset0x14;
-            entry._0x14 = MDL3MaterialData_0x14.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            entry.ShaderReference = MDL3MaterialShaderReference.FromStream(bs, mdlBasePos, mdl3VersionMajor);
         }
 
         for (var i = 0; i < count0x18; i++)
@@ -87,7 +90,7 @@ public class MDL3MaterialData
         if (shaderReferencesOffset != 0)
         {
             bs.Position = mdlBasePos + shaderReferencesOffset;
-            entry.ShaderReferences = MDL3MaterialShaderReferences.FromStream(bs, mdlBasePos, mdl3VersionMajor);
+            entry.UnkShaderReferences = MDL3MaterialUnkShaderReferences.FromStream(bs, mdlBasePos, mdl3VersionMajor);
         }
 
         return entry;

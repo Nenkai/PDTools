@@ -19,7 +19,7 @@ public class CarModel0
 {
     public const int HeaderSize = 0x20;
 
-    public ModelSet0 ModelSet { get; set; }
+    public ModelSet0? ModelSet { get; set; }
     public UTextureSet TextureSet { get; set; } = new();
 
     public void FromStream(Stream stream)

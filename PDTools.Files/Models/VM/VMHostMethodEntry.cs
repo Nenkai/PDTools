@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.VM
 {
     public class VMHostMethodEntry
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public short StorageDataSize { get; set; }
         public short StorageID { get; set; }
 

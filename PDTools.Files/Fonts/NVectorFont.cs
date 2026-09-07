@@ -71,7 +71,7 @@ public class NVectorFont
         return vecFont;
     }
 
-    public Glyph GetGlyphByChar(char ch)
+    public Glyph? GetGlyphByChar(char ch)
     {
         int idx = Characters.IndexOf(ch);
         if (idx == -1)

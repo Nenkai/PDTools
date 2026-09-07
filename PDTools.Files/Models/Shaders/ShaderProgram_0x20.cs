@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace PDTools.Files.Models.Shaders;
 
 public class ShadersProgram_0x20
 {
-    public byte[] Program { get; set; }
+    public byte[]? Program { get; set; }
     public List<ShaderProgramEntry_0x20_0x14> _0x14 { get; set; } = [];
     public List<ShaderProgramEntry_0x20_0x18> _0x18 { get; set; } = [];
     public int Unk { get; set; }

@@ -13,7 +13,7 @@ namespace PDTools.Files.Models.PS3.ModelSet3.PackedMesh;
 public class PackedMeshKey
 {
     public uint PackedMeshID;
-    public string Name;
+    public string? Name;
 
     public static PackedMeshKey FromStream(BinaryStream bs, long mdlBasePos, ushort mdl3VersionMajor)
     {

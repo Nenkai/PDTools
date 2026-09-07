@@ -17,7 +17,7 @@ public class AutoDriveFile
 {
     public const int HeaderAlignment = 0x80;
 
-    public EnemyLine EnemyLine { get; set; }
+    public EnemyLine? EnemyLine { get; set; }
 
     public static AutoDriveFile FromStream(BinaryStream bs)
     {
@@ -38,8 +38,8 @@ public class AutoDriveFile
             bs.Position = enemyLineHeaderOffset;
             ad.EnemyLine = EnemyLine.FromStream(bs);
         }
+            ad.EnemyLine = EnemyLine.FromStream(bs);
 
-        ad.EnemyLine = EnemyLine.FromStream(bs);
         return ad;
     }
 }
