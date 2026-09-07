@@ -193,7 +193,9 @@ public class TextureSet3
                 PGLUTextureInfo textureInfo = new PGLUCellTextureInfo();
                 textureInfo.Read(bs, BaseTextureSetPosition);
                 TextureInfos.Add(textureInfo);
-                textureInfo.BufferInfo = Buffers[(int)textureInfo.BufferId];
+
+                // Match by position: BufferId defaults to 0 and is left unset here, only the PS4/PSP readers populate it from the file being read
+                textureInfo.BufferInfo = texture;
 
                 bs.Position = BaseTextureSetPosition + texture.ImageOffset;
                 texture.ImageData = new byte[texture.ImageSize];
