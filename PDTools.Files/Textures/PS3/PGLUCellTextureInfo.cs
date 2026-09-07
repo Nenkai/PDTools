@@ -10,6 +10,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
+
 using Pfim;
 
 using SixLabors.ImageSharp;
@@ -26,6 +29,8 @@ namespace PDTools.Files.Textures.PS3;
 /// </summary>
 public class PGLUCellTextureInfo : PGLUTextureInfo
 {
+    private readonly ILogger? logger;
+
     public uint Head0 { get; set; }
     public uint Offset { get; set; }
     public byte MipmapLevelLast { get; set; }
@@ -100,9 +105,10 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
     public uint ImageId { get; set; }
     public string SourceFileName { get; set; }
 
-    public PGLUCellTextureInfo()
+    public PGLUCellTextureInfo(ILoggerFactory? loggerFactory = null)
     {
         BufferInfo = new CellTextureBuffer();
+        logger = loggerFactory?.CreateLogger<PGLUCellTextureInfo>();
     }
 
     public override void Write(BinaryStream bs)
@@ -394,7 +400,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         IImageFormat i = Image.DetectFormat(path);
         if (i is null)
         {
-            Console.WriteLine($"This file is not a regular image file. {path}");
+            logger?.LogError("This file is not a regular image file. {}", path);
             return false;
         }
 
@@ -433,7 +439,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         return ms.ToArray();
     }
 
-    public override Image GetAsImage()
+    public override Image? GetAsImage()
     {
         // TODO: don't make a dds first. decode straight away.
         using var ms = new MemoryStream();
@@ -453,7 +459,7 @@ public class PGLUCellTextureInfo : PGLUTextureInfo
         }
         else
         {
-            Console.WriteLine($"Invalid format to save..? {dds.Format}");
+            logger?.LogError("Invalid format to save..? {}", dds.Format);
             return null;
         }
 
