@@ -42,9 +42,13 @@ public class ChaCha20Stream : Stream
     {
         ulong cryptoPos = (ulong)(BaseStream.Position - _BasePos);
 
-        BaseStream.ReadExactly(buffer, 0, count);
-        _chacha.DecryptBytes(buffer, count, cryptoPos);
-        return count;
+        // Honour `offset`, and return what is there at end of stream instead of throwing: decompressors
+        // read ahead in large buffers, which near the end of a volume asks for more than remains.
+        int total = 0, n;
+        while (total < count && (n = BaseStream.Read(buffer, offset + total, count - total)) > 0)
+            total += n;
+        _chacha.DecryptBytes(buffer.AsSpan(offset, total), total, cryptoPos);
+        return total;
     }
 
     public void SetBasePosition(long basePos)

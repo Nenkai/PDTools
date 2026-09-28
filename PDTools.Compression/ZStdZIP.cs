@@ -110,7 +110,10 @@ public class ZStdZIP
         else
         {
             using var decompressor = new ZStdDecompressor();
-            while (true)
+            // Stop once the declared size is out: probing for another chunk magic after the last
+            // chunk reads past the end of the stream when the file is the last one in its volume.
+            ulong written = 0;
+            while (written < uncompressed_size)
             {
                 uint magic = stream.ReadUInt32();
                 if (magic != 0xFFF7F32E)
@@ -122,6 +125,7 @@ public class ZStdZIP
 
                 byte[] chunkBuffer = ArrayPool<byte>.Shared.Rent(chunk_uncompressed_size);
                 byte[] inputBuffer = ArrayPool<byte>.Shared.Rent(chunk_compressed_size);
+                written += (ulong)chunk_uncompressed_size;
 
                 stream.ReadExactly(inputBuffer, 0, chunk_compressed_size);
 
@@ -132,7 +136,8 @@ public class ZStdZIP
 
                 outputStream.Write(chunkBuffer, 0, chunk_uncompressed_size);
 
-                stream.Align(0x10000);
+                if (written < uncompressed_size)
+                    stream.Align(0x10000);
 
                 ArrayPool<byte>.Shared.Return(chunkBuffer);
                 ArrayPool<byte>.Shared.Return(inputBuffer);
