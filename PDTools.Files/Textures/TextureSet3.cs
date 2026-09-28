@@ -209,7 +209,10 @@ public class TextureSet3
 
     private void ReadPS4Header(BinaryStream bs)
     {
+        // The set's own position when it was built: 0 for a standalone .txs, the set's file offset
+        // when embedded in a model (MDL4), whose pointers are absolute. Offsets below are relative to it.
         long relocPtr = bs.ReadInt64();
+        RelocPtr = (uint)relocPtr;
         long relocPtr2 = bs.ReadInt64();
         int unk = bs.ReadInt32(); // Unknown, 2
 
@@ -238,7 +241,7 @@ public class TextureSet3
                 bufferInfo.Read(bs);
                 Buffers.Add(bufferInfo);
 
-                bs.Position = BaseTextureSetPosition + bufferInfo.ImageOffset;
+                bs.Position = BaseTextureSetPosition + bufferInfo.ImageOffset - RelocPtr;
                 bufferInfo.ImageData = new byte[bufferInfo.ImageSize];
                 bs.ReadExactly(bufferInfo.ImageData.Span);
             }
@@ -251,7 +254,7 @@ public class TextureSet3
                 bs.Position = BaseTextureSetPosition + (pgluTexturesOffset - RelocPtr) + (i * 0x48);
 
                 PGLUTextureInfo textureInfo = new PGLUOrbisTextureInfo();
-                textureInfo.Read(bs, BaseTextureSetPosition);
+                textureInfo.Read(bs, BaseTextureSetPosition - RelocPtr);
                 TextureInfos.Add(textureInfo);
                 textureInfo.BufferInfo = Buffers[(int)textureInfo.BufferId];
             }
