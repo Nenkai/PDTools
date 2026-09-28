@@ -46,6 +46,27 @@ public class Swizzler
         }
     }
 
+    /// <summary>
+    /// Untile a 1D-thin surface of <paramref name="width"/> x <paramref name="height"/> elements
+    /// (texels, or 4x4 blocks for BCn) of <paramref name="elementBytes"/> each: 8x8-element tiles in
+    /// row order, elements within a tile in Morton order. Unlike DoSwizzle it takes the element grid
+    /// directly, so it serves uncompressed formats and 8-byte blocks too.
+    /// </summary>
+    public static void Untile(ReadOnlySpan<byte> input, Span<byte> output, int width, int height, int elementBytes)
+    {
+        int tilesX = (width + 7) / 8, tilesY = (height + 7) / 8;
+        int src = 0;
+        for (int ty = 0; ty < tilesY; ty++)
+            for (int tx = 0; tx < tilesX; tx++)
+                for (int t = 0; t < 64; t++, src += elementBytes)
+                {
+                    int p = MortonReorder(t, 8, 8);
+                    int x = tx * 8 + p % 8, y = ty * 8 + p / 8;
+                    if (x < width && y < height && src + elementBytes <= input.Length)
+                        input.Slice(src, elementBytes).CopyTo(output.Slice((y * width + x) * elementBytes, elementBytes));
+                }
+    }
+
     public static int MortonReorder(int i, int width, int height)
     {
         int x = 1;
