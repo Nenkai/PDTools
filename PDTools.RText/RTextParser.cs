@@ -68,6 +68,17 @@ public class RTextParser
                 break;
 
             case 0x52543035: // 50TR
+                // GT7 uses 0x18-byte page entries with 64-bit offsets: {name i64, pair count, unused,
+                // pairs i64}. Read with GT Sport's 0x10-byte u32 entries, 0x24 is then the upper half
+                // of GT7's name offset and 0x2C its unused dword, both 0 - but 0x2C is GT Sport's pair
+                // offset for page 0, which can never be 0. Without this check the GT Sport layout can
+                // "succeed" on a small GT7 file and yield garbage page names and no strings.
+                if (data.Length >= 0x30 && BitConverter.ToUInt32(data, 0x24) == 0 && BitConverter.ToUInt32(data, 0x2C) == 0)
+                {
+                    RText = new _50TR(gt7: true);
+                    break;
+                }
+
                 try
                 {
                     RText = new _50TR();
